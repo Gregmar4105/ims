@@ -32,7 +32,7 @@ import { cn, resolveUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Menu, MapPin, Search, Bike, Mars, Venus, Cog, Wind, HatGlasses } from 'lucide-react';
+import { Menu, Search, Bike, Mars, Venus, Cog, Wind, HatGlasses, MapPlus } from 'lucide-react';
 import React from 'react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
@@ -44,7 +44,7 @@ const rightNavItems: NavItem[] = [
     {
         title: 'Branches',
         href: '/branches',
-        icon: MapPin,
+        icon: MapPlus,
     },
     {
         title: 'Learn More',
@@ -57,7 +57,7 @@ const features: { title: string; href: string; description: string }[] = [
     {
         title: "LM2 Bicycle Trading",
         href: "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d2704.390268520652!2d120.32140132065776!3d16.547015982846894!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x339185f2599e5a3d%3A0xdfb1df35ec51792d!2sLM2%20Bicycle%20Trading!5e0!3m2!1sen!2sph!4v1764396662532!5m2!1sen!2sph",
-        description: "# 4, Bauang, 2501 La Union4, Bauang, 2501 La Union",
+        description: "# 4 Baccuit Norte, Bauang, La Union 2501",
     },
 ];
 
@@ -314,7 +314,7 @@ const ListItem = React.forwardRef<
                     ref={ref as any}
                     href={href ?? '#'}
                     className={cn(
-                        "block select-none space-y-1 rounded-md p-3 leading-none  outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                        "block select-none space-y-1 rounded-md p-3 leading-none  outline-none transition-colors hover:bg-accent  hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
                         className
                     )}
                     {...props}
@@ -337,7 +337,7 @@ export function AppHeader() {
     const { auth } = page.props;
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-sidebar-border/80 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-50 w-full border-b border-sidebar-border/80  bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
                 
                 {/* --- Left: Mobile Menu & Logo --- */}

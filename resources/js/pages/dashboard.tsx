@@ -6,7 +6,7 @@ import { Head } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Product List',
         href: dashboard().url,
     },
 ];
