@@ -18,7 +18,7 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { ArrowLeftRight, ArrowLeftToLine, ArrowRightFromLine, ArrowUpDown, BellRing, BookOpen, Brush, ChevronRight, Download, Folder, Frown, GalleryVertical, GalleryVerticalEnd, IdCardLanyard, LayoutDashboard, LayoutGrid, ListChecks, Mail, MapPlus, MonitorCog, NotebookText, PackageOpen, QrCode, ScanQrCode, Settings, ShoppingBag, ShoppingBasket, Sparkles, Split, SquareTerminal, Store, TriangleAlert, UserCog, UserLock, UserPen, Users, Wallet } from 'lucide-react';
+import { ArrowLeftRight, ArrowLeftToLine, ArrowRightFromLine, ArrowUpDown, BellRing, BookOpen, Brush, ChevronRight, Download, Folder, Frown, GalleryVertical, GalleryVerticalEnd, IdCardLanyard, LayoutDashboard, LayoutGrid, ListChecks, Mail, MapPlus, MessagesSquare, MonitorCog, NotebookText, PackageOpen, QrCode, ScanQrCode, Settings, ShoppingBag, ShoppingBasket, Sparkles, Split, SquareTerminal, Store, TriangleAlert, UserCog, UserLock, UserPen, Users, Wallet } from 'lucide-react';
 import AppLogo from './app-logo';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@radix-ui/react-collapsible';
 
@@ -41,7 +41,7 @@ const BranchAdmin = {
   isActive: true,
   items: [
     { title: "Branch Dashboard", url: "/branch-dashboard", icon: LayoutDashboard },
-    { title: "Email", url: "/email", icon: Mail  },
+    { title: "Chats", url: "/email", icon: MessagesSquare },
   ],
 }
 
@@ -56,16 +56,6 @@ const Sales = {
   ],
 }
 
-const Expenses = {
-  title: "Expenses",
-  icon: Wallet,
-  isActive: true,
-  items: [
-    { title: "Expense List", url: "/expense-list", icon: ListChecks },
-    { title: "Add Expense", url: "/add-expense", icon: BellRing },
-    { title: "Exp. Category", url: "/expense-category", icon: Folder },
-  ],
-}
 
 const Transfer = {
   title: "Transfer",
@@ -234,34 +224,6 @@ export function AppSidebar() {
                                 <CollapsibleContent>
                                 <SidebarMenuSub>
                                     {Sales.items.map((subItem) => (
-                                    <SidebarMenuSubItem key={subItem.title}>
-                                        <SidebarMenuSubButton asChild>
-                                        <a href={subItem.url}>
-                                            {subItem.icon && <subItem.icon />}
-                                            <span>{subItem.title}</span>
-                                        </a>
-                                        </SidebarMenuSubButton>
-                                    </SidebarMenuSubItem>
-                                    ))}
-                                </SidebarMenuSub>
-                                </CollapsibleContent>
-
-                            </Collapsible>
-
-                            <Collapsible className="group/sub-collapsible"> 
-                                
-                                <CollapsibleTrigger asChild>
-                                <SidebarMenuButton tooltip={Expenses.title}>
-                                    {Expenses.icon && <Expenses.icon />}
-                                    <span>{Expenses.title}</span>
-                                    {/* Note: I changed the rotate class to look at group/sub-collapsible */}
-                                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/sub-collapsible:rotate-90" />
-                                </SidebarMenuButton>
-                                </CollapsibleTrigger>
-
-                                <CollapsibleContent>
-                                <SidebarMenuSub>
-                                    {Expenses.items.map((subItem) => (
                                     <SidebarMenuSubItem key={subItem.title}>
                                         <SidebarMenuSubButton asChild>
                                         <a href={subItem.url}>
