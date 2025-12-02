@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Head, useForm, Link } from '@inertiajs/react'; // Changed usePage/router to useForm for better form handling
-import { UserPlus, Save, X } from 'lucide-react';
+import { Head, useForm, Link } from '@inertiajs/react';
+import { UserCog, Save, X, UserPen } from 'lucide-react'; // Swapped UserPlus for UserCog (Edit Icon)
 import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -15,50 +15,67 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
     { 
         title: 'Add Users',
-        href: '/users.create',
+        href: '/users.create', 
+    },
+    { 
+        title: 'Edit Users',
+        href: '/users.edit', 
     },
 ];
 
-export default function Create({ branches = [], roles = [] }: { branches: any[], roles: any[] }) {
+interface EditProps {
+    user: {
+        id: number;
+        name: string;
+        email: string;
+        branch_id: string | number;
+        role: string;
+    };
+    branches: any[];
+    roles: any[];
+}
+
+export default function Edit({ users, branches = [], roles = [] }: EditProps) {
     
-    // Inertia form handling
-    const { data, setData, post, processing, errors, reset } = useForm({
-        name: '',
-        email: '',
-        password: 'password123', // Set your default password logic here
-        branch_id: '',
-        role: '',
+    // Initialize form with EXISTING user data
+    const { data, setData, put, processing, errors } = useForm({
+        name: users.name || '',
+        email: users.email || '',
+        password: '', // Leave empty. Only send if changing it.
+        branch_id: users.branch_id ? String(users.branch_id) : '',
+        role: users.role || '',
     });
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         
-        post('/users.store', {
+        // Use PUT method and target specific user ID
+        put(`/users/${user.id}`, {
             onSuccess: () => {
-                toast.success('User created successfully');
-                reset();
+                toast.success('User updated successfully');
             },
             onError: () => {
-                toast.error('Failed to create user. Please check the form.');
+                toast.error('Failed to update user. Please check the form.');
             }
         });
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Add User" />
+            <Head title="Edit User" />
             
             <div className="p-4 md:p-6 ">
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 ">
                     <div className="flex items-start">
-                            <UserPlus className="size-14 mr-3 text-primary" />
+                        {/* Changed Icon to UserCog for "Edit" context */}
+                        <UserPen className="size-14 mr-3 text-primary" />
                         <div className="space-y-1">
                             <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                                Add a User
+                                Edit User
                             </h2>
                             <p className="text-sm text-muted-foreground">
-                                Add a new user to the system and assign their branch.
+                                Update the user's details, branch assignment, or role.
                             </p>
                         </div>
                     </div>
@@ -73,7 +90,7 @@ export default function Create({ branches = [], roles = [] }: { branches: any[],
                         </Link>
                         <Button onClick={submit} disabled={processing} size="sm">
                             <Save className="size-4 mr-2" />
-                            {processing ? 'Saving...' : 'Save User'}
+                            {processing ? 'Updating...' : 'Update User'}
                         </Button>
                     </div>
                 </div>
@@ -113,7 +130,10 @@ export default function Create({ branches = [], roles = [] }: { branches: any[],
                             {/* Branch Dropdown */}
                             <div className="space-y-2">
                                 <Label>Branch</Label>
-                                <Select onValueChange={(value) => setData('branch_id', value)}>
+                                <Select 
+                                    value={data.branch_id} 
+                                    onValueChange={(value) => setData('branch_id', value)}
+                                >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select a branch" />
                                     </SelectTrigger>
@@ -131,7 +151,10 @@ export default function Create({ branches = [], roles = [] }: { branches: any[],
                             {/* Role Dropdown */}
                             <div className="space-y-2">
                                 <Label>Role</Label>
-                                <Select onValueChange={(value) => setData('role', value)}>
+                                <Select 
+                                    value={data.role} 
+                                    onValueChange={(value) => setData('role', value)}
+                                >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select a role" />
                                     </SelectTrigger>
@@ -146,16 +169,18 @@ export default function Create({ branches = [], roles = [] }: { branches: any[],
                                 {errors.role && <p className="text-sm text-destructive">{errors.role}</p>}
                             </div>
 
-                            {/* Default Password */}
+                            {/* Password Field (Optional on Edit) */}
                             <div className="space-y-2">
-                                <Label htmlFor="password">Default Password</Label>
+                                <Label htmlFor="password">Reset Password</Label>
                                 <Input 
                                     id="password"
+                                    type="password"
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
+                                    placeholder="••••••••"
                                 />
                                 <p className="text-xs text-muted-foreground">
-                                    This password will be set initially. The user should change it upon login.
+                                    Leave blank to keep the current password.
                                 </p>
                                 {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                             </div>

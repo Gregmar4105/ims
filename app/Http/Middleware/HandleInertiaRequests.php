@@ -44,6 +44,14 @@ class HandleInertiaRequests extends Middleware
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),
+                // 👇 ADDED THIS: This sends the permissions to your React frontend
+                'permissions' => $request->user() 
+                    ? $request->user()->getAllPermissions()->pluck('name') 
+                    : [],
+                // Optional: You can send roles too if you need them later
+                'roles' => $request->user() 
+                    ? $request->user()->getRoleNames() 
+                    : [],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
