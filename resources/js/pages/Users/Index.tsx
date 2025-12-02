@@ -144,17 +144,17 @@ export default function Index({ users }:any) {
         </div>
     </div>
       <div className="flex items-center relative">
-        <Link href="/users/create">
-        <Button className="mx-4">Add a User <Plus className="size-5"/></Button>
-        </Link>
-                <Search className="absolute left-174 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <Search className="absolute left-140 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <Input
                     type="text"
                     placeholder="Search users..."
                     value={search}
                     onChange={handleSearchChange}
-                    className="border border-gray-400 w-full max-w-xl rounded-md px-3 py-1 mr-4 focus:outline-none focus:ring focus:ring-gray-300"
+                    className="border border-gray-400 w-full max-w-xl rounded-md px-3 py-1 mx-4 focus:outline-none focus:ring focus:ring-gray-300"
                 />
+                <Link href="/users.create">
+                <Button className="mr-4"><Plus className="size-5"/>Add a User</Button>
+                </Link>
         </div>
       <div
         className="m-4 bg-white border border-black dark:border-white
@@ -167,7 +167,6 @@ export default function Index({ users }:any) {
             <TableRow>
               <TableHead>ID</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
               <TableHead>Verification</TableHead>
               <TableHead>Date Created</TableHead>
               <TableHead>Account Status</TableHead>
@@ -190,8 +189,26 @@ export default function Index({ users }:any) {
                 filteredUsers.map(({ id, name, email, email_verified_at, user_status ,created_at }: any) => (
                     <TableRow key={id}>
                         <TableCell className="font-medium">{id}</TableCell>
-                        <TableCell>{name}</TableCell>
-                        <TableCell>{email}</TableCell>
+                        <TableCell className="py-4">
+                        <div className="flex items-center gap-3">
+                            {/* Avatar / Initials Circle */}
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-600">
+                            <span className="font-semibold text-sm">
+                                {name.charAt(0).toUpperCase()}
+                            </span>
+                            </div>
+
+                            {/* Text Stack */}
+                            <div className="flex flex-col">
+                            <span className="font-medium text-gray-900 leading-none">
+                                {name}
+                            </span>
+                            <span className="mt-1 text-sm text-gray-500 leading-none">
+                                {email}
+                            </span>
+                            </div>
+                        </div>
+                        </TableCell>
                         <TableCell>
                             {email_verified_at ? (
                                 <Badge variant="secondary" className="bg-blue-600 text-white hover:bg-blue-700 gap-1">
@@ -222,8 +239,8 @@ export default function Index({ users }:any) {
                             <div className="flex items-center gap-2">
                                 {/* EDIT ACTION */}
                                 {/* Assuming you have a named route 'users.edit' */}
-                                <Link >
-                                    <Button variant="outline" size="icon" className="h-8 w-8 text-blue-600">
+                                <Link href={`/users.edit/${id}`} >
+                                    <Button  variant="outline" size="icon" className="h-8 w-8 text-blue-600">
                                         <Pencil className="h-4 w-4" />
                                     </Button>
                                 </Link>
@@ -249,7 +266,7 @@ export default function Index({ users }:any) {
         </div>
 
         {/* Pagination Links */}
-        <div className="mt-4 flex justify-between">
+        <div className="mt-4 flex justify-between items-center">
             <h2>Showing Results: <strong>{users.total}</strong> </h2> 
             <Pagination links={links} />
         </div>

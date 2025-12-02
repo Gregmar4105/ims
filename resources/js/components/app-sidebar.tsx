@@ -16,12 +16,12 @@ import {
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
+import { SharedData, type NavItem } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { ArrowLeftRight, ArrowLeftToLine, ArrowRightFromLine, ArrowUpDown, BellRing, BookOpen, Brush, ChevronRight, Download, Folder, Frown, GalleryVertical, GalleryVerticalEnd, IdCardLanyard, LayoutDashboard, LayoutGrid, ListChecks, Mail, MapPlus, MessagesSquare, MonitorCog, NotebookText, PackageOpen, QrCode, ScanQrCode, Settings, ShoppingBag, ShoppingBasket, Sparkles, Split, SquareTerminal, Store, TriangleAlert, UserCog, UserLock, UserPen, Users, Wallet } from 'lucide-react';
 import AppLogo from './app-logo';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@radix-ui/react-collapsible';
-
+import { usePermission } from '@/hooks/usePermission';
 
 
 const SystemAdmin = {
@@ -75,11 +75,11 @@ const Products = {
   isActive: true,
   items: [
     { title: "Product List", url: "/dashboard", icon: ListChecks },
-    { title: "Add Product", url: "/add-product", icon: NotebookText  },
+    { title: "Add Product", url: "/add-product", icon: NotebookText, permission: "add-products"},
     { title: "Prod. Category", url: "#", icon: Folder   },
     { title: "Prod. Sub Category", url: "#", icon: GalleryVerticalEnd },
     { title: "Product Brands", url: "#", icon: Sparkles },
-    { title: "QR & Barcodes", url: "#", icon: QrCode },
+    { title: "QR & Barcodes", url: "#", icon: QrCode , permission: "add-qr-and-barcodes"},
   ],
 }
 
@@ -94,7 +94,11 @@ const userManagement = {
   ],
 }
 
+
+
 export function AppSidebar() {
+    const { can } = usePermission();
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -111,6 +115,7 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <SidebarGroupLabel>Larable IMS Platform</SidebarGroupLabel>
+                {can('system.admin') &&
                 <Collapsible
                     defaultOpen={SystemAdmin.isActive}
                     className="group/collapsible"
@@ -179,8 +184,9 @@ export function AppSidebar() {
                         </SidebarMenuSub>
                         </CollapsibleContent>
                     </SidebarMenuItem>
-                    </Collapsible>
+                    </Collapsible>}
 
+                {can('branch.admin') &&
                 <Collapsible 
                 defaultOpen={BranchAdmin.isActive} 
                 className="group/collapsible"
@@ -268,9 +274,9 @@ export function AppSidebar() {
                             </SidebarMenuSub>
                         </CollapsibleContent>
                     </SidebarMenuItem>
-                </Collapsible>
+                </Collapsible>}
                 
-                
+                {can('employee') && 
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Employee Dashboard">
                         <IdCardLanyard />
@@ -278,7 +284,7 @@ export function AppSidebar() {
                         <span>Employee Dashboard</span>
                         </a>
                     </SidebarMenuButton>
-                </SidebarMenuItem>
+                </SidebarMenuItem>}
 
                 <Collapsible 
                 defaultOpen={Products.isActive} 
@@ -312,7 +318,8 @@ export function AppSidebar() {
                         </CollapsibleContent>
                     </SidebarMenuItem>
                 </Collapsible>
-
+                
+                {can('employee') &&
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Scanner">
                         <ScanQrCode />
@@ -320,7 +327,7 @@ export function AppSidebar() {
                         <span>QR & Barcode Scanner</span>
                         </a>
                     </SidebarMenuButton>
-                </SidebarMenuItem>
+                </SidebarMenuItem>}
 
             </SidebarContent>
 
