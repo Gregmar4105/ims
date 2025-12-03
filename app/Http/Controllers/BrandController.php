@@ -18,17 +18,21 @@ class BrandController extends Controller
         $query = Brand::query();
 
         // Strictly filter by user's branch_id. If no branch, show nothing.
-        if (!$user->hasRole('System Administrator')) {
-            if (!$user->branch_id) {
-                $query->whereRaw('1 = 0');
-            } else {
-                $query->where('branch_id', $user->branch_id);
-            }
+        $isSystemAdmin = $user->hasRole('System Administrator');
+
+        if ($isSystemAdmin) {
+            // System Admin sees all brands
+        } elseif ($user->branch_id) {
+            $query->where('branch_id', $user->branch_id);
+        } else {
+            // User has no branch and is not Admin, show nothing.
+            $query->whereRaw('1 = 0');
         }
 
         $brands = $query->when($search, function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%");
             })
+            ->with('creator')
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -43,18 +47,34 @@ class BrandController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('brands')],
-            'status' => ['required', 'in:Active,Inactive'],
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'status' => 'required|in:Active,Inactive',
         ]);
 
-        $validated['slug'] = Str::slug($validated['name']);
-        
-        if (auth()->user()->branch_id) {
-            $validated['branch_id'] = auth()->user()->branch_id;
+        $user = auth()->user();
+        $branchId = $user->branch_id;
+
+        if (!$branchId && !$user->hasRole('System Administrator')) {
+             return back()->withErrors(['branch' => 'You must be assigned to a branch to create brands.']);
         }
 
-        Brand::create($validated);
+        // Check if brand already exists for this branch
+        $existingBrand = Brand::where('name', $request->name)
+            ->where('branch_id', $branchId)
+            ->first();
+
+        if ($existingBrand) {
+            return redirect()->back()->with('success', 'Brand already exists.');
+        }
+
+        Brand::create([
+            'name' => $request->name,
+            'slug' => Str::slug($request->name),
+            'status' => $request->status,
+            'branch_id' => $branchId,
+            'created_by' => $user->id,
+        ]);
 
         return redirect()->back()->with('success', 'Brand created successfully.');
     }

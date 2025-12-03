@@ -18,7 +18,7 @@ import {
 import { dashboard } from '@/routes';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowLeftRight, ArrowLeftToLine, ArrowRightFromLine, ArrowUpDown, BellRing, BookOpen, Brush, ChevronRight, Download, Folder, Frown, GalleryVertical, GalleryVerticalEnd, IdCardLanyard, LayoutDashboard, LayoutGrid, ListChecks, Mail, MapPlus, MessagesSquare, MonitorCog, NotebookText, PackageOpen, QrCode, ScanQrCode, Settings, ShoppingBag, ShoppingBasket, Sparkles, Split, SquareTerminal, Store, TriangleAlert, UserCog, UserLock, UserPen, Users, Wallet } from 'lucide-react';
+import { ArrowLeftRight, ArrowLeftToLine, ArrowRightFromLine, ArrowUpDown, BellRing, BookOpen, Brush, ChevronRight, Download, Folder, Frown, GalleryVertical, GalleryVerticalEnd, IdCardLanyard, LayoutDashboard, LayoutGrid, ListChecks, Mail, MapPlus, MessagesSquare, MonitorCog, NotebookText, PackageOpen, QrCode, ScanQrCode, Settings, ShoppingBag, ShoppingBasket, Sparkles, ScanBarcode, Settings2, Split, SquareTerminal, Tag, Store, TriangleAlert, UserCog, UserLock, UserPen, Users, Wallet } from 'lucide-react';
 import AppLogo from './app-logo';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@radix-ui/react-collapsible';
 import { usePermission } from '@/hooks/usePermission';
@@ -75,11 +75,21 @@ const Products = {
     isActive: true,
     items: [
         { title: "Product List", url: "/products", icon: ListChecks },
-
-        { title: "Prod. Category", url: "/categories", icon: Folder },
-
-        { title: "Product Brands", url: "/brands", icon: Sparkles },
-        { title: "QR & Barcodes", url: "#", icon: QrCode, permission: "add-qr-and-barcodes" },
+        {
+            title: "Prod. Category",
+            url: "/categories",
+            icon: Tag,
+        },
+        {
+            title: "Product Brands",
+            url: "/brands",
+            icon: Tag,
+        },
+        {
+            title: "QR & Barcodes",
+            url: "/qr-barcodes",
+            icon: ScanBarcode,
+        },
     ],
 }
 

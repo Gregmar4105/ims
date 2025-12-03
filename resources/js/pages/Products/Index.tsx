@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Search, PackageOpen, Plus, MapPin, Layers, X } from 'lucide-react';
+import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import Pagination from '@/components/Pagination';
@@ -15,6 +15,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import QRCode from "react-qr-code";
+import Barcode from "react-barcode";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -32,6 +42,8 @@ interface Product {
     description: string | null;
     variations: { name: string; options: string }[] | null;
     image_path: string | null;
+    barcode: string | null;
+    qr_code: string | null;
     branch?: {
         branch_name: string;
     };
@@ -48,12 +60,13 @@ interface Props {
     };
     options: {
         branches: string[];
-        brands: { id: number; name: string }[];
-        categories: { id: number; name: string }[];
+        brands: string[];
+        categories: string[];
     };
+    isSystemAdmin: boolean;
 }
 
-export default function Index({ products, filters, options }: Props) {
+export default function Index({ products, filters, options, isSystemAdmin }: Props) {
     const productList = products?.data || [];
     const links = products?.links || [];
 
@@ -121,6 +134,74 @@ export default function Index({ products, filters, options }: Props) {
 
     const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all';
 
+    const [viewCodeProduct, setViewCodeProduct] = useState<Product | null>(null);
+
+    function handlePrint() {
+        if (!viewCodeProduct) return;
+
+        const printWindow = window.open('', '', 'width=800,height=600');
+        if (printWindow) {
+            const content = document.getElementById('printable-codes');
+            if (content) {
+                printWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>Print Codes - ${viewCodeProduct.name}</title>
+                            <style>
+                                body {
+                                    font-family: sans-serif;
+                                    display: flex;
+                                    flex-direction: column;
+                                    align-items: center;
+                                    justify-content: center;
+                                    padding: 40px;
+                                }
+                                .container {
+                                    text-align: center;
+                                    width: 100%;
+                                    max-width: 600px;
+                                }
+                                h2 { margin-bottom: 5px; font-size: 24px; }
+                                p { margin-top: 0; color: #666; font-size: 16px; margin-bottom: 30px; }
+                                .code-section {
+                                    margin-bottom: 40px;
+                                    display: flex;
+                                    flex-direction: column;
+                                    align-items: center;
+                                }
+                                .label {
+                                    font-weight: bold;
+                                    margin-bottom: 10px;
+                                    font-size: 18px;
+                                }
+                                svg, canvas, img {
+                                    max-width: 100%;
+                                    height: auto;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <h2>${viewCodeProduct.name}</h2>
+                                <p>${viewCodeProduct.branch?.branch_name || ''}</p>
+                                ${content.innerHTML}
+                            </div>
+                            <script>
+                                window.onload = function() {
+                                    window.print();
+                                    window.onafterprint = function() {
+                                        window.close();
+                                    }
+                                }
+                            </script>
+                        </body>
+                    </html>
+                `);
+                printWindow.document.close();
+            }
+        }
+    }
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Products" />
@@ -158,17 +239,19 @@ export default function Index({ products, filters, options }: Props) {
                             />
                         </div>
 
-                        <Select value={branch} onValueChange={(val) => { setBranch(val); updateParams({ branch: val }); }}>
-                            <SelectTrigger className="w-[160px]">
-                                <SelectValue placeholder="Branch" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Branches</SelectItem>
-                                {options.branches.map((b) => (
-                                    <SelectItem key={b} value={b}>{b}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        {isSystemAdmin && (
+                            <Select value={branch} onValueChange={(val) => { setBranch(val); updateParams({ branch: val }); }}>
+                                <SelectTrigger className="w-[160px]">
+                                    <SelectValue placeholder="Branch" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Branches</SelectItem>
+                                    {options.branches.map((b) => (
+                                        <SelectItem key={b} value={b}>{b}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
 
                         <Select value={brand} onValueChange={(val) => { setBrand(val); updateParams({ brand: val }); }}>
                             <SelectTrigger className="w-[160px]">
@@ -177,7 +260,7 @@ export default function Index({ products, filters, options }: Props) {
                             <SelectContent>
                                 <SelectItem value="all">All Brands</SelectItem>
                                 {options.brands.map((b) => (
-                                    <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+                                    <SelectItem key={b} value={b}>{b}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -189,7 +272,7 @@ export default function Index({ products, filters, options }: Props) {
                             <SelectContent>
                                 <SelectItem value="all">All Categories</SelectItem>
                                 {options.categories.map((c) => (
-                                    <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                                    <SelectItem key={c} value={c}>{c}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -215,7 +298,7 @@ export default function Index({ products, filters, options }: Props) {
                 </div>
             </div>
 
-            <div className="p-4">
+            <div className="p-4 h-[calc(100vh-280px)] overflow-y-auto">
                 {productList.length === 0 ? (
                     <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed">
                         <PackageOpen className="mx-auto h-12 w-12 text-gray-400" />
@@ -247,6 +330,17 @@ export default function Index({ products, filters, options }: Props) {
                                         <Badge className={`backdrop-blur-sm text-[10px] px-1.5 py-0.5 ${product.quantity === 0 ? 'bg-red-500/90 hover:bg-red-600/90' : 'bg-black/70 hover:bg-black/80'}`}>
                                             Qty: {product.quantity}
                                         </Badge>
+                                    </div>
+                                    {/* Overlay Action Button */}
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2">
+                                        <Button variant="secondary" size="sm" onClick={() => setViewCodeProduct(product)}>
+                                            View Codes
+                                        </Button>
+                                        <Link href={`/products/${product.id}/edit`}>
+                                            <Button variant="secondary" size="sm">
+                                                Edit Product
+                                            </Button>
+                                        </Link>
                                     </div>
                                 </div>
                                 <CardHeader className="p-3 pb-1">
@@ -300,6 +394,45 @@ export default function Index({ products, filters, options }: Props) {
                     <Pagination links={links} />
                 </div>
             </div>
+
+            <Dialog open={!!viewCodeProduct} onOpenChange={(open) => !open && setViewCodeProduct(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Product Codes: {viewCodeProduct?.name}</DialogTitle>
+                    </DialogHeader>
+                    <div id="printable-codes" className="flex flex-col items-center space-y-6 py-4">
+                        {viewCodeProduct?.qr_code ? (
+                            <div className="flex flex-col items-center code-section">
+                                <Label className="mb-2 label">QR Code</Label>
+                                <div className="p-2 bg-white border rounded-lg">
+                                    <QRCode value={viewCodeProduct.qr_code} size={150} />
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground text-sm">No QR Code generated.</p>
+                        )}
+
+                        {viewCodeProduct?.barcode ? (
+                            <div className="flex flex-col items-center w-full code-section">
+                                <Label className="mb-2 label">Barcode</Label>
+                                <div className="p-2 bg-white border rounded-lg w-full flex justify-center overflow-hidden">
+                                    <Barcode value={viewCodeProduct.barcode} width={1.5} height={50} fontSize={14} />
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground text-sm">No Barcode generated.</p>
+                        )}
+                    </div>
+                    <DialogFooter className="sm:justify-between">
+                        <Button type="button" variant="outline" onClick={handlePrint}>
+                            <Printer className="mr-2 h-4 w-4" /> Print
+                        </Button>
+                        <Button type="button" variant="secondary" onClick={() => setViewCodeProduct(null)}>
+                            Close
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

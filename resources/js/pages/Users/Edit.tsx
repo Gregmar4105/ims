@@ -13,13 +13,13 @@ const breadcrumbs: BreadcrumbItem[] = [
         title: 'Users',
         href: '/users',
     },
-    { 
+    {
         title: 'Add Users',
-        href: '/users.create', 
+        href: '/users.create',
     },
-    { 
+    {
         title: 'Edit Users',
-        href: '/users.edit', 
+        href: '/users.edit',
     },
 ];
 
@@ -36,7 +36,7 @@ interface EditProps {
 }
 
 export default function Edit({ users, branches = [], roles = [] }: EditProps) {
-    
+
     // Initialize form with EXISTING user data
     const { data, setData, put, processing, errors } = useForm({
         name: users.name || '',
@@ -48,7 +48,7 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         // Use PUT method and target specific user ID
         put(`/users.update/${users.id}`, {
             onSuccess: () => {
@@ -63,7 +63,7 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Edit User" />
-            
+
             <div className="p-4 md:p-6 ">
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 ">
@@ -79,7 +79,7 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
                             </p>
                         </div>
                     </div>
-                    
+
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2">
                         <Link href="/users">
@@ -99,11 +99,11 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
                 <div className="bg-card text-card-foreground rounded-xl border border-black shadow-sm p-6">
                     <form onSubmit={submit} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            
+
                             {/* Name Field */}
                             <div className="space-y-2">
                                 <Label htmlFor="name">Full Name</Label>
-                                <Input 
+                                <Input
                                     id="name"
                                     value={data.name}
                                     onChange={(e) => setData('name', e.target.value)}
@@ -116,7 +116,7 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
                             {/* Email Field */}
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email Address</Label>
-                                <Input 
+                                <Input
                                     id="email"
                                     type="email"
                                     value={data.email}
@@ -130,8 +130,8 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
                             {/* Branch Dropdown */}
                             <div className="space-y-2">
                                 <Label>Branch</Label>
-                                <Select 
-                                    value={data.branch_id} 
+                                <Select
+                                    value={data.branch_id}
                                     onValueChange={(value) => setData('branch_id', value)}
                                 >
                                     <SelectTrigger>
@@ -140,7 +140,7 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
                                     <SelectContent>
                                         {branches.map((branch) => (
                                             <SelectItem key={branch.id} value={String(branch.id)}>
-                                                {branch.name}
+                                                {branch.branch_name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -152,7 +152,7 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
                                 <Label>Role</Label>
                                 <Select
                                     // FIX 1: Ensure you are binding the value to your state
-                                    value={data.role ? String(data.role) : undefined} 
+                                    value={data.role ? String(data.role) : undefined}
                                     onValueChange={(value) => {
                                         // If you want "deselect" capability in a single select, you check if it's already selected
                                         const newValue = value === data.role ? "" : value;
@@ -164,15 +164,15 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
                                         <SelectValue placeholder="Select a role" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                    {/* Add this item manually */}
-                                    <SelectItem value="null_value"></SelectItem>
-                                    
-                                    {roles.map((role) => (
-                                        <SelectItem key={role.id} value={String(role.id)}>
-                                            {role.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
+                                        {/* Add this item manually */}
+                                        <SelectItem value="null_value"></SelectItem>
+
+                                        {roles.map((role) => (
+                                            <SelectItem key={role.id} value={String(role.id)}>
+                                                {role.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
                                 </Select>
                                 {errors.role && <p className="text-sm text-destructive">{errors.role}</p>}
                             </div>
@@ -181,7 +181,7 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
                             {/* Password Field (Optional on Edit) */}
                             <div className="space-y-2">
                                 <Label htmlFor="password">Reset Password</Label>
-                                <Input 
+                                <Input
                                     id="password"
                                     type="password"
                                     value={data.password}

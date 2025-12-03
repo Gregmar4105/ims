@@ -45,6 +45,10 @@ interface Category {
     slug: string;
     status: 'Active' | 'Inactive';
     created_at: string;
+    updated_at: string;
+    creator?: {
+        name: string;
+    };
 }
 
 interface Props {
@@ -149,20 +153,23 @@ export default function Index({ categories, filters }: Props) {
             </div>
 
             <div className="p-4">
-                <div className="bg-white dark:bg-gray-800 rounded-lg border shadow-sm overflow-hidden">
+                <div className="bg-white dark:bg-gray-800 rounded-lg border shadow-sm overflow-hidden h-[calc(100vh-220px)] overflow-y-auto relative">
                     <Table>
-                        <TableHeader>
+                        <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-sm">
                             <TableRow>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Slug</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Created By</TableHead>
+                                <TableHead>Created At</TableHead>
+                                <TableHead>Updated At</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {categories.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                                         No categories found.
                                     </TableCell>
                                 </TableRow>
@@ -175,6 +182,15 @@ export default function Index({ categories, filters }: Props) {
                                             <Badge variant={category.status === 'Active' ? 'default' : 'secondary'}>
                                                 {category.status}
                                             </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground text-sm">
+                                            {category.creator?.name || 'System'}
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground text-sm">
+                                            {new Date(category.created_at).toLocaleString()}
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground text-sm">
+                                            {new Date(category.updated_at).toLocaleString()}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">

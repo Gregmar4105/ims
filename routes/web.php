@@ -38,7 +38,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
     Route::resource('branches', \App\Http\Controllers\BranchController::class);
     Route::resource('brands', \App\Http\Controllers\BrandController::class);
-    Route::resource('categories', \App\Http\Controllers\CategoryController::class);
+Route::resource('categories', \App\Http\Controllers\CategoryController::class);
+Route::resource('qr-barcodes', \App\Http\Controllers\QrBarcodeController::class)->only(['index', 'store']);
     Route::resource('products', \App\Http\Controllers\ProductController::class);
 
     Route::get('qr-and-barcode-scanner' , [QrAndBarcodeController::class, 'index']);

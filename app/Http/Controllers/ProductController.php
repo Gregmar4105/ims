@@ -24,7 +24,7 @@ class ProductController extends Controller
         $user = auth()->user();
         $isSystemAdmin = $user->hasRole('System Administrator');
         
-        $query = Product::with(['branch', 'brand', 'category']);
+        $query = Product::with(['branch', 'brand', 'category', 'creator']);
 
         if (!$isSystemAdmin) {
             if (!$user->branch_id) {
@@ -58,11 +58,15 @@ class ProductController extends Controller
         }
 
         if ($filterBrand && $filterBrand !== 'all') {
-            $query->where('brand_id', $filterBrand);
+            $query->whereHas('brand', function ($q) use ($filterBrand) {
+                $q->where('name', $filterBrand);
+            });
         }
 
         if ($filterCategory && $filterCategory !== 'all') {
-            $query->where('category_id', $filterCategory);
+            $query->whereHas('category', function ($q) use ($filterCategory) {
+                $q->where('name', $filterCategory);
+            });
         }
 
         if ($filterStock && $filterStock !== 'all') {
@@ -89,8 +93,8 @@ class ProductController extends Controller
             $categoriesQuery->where('branch_id', $user->branch_id);
         }
 
-        $brands = $brandsQuery->get(['id', 'name']);
-        $categories = $categoriesQuery->get(['id', 'name']);
+        $brands = $brandsQuery->pluck('name')->unique()->values();
+        $categories = $categoriesQuery->pluck('name')->unique()->values();
 
         return Inertia::render('Products/Index', [
             'products' => $products,
@@ -105,7 +109,8 @@ class ProductController extends Controller
                 'branches' => $branches,
                 'brands' => $brands,
                 'categories' => $categories,
-            ]
+            ],
+            'isSystemAdmin' => $isSystemAdmin,
         ]);
     }
 
@@ -122,17 +127,29 @@ class ProductController extends Controller
             ]);
         }
 
-        $brands = Brand::where('status', 'Active')
-            ->when(!$isSystemAdmin, function ($q) use ($branchId) {
-                $q->where('branch_id', $branchId);
-            })
-            ->get();
+        if ($isSystemAdmin) {
+            $brands = Brand::where('status', 'Active')->get()
+                ->sortByDesc(function ($brand) use ($branchId) {
+                    return $brand->branch_id === $branchId ? 1 : 0;
+                })
+                ->unique('name')
+                ->values();
 
-        $categories = Category::where('status', 'Active')
-            ->when(!$isSystemAdmin, function ($q) use ($branchId) {
-                $q->where('branch_id', $branchId);
-            })
-            ->get();
+            $categories = Category::where('status', 'Active')->get()
+                ->sortByDesc(function ($category) use ($branchId) {
+                    return $category->branch_id === $branchId ? 1 : 0;
+                })
+                ->unique('name')
+                ->values();
+        } else {
+            $brands = Brand::where('status', 'Active')
+                ->where('branch_id', $branchId)
+                ->get();
+
+            $categories = Category::where('status', 'Active')
+                ->where('branch_id', $branchId)
+                ->get();
+        }
 
         return Inertia::render('Products/Create', [
             'brands' => $brands,
@@ -190,8 +207,86 @@ class ProductController extends Controller
 
         $product = new Product($validated);
         $product->branch_id = $user->branch_id;
+        $product->created_by = $user->id;
         $product->save();
 
         return redirect()->route('products.index')->with('success', 'Product added successfully.');
+    }
+    public function edit(Product $product)
+    {
+        $user = auth()->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+
+        // Authorization: System Admin or Branch Admin of the product's branch
+        if (!$isSystemAdmin && $product->branch_id !== $user->branch_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $branchId = $product->branch_id;
+
+        $brands = Brand::where('status', 'Active')
+            ->where('branch_id', $branchId)
+            ->get();
+
+        $categories = Category::where('status', 'Active')
+            ->where('branch_id', $branchId)
+            ->get();
+
+        return Inertia::render('Products/Edit', [
+            'product' => $product,
+            'brands' => $brands,
+            'categories' => $categories,
+        ]);
+    }
+
+    public function update(Request $request, Product $product)
+    {
+        $user = auth()->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+
+        if (!$isSystemAdmin && $product->branch_id !== $user->branch_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'brand_id' => 'required|exists:brands,id',
+            'category_id' => 'required|exists:categories,id',
+            'quantity' => 'required|integer|min:0',
+            'physical_location' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'variations' => 'nullable|array',
+            'variations.*.name' => 'required|string',
+            'variations.*.options' => 'required|string',
+            'image' => 'nullable|image|max:2048', // Image is optional on update
+        ]);
+
+        // Handle Image Upload if provided
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
+                Storage::disk('public')->delete($product->image_path);
+            }
+
+            $branchName = $product->branch->branch_name;
+            $brand = Brand::find($validated['brand_id']);
+            $category = Category::find($validated['category_id']);
+            
+            $safeBranch = str_replace(' ', '', $branchName);
+            $safeBrand = str_replace(' ', '', $brand->name);
+            $safeCategory = str_replace(' ', '', $category->name);
+            $safeProduct = str_replace(' ', '-', $validated['name']);
+            
+            $extension = $request->file('image')->getClientOriginalExtension();
+            $filename = "{$safeBranch}.{$safeBrand}.{$safeCategory}.{$safeProduct}.{$extension}";
+            
+            $folderPath = 'products/' . $branchName;
+            $path = $request->file('image')->storeAs($folderPath, $filename, 'public');
+            $validated['image_path'] = $path;
+        }
+
+        $product->update($validated);
+
+        return redirect()->route('products.index')->with('success', 'Product updated successfully.');
     }
 }

@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,8 +22,8 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/products',
     },
     {
-        title: 'Add Product',
-        href: '/products/create',
+        title: 'Edit Product',
+        href: '#',
     },
 ];
 
@@ -42,24 +42,40 @@ interface Category {
     name: string;
 }
 
+interface Product {
+    id: number;
+    name: string;
+    brand_id: number;
+    category_id: number;
+    quantity: number;
+    physical_location: string | null;
+    description: string | null;
+    variations: Variation[] | null;
+    image_path: string | null;
+}
+
 interface Props {
+    product: Product;
     brands: Brand[];
     categories: Category[];
 }
 
-export default function Create({ brands, categories }: Props) {
+export default function Edit({ product, brands, categories }: Props) {
     const { data, setData, post, processing, errors } = useForm({
-        name: '',
-        brand_id: '',
-        category_id: '',
-        quantity: '',
-        physical_location: '',
-        description: '',
-        variations: [] as Variation[],
+        _method: 'PUT',
+        name: product.name,
+        brand_id: String(product.brand_id),
+        category_id: String(product.category_id),
+        quantity: String(product.quantity),
+        physical_location: product.physical_location || '',
+        description: product.description || '',
+        variations: product.variations || [] as Variation[],
         image: null as File | null,
     });
 
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(
+        product.image_path ? `/storage/${product.image_path}` : null
+    );
 
     function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
@@ -91,19 +107,19 @@ export default function Create({ brands, categories }: Props) {
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
-        post('/products');
+        post(`/products/${product.id}`);
     }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Add Product" />
+            <Head title="Edit Product" />
 
             <div className="p-4 md:p-6">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Add New Product</h1>
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Edit Product</h1>
                         <p className="text-sm text-muted-foreground mt-1">
-                            Enter the details of the new product. It will be associated with your branch.
+                            Update the details of the product.
                         </p>
                     </div>
                 </div>
@@ -244,12 +260,12 @@ export default function Create({ brands, categories }: Props) {
                                         accept="image/*"
                                         className="absolute inset-0 opacity-0 cursor-pointer"
                                         onChange={handleImageChange}
-                                        required
                                     />
                                 </div>
                                 <div className="text-sm text-muted-foreground">
                                     <p>Click to upload or drag and drop</p>
                                     <p>SVG, PNG, JPG or GIF (max. 2MB)</p>
+                                    <p className="text-xs text-yellow-600 mt-1">Leave empty to keep current image</p>
                                 </div>
                             </div>
                             {errors.image && <p className="text-sm text-red-500">{errors.image}</p>}
@@ -257,7 +273,7 @@ export default function Create({ brands, categories }: Props) {
 
                         <div className="flex justify-end pt-4">
                             <Button type="submit" disabled={processing}>
-                                {processing ? 'Creating...' : 'Create Product'}
+                                {processing ? 'Updating...' : 'Update Product'}
                             </Button>
                         </div>
                     </form>
