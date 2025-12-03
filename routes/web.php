@@ -29,7 +29,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('users' , [UserController::class , 'index'])->name('users.index');
     Route::get('users.create' , [UserController::class , 'create'])->name('users.create');
     Route::post('users.store' , [UserController::class , 'store'])->name('users.store');
-    Route::get('users.edit/{id}', [UserController::class, 'edit'])->name('users.edit');
+    Route::get('users.edit/{user}', [UserController::class, 'edit'])->name('users.edit');
+    Route::put('users.update/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+    // Role Management Routes
+    Route::resource('roles', \App\Http\Controllers\RoleController::class);
+    Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
+    Route::resource('branches', \App\Http\Controllers\BranchController::class);
 
     Route::get('qr-and-barcode-scanner' , [QrAndBarcodeController::class, 'index']);
 });

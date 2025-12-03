@@ -26,7 +26,7 @@ export default function Create({ branches = [], roles = [] }: { branches: any[],
         name: '',
         email: '',
         password: 'password123', // Set your default password logic here
-        branch_id: '',
+        branch_name: '',
         role: '',
     });
 
@@ -113,35 +113,69 @@ export default function Create({ branches = [], roles = [] }: { branches: any[],
                             {/* Branch Dropdown */}
                             <div className="space-y-2">
                                 <Label>Branch</Label>
-                                <Select onValueChange={(value) => setData('branch_id', value)}>
+                                <Select
+                                    // FIX 1: Bind to the correct state variable (branch_name), not 'branches'
+                                    value={data.branch_name ? String(data.branch_name) : undefined}
+                                    onValueChange={(value) => {
+                                        // Handle the manual "clear" option
+                                        if (value === "null_value") {
+                                            setData('branch_name', '');
+                                        } else {
+                                            setData('branch_name', value);
+                                        }
+                                    }}
+                                >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select a branch" />
+                                        <SelectValue placeholder="Select branch" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        {/* Clear Option */}
+                                        <SelectItem value="null_value">
+                                            <span className="text-muted-foreground italic"></span>
+                                        </SelectItem>
+
+                                        {/* FIX 2: Loop over branches and use 'branch' variables, not 'role' */}
                                         {branches.map((branch) => (
-                                            <SelectItem key={branch.id} value={String(branch.id)}>
-                                                {branch.name}
+                                            <SelectItem 
+                                                key={branch.id} 
+                                                value={String(branch.id)} // Store the ID
+                                            >
+                                                {/* FIX 3: Render the specific name property, not the object */}
+                                                {branch.branch_name} 
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {errors.branch_id && <p className="text-sm text-destructive">{errors.branch_id}</p>}
+                                {/* Update error key if your backend returns 'branch_id' or 'branch_name' */}
+                                {errors.branch_name && <p className="text-sm text-destructive">{errors.branch_name}</p>}
                             </div>
 
                             {/* Role Dropdown */}
                             <div className="space-y-2">
                                 <Label>Role</Label>
-                                <Select onValueChange={(value) => setData('role', value)}>
+                                <Select
+                                    // FIX 1: Ensure you are binding the value to your state
+                                    value={data.role ? String(data.role) : undefined} 
+                                    onValueChange={(value) => {
+                                        // If you want "deselect" capability in a single select, you check if it's already selected
+                                        const newValue = value === data.role ? "" : value;
+                                        setData('role', newValue);
+                                    }}
+                                >
                                     <SelectTrigger>
+                                        {/* FIX 2: Pass the placeholder directly to SelectValue */}
                                         <SelectValue placeholder="Select a role" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {roles.map((role) => (
-                                            <SelectItem key={role.id || role.value} value={role.value}>
-                                                {role.label || role.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
+                                    {/* Add this item manually */}
+                                    <SelectItem value="null_value"></SelectItem>
+                                    
+                                    {roles.map((role) => (
+                                        <SelectItem key={role.id} value={String(role.id)}>
+                                            {role.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
                                 </Select>
                                 {errors.role && <p className="text-sm text-destructive">{errors.role}</p>}
                             </div>

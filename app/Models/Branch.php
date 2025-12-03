@@ -3,8 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Branch extends Model
 {
-    protected $table = "branch";
+    protected $table = "branches";
+
+    protected $fillable = [
+        'branch_name',
+        'location',
+        'branch_status',
+    ];
+    
+    public function users(): HasMany{
+        return $this->hasMany(User::class);
+    }
 }

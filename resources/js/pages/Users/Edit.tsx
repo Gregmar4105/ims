@@ -50,7 +50,7 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
         e.preventDefault();
         
         // Use PUT method and target specific user ID
-        put(`/users/${user.id}`, {
+        put(`/users.update/${users.id}`, {
             onSuccess: () => {
                 toast.success('User updated successfully');
             },
@@ -148,26 +148,35 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
                                 {errors.branch_id && <p className="text-sm text-destructive">{errors.branch_id}</p>}
                             </div>
 
-                            {/* Role Dropdown */}
                             <div className="space-y-2">
                                 <Label>Role</Label>
-                                <Select 
-                                    value={data.role} 
-                                    onValueChange={(value) => setData('role', value)}
+                                <Select
+                                    // FIX 1: Ensure you are binding the value to your state
+                                    value={data.role ? String(data.role) : undefined} 
+                                    onValueChange={(value) => {
+                                        // If you want "deselect" capability in a single select, you check if it's already selected
+                                        const newValue = value === data.role ? "" : value;
+                                        setData('role', newValue);
+                                    }}
                                 >
                                     <SelectTrigger>
+                                        {/* FIX 2: Pass the placeholder directly to SelectValue */}
                                         <SelectValue placeholder="Select a role" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {roles.map((role) => (
-                                            <SelectItem key={role.id || role.value} value={role.value}>
-                                                {role.label || role.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
+                                    {/* Add this item manually */}
+                                    <SelectItem value="null_value"></SelectItem>
+                                    
+                                    {roles.map((role) => (
+                                        <SelectItem key={role.id} value={String(role.id)}>
+                                            {role.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
                                 </Select>
                                 {errors.role && <p className="text-sm text-destructive">{errors.role}</p>}
                             </div>
+
 
                             {/* Password Field (Optional on Edit) */}
                             <div className="space-y-2">
