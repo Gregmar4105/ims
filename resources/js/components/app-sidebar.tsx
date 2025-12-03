@@ -74,11 +74,11 @@ const Products = {
     icon: PackageOpen,
     isActive: true,
     items: [
-        { title: "Product List", url: "/dashboard", icon: ListChecks },
-        { title: "Add Product", url: "/add-product", icon: NotebookText, permission: "add-products" },
-        { title: "Prod. Category", url: "#", icon: Folder },
-        { title: "Prod. Sub Category", url: "#", icon: GalleryVerticalEnd },
-        { title: "Product Brands", url: "#", icon: Sparkles },
+        { title: "Product List", url: "/products", icon: ListChecks },
+
+        { title: "Prod. Category", url: "/categories", icon: Folder },
+
+        { title: "Product Brands", url: "/brands", icon: Sparkles },
         { title: "QR & Barcodes", url: "#", icon: QrCode, permission: "add-qr-and-barcodes" },
     ],
 }
