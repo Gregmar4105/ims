@@ -9,15 +9,20 @@ class Brand extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['branch_id', 'name', 'slug', 'status'];
+    protected $fillable = ['name', 'slug', 'status', 'branch_id', 'created_by'];
+
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
 
     public function branch()
     {
         return $this->belongsTo(Branch::class);
     }
 
-    public function products()
+    public function creator()
     {
-        return $this->hasMany(Product::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

@@ -39,5 +39,12 @@ export interface User {
     two_factor_enabled?: boolean;
     created_at: string;
     updated_at: string;
+    branch_id?: number | null;
+    branch?: {
+        id: number;
+        branch_name: string;
+        location?: string;
+        branch_status?: string;
+    } | null;
     [key: string]: unknown; // This allows for additional properties...
 }

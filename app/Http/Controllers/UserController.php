@@ -127,7 +127,8 @@ class UserController extends Controller
         $user->save();
 
         if (isset($validated['role'])) {
-            $user->syncRoles([$validated['role']]);
+            $role = Role::findById($validated['role']);
+            $user->syncRoles($role);
         }
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');

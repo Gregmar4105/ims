@@ -152,9 +152,9 @@ export default function Index({ roles }: any) {
                 </Link>
             </div>
             <div className="m-4 bg-white border border-black dark:border-white dark:bg-primary-foreground p-4 rounded-lg">
-                <div className="border border-black/40 rounded-lg p-4 dark:border-white">
+                <div className="border border-black/40 rounded-lg p-4 dark:border-white h-[calc(100vh-300px)] overflow-y-auto relative">
                     <Table className="w-full">
-                        <TableHeader>
+                        <TableHeader className="sticky top-0 z-10 bg-white dark:bg-primary-foreground shadow-sm">
                             <TableRow>
                                 <TableHead>ID</TableHead>
                                 <TableHead>Name</TableHead>
