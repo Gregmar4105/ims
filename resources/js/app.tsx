@@ -23,7 +23,6 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 // Debug Component
 const DebugOverlay = ({ logs }: { logs: string[] }) => {
-    if (logs.length === 0) return null;
     return (
         <div style={{
             position: 'fixed',
@@ -39,7 +38,8 @@ const DebugOverlay = ({ logs }: { logs: string[] }) => {
             overflowY: 'auto',
             pointerEvents: 'none'
         }}>
-            {logs.map((log, i) => <div key={i}>{log}</div>)}
+            <div style={{ borderBottom: '1px solid #333', marginBottom: '5px' }}>DEBUG ACTIVE v2</div>
+            {logs.length === 0 ? <div>Waiting for logs...</div> : logs.map((log, i) => <div key={i}>{log}</div>)}
         </div>
     );
 };
@@ -59,8 +59,14 @@ createInertiaApp({
             const addLog = (msg: string) => setLogs(prev => [...prev, `${new Date().toLocaleTimeString()} - ${msg}`]);
 
             useEffect(() => {
-                if (appProps.initialPage.props.auth?.user) {
-                    addLog('User logged in. Starting OneSignal check...');
+                // Log Auth State
+                const user = appProps.initialPage.props.auth?.user;
+                addLog(`Auth User: ${user ? `ID ${user.id}` : 'NULL'}`);
+                addLog(`Window.median: ${!!window.median}`);
+                addLog(`Window.gonative: ${!!window.gonative}`);
+
+                if (user) {
+                    addLog('Starting OneSignal check...');
 
                     const savePlayerId = (attempts = 0) => {
                         if (attempts > 10) {
@@ -105,6 +111,8 @@ createInertiaApp({
                     };
 
                     savePlayerId();
+                } else {
+                    addLog('User not logged in, skipping OneSignal logic.');
                 }
             }, []);
 
