@@ -10,6 +10,7 @@ import { initializeTheme } from './hooks/use-appearance';
 declare global {
     interface Window {
         median?: any;
+        gonative?: any;
     }
 }
 
