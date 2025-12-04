@@ -9,7 +9,7 @@ import { initializeTheme } from './hooks/use-appearance';
 
 declare global {
     interface Window {
-        OneSignalDeferred: any[];
+        median?: any;
     }
 }
 
@@ -25,13 +25,14 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        // OneSignal User Identification
+        // Median.co (GoNative) OneSignal Integration
         if (props.initialPage.props.auth?.user) {
             const user = props.initialPage.props.auth.user as { id: number };
-            if (window.OneSignalDeferred) {
-                window.OneSignalDeferred.push(function (OneSignal: any) {
-                    OneSignal.login(String(user.id));
-                });
+
+            // Check if running inside Median App
+            if (window.median) {
+                // Set External User ID for Native OneSignal SDK
+                window.median.onesignal.externalUserId.set(String(user.id));
             }
         }
 

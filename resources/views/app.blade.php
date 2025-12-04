@@ -42,16 +42,6 @@
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         @inertiaHead
-
-        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-        <script>
-          window.OneSignalDeferred = window.OneSignalDeferred || [];
-          OneSignalDeferred.push(async function(OneSignal) {
-            await OneSignal.init({
-              appId: "ca6648da-fa34-4acb-91d6-eee12d6f8428",
-            });
-          });
-        </script>
     </head>
     <body class="font-sans antialiased">
         @inertia
