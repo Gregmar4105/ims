@@ -26,6 +26,7 @@ class User extends Authenticatable
         'email',
         'password',
         'branch_id',
+        'onesignal_player_id',
     ];
 
     /**

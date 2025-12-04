@@ -56,15 +56,31 @@ class ChatController extends Controller
         broadcast(new \App\Events\MessageSent($message))->toOthers();
 
         // Send OneSignal Notification
-        // Get all users in the receiver branch
-        $receiverUserIds = \App\Models\User::where('branch_id', $branch->id)->pluck('id')->toArray();
+        // Get all users in the receiver branch with a player ID
+        $receiverPlayerIds = \App\Models\User::where('branch_id', $branch->id)
+            ->whereNotNull('onesignal_player_id')
+            ->pluck('onesignal_player_id')
+            ->toArray();
         
         $oneSignal->sendNotification(
             auth()->user()->name . ': ' . $request->content,
-            $receiverUserIds,
+            $receiverPlayerIds,
             ['branch_id' => auth()->user()->branch_id]
         );
 
         return response()->json($message->load('sender'));
+    }
+
+    public function storeOneSignalId(Request $request)
+    {
+        $request->validate([
+            'player_id' => 'required|string'
+        ]);
+
+        auth()->user()->update([
+            'onesignal_player_id' => $request->player_id
+        ]);
+
+        return response()->json(['status' => 'success']);
     }
 }

@@ -15,9 +15,9 @@ class OneSignalService
         $this->restApiKey = config('services.onesignal.rest_api_key');
     }
 
-    public function sendNotification($message, $userIds, $data = null)
+    public function sendNotification($message, $playerIds, $data = null)
     {
-        if (empty($userIds)) {
+        if (empty($playerIds)) {
             return;
         }
 
@@ -26,7 +26,7 @@ class OneSignalService
             'Content-Type' => 'application/json',
         ])->post('https://onesignal.com/api/v1/notifications', [
             'app_id' => $this->appId,
-            'include_external_user_ids' => array_map('strval', $userIds),
+            'include_player_ids' => array_map('strval', $playerIds),
             'contents' => ['en' => $message],
             'data' => $data,
         ]);

@@ -31,9 +31,18 @@ createInertiaApp({
             const user = props.initialPage.props.auth.user as { id: number };
 
             // Check if running inside Median App
-            if (window.median) {
-                // Set External User ID for Native OneSignal SDK
-                window.median.onesignal.externalUserId.set(String(user.id));
+            if (window.median || window.gonative) {
+                const median = window.median || window.gonative;
+
+                // Get OneSignal Info (Player ID)
+                median.onesignal.info().then((info: any) => {
+                    if (info && info.oneSignalUserId) {
+                        // Send Player ID to backend
+                        axios.post('/user/onesignal-id', {
+                            player_id: info.oneSignalUserId
+                        }).catch(err => console.error('Failed to save Player ID', err));
+                    }
+                });
             }
         }
 
