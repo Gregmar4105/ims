@@ -7,6 +7,12 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
 
+declare global {
+    interface Window {
+        OneSignalDeferred: any[];
+    }
+}
+
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
@@ -18,6 +24,16 @@ createInertiaApp({
         ),
     setup({ el, App, props }) {
         const root = createRoot(el);
+
+        // OneSignal User Identification
+        if (props.initialPage.props.auth?.user) {
+            const user = props.initialPage.props.auth.user as { id: number };
+            if (window.OneSignalDeferred) {
+                window.OneSignalDeferred.push(function (OneSignal: any) {
+                    OneSignal.login(String(user.id));
+                });
+            }
+        }
 
         root.render(
             <StrictMode>

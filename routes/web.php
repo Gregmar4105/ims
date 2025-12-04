@@ -64,9 +64,23 @@ Route::resource('qr-barcodes', \App\Http\Controllers\QrBarcodeController::class)
     Route::post('sale-returns', [\App\Http\Controllers\SaleController::class, 'storeReturn'])->name('sales.storeReturn');
 
     // Chat Routes
-    Route::get('chats', [\App\Http\Controllers\ChatController::class, 'index'])->name('chats.index');
-    Route::get('chats/{branch}', [\App\Http\Controllers\ChatController::class, 'show'])->name('chats.show');
-    Route::post('chats/{branch}', [\App\Http\Controllers\ChatController::class, 'store'])->name('chats.store');
+    Route::get('/chats', [App\Http\Controllers\ChatController::class, 'index'])->name('chats.index');
+    Route::get('/chats/{branch}', [App\Http\Controllers\ChatController::class, 'show'])->name('chats.show');
+    Route::post('/chats/{branch}', [App\Http\Controllers\ChatController::class, 'store'])->name('chats.store');
+    
+    // Temporary test route for OneSignal
+    Route::get('/test-onesignal', function (\App\Services\OneSignalService $oneSignal) {
+        $userId = auth()->id();
+        $response = $oneSignal->sendNotification(
+            "Test Notification from IMS Chat",
+            [$userId],
+            ['test_data' => 'foo']
+        );
+        return response()->json([
+            'user_id' => $userId,
+            'response' => $response
+        ]);
+    });
 });
 
 require __DIR__.'/settings.php';

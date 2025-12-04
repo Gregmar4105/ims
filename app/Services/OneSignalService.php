@@ -11,8 +11,8 @@ class OneSignalService
 
     public function __construct()
     {
-        $this->appId = env('ONESIGNAL_APP_ID');
-        $this->restApiKey = env('ONESIGNAL_REST_API');
+        $this->appId = config('services.onesignal.app_id');
+        $this->restApiKey = config('services.onesignal.rest_api_key');
     }
 
     public function sendNotification($message, $userIds, $data = null)
