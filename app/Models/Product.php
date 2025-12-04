@@ -11,18 +11,12 @@ class Product extends Model
     use HasFactory;
 
     protected $fillable = [
-        'branch_id',
         'brand_id',
         'category_id',
         'name',
-        'quantity',
-        'physical_location',
         'description',
         'variations',
         'image_path',
-        'branch_id',
-        'brand_id',
-        'category_id',
         'barcode',
         'qr_code',
         'created_by',
@@ -32,9 +26,16 @@ class Product extends Model
         'variations' => 'array',
     ];
 
-    public function branch()
+    public function branches()
     {
-        return $this->belongsTo(Branch::class);
+        return $this->belongsToMany(Branch::class, 'branch_products')
+                    ->withPivot('quantity', 'physical_location')
+                    ->withTimestamps();
+    }
+
+    public function branchProducts()
+    {
+        return $this->hasMany(BranchProduct::class);
     }
 
     public function brand()
