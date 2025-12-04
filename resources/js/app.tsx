@@ -6,6 +6,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
+import axios from 'axios';
 
 declare global {
     interface Window {
@@ -28,22 +29,31 @@ createInertiaApp({
 
         // Median.co (GoNative) OneSignal Integration
         if (props.initialPage.props.auth?.user) {
-            const user = props.initialPage.props.auth.user as { id: number };
+            const savePlayerId = (attempts = 0) => {
+                if (attempts > 10) return;
 
-            // Check if running inside Median App
-            if (window.median || window.gonative) {
                 const median = window.median || window.gonative;
+                if (median) {
+                    median.onesignal.info().then((info: any) => {
+                        if (info && info.oneSignalUserId) {
+                            axios.post('/user/onesignal-id', {
+                                player_id: info.oneSignalUserId
+                            }).catch(err => console.error('Failed to save Player ID', err));
+                        } else {
+                            // Median loaded but info not ready, retry
+                            setTimeout(() => savePlayerId(attempts + 1), 1000);
+                        }
+                    }).catch(() => {
+                        // Promise failed, retry
+                        setTimeout(() => savePlayerId(attempts + 1), 1000);
+                    });
+                } else {
+                    // Median not loaded, retry
+                    setTimeout(() => savePlayerId(attempts + 1), 1000);
+                }
+            };
 
-                // Get OneSignal Info (Player ID)
-                median.onesignal.info().then((info: any) => {
-                    if (info && info.oneSignalUserId) {
-                        // Send Player ID to backend
-                        axios.post('/user/onesignal-id', {
-                            player_id: info.oneSignalUserId
-                        }).catch(err => console.error('Failed to save Player ID', err));
-                    }
-                });
-            }
+            savePlayerId();
         }
 
         root.render(
