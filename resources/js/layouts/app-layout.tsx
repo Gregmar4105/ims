@@ -66,4 +66,3 @@ export default function AppLayout({ children, breadcrumbs, ...props }: AppLayout
         </AppLayoutTemplate>
     );
 }
-```
