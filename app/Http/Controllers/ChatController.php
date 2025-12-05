@@ -62,7 +62,7 @@ class ChatController extends Controller
             ->pluck('onesignal_player_id')
             ->toArray();
         
-        $senderBranchName = \App\Models\Branch::find(auth()->user()->branch_id)->name ?? 'IMS Chat';
+        $senderBranchName = \App\Models\Branch::find(auth()->user()->branch_id)->branch_name ?? 'IMS Chat';
 
         $oneSignal->sendNotification(
             auth()->user()->name . ': ' . $request->content,
