@@ -1,301 +1,523 @@
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import AppLayout from '@/layouts/app-layout';
-import { dashboard } from '@/routes';
-import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'; 
+import { Head, useForm, router } from '@inertiajs/react'; // Added router
+import { useState, useRef, useEffect } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
+import { toast } from 'sonner';
+import {
+    Barcode,
+    Scan,
+    ShoppingCart,
+    ArrowRightLeft,
+    History,
+    Trash2,
+    Plus,
+    Minus,
+    Check,
+    X,
+    Camera,
+    StopCircle,
+    Package,
+    ArrowRight
+} from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+// Types
+interface Product {
+    id: number;
+    name: string;
+    barcode: string | null;
+    qr_code: string | null;
+    available_quantity: number;
+}
+
+interface Branch {
+    id: number;
+    branch_name: string;
+}
+
+interface Item {
+    product_id: number;
+    quantity: number;
+    product: Product;
+}
+
+interface PendingItem {
+    id: number;
+    status: string;
+    created_at: string;
+    readied_by: { name: string };
+    items: {
+        id: number;
+        quantity: number;
+        product: { name: string };
+    }[];
+    // Specific to Transfer
+    destination_branch?: { branch_name: string };
+    // Specific to Sale - none unique here, relies on context
+}
 
 
-import { Camera, Copy, RefreshCw, StopCircle, Zap, ZapOff, ExternalLink, CheckCircle, Barcode } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+export default function QrScannerIndex({
+    products,
+    branches,
+    pendingSales,
+    pendingTransfers
+}: {
+    products: Product[],
+    branches: Branch[],
+    pendingSales: PendingItem[],
+    pendingTransfers: PendingItem[]
+}) {
+    // Mode State
+    const [mode, setMode] = useState<'sale' | 'transfer'>('sale');
+    const [activeTab, setActiveTab] = useState<'scan' | 'pending'>('scan');
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'QR & Barcode Scanner',
-        href: '/qr-and-barcode-scanner',
-    },
-];
-
-export default function Index() {
+    // Scanner State
     const [isScanning, setIsScanning] = useState(false);
-    const [scanResult, setScanResult] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [hasFlash, setHasFlash] = useState(false);
-    const [isFlashOn, setIsFlashOn] = useState(false);
-    
-    // Using 'any' for preview; use Html5Qrcode type in real app
-    const scannerRef = useRef<any | null>(null);
+    const [manualCode, setManualCode] = useState('');
+    const scannerRef = useRef<Html5Qrcode | null>(null);
+    const lastScanRef = useRef<number>(0);
 
-    // [PREVIEW ONLY] Load library from CDN
+    // Cart State
+    const [cart, setCart] = useState<Item[]>([]);
+
+    // Transfer State
+    const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+
+    // Form Hooks (for submitting)
+    const { post: postSale, processing: processingSale } = useForm();
+    const { post: postTransfer, processing: processingTransfer } = useForm();
+
+    // --- Audio Helper ---
+    const playBeep = () => {
+        const audio = new Audio('/sounds/beep.mp3'); // Assuming standard path, or use synth
+        // Fallback synth
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.1);
+    };
+
+    // --- Scanner Logic ---
+    // --- Scanner Logic ---
+    // Moved initialization to useEffect to wait for DOM Rendering
     useEffect(() => {
-        if (!document.getElementById('html5-qrcode-script')) {
-            const script = document.createElement('script');
-            script.id = 'html5-qrcode-script';
-            script.src = "https://unpkg.com/html5-qrcode";
-            script.async = true;
-            document.body.appendChild(script);
-        }
-    }, []);
+        if (isScanning) {
+            // Small delay to ensure the #reader div is mounted
+            const timer = setTimeout(() => {
+                const html5QrCode = new Html5Qrcode("reader");
+                scannerRef.current = html5QrCode;
 
-    // 🔊 Sound Effect Helper
-    const playScanSound = () => {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.type = "sine";
-        oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(500, audioContext.currentTime + 0.1);
-        
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-        
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + 0.1);
-    };
-
-    const startScanning = async () => {
-        setError(null);
-        setScanResult(null);
-
-        // [NOTE] In your project use: import { Html5Qrcode } from 'html5-qrcode'
-        const Html5Qrcode = (window as any).Html5Qrcode;
-
-        if (!Html5Qrcode) {
-            setError("Scanner loading... please wait.");
-            return;
-        }
-
-        try {
-            // Default config supports both QR and standard Barcodes
-            const html5QrCode = new Html5Qrcode("reader");
-            scannerRef.current = html5QrCode;
-
-            const config = { 
-                fps: 10, 
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0 
-            };
-            
-            await html5QrCode.start(
-                { facingMode: "environment" }, 
-                config, 
-                (decodedText: string) => {
-                    // ✅ SUCCESS CALLBACK
-                    playScanSound(); // Beep
-                    if (navigator.vibrate) navigator.vibrate(200); // Vibrate phone
-                    
-                    setScanResult(decodedText);
-                    stopScanning(); 
-                },
-                (errorMessage: string) => {
-                    // Ignore frame errors
-                }
-            );
-
-            setIsScanning(true);
-
-            // Check for flash
-            try {
-                const settings = html5QrCode.getRunningTrackCameraCapabilities();
-                if (settings && settings.torchFeature().isSupported()) {
-                    setHasFlash(true);
-                }
-            } catch (e) {
-                // Flash not supported
-            }
-
-        } catch (err) {
-            setError("Camera access failed. Please grant permission.");
-            setIsScanning(false);
-        }
-    };
-
-    const stopScanning = async () => {
-        if (scannerRef.current && isScanning) {
-            try {
-                await scannerRef.current.stop();
-                scannerRef.current.clear();
-                setIsScanning(false);
-                setIsFlashOn(false);
-            } catch (err) {
-                console.error("Failed to stop scanner", err);
-            }
-        }
-    };
-
-    const toggleFlash = async () => {
-        if (scannerRef.current && hasFlash) {
-            try {
-                await scannerRef.current.applyVideoConstraints({
-                    advanced: [{ torch: !isFlashOn }]
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    (decodedText) => {
+                        const now = Date.now();
+                        if (now - lastScanRef.current < 1500) return;
+                        lastScanRef.current = now;
+                        playBeep();
+                        handleCodeScanned(decodedText);
+                    },
+                    (errorMessage) => { }
+                ).catch(err => {
+                    console.error("Error starting scanner", err);
+                    toast.error("Could not start camera");
+                    setIsScanning(false);
                 });
-                setIsFlashOn(!isFlashOn);
-            } catch (err) {
-                console.error("Flash toggle failed", err);
-            }
+            }, 100);
+
+            return () => {
+                clearTimeout(timer);
+                if (scannerRef.current) {
+                    if (scannerRef.current.isScanning) {
+                        scannerRef.current.stop().catch(console.error);
+                    }
+                    scannerRef.current.clear();
+                    scannerRef.current = null;
+                }
+            };
+        }
+    }, [isScanning]);
+
+    const startScanner = () => setIsScanning(true);
+    const stopScanner = () => setIsScanning(false);
+
+    const toggleScanner = () => setIsScanning(prev => !prev);
+
+
+    // --- Product Logic ---
+    const normalizeCode = (code: string | null) => {
+        if (!code) return '';
+        return code.replace(/[-\s]/g, '').toUpperCase();
+    };
+
+    const findProduct = (code: string) => {
+        const normalizedInput = normalizeCode(code);
+
+        // Try exact match first
+        const simpleMatch = products.find(p => {
+            return normalizeCode(p.barcode) === normalizedInput || normalizeCode(p.qr_code) === normalizedInput;
+        });
+        if (simpleMatch) return simpleMatch;
+
+        // Try JSON parse
+        try {
+            const json = JSON.parse(code);
+            if (json.id) return products.find(p => p.id === Number(json.id));
+        } catch (e) { }
+
+        return undefined;
+    };
+
+    const handleCodeScanned = (code: string) => {
+        const product = findProduct(code);
+        if (product) {
+            addToCart(product);
+            toast.success(`Found: ${product.name}`);
+        } else {
+            toast.error("Product not found in inventory");
         }
     };
 
-    const copyResult = () => {
-        if (scanResult) {
-            // Fallback for iframe/mobile clipboard restrictions
-            const textArea = document.createElement("textarea");
-            textArea.value = scanResult;
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                alert("Result copied to clipboard!");
-            } catch (err) {
-                console.error('Copy failed', err);
-            }
-            document.body.removeChild(textArea);
-        }
+    const handleManualSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!manualCode.trim()) return;
+        handleCodeScanned(manualCode);
+        setManualCode('');
     };
 
-    useEffect(() => {
-        return () => {
-            if (scannerRef.current?.isScanning) {
-                scannerRef.current.stop().catch(console.error);
+
+    // --- Cart Logic ---
+    const addToCart = (product: Product) => {
+        setCart(prev => {
+            const existing = prev.find(item => item.product_id === product.id);
+            if (existing) {
+                if (existing.quantity >= product.available_quantity) {
+                    toast.error(`Stock limit reached (${product.available_quantity})`);
+                    return prev;
+                }
+                return prev.map(item =>
+                    item.product_id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+                );
             }
-        };
-    }, []);
+            return [...prev, { product_id: product.id, quantity: 1, product }];
+        });
+    };
+
+    const updateQuantity = (productId: number, newQty: number) => {
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+        if (newQty > product.available_quantity) return toast.error(`Stock limit reached`);
+        if (newQty < 1) return;
+
+        setCart(prev => prev.map(item =>
+            item.product_id === productId ? { ...item, quantity: newQty } : item
+        ));
+    };
+
+    const removeFromCart = (productId: number) => {
+        setCart(prev => prev.filter(i => i.product_id !== productId));
+    };
+
+    const clearCart = () => setCart([]);
+
+    // --- Submission Logic ---
+    const handleReadySale = () => {
+        router.post('/sales', {
+            items: cart.map(i => ({ product_id: i.product_id, quantity: i.quantity })),
+            notes: 'Created via Mobile Scanner'
+        }, {
+            onSuccess: () => {
+                toast.success("Sale Readied!");
+                clearCart();
+                setActiveTab('pending');
+            }
+        });
+    };
+
+    const handleReadyTransfer = () => {
+        if (!selectedBranchId) return toast.error("Select a destination branch");
+
+        router.post('/transfers', {
+            destination_branch_id: selectedBranchId,
+            items: cart.map(i => ({ product_id: i.product_id, quantity: i.quantity })),
+            notes: 'Created via Mobile Scanner'
+        }, {
+            onSuccess: () => {
+                toast.success("Transfer Readied!");
+                clearCart();
+                setActiveTab('pending');
+            }
+        });
+    };
+
+    // Pending Actions
+    const handleCancelSale = (id: number) => {
+        if (confirm("Cancel this sale?")) {
+            router.post(`/sales/${id}/cancel`, {}, { onSuccess: () => toast.success("Sale Cancelled") });
+        }
+    };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="QR and Barcode Scanner" />
-            
-            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
-                <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden relative">
-                    <PlaceholderPattern className="absolute inset-0 opacity-10 pointer-events-none" />
-                    
-                    <div className="relative p-4 md:p-6 flex flex-col gap-6">
-                        
-                        {/* Header */}
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                <Barcode className="w-5 h-5 text-indigo-600" />
-                                Scanner
-                            </h2>
-                            {isScanning && (
-                                <div className="flex items-center gap-2">
-                                    <span className="relative flex h-3 w-3">
-                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                                    </span>
-                                    <span className="text-xs font-bold text-red-500 tracking-wider">LIVE</span>
-                                </div>
-                            )}
-                        </div>
+        <AppLayout breadcrumbs={[{ title: 'Scanner', href: '/qr-and-barcode-scanner' }]}>
+            <Head title="Mobile Scanner" />
 
-                        {/* Camera Area */}
-                        <div className={`relative w-full aspect-square bg-gray-900 rounded-2xl overflow-hidden shadow-inner ring-1 ring-gray-900/5 transition-all duration-300 ${scanResult ? 'ring-4 ring-green-500/20' : ''}`}>
-                            <div id="reader" className="w-full h-full object-cover" />
-                            
-                            {!isScanning && !scanResult && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 p-6 text-center bg-gray-900/5">
-                                    <div className="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center mb-4 shadow-lg">
-                                        <Camera className="w-8 h-8 opacity-50" />
-                                    </div>
-                                    <p className="text-sm font-medium text-gray-500">
-                                        Scan QR codes or Barcodes
-                                    </p>
-                                </div>
-                            )}
+            <div className="flex flex-col h-[calc(100vh-4rem)] max-w-md mx-auto w-full bg-background relative">
 
-                            {/* Flash Button */}
-                            {isScanning && hasFlash && (
-                                <button 
-                                    onClick={toggleFlash}
-                                    className="absolute top-4 right-4 p-3 rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all active:scale-95 z-10"
-                                >
-                                    {isFlashOn ? <Zap className="w-5 h-5 fill-yellow-400 text-yellow-400" /> : <ZapOff className="w-5 h-5" />}
-                                </button>
-                            )}
-
-                            {/* Success Overlay Checkmark */}
-                            {scanResult && !isScanning && (
-                                <div className="absolute inset-0 bg-green-500/10 flex items-center justify-center animate-in fade-in duration-300 backdrop-blur-[2px]">
-                                    <div className="bg-white p-4 rounded-full shadow-2xl scale-110">
-                                        <CheckCircle className="w-12 h-12 text-green-600" />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {error && (
-                            <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600 text-center font-medium">
-                                {error}
-                            </div>
-                        )}
-
-                        {/* ✅ RESULT DISPLAY AREA - This shows the scanned data */}
-                        {scanResult && !isScanning && (
-                            <div className="animate-in slide-in-from-bottom-8 duration-500 ease-out">
-                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5 shadow-sm mb-4">
-                                    <div className="flex items-start gap-3">
-                                        <div className="p-2 bg-green-100 rounded-lg">
-                                            <Barcode className="w-5 h-5 text-green-700" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <label className="text-xs font-bold text-green-700 uppercase tracking-wider mb-1 block">
-                                                Scanned Content
-                                            </label>
-                                            <p className="text-gray-900 font-bold text-lg break-all leading-tight">
-                                                {scanResult}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button 
-                                        onClick={copyResult}
-                                        className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-white border-2 border-gray-100 text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 active:scale-[0.98] transition-all"
-                                    >
-                                        <Copy className="w-4 h-4" />
-                                        Copy Text
-                                    </button>
-                                    <button 
-                                        onClick={() => window.open(scanResult, '_blank')}
-                                        disabled={!scanResult.startsWith('http')}
-                                        className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200"
-                                    >
-                                        <ExternalLink className="w-4 h-4" />
-                                        Open Link
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Bottom Action Button */}
-                        <div className="pt-2">
-                            {!isScanning ? (
-                                <button 
-                                    onClick={startScanning}
-                                    className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gray-900 text-white font-bold text-base shadow-xl shadow-gray-200 hover:bg-gray-800 active:scale-[0.98] transition-all"
-                                >
-                                    {scanResult ? <RefreshCw className="w-5 h-5" /> : <Camera className="w-5 h-5" />}
-                                    {scanResult ? 'Scan Another Code' : 'Start Camera'}
-                                </button>
-                            ) : (
-                                <button 
-                                    onClick={stopScanning}
-                                    className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-red-500 text-white font-bold text-base shadow-xl shadow-red-200 hover:bg-red-600 active:scale-[0.98] transition-all"
-                                >
-                                    <StopCircle className="w-5 h-5" />
-                                    Stop Scanning
-                                </button>
-                            )}
-                        </div>
-
+                {/* --- Top Tabs (Scan / Pending) --- */}
+                <div className="p-4 bg-background border-b z-10">
+                    <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
+                        <button
+                            onClick={() => setActiveTab('scan')}
+                            className={`py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'scan' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+                        >
+                            Scanner
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('pending')}
+                            className={`py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'pending' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+                        >
+                            Pending ({mode === 'sale' ? pendingSales.length : pendingTransfers.length})
+                        </button>
                     </div>
                 </div>
+
+                {/* --- Content Area --- */}
+                <div className="flex-1 overflow-y-auto">
+                    <div className="p-4 space-y-4 pb-24">
+
+                        {activeTab === 'scan' && (
+                            <>
+                                {/* Mode Switcher */}
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-bold flex items-center gap-2">
+                                        {mode === 'sale' ? <ShoppingCart className="w-5 h-5 text-primary" /> : <ArrowRightLeft className="w-5 h-5 text-orange-500" />}
+                                        {mode === 'sale' ? 'New Sale' : 'New Transfer'}
+                                    </h2>
+
+                                    <DropdownModeSelector mode={mode} setMode={setMode} clearCart={clearCart} />
+                                </div>
+
+                                {/* Transfer Destination Selector */}
+                                {mode === 'transfer' && (
+                                    <Card className="border-orange-200 bg-orange-50/50 mb-4">
+                                        <CardContent className="p-4">
+                                            <Label className="mb-2 block">Destination Branch</Label>
+                                            <Select value={selectedBranchId} onValueChange={setSelectedBranchId}>
+                                                <SelectTrigger className="bg-white">
+                                                    <SelectValue placeholder="Select Destination" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {branches.map(b => (
+                                                        <SelectItem key={b.id} value={String(b.id)}>{b.branch_name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {/* Scanner View */}
+                                <Card className="overflow-hidden">
+                                    <div className="bg-black relative min-h-[250px] flex items-center justify-center">
+                                        {!isScanning ? (
+                                            <button
+                                                onClick={startScanner}
+                                                className="text-white/50 flex flex-col items-center gap-2 hover:text-white transition-colors"
+                                            >
+                                                <Camera className="w-12 h-12" />
+                                                <span className="text-sm font-medium">Tap to Start Camera</span>
+                                            </button>
+                                        ) : (
+                                            <div id="reader" className="w-full h-full [&>video]:object-cover [&>video]:h-[250px]"></div>
+                                        )}
+
+                                        <Button
+                                            size="icon"
+                                            className="absolute bottom-4 right-4 rounded-full h-12 w-12 shadow-lg z-[100]" // added z-index to be sure
+                                            onClick={toggleScanner}
+                                            variant={isScanning ? "destructive" : "default"}
+                                        >
+                                            {isScanning ? <StopCircle /> : <Camera />}
+                                        </Button>
+                                    </div>
+                                    <CardContent className="p-4 pt-4">
+                                        <form onSubmit={handleManualSubmit} className="flex gap-2">
+                                            <Input
+                                                placeholder="Enter barcode manually..."
+                                                value={manualCode}
+                                                onChange={e => setManualCode(e.target.value)}
+                                            />
+                                            <Button type="submit" variant="secondary"><Scan className="w-4 h-4" /></Button>
+                                        </form>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Cart Items */}
+                                <div className="space-y-3 mt-6">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="font-semibold text-muted-foreground">Items ({cart.length})</h3>
+                                        {cart.length > 0 && (
+                                            <Button variant="ghost" size="sm" onClick={clearCart} className="text-destructive h-8 text-xs">Clear</Button>
+                                        )}
+                                    </div>
+
+                                    {cart.length === 0 ? (
+                                        <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed rounded-lg">
+                                            Scan items to add them here
+                                        </div>
+                                    ) : (
+                                        cart.map(item => (
+                                            <div key={item.product_id} className="flex items-center gap-3 p-3 border rounded-lg bg-card">
+                                                <div className="h-10 w-10 bg-primary/10 rounded flex items-center justify-center text-primary">
+                                                    <Package className="w-5 h-5" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium truncate">{item.product.name}</div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        Stock: {item.product.available_quantity}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQuantity(item.product_id, item.quantity - 1)}><Minus className="w-3 h-3" /></Button>
+                                                    <span className="w-6 text-center text-sm">{item.quantity}</span>
+                                                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQuantity(item.product_id, item.quantity + 1)}><Plus className="w-3 h-3" /></Button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </>
+                        )}
+
+                        {activeTab === 'pending' && (
+                            <div className="space-y-4">
+                                <h3 className="font-semibold px-1">
+                                    {mode === 'sale' ? 'Pending Sales' : 'Pending Transfers'}
+                                </h3>
+
+                                {mode === 'sale' ? (
+                                    pendingSales.length === 0 ? <EmptyState msg="No pending sales" /> :
+                                        pendingSales.map(sale => (
+                                            <PendingCard key={sale.id} item={sale} type="sale" onCancel={() => handleCancelSale(sale.id)} />
+                                        ))
+                                ) : (
+                                    pendingTransfers.length === 0 ? <EmptyState msg="No pending transfers" /> :
+                                        pendingTransfers.map(transfer => (
+                                            <PendingCard key={transfer.id} item={transfer} type="transfer" />
+                                        ))
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+
+
+                {/* --- Bottom Action Bar (Only for Scan Tab) --- */}
+                {activeTab === 'scan' && cart.length > 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                        <Button
+                            className="w-full gap-2 text-lg h-12"
+                            size="lg"
+                            onClick={mode === 'sale' ? handleReadySale : handleReadyTransfer}
+                            disabled={mode === 'sale' ? processingSale : processingTransfer}
+                        >
+                            <Check className="w-5 h-5" />
+                            {mode === 'sale' ? 'Ready Sale' : 'Ready Transfer'}
+                        </Button>
+                    </div>
+                )}
             </div>
         </AppLayout>
+    );
+}
+
+// Subcomponents
+
+function DropdownModeSelector({ mode, setMode, clearCart }: { mode: 'sale' | 'transfer', setMode: any, clearCart: any }) {
+    return (
+        <Select value={mode} onValueChange={(v) => {
+            if (confirm("Switching modes will clear your cart. Continue?")) {
+                clearCart();
+                setMode(v);
+            }
+        }}>
+            <SelectTrigger className="w-[110px] h-8 text-xs">
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="sale">Sale Mode</SelectItem>
+                <SelectItem value="transfer">Transfer</SelectItem>
+            </SelectContent>
+        </Select>
+    );
+}
+
+function EmptyState({ msg }: { msg: string }) {
+    return (
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground opacity-50">
+            <History className="w-12 h-12 mb-2" />
+            <p>{msg}</p>
+        </div>
+    );
+}
+
+function PendingCard({ item, type, onCancel }: { item: PendingItem, type: 'sale' | 'transfer', onCancel?: () => void }) {
+    return (
+        <Card>
+            <CardHeader className="p-4 pb-2">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle className="text-sm font-medium">#{item.id}</CardTitle>
+                        <CardDescription className="text-xs">
+                            {new Date(item.created_at).toLocaleString()}
+                        </CardDescription>
+                    </div>
+                    <Badge variant="secondary" className={type === 'sale' ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
+                        Readied
+                    </Badge>
+                </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-2">
+                {type === 'transfer' && item.destination_branch && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 bg-muted p-2 rounded">
+                        <span>To:</span>
+                        <span className="font-semibold text-foreground">{item.destination_branch.branch_name}</span>
+                    </div>
+                )}
+
+                <div className="space-y-1">
+                    {item.items.slice(0, 3).map((line, i) => (
+                        <div key={i} className="flex justify-between text-sm">
+                            <span className="truncate max-w-[200px]">{line.product.name}</span>
+                            <span className="font-mono text-xs">x{line.quantity}</span>
+                        </div>
+                    ))}
+                    {item.items.length > 3 && (
+                        <p className="text-xs text-muted-foreground pt-1">+ {item.items.length - 3} more items</p>
+                    )}
+                </div>
+            </CardContent>
+            {onCancel && (
+                <CardFooter className="p-2 border-t bg-muted/5">
+                    <Button variant="ghost" size="sm" className="w-full text-destructive h-8 text-xs hover:bg-destructive/10" onClick={onCancel}>
+                        Cancel
+                    </Button>
+                </CardFooter>
+            )}
+        </Card>
     );
 }
