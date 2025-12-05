@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import DeleteConfirmation from '@/components/DeleteConfirmation';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -41,7 +42,7 @@ export default function Index({ users, branches, roles }: any) {
 
         const q = search.toLowerCase();
 
-        return userList.filter(({ name, email, email_verified_at, created_at, branch, roles }: any) =>
+        return userList.filter(({ name, email, email_verified_at, created_at, branch, roles, profile_photo_url }: any) =>
             (name || "").toLowerCase().includes(q) ||
             (email || "").toLowerCase().includes(q) ||
             (email_verified_at || "").includes(q) ||
@@ -216,17 +217,18 @@ export default function Index({ users, branches, roles }: any) {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredUsers.map(({ id, name, email, email_verified_at, user_status, created_at, branch, roles }: any) => (
+                                filteredUsers.map(({ id, name, email, email_verified_at, user_status, created_at, branch, roles, profile_photo_url }: any) => (
                                     <TableRow key={id}>
                                         <TableCell className="font-medium">{id}</TableCell>
                                         <TableCell className="py-4">
                                             <div className="flex items-center gap-3">
                                                 {/* Avatar / Initials Circle */}
-                                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-600">
-                                                    <span className="font-semibold text-sm">
+                                                <Avatar className="h-10 w-10">
+                                                    <AvatarImage src={profile_photo_url} alt={name} />
+                                                    <AvatarFallback className="bg-gray-100 text-gray-600 font-semibold text-sm">
                                                         {name.charAt(0).toUpperCase()}
-                                                    </span>
-                                                </div>
+                                                    </AvatarFallback>
+                                                </Avatar>
 
                                                 {/* Text Stack */}
                                                 <div className="flex flex-col">
