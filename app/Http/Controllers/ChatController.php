@@ -33,8 +33,11 @@ class ChatController extends Controller
                       $q->where('branch_id', $currentBranchId);
                   });
             })
-            ->orderBy('created_at', 'asc')
-            ->get();
+            ->orderBy('created_at', 'desc')
+            ->take(20)
+            ->get()
+            ->reverse()
+            ->values();
 
         return response()->json($messages);
     }
