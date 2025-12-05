@@ -94,6 +94,12 @@ export default function ChatsIndex({ branches }: { branches: Branch[] }) {
             const currentSelectedBranch = selectedBranchRef.current;
 
             if (currentSelectedBranch) {
+                // Ignore my own messages (handled by handleSendMessage response)
+                if (e.message.sender_id === user.id) {
+                    console.log('Ignoring own message from Echo');
+                    return;
+                }
+
                 const isIncoming = e.message.sender.branch_id === currentSelectedBranch.id;
                 const isOutgoing = e.message.receiver_branch_id === currentSelectedBranch.id;
 
