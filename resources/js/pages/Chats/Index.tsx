@@ -25,6 +25,7 @@ interface User {
     id: number;
     name: string;
     branch_id: number;
+    profile_photo_url?: string;
 }
 
 interface Message {
@@ -240,6 +241,7 @@ export default function ChatsIndex({ branches }: { branches: Branch[] }) {
                                             >
                                                 {!isMe && (
                                                     <Avatar className="w-8 h-8 mt-1">
+                                                        <AvatarImage src={msg.sender.profile_photo_url} />
                                                         <AvatarFallback>{msg.sender.name.substring(0, 1)}</AvatarFallback>
                                                     </Avatar>
                                                 )}
