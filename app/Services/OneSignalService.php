@@ -26,9 +26,12 @@ class OneSignalService
             'Content-Type' => 'application/json',
         ])->post('https://onesignal.com/api/v1/notifications', [
             'app_id' => $this->appId,
-            'include_player_ids' => array_map('strval', $playerIds),
+            'include_aliases' => [
+                'onesignal_id' => array_map('strval', $playerIds)
+            ],
             'contents' => ['en' => $message],
             'data' => $data,
+            'target_channel' => 'push',
         ]);
 
         return $response->json();

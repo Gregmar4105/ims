@@ -69,26 +69,6 @@ Route::resource('qr-barcodes', \App\Http\Controllers\QrBarcodeController::class)
     Route::post('/chats/{branch}', [App\Http\Controllers\ChatController::class, 'store'])->name('chats.store');
     Route::post('/user/onesignal-id', [App\Http\Controllers\ChatController::class, 'storeOneSignalId'])->name('user.onesignal.store');
     
-    // Temporary test route for OneSignal
-    Route::get('/test-onesignal', function (\App\Services\OneSignalService $oneSignal) {
-        $user = auth()->user();
-        $playerId = $user->onesignal_player_id;
-
-        if (!$playerId) {
-            return response()->json(['error' => 'No Player ID found for this user. Please log in via the app first.']);
-        }
-
-        $response = $oneSignal->sendNotification(
-            "Test Notification from IMS Chat",
-            [$playerId],
-            ['test_data' => 'foo']
-        );
-        return response()->json([
-            'user_id' => $user->id,
-            'player_id' => $playerId,
-            'response' => $response
-        ]);
-    });
 });
 
 require __DIR__.'/settings.php';
