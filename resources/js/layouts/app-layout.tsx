@@ -47,9 +47,12 @@ export default function AppLayout({ children, breadcrumbs, ...props }: AppLayout
 
                         median.onesignal.info().then((info: any) => {
                             addLog(`Info: ${JSON.stringify(info)}`);
-                            if (info && info.oneSignalUserId) {
+                            // Check for oneSignalUserId OR oneSignalId (based on user feedback)
+                            const playerId = info.oneSignalUserId || info.oneSignalId;
+
+                            if (playerId) {
                                 axios.post('/user/onesignal-id', {
-                                    player_id: info.oneSignalUserId
+                                    player_id: playerId
                                 }).then(() => {
                                     addLog('SUCCESS: Saved to DB');
                                 }).catch(err => addLog(`POST Error: ${err.message}`));
