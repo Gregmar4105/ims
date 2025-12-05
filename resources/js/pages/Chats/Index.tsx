@@ -93,15 +93,20 @@ export default function ChatsIndex({ branches }: { branches: Branch[] }) {
             console.log('Message received:', e);
             const currentSelectedBranch = selectedBranchRef.current;
 
-            if (currentSelectedBranch && e.message.sender.branch_id === currentSelectedBranch.id) {
-                console.log('Message matches selected branch, adding to list');
-                setMessages(prev => [...prev, e.message]);
-                scrollToBottom();
-            } else {
-                console.log('Message does not match selected branch', {
-                    msgSenderBranch: e.message.sender.branch_id,
-                    selectedBranchId: currentSelectedBranch?.id
-                });
+            if (currentSelectedBranch) {
+                const isIncoming = e.message.sender.branch_id === currentSelectedBranch.id;
+                const isOutgoing = e.message.receiver_branch_id === currentSelectedBranch.id;
+
+                if (isIncoming || isOutgoing) {
+                    console.log('Message matches selected branch, adding to list');
+                    setMessages(prev => [...prev, e.message]);
+                    scrollToBottom();
+                } else {
+                    console.log('Message does not match selected branch', {
+                        msg: e.message,
+                        selectedBranchId: currentSelectedBranch.id
+                    });
+                }
             }
         });
 

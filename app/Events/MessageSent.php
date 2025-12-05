@@ -33,6 +33,7 @@ class MessageSent implements ShouldBroadcast
     {
         return [
             new Channel('chat.branch.' . $this->message->receiver_branch_id),
+            new Channel('chat.branch.' . $this->message->sender->branch_id),
         ];
     }
 
