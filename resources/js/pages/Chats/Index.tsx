@@ -1,9 +1,10 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useState, useRef } from 'react';
-import { Send, Search, MessageSquare, MoreVertical, Phone, Video } from 'lucide-react';
+import { Send, Search, MessageSquare, MoreVertical, Phone, Video, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
@@ -61,6 +62,15 @@ export default function ChatsIndex({ branches }: { branches: Branch[] }) {
     useEffect(() => {
         selectedBranchRef.current = selectedBranch;
     }, [selectedBranch]);
+
+    // Auto-resize textarea
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+        }
+    }, [newMessage]);
 
     // Fetch messages when branch selected
     useEffect(() => {
@@ -124,7 +134,10 @@ export default function ChatsIndex({ branches }: { branches: Branch[] }) {
 
             <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-background border rounded-lg shadow-sm m-4">
                 {/* Sidebar */}
-                <div className="w-80 border-r flex flex-col bg-muted/10">
+                <div className={cn(
+                    "w-full md:w-80 border-r flex-col bg-muted/10",
+                    selectedBranch ? "hidden md:flex" : "flex"
+                )}>
                     <div className="p-4 border-b">
                         <h2 className="text-xl font-bold mb-4">Chats</h2>
                         <div className="relative">
@@ -166,12 +179,23 @@ export default function ChatsIndex({ branches }: { branches: Branch[] }) {
                 </div>
 
                 {/* Chat Area */}
-                <div className="flex-1 flex flex-col bg-background">
+                <div className={cn(
+                    "flex-1 flex-col bg-background",
+                    !selectedBranch ? "hidden md:flex" : "flex"
+                )}>
                     {selectedBranch ? (
                         <>
                             {/* Header */}
                             <div className="p-4 border-b flex items-center justify-between shadow-sm z-10">
                                 <div className="flex items-center gap-3">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="md:hidden -ml-2"
+                                        onClick={() => setSelectedBranch(null)}
+                                    >
+                                        <ArrowLeft className="w-5 h-5" />
+                                    </Button>
                                     <Avatar>
                                         <AvatarFallback>{selectedBranch.branch_name.substring(0, 2).toUpperCase()}</AvatarFallback>
                                     </Avatar>
@@ -199,7 +223,7 @@ export default function ChatsIndex({ branches }: { branches: Branch[] }) {
                                             <div
                                                 key={msg.id || index}
                                                 className={cn(
-                                                    "flex gap-2 max-w-[80%]",
+                                                    "flex gap-2 max-w-[85%]",
                                                     isMe ? "ml-auto flex-row-reverse" : ""
                                                 )}
                                             >
@@ -208,16 +232,21 @@ export default function ChatsIndex({ branches }: { branches: Branch[] }) {
                                                         <AvatarFallback>{msg.sender.name.substring(0, 1)}</AvatarFallback>
                                                     </Avatar>
                                                 )}
-                                                <div className={cn(
-                                                    "p-3 rounded-2xl shadow-sm",
-                                                    isMe
-                                                        ? "bg-primary text-primary-foreground rounded-tr-none"
-                                                        : "bg-card border rounded-tl-none"
-                                                )}>
-                                                    <p className="text-sm">{msg.content}</p>
-                                                    <span className="text-[10px] opacity-70 mt-1 block">
-                                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
+                                                    <span className="text-[10px] text-muted-foreground mb-1 px-1">
+                                                        {msg.sender.name}
                                                     </span>
+                                                    <div className={cn(
+                                                        "p-3 rounded-2xl shadow-sm",
+                                                        isMe
+                                                            ? "bg-primary text-primary-foreground rounded-tr-none"
+                                                            : "bg-card border rounded-tl-none"
+                                                    )}>
+                                                        <p className="text-sm">{msg.content}</p>
+                                                        <span className="text-[10px] opacity-70 mt-1 block">
+                                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
@@ -228,14 +257,22 @@ export default function ChatsIndex({ branches }: { branches: Branch[] }) {
 
                             {/* Input */}
                             <div className="p-4 border-t bg-background">
-                                <form onSubmit={handleSendMessage} className="flex gap-2 max-w-3xl mx-auto">
-                                    <Input
+                                <form onSubmit={handleSendMessage} className="flex gap-2 max-w-3xl mx-auto items-end">
+                                    <Textarea
+                                        ref={textareaRef}
                                         value={newMessage}
                                         onChange={e => setNewMessage(e.target.value)}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleSendMessage(e);
+                                            }
+                                        }}
                                         placeholder="Type a message..."
-                                        className="flex-1 rounded-full"
+                                        className="flex-1 min-h-[40px] max-h-[120px] resize-none rounded-2xl py-3"
+                                        rows={1}
                                     />
-                                    <Button type="submit" size="icon" className="rounded-full" disabled={!newMessage.trim()}>
+                                    <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!newMessage.trim()}>
                                         <Send className="w-4 h-4" />
                                     </Button>
                                 </form>
