@@ -113,6 +113,8 @@ export default function QrScannerIndex({
     // --- Scanner Logic ---
     // --- Scanner Logic ---
     // Moved initialization to useEffect to wait for DOM Rendering
+    // --- Scanner Logic ---
+    // Moved initialization to useEffect to wait for DOM Rendering
     useEffect(() => {
         if (isScanning) {
             // Small delay to ensure the #reader div is mounted
@@ -128,6 +130,7 @@ export default function QrScannerIndex({
                         if (now - lastScanRef.current < 1500) return;
                         lastScanRef.current = now;
                         playBeep();
+                        if (navigator.vibrate) navigator.vibrate(200);
                         handleCodeScanned(decodedText);
                     },
                     (errorMessage) => { }
@@ -140,21 +143,33 @@ export default function QrScannerIndex({
 
             return () => {
                 clearTimeout(timer);
-                if (scannerRef.current) {
-                    if (scannerRef.current.isScanning) {
-                        scannerRef.current.stop().catch(console.error);
-                    }
-                    scannerRef.current.clear();
-                    scannerRef.current = null;
-                }
+                // Only clean up on unmount or if we are still marked as scanning but effect is re-running
+                // The explicit stopScanner function handles the main cleanup.
             };
         }
     }, [isScanning]);
 
     const startScanner = () => setIsScanning(true);
-    const stopScanner = () => setIsScanning(false);
 
-    const toggleScanner = () => setIsScanning(prev => !prev);
+    const stopScanner = async () => {
+        if (scannerRef.current) {
+            try {
+                if (scannerRef.current.isScanning) {
+                    await scannerRef.current.stop();
+                }
+                scannerRef.current.clear();
+            } catch (e) {
+                console.error("Error stopping scanner", e);
+            }
+            scannerRef.current = null;
+        }
+        setIsScanning(false);
+    };
+
+    const toggleScanner = () => {
+        if (isScanning) stopScanner();
+        else startScanner();
+    };
 
 
     // --- Product Logic ---
@@ -330,37 +345,59 @@ export default function QrScannerIndex({
                                 )}
 
                                 {/* Scanner View */}
-                                <Card className="overflow-hidden">
-                                    <div className="bg-black relative min-h-[250px] flex items-center justify-center">
+                                <Card className="overflow-hidden border-2 border-primary/20 shadow-lg relative">
+                                    <div className="bg-zinc-950 relative min-h-[300px] flex items-center justify-center">
                                         {!isScanning ? (
                                             <button
                                                 onClick={startScanner}
-                                                className="text-white/50 flex flex-col items-center gap-2 hover:text-white transition-colors"
+                                                className="group flex flex-col items-center gap-4 transition-all"
                                             >
-                                                <Camera className="w-12 h-12" />
-                                                <span className="text-sm font-medium">Tap to Start Camera</span>
+                                                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300">
+                                                    <Camera className="w-10 h-10 text-primary" />
+                                                </div>
+                                                <div className="text-center">
+                                                    <span className="text-lg font-semibold text-white block">Tap to Scan</span>
+                                                    <span className="text-xs text-white/50">Camera is currently off</span>
+                                                </div>
                                             </button>
                                         ) : (
-                                            <div id="reader" className="w-full h-full [&>video]:object-cover [&>video]:h-[250px]"></div>
+                                            <>
+                                                <div id="reader" className="w-full h-full [&>video]:object-cover [&>video]:h-[300px]"></div>
+                                                {/* Scan Line Animation */}
+                                                <div className="absolute inset-x-0 mx-auto w-[80%] h-0.5 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-[scan_2s_ease-in-out_infinite] top-0 pointer-events-none z-10"></div>
+                                                <div className="absolute inset-0 border-[40px] border-black/50 pointer-events-none z-0"></div>
+                                            </>
                                         )}
 
-                                        <Button
-                                            size="icon"
-                                            className="absolute bottom-4 right-4 rounded-full h-12 w-12 shadow-lg z-[100]" // added z-index to be sure
-                                            onClick={toggleScanner}
-                                            variant={isScanning ? "destructive" : "default"}
-                                        >
-                                            {isScanning ? <StopCircle /> : <Camera />}
-                                        </Button>
+                                        <style>{`
+                                            @keyframes scan {
+                                                0%, 100% { top: 10%; opacity: 0; }
+                                                10% { opacity: 1; }
+                                                50% { top: 90%; }
+                                                90% { opacity: 1; }
+                                            }
+                                        `}</style>
+
+                                        {isScanning && (
+                                            <Button
+                                                size="icon"
+                                                className="absolute bottom-6 right-6 rounded-full h-14 w-14 shadow-xl z-50 bg-red-600 hover:bg-red-700 text-white border-2 border-white/20"
+                                                onClick={stopScanner}
+                                            >
+                                                <StopCircle className="w-6 h-6" />
+                                            </Button>
+                                        )}
                                     </div>
-                                    <CardContent className="p-4 pt-4">
-                                        <form onSubmit={handleManualSubmit} className="flex gap-2">
+                                    <CardContent className="p-4 bg-muted/30">
+                                        <form onSubmit={handleManualSubmit} className="flex gap-2 relative">
                                             <Input
-                                                placeholder="Enter barcode manually..."
+                                                className="pl-10 h-12 bg-background shadow-sm"
+                                                placeholder="Or enter barcode manually..."
                                                 value={manualCode}
                                                 onChange={e => setManualCode(e.target.value)}
                                             />
-                                            <Button type="submit" variant="secondary"><Scan className="w-4 h-4" /></Button>
+                                            <Barcode className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                                            <Button type="submit" size="icon" className="h-12 w-12 shrink-0 shadow-sm"><Scan className="w-5 h-5" /></Button>
                                         </form>
                                     </CardContent>
                                 </Card>
