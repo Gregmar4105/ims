@@ -27,6 +27,7 @@ class User extends Authenticatable
         'password',
         'branch_id',
         'onesignal_player_id',
+        'profile_photo_path',
     ];
 
     /**
@@ -39,6 +40,15 @@ class User extends Authenticatable
         'two_factor_secret',
         'two_factor_recovery_codes',
         'remember_token',
+    ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'profile_photo_url',
     ];
 
     /**
@@ -60,5 +70,12 @@ class User extends Authenticatable
         // 2nd argument 'branch_id' is optional if you follow conventions, 
         // but good to be explicit.
         return $this->belongsTo(Branch::class, 'branch_id');
+    }
+
+    public function getProfilePhotoUrlAttribute()
+    {
+        return $this->profile_photo_path
+                    ? asset('storage/' . $this->profile_photo_path)
+                    : 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
     }
 }
