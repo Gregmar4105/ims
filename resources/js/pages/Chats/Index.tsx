@@ -336,13 +336,13 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                                                 >
                                                     {!isMe && (
                                                         <Avatar className="w-8 h-8 mt-1">
-                                                            <AvatarImage src={msg.sender.profile_photo_url} />
-                                                            <AvatarFallback>{msg.sender.name.substring(0, 1)}</AvatarFallback>
+                                                            <AvatarImage src={msg.sender?.profile_photo_url} />
+                                                            <AvatarFallback>{msg.sender?.name?.substring(0, 1) || '?'}</AvatarFallback>
                                                         </Avatar>
                                                     )}
                                                     <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
                                                         <span className="text-[10px] text-muted-foreground mb-1 px-1">
-                                                            {msg.sender.name}
+                                                            {msg.sender?.name || 'Unknown User'}
                                                         </span>
                                                         <div className={cn(
                                                             "p-3 rounded-2xl shadow-sm",
