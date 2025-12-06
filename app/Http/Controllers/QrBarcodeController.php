@@ -18,14 +18,18 @@ class QrBarcodeController extends Controller
             ->where(function ($q) {
                 $q->whereNull('barcode')->orWhereNull('qr_code');
             })
-            ->with(['branch', 'brand', 'category', 'creator']);
+            // Removed 'branch' from with() as it doesn't exist on Product model
+            ->with(['brand', 'category', 'creator']);
 
         if (!$isSystemAdmin) {
             if (!$user->branch_id) {
                 // User has no branch and is not Admin, show nothing.
                 $query->whereRaw('1 = 0');
             } else {
-                $query->where('branch_id', $user->branch_id);
+                // Use whereHas to filter by the user's branch
+                $query->whereHas('branches', function ($q) use ($user) {
+                    $q->where('branches.id', $user->branch_id);
+                });
             }
         }
 
@@ -51,7 +55,12 @@ class QrBarcodeController extends Controller
             });
 
             if (!$user->hasRole('System Administrator')) {
-                $query->where('branch_id', $user->branch_id);
+                 if (!$user->branch_id) {
+                     return redirect()->back()->with('error', 'User does not belong to a branch.');
+                 }
+                $query->whereHas('branches', function ($q) use ($user) {
+                    $q->where('branches.id', $user->branch_id);
+                });
             }
 
             $products = $query->get();
@@ -68,8 +77,12 @@ class QrBarcodeController extends Controller
         $product = Product::findOrFail($request->product_id);
         
         // Ensure user has permission to update this product
-        if (!$user->hasRole('System Administrator') && $product->branch_id !== $user->branch_id) {
-            abort(403, 'Unauthorized action.');
+        if (!$user->hasRole('System Administrator')) {
+             // Check if product belongs to user's branch
+             $belongsToBranch = $product->branches()->where('branches.id', $user->branch_id)->exists();
+             if (!$belongsToBranch) {
+                  abort(403, 'Unauthorized action.');
+             }
         }
 
         $this->generateCodesForProduct($product);
@@ -80,13 +93,18 @@ class QrBarcodeController extends Controller
     private function generateCodesForProduct(Product $product)
     {
         // Generate Barcode: 12 digit number (EAN-13 style without check digit logic for simplicity, or just random)
-        // Let's use a format: B-{BranchId}-{ProductId}-{Random4} to ensure uniqueness and readability
+        // Format: P-{BranchId}-{ProductId}-{Random4}
+        // Since product doesn't have a single branch_id, we use the current user's branch_id if available,
+        // or a default '000' for System Admin generated items that contextually don't belong to a specific branch edit.
+        
+        $userBranchId = auth()->user()->branch_id ?? 0;
+
         if (!$product->barcode) {
-            $product->barcode = 'P-' . str_pad($product->branch_id, 3, '0', STR_PAD_LEFT) . '-' . str_pad($product->id, 5, '0', STR_PAD_LEFT) . '-' . strtoupper(Str::random(4));
+             // Use user's branch ID for the barcode generation to track origin of the barcode assignment
+            $product->barcode = 'P-' . str_pad($userBranchId, 3, '0', STR_PAD_LEFT) . '-' . str_pad($product->id, 5, '0', STR_PAD_LEFT) . '-' . strtoupper(Str::random(4));
         }
 
         // Generate QR Code Content: JSON with ID and Name, or a URL
-        // For now, let's store a JSON string that can be scanned
         if (!$product->qr_code) {
             $product->qr_code = json_encode([
                 'id' => $product->id,

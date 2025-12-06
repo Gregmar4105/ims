@@ -10,8 +10,28 @@ class ChatController extends Controller
     {
         // List all branches except current user's branch
         $branches = \App\Models\Branch::where('id', '!=', auth()->user()->branch_id)->get();
+
+        $activeTransfers = [];
+        $user = auth()->user();
+        if ($user->branch_id) {
+             $activeTransfers = \App\Models\Transfer::with(['sourceBranch', 'destinationBranch'])
+                ->where(function($q) use ($user) {
+                    // I am the sender: I can see readied (pending) and outgoing
+                    $q->where('source_branch_id', $user->branch_id)
+                      ->whereIn('status', ['readied', 'outgoing']);
+                })
+                ->orWhere(function($q) use ($user) {
+                    // I am the receiver: I can ONLY see outgoing (on the way)
+                    $q->where('destination_branch_id', $user->branch_id)
+                      ->where('status', 'outgoing');
+                })
+                ->latest()
+                ->get();
+        }
+
         return inertia('Chats/Index', [
-            'branches' => $branches
+            'branches' => $branches,
+            'activeTransfers' => $activeTransfers
         ]);
     }
 
@@ -55,24 +75,33 @@ class ChatController extends Controller
         ]);
 
         // Broadcast event
-        $message->load('sender');
-        broadcast(new \App\Events\MessageSent($message))->toOthers();
+        // Broadcast event
+        try {
+            $message->load('sender');
+            broadcast(new \App\Events\MessageSent($message))->toOthers();
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Broadcast failed: ' . $e->getMessage());
+        }
 
         // Send OneSignal Notification
-        // Get all users in the receiver branch with a player ID
-        $receiverPlayerIds = \App\Models\User::where('branch_id', $branch->id)
-            ->whereNotNull('onesignal_player_id')
-            ->pluck('onesignal_player_id')
-            ->toArray();
-        
-        $senderBranchName = \App\Models\Branch::find(auth()->user()->branch_id)->branch_name ?? 'IMS Chat';
+        try {
+            // Get all users in the receiver branch with a player ID
+            $receiverPlayerIds = \App\Models\User::where('branch_id', $branch->id)
+                ->whereNotNull('onesignal_player_id')
+                ->pluck('onesignal_player_id')
+                ->toArray();
+            
+            $senderBranchName = \App\Models\Branch::find(auth()->user()->branch_id)->branch_name ?? 'IMS Chat';
 
-        $oneSignal->sendNotification(
-            auth()->user()->name . ': ' . $request->content,
-            $receiverPlayerIds,
-            $senderBranchName,
-            ['branch_id' => auth()->user()->branch_id]
-        );
+            $oneSignal->sendNotification(
+                auth()->user()->name . ': ' . $request->content,
+                $receiverPlayerIds,
+                $senderBranchName,
+                ['branch_id' => auth()->user()->branch_id]
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('OneSignal notification failed: ' . $e->getMessage());
+        }
 
         return response()->json($message->load('sender'));
     }
