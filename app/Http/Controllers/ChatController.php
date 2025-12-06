@@ -97,8 +97,10 @@ class ChatController extends Controller
         try {
             $message->load('sender');
             broadcast(new \App\Events\MessageSent($message))->toOthers();
+            \Illuminate\Support\Facades\Log::info('Broadcast attempted for message ' . $message->id);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Broadcast failed: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error($e->getTraceAsString());
         }
 
         // Send OneSignal Notification
@@ -106,23 +108,32 @@ class ChatController extends Controller
             $currentUser = auth()->user();
             
             // Get all users in the receiver branch with a player ID
-            // EXCLUDING the current user's player ID (to avoid self-notification on same device)
+            // EXCLUDING the current user's player ID
             $receiverPlayerIds = \App\Models\User::where('branch_id', $branch->id)
                 ->whereNotNull('onesignal_player_id')
-                ->where('onesignal_player_id', '!=', $currentUser->onesignal_player_id) // Exclude self
+                ->where('onesignal_player_id', '!=', $currentUser->onesignal_player_id) 
                 ->pluck('onesignal_player_id')
                 ->toArray();
             
+            \Illuminate\Support\Facades\Log::info("OneSignal Target: Branch {$branch->id}, Found " . count($receiverPlayerIds) . " recipients.");
+            \Illuminate\Support\Facades\Log::info("Excluded Sender ID: " . $currentUser->onesignal_player_id);
+
             $senderBranchName = $senderBranchId 
                 ? (\App\Models\Branch::find($senderBranchId)->branch_name ?? 'IMS Chat')
                 : 'System Admin';
 
-            $oneSignal->sendNotification(
-                $currentUser->name . ': ' . $request->content,
-                $receiverPlayerIds,
-                $senderBranchName,
-                ['branch_id' => $senderBranchId]
-            );
+            if (!empty($receiverPlayerIds)) {
+                $response = $oneSignal->sendNotification(
+                    $currentUser->name . ': ' . $request->content,
+                    $receiverPlayerIds,
+                    $senderBranchName,
+                    ['branch_id' => $senderBranchId]
+                );
+                \Illuminate\Support\Facades\Log::info("OneSignal Response: " . json_encode($response));
+            } else {
+                \Illuminate\Support\Facades\Log::warning("OneSignal: No recipients found for branch {$branch->id}");
+            }
+
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('OneSignal notification failed: ' . $e->getMessage());
         }
