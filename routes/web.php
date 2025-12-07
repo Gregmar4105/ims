@@ -19,9 +19,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('system-dashboard', function () {
         return Inertia::render('SystemDashboard');
     })->name('system.dashboard')->middleware('role:System Administrator');
-    Route::get('branch-dashboard', function () {
-        return Inertia::render('BranchDashboard');
-    })->name('branch.dashboard')->middleware('role:Branch Administrator');
+    Route::get('branch-dashboard', [\App\Http\Controllers\BranchDashboardController::class, 'index'])
+        ->name('branch.dashboard');
     Route::get('employee-dashboard', function () {
         return Inertia::render('EmployeeDashboard');
     })->name('employee.dashboard')->middleware('role:Employee');
@@ -38,8 +37,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
     Route::resource('branches', \App\Http\Controllers\BranchController::class);
     Route::resource('brands', \App\Http\Controllers\BrandController::class);
-Route::resource('categories', \App\Http\Controllers\CategoryController::class);
-Route::resource('qr-barcodes', \App\Http\Controllers\QrBarcodeController::class)->only(['index', 'store']);
+    Route::resource('categories', \App\Http\Controllers\CategoryController::class);
+    Route::resource('qr-barcodes', \App\Http\Controllers\QrBarcodeController::class)->only(['index', 'store']);
     Route::resource('products', \App\Http\Controllers\ProductController::class);
 
     Route::get('qr-and-barcode-scanner' , [QrAndBarcodeController::class, 'index']);

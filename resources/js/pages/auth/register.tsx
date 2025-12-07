@@ -20,7 +20,9 @@ export default function Register() {
         >
             <Head title="Register" />
             <Form
-                {...store.form()}
+                method="post"
+                action={store.url()}
+                data={{ name: '', email: '', password: '', password_confirmation: '', terms: false } as any}
                 resetOnSuccess={['password', 'password_confirmation']}
                 disableWhileProcessing
                 className="flex flex-col gap-6"
