@@ -62,7 +62,7 @@ class TransferController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, \App\Services\OneSignalService $oneSignal)
     {
         $request->validate([
             'destination_branch_id' => 'required|exists:branches,id',
@@ -73,8 +73,9 @@ class TransferController extends Controller
         ]);
 
         $user = auth()->user();
+        $transfer = null;
 
-        DB::transaction(function () use ($request, $user) {
+        DB::transaction(function () use ($request, $user, &$transfer) {
             $transfer = Transfer::create([
                 'source_branch_id' => $user->branch_id,
                 'destination_branch_id' => $request->destination_branch_id,
@@ -92,6 +93,26 @@ class TransferController extends Controller
                 ]);
             }
         });
+
+        // Notify Branch Administrators
+        try {
+            $adminPlayerIds = \App\Models\User::role('Branch Administrator')
+                ->where('branch_id', $user->branch_id)
+                ->whereNotNull('onesignal_player_id')
+                ->where('id', '!=', $user->id) // Optional: exclude self if admin is also readying
+                ->pluck('onesignal_player_id')
+                ->toArray();
+
+            if (!empty($adminPlayerIds)) {
+                $oneSignal->sendNotification(
+                    "Transfer #{$transfer->id} readied by {$user->name}",
+                    $adminPlayerIds,
+                    "Transfer Readied"
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send transfer notification: " . $e->getMessage());
+        }
 
         return redirect()->back()->with('success', 'Transfer readied successfully.');
     }

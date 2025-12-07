@@ -111,7 +111,7 @@ class SaleController extends Controller
     /**
      * Store a new sale (ready it)
      */
-    public function store(Request $request)
+    public function store(Request $request, \App\Services\OneSignalService $oneSignal)
     {
         $request->validate([
             'items' => 'required|array|min:1',
@@ -126,7 +126,9 @@ class SaleController extends Controller
             abort(403, 'User does not belong to a branch');
         }
         
-        DB::transaction(function () use ($request, $user) {
+        $sale = null;
+
+        DB::transaction(function () use ($request, $user, &$sale) {
             $sale = Sale::create([
                 'branch_id' => $user->branch_id,
                 'status' => 'readied',
@@ -143,6 +145,26 @@ class SaleController extends Controller
             }
         });
         
+        // Notify Branch Administrators
+        try {
+            $adminPlayerIds = \App\Models\User::role('Branch Administrator')
+                ->where('branch_id', $user->branch_id)
+                ->whereNotNull('onesignal_player_id')
+                ->where('id', '!=', $user->id) 
+                ->pluck('onesignal_player_id')
+                ->toArray();
+
+            if (!empty($adminPlayerIds)) {
+                $oneSignal->sendNotification(
+                    "Sale #{$sale->id} readied by {$user->name}",
+                    $adminPlayerIds,
+                    "Sale Readied"
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send sale notification: " . $e->getMessage());
+        }
+
         return redirect()->back()->with('success', 'Sale readied successfully.');
     }
 
