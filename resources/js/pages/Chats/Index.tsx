@@ -323,7 +323,7 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
 
                                 {/* Messages */}
                                 <div className="flex-1 p-4 bg-muted/5 overflow-y-auto">
-                                    <div className="space-y-4 max-w-3xl mx-auto">
+                                    <div className="space-y-4 max-w-5xl mx-auto">
                                         {messages.map((msg, index) => {
                                             const isMe = msg.sender_id === user.id;
                                             return (

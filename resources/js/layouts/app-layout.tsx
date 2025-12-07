@@ -38,8 +38,9 @@ export default function AppLayout({ children, breadcrumbs, ...props }: AppLayout
                         median.onesignal.register();
 
                         median.onesignal.info().then((info: any) => {
-                            // Check for oneSignalUserId OR oneSignalId (based on user feedback)
-                            const playerId = info.oneSignalUserId || info.oneSignalId;
+                            // We need the OneSignal Player ID (UUID) for include_player_ids targeting
+                            // prioritized over oneSignalUserId (External ID)
+                            const playerId = info.oneSignalId || info.userId;
 
                             if (playerId) {
                                 axios.post('/user/onesignal-id', {

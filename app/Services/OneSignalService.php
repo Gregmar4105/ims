@@ -33,10 +33,15 @@ class OneSignalService
             $payload['headings'] = ['en' => $heading];
         }
 
+        \Illuminate\Support\Facades\Log::info('OneSignal Payload:', $payload);
+
         $response = Http::withHeaders([
             'Authorization' => 'Basic ' . $this->restApiKey,
             'Content-Type' => 'application/json',
         ])->post('https://onesignal.com/api/v1/notifications', $payload);
+
+        \Illuminate\Support\Facades\Log::info('OneSignal Response Status: ' . $response->status());
+        \Illuminate\Support\Facades\Log::info('OneSignal Response Body: ' . $response->body());
 
         return $response->json();
     }
