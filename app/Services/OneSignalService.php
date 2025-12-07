@@ -23,9 +23,7 @@ class OneSignalService
 
         $payload = [
             'app_id' => $this->appId,
-            'include_aliases' => [
-                'onesignal_id' => array_map('strval', $playerIds)
-            ],
+            'include_player_ids' => array_map('strval', $playerIds),
             'contents' => ['en' => $message],
             'data' => $data,
             'target_channel' => 'push',

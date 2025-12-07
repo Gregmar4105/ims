@@ -118,9 +118,13 @@ class ChatController extends Controller
             \Illuminate\Support\Facades\Log::info("OneSignal Target: Branch {$branch->id}, Found " . count($receiverPlayerIds) . " recipients.");
             \Illuminate\Support\Facades\Log::info("Excluded Sender ID: " . $currentUser->onesignal_player_id);
 
-            $senderBranchName = $senderBranchId 
-                ? (\App\Models\Branch::find($senderBranchId)->branch_name ?? 'IMS Chat')
-                : 'System Admin';
+            $senderBranchName = 'System Admin'; // Default
+            if ($senderBranchId) {
+                $senderBranch = \App\Models\Branch::find($senderBranchId);
+                if ($senderBranch) {
+                    $senderBranchName = $senderBranch->branch_name;
+                }
+            }
 
             if (!empty($receiverPlayerIds)) {
                 $response = $oneSignal->sendNotification(
