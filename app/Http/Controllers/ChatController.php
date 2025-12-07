@@ -108,12 +108,15 @@ class ChatController extends Controller
             $currentUser = auth()->user();
             
             // Get all users in the receiver branch with a player ID
-            // EXCLUDING the current user's player ID
-            $receiverPlayerIds = \App\Models\User::where('branch_id', $branch->id)
-                ->whereNotNull('onesignal_player_id')
-                ->where('onesignal_player_id', '!=', $currentUser->onesignal_player_id) 
-                ->pluck('onesignal_player_id')
-                ->toArray();
+            $query = \App\Models\User::where('branch_id', $branch->id)
+                ->whereNotNull('onesignal_player_id');
+            
+            // Only exclude current user if they have a player ID
+            if ($currentUser->onesignal_player_id) {
+                $query->where('onesignal_player_id', '!=', $currentUser->onesignal_player_id);
+            }
+
+            $receiverPlayerIds = $query->pluck('onesignal_player_id')->toArray();
             
             \Illuminate\Support\Facades\Log::info("OneSignal Target: Branch {$branch->id}, Found " . count($receiverPlayerIds) . " recipients.");
             \Illuminate\Support\Facades\Log::info("Excluded Sender ID: " . $currentUser->onesignal_player_id);
