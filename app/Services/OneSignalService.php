@@ -27,6 +27,12 @@ class OneSignalService
             'contents' => ['en' => $message],
             'data' => $data,
             'target_channel' => 'push',
+            'priority' => 10,
+            'android_visibility' => 1, // Public visibility
+            // 'android_channel_id' => '...', // Add if you have a specific channel UUID
+            'android_group' => 'chat_messages', 
+            'ios_badgeType' => 'Increase',
+            'ios_badgeCount' => 1,
         ];
 
         if ($heading) {
