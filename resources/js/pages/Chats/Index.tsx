@@ -56,7 +56,8 @@ interface Transfer {
 }
 
 export default function ChatsIndex({ branches, activeTransfers = [] }: { branches: Branch[], activeTransfers?: Transfer[] }) {
-    const user = usePage().props.auth.user as User;
+    const { auth } = usePage().props as any;
+    const user = auth.user as User;
     const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
