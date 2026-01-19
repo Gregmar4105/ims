@@ -139,14 +139,21 @@ class ProxmoxService
         
         // 2. Send Shutdown command (parallel)
         $shutdownResponses = Http::pool(fn (Pool $pool) => [
-             $node1 ? $pool->as('s1')->withoutVerifying()
+             $node1 ? $pool->as('s1')->withoutVerifying()->asForm()
                 ->withHeaders(['Authorization' => $this->token1])
                 ->post("https://{$this->server1}/api2/json/nodes/{$node1}/status", ['command' => 'shutdown']) : null,
                 
-             $node2 ? $pool->as('s2')->withoutVerifying()
+             $node2 ? $pool->as('s2')->withoutVerifying()->asForm()
                 ->withHeaders(['Authorization' => $this->token2])
                 ->post("https://{$this->server2}/api2/json/nodes/{$node2}/status", ['command' => 'shutdown']) : null,
         ]);
+
+        if (isset($shutdownResponses['s1']) && $shutdownResponses['s1']->failed()) {
+            Log::error("Shutdown Failed Server 1: " . $shutdownResponses['s1']->body());
+        }
+        if (isset($shutdownResponses['s2']) && $shutdownResponses['s2']->failed()) {
+            Log::error("Shutdown Failed Server 2: " . $shutdownResponses['s2']->body());
+        }
         
         return [
             'server1' => isset($shutdownResponses['s1']) ? $shutdownResponses['s1']->successful() : false,
