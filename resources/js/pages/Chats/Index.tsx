@@ -534,197 +534,198 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                                     </div>
                                 )}
 
-                            </div>
 
-                        {/* Search Bar Overlay */}
-                        {searchMode && (
-                            <div className="bg-background border-b p-2 px-4 animate-in slide-in-from-top-2 flex items-center gap-2">
-                                <Search className="w-4 h-4 text-muted-foreground" />
-                                <Input
-                                    id="msg-search"
-                                    placeholder="Search messages..."
-                                    value={messageSearchQuery}
-                                    onChange={e => setMessageSearchQuery(e.target.value)}
-                                    className="h-8 text-sm"
-                                />
-                                <Button variant="ghost" size="sm" onClick={() => {
-                                    setSearchMode(false);
-                                    setMessageSearchQuery('');
-                                    // Reset to normal view
-                                    if (selectedBranch) {
-                                        axios.get(`/chats/${selectedBranch.id}`).then(res => {
-                                            setMessages(res.data);
-                                            setHasMoreMessages(true);
-                                            scrollToBottom("auto");
-                                        });
-                                    }
-                                }}>
-                                    Cancel
-                                </Button>
-                            </div>
-                        )}
 
-                        {/* Messages */}
-                        <div
-                            className="flex-1 p-4 bg-muted/5 overflow-y-auto"
-                            onScroll={handleScroll}
-                        >
-                            <div className="space-y-4 max-w-7xl mx-auto">
-                                {isLoadingMore && (
-                                    <div className="flex justify-center py-2">
-                                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                                {/* Search Bar Overlay */}
+                                {searchMode && (
+                                    <div className="bg-background border-b p-2 px-4 animate-in slide-in-from-top-2 flex items-center gap-2">
+                                        <Search className="w-4 h-4 text-muted-foreground" />
+                                        <Input
+                                            id="msg-search"
+                                            placeholder="Search messages..."
+                                            value={messageSearchQuery}
+                                            onChange={e => setMessageSearchQuery(e.target.value)}
+                                            className="h-8 text-sm"
+                                        />
+                                        <Button variant="ghost" size="sm" onClick={() => {
+                                            setSearchMode(false);
+                                            setMessageSearchQuery('');
+                                            // Reset to normal view
+                                            if (selectedBranch) {
+                                                axios.get(`/chats/${selectedBranch.id}`).then(res => {
+                                                    setMessages(res.data);
+                                                    setHasMoreMessages(true);
+                                                    scrollToBottom("auto");
+                                                });
+                                            }
+                                        }}>
+                                            Cancel
+                                        </Button>
                                     </div>
                                 )}
-                                {messages.map((msg, index) => {
-                                    const isMe = msg.sender_id === user.id;
-                                    return (
-                                        <div
-                                            key={msg.id || index}
-                                            className={cn(
-                                                "flex gap-2 max-w-[85%]",
-                                                isMe ? "ml-auto flex-row-reverse" : ""
-                                            )}
-                                        >
-                                            {!isMe && (
-                                                <Avatar className="w-8 h-8 mt-1">
-                                                    <AvatarImage src={msg.sender?.profile_photo_url} />
-                                                    <AvatarFallback>{msg.sender?.name?.substring(0, 1) || '?'}</AvatarFallback>
-                                                </Avatar>
-                                            )}
-                                            <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
-                                                <span className="text-[10px] text-muted-foreground mb-1 px-1">
-                                                    {msg.sender?.name || 'Unknown User'}
-                                                </span>
-                                                <div className={cn(
-                                                    "p-3 rounded-2xl shadow-sm",
-                                                    isMe
-                                                        ? "bg-primary text-primary-foreground rounded-tr-none"
-                                                        : "bg-card border rounded-tl-none"
-                                                )}>
-                                                    {msg.attachment_path && (
-                                                        <div className="mb-2">
-                                                            <img
-                                                                src={`/storage/${msg.attachment_path}`}
-                                                                alt="Attachment"
-                                                                className="rounded-lg max-h-60 object-contain cursor-pointer"
-                                                                onClick={() => window.open(`/storage/${msg.attachment_path}`, '_blank')}
-                                                            />
+
+                                {/* Messages */}
+                                <div
+                                    className="flex-1 p-4 bg-muted/5 overflow-y-auto"
+                                    onScroll={handleScroll}
+                                >
+                                    <div className="space-y-4 max-w-7xl mx-auto">
+                                        {isLoadingMore && (
+                                            <div className="flex justify-center py-2">
+                                                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                                            </div>
+                                        )}
+                                        {messages.map((msg, index) => {
+                                            const isMe = msg.sender_id === user.id;
+                                            return (
+                                                <div
+                                                    key={msg.id || index}
+                                                    className={cn(
+                                                        "flex gap-2 max-w-[85%]",
+                                                        isMe ? "ml-auto flex-row-reverse" : ""
+                                                    )}
+                                                >
+                                                    {!isMe && (
+                                                        <Avatar className="w-8 h-8 mt-1">
+                                                            <AvatarImage src={msg.sender?.profile_photo_url} />
+                                                            <AvatarFallback>{msg.sender?.name?.substring(0, 1) || '?'}</AvatarFallback>
+                                                        </Avatar>
+                                                    )}
+                                                    <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
+                                                        <span className="text-[10px] text-muted-foreground mb-1 px-1">
+                                                            {msg.sender?.name || 'Unknown User'}
+                                                        </span>
+                                                        <div className={cn(
+                                                            "p-3 rounded-2xl shadow-sm",
+                                                            isMe
+                                                                ? "bg-primary text-primary-foreground rounded-tr-none"
+                                                                : "bg-card border rounded-tl-none"
+                                                        )}>
+                                                            {msg.attachment_path && (
+                                                                <div className="mb-2">
+                                                                    <img
+                                                                        src={`/storage/${msg.attachment_path}`}
+                                                                        alt="Attachment"
+                                                                        className="rounded-lg max-h-60 object-contain cursor-pointer"
+                                                                        onClick={() => window.open(`/storage/${msg.attachment_path}`, '_blank')}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            {msg.content && <p className="text-sm">{msg.content}</p>}
+                                                            <span className="text-[10px] opacity-70 mt-1 block">
+                                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        <div ref={scrollRef} />
+                                    </div>
+                                </div>
+
+                                {/* Input */}
+                                <div className="p-4 border-t bg-background">
+                                    <div className="max-w-3xl mx-auto">
+                                        {/* Preview Area */}
+                                        {previewUrl && (
+                                            <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-lg w-fit">
+                                                <div className="relative h-16 w-16">
+                                                    <img src={previewUrl} alt="Preview" className="h-full w-full object-cover rounded" />
+                                                    {isCompressing && (
+                                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[10px] rounded">
+                                                            Processing...
                                                         </div>
                                                     )}
-                                                    {msg.content && <p className="text-sm">{msg.content}</p>}
-                                                    <span className="text-[10px] opacity-70 mt-1 block">
-                                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
                                                 </div>
+                                                <div className="text-xs truncate max-w-[150px]">
+                                                    {isCompressing ? 'Compressing...' : attachment?.name}
+                                                    {attachment && <div className="opacity-50">{(attachment.size / 1024 / 1024).toFixed(2)} MB</div>}
+                                                </div>
+                                                <button onClick={clearAttachment} className="p-1 hover:bg-muted-foreground/20 rounded-full">
+                                                    <X className="w-4 h-4" />
+                                                </button>
                                             </div>
-                                        </div>
-                                    );
-                                })}
-                                <div ref={scrollRef} />
-                            </div>
-                        </div>
+                                        )}
 
-                        {/* Input */}
-                        <div className="p-4 border-t bg-background">
-                            <div className="max-w-3xl mx-auto">
-                                {/* Preview Area */}
-                                {previewUrl && (
-                                    <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-lg w-fit">
-                                        <div className="relative h-16 w-16">
-                                            <img src={previewUrl} alt="Preview" className="h-full w-full object-cover rounded" />
-                                            {isCompressing && (
-                                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[10px] rounded">
-                                                    Processing...
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="text-xs truncate max-w-[150px]">
-                                            {isCompressing ? 'Compressing...' : attachment?.name}
-                                            {attachment && <div className="opacity-50">{(attachment.size / 1024 / 1024).toFixed(2)} MB</div>}
-                                        </div>
-                                        <button onClick={clearAttachment} className="p-1 hover:bg-muted-foreground/20 rounded-full">
-                                            <X className="w-4 h-4" />
-                                        </button>
+                                        <form onSubmit={handleSendMessage} className="flex gap-2 items-end">
+                                            {/* File Input */}
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={handleFileSelect}
+                                            />
+                                            {/* Camera Input */}
+                                            <input
+                                                type="file"
+                                                ref={cameraInputRef}
+                                                className="hidden"
+                                                accept="image/*"
+                                                capture="environment"
+                                                onChange={handleFileSelect}
+                                            />
+
+                                            <div className="flex gap-1 shrink-0">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="rounded-full h-10 w-10 text-muted-foreground hover:bg-muted"
+                                                    onClick={() => cameraInputRef.current?.click()}
+                                                    title="Take Photo"
+                                                >
+                                                    <Camera className="w-5 h-5" />
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="rounded-full h-10 w-10 text-muted-foreground hover:bg-muted"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    title="Attach File"
+                                                >
+                                                    <Paperclip className="w-5 h-5" />
+                                                </Button>
+                                            </div>
+
+                                            <Textarea
+                                                ref={textareaRef}
+                                                value={newMessage}
+                                                onChange={e => setNewMessage(e.target.value)}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        handleSendMessage(e);
+                                                    }
+                                                }}
+                                                placeholder="Type a message..."
+                                                className="flex-1 min-h-[40px] max-h-[120px] resize-none rounded-2xl py-3"
+                                                rows={1}
+                                            />
+                                            <Button
+                                                type="submit"
+                                                size="icon"
+                                                className="rounded-full h-10 w-10 shrink-0"
+                                                disabled={(!newMessage.trim() && !attachment) || isCompressing}
+                                            >
+                                                <Send className="w-4 h-4" />
+                                            </Button>
+                                        </form>
                                     </div>
-                                )}
-
-                                <form onSubmit={handleSendMessage} className="flex gap-2 items-end">
-                                    {/* File Input */}
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={handleFileSelect}
-                                    />
-                                    {/* Camera Input */}
-                                    <input
-                                        type="file"
-                                        ref={cameraInputRef}
-                                        className="hidden"
-                                        accept="image/*"
-                                        capture="environment"
-                                        onChange={handleFileSelect}
-                                    />
-
-                                    <div className="flex gap-1 shrink-0">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="rounded-full h-10 w-10 text-muted-foreground hover:bg-muted"
-                                            onClick={() => cameraInputRef.current?.click()}
-                                            title="Take Photo"
-                                        >
-                                            <Camera className="w-5 h-5" />
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="rounded-full h-10 w-10 text-muted-foreground hover:bg-muted"
-                                            onClick={() => fileInputRef.current?.click()}
-                                            title="Attach File"
-                                        >
-                                            <Paperclip className="w-5 h-5" />
-                                        </Button>
-                                    </div>
-
-                                    <Textarea
-                                        ref={textareaRef}
-                                        value={newMessage}
-                                        onChange={e => setNewMessage(e.target.value)}
-                                        onKeyDown={e => {
-                                            if (e.key === 'Enter' && !e.shiftKey) {
-                                                e.preventDefault();
-                                                handleSendMessage(e);
-                                            }
-                                        }}
-                                        placeholder="Type a message..."
-                                        className="flex-1 min-h-[40px] max-h-[120px] resize-none rounded-2xl py-3"
-                                        rows={1}
-                                    />
-                                    <Button
-                                        type="submit"
-                                        size="icon"
-                                        className="rounded-full h-10 w-10 shrink-0"
-                                        disabled={(!newMessage.trim() && !attachment) || isCompressing}
-                                    >
-                                        <Send className="w-4 h-4" />
-                                    </Button>
-                                </form>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-muted/5">
+                                <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
+                                    <MessageSquare className="w-10 h-10 opacity-20" />
+                                </div>
+                                <h3 className="text-xl font-semibold mb-2">Select a branch to chat</h3>
+                                <p>Choose a branch from the sidebar to start messaging.</p>
                             </div>
-                        </div>
-                    </>
-                    ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-muted/5">
-                        <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
-                            <MessageSquare className="w-10 h-10 opacity-20" />
-                        </div>
-                        <h3 className="text-xl font-semibold mb-2">Select a branch to chat</h3>
-                        <p>Choose a branch from the sidebar to start messaging.</p>
-                    </div>
                         )}
+                    </div>
                 </div>
             </div>
         </AppLayout>
