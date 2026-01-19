@@ -53,7 +53,7 @@ export default function SystemDashboard() {
     const fetchStats = async () => {
         setLoading(true);
         try {
-            const url = route('system.dashboard.stats');
+            const url = '/system-dashboard/api/stats';
             console.log('Fetching stats from:', url);
             const res = await fetch(url);
             console.log('Response status:', res.status);
@@ -77,7 +77,7 @@ export default function SystemDashboard() {
 
     const fetchSchedules = async () => {
         try {
-            const res = await fetch(route('system.dashboard.schedules'));
+            const res = await fetch('/system-dashboard/api/schedules');
             const data = await res.json();
             setSchedules(data);
         } catch (error) {
@@ -99,7 +99,7 @@ export default function SystemDashboard() {
     const handleShutdown = async () => {
         setShutdownLoading(true);
         try {
-            const res = await fetch(route('system.dashboard.shutdown'), {
+            const res = await fetch('/system-dashboard/api/shutdown', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ export default function SystemDashboard() {
         e.preventDefault();
         // Manually post using fetch for API consistency or use Inertia form
         // Using fetch to stay on page without reload
-        fetch(route('system.dashboard.schedule'), {
+        fetch('/system-dashboard/api/schedule', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -144,7 +144,7 @@ export default function SystemDashboard() {
 
     const cancelSchedule = async (id: number) => {
         try {
-            await fetch(route('system.dashboard.cancel', { command: id }), {
+            await fetch(`/system-dashboard/api/schedules/${id}/cancel`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
