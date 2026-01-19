@@ -39,20 +39,12 @@ class ChatController extends Controller
         ]);
     }
 
-    public function show(\App\Models\Branch $branch)
+    public function show(\App\Models\Branch $branch, Request $request)
     {
         // Get messages between current user's branch and target branch
         $currentBranchId = auth()->user()->branch_id;
         
-        // If system admin (no branch), show messages for that branch? 
-        // Logic Gap: If I am sys admin, who am I chatting AS? 
-        // Usually Sys Admins might not have a specific "chat identity" in this branch-to-branch model unless they impersonate.
-        // But assuming they act as "Headquarters" or similar if branch_id is null?
-        // Limitation: Message table requires sender_branch_id/receiver_branch_id. 
-        // If currentBranchId is null, the query below might fail or return nothing.
-        // For now, let's keep existing logic but be aware.
-        
-        $messages = \App\Models\Message::with('sender')
+        $query = \App\Models\Message::with('sender')
             ->where(function($q) use ($currentBranchId, $branch) {
                 $q->where('receiver_branch_id', $currentBranchId)
                   ->whereHas('sender', function($q) use ($branch) {
@@ -64,14 +56,55 @@ class ChatController extends Controller
                   ->whereHas('sender', function($q) use ($currentBranchId) {
                       $q->where('branch_id', $currentBranchId);
                   });
-            })
-            ->orderBy('created_at', 'desc')
+            });
+
+        // Search functionality
+        if ($request->has('query') && !empty($request->input('query'))) {
+            $searchTerm = '%' . $request->input('query') . '%';
+            $query->where('content', 'like', $searchTerm);
+        }
+
+        // Pagination: Load older messages
+        if ($request->has('before_id')) {
+            $query->where('id', '<', $request->before_id);
+        }
+            
+        $messages = $query->orderBy('created_at', 'desc')
             ->take(20)
             ->get()
             ->reverse()
             ->values();
 
         return response()->json($messages);
+    }
+
+    public function media(\App\Models\Branch $branch)
+    {
+        $currentBranchId = auth()->user()->branch_id;
+        
+        $media = \App\Models\Message::whereNotNull('attachment_path')
+            ->where(function($q) use ($currentBranchId, $branch) {
+                $q->where(function($inner) use ($currentBranchId, $branch) {
+                    $inner->where('receiver_branch_id', $currentBranchId)
+                          ->whereHas('sender', function($s) use ($branch) {
+                              $s->where('branch_id', $branch->id);
+                          });
+                })->orWhere(function($inner) use ($currentBranchId, $branch) {
+                    $inner->where('receiver_branch_id', $branch->id)
+                          ->whereHas('sender', function($s) use ($currentBranchId) {
+                              $s->where('branch_id', $currentBranchId);
+                          });
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get(['id', 'attachment_path', 'created_at']);
+
+        // Group by date
+        $grouped = $media->groupBy(function($item) {
+            return $item->created_at->format('Y-m-d');
+        });
+
+        return response()->json($grouped);
     }
 
     public function store(\Illuminate\Http\Request $request, \App\Models\Branch $branch, \App\Services\OneSignalService $oneSignal)

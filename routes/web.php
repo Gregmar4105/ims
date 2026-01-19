@@ -61,6 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Chat Routes
     Route::get('/chats', [App\Http\Controllers\ChatController::class, 'index'])->name('chats.index');
+    Route::get('/chats/{branch}/media', [App\Http\Controllers\ChatController::class, 'media'])->name('chats.media'); // Specific route first
     Route::get('/chats/{branch}', [App\Http\Controllers\ChatController::class, 'show'])->name('chats.show');
     Route::post('/chats/{branch}', [App\Http\Controllers\ChatController::class, 'store'])->name('chats.store');
     Route::post('/user/onesignal-id', [App\Http\Controllers\ChatController::class, 'storeOneSignalId'])->name('user.onesignal.store');
