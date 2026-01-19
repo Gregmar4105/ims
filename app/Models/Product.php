@@ -20,6 +20,7 @@ class Product extends Model
         'barcode',
         'qr_code',
         'created_by',
+        'price',
     ];
 
     protected $casts = [

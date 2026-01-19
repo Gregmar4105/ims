@@ -56,6 +56,7 @@ class SaleController extends Controller
                 'products.name',
                 'products.barcode',
                 'products.qr_code',
+                'products.price',
                 'branch_products.quantity as available_quantity'
             )
             ->get();
@@ -97,6 +98,7 @@ class SaleController extends Controller
                 'products.name',
                 'products.barcode',
                 'products.qr_code',
+                'products.price',
                 'branch_products.quantity as available_quantity'
             )
             ->first();
@@ -137,10 +139,14 @@ class SaleController extends Controller
             ]);
             
             foreach ($request->items as $item) {
+                // Fetch current price
+                $product = \App\Models\Product::find($item['product_id']);
+                
                 SaleItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
+                    'price' => $product ? $product->price : 0,
                 ]);
             }
         });

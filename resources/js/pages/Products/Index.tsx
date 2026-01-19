@@ -47,6 +47,7 @@ interface Product {
     branch?: {
         branch_name: string;
     };
+    price: number | null;
 }
 
 interface Props {
@@ -347,9 +348,14 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     <CardTitle className="text-base font-bold line-clamp-1" title={product.name}>
                                         {product.name}
                                     </CardTitle>
-                                    <div className="flex items-center text-xs text-muted-foreground mt-1">
-                                        <MapPin className="h-3 w-3 mr-1" />
-                                        <span className="truncate">{product.physical_location || 'No location'}</span>
+                                    <div className="flex items-center justify-between mt-1">
+                                        <div className="flex items-center text-xs text-muted-foreground">
+                                            <MapPin className="h-3 w-3 mr-1" />
+                                            <span className="truncate max-w-[80px]">{product.physical_location || 'No loc'}</span>
+                                        </div>
+                                        <Badge variant="outline" className="text-xs font-bold bg-green-50 text-green-700 border-green-200">
+                                            ₱{product.price ? Number(product.price).toFixed(2) : '0.00'}
+                                        </Badge>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-3 pt-1 flex-grow space-y-2">
@@ -433,6 +439,6 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </AppLayout>
+        </AppLayout >
     );
 }

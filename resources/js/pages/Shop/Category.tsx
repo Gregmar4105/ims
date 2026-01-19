@@ -19,6 +19,7 @@ interface Product {
     brand?: {
         name: string;
     };
+    price: number | null;
 }
 
 interface Category {
@@ -93,8 +94,11 @@ export default function CategoryPage({ category, products }: Props) {
                                         {/* Content Section */}
                                         <div className="flex flex-1 flex-col justify-between gap-4 p-5">
                                             <div className="space-y-1">
-                                                <div className="flex justify-between items-start">
+                                                <div className="flex justify-between items-start gap-2">
                                                     <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-1" title={product.name}>{product.name}</h3>
+                                                    <span className="font-bold text-sm bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-100 whitespace-nowrap">
+                                                        ₱{product.price ? Number(product.price).toFixed(2) : '0.00'}
+                                                    </span>
                                                 </div>
                                                 <p className="line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
                                                     {product.description || 'No description available.'}

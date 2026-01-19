@@ -233,6 +233,7 @@ class ProductController extends Controller
             'variations.*.name' => 'required|string',
             'variations.*.options' => 'required|string', // Comma separated
             'image' => 'required|image|max:2048', // 2MB Max
+            'price' => 'nullable|numeric|min:0',
         ]);
 
         $user = auth()->user();
@@ -276,6 +277,7 @@ class ProductController extends Controller
                 // Generate barcode/QR if needed, or let model/observer handle it
                 'barcode' => 'P-' . Str::random(8), // Placeholder
                 'qr_code' => 'QR-' . Str::random(8), // Placeholder
+                'price' => $validated['price'] ?? null,
             ]);
 
             // Create Branch Product (Stock)
@@ -341,7 +343,8 @@ class ProductController extends Controller
             'variations' => 'nullable|array',
             'variations.*.name' => 'required|string',
             'variations.*.options' => 'required|string',
-            'image' => 'nullable|image|max:2048', 
+            'image' => 'nullable|image|max:2048',
+            'price' => 'nullable|numeric|min:0', 
         ]);
 
         // Handle Image Upload if provided
@@ -365,6 +368,7 @@ class ProductController extends Controller
                 'description' => $validated['description'] ?? null,
                 'variations' => $validated['variations'] ?? null,
                 'image_path' => $validated['image_path'] ?? $product->image_path,
+                'price' => $validated['price'] ?? $product->price,
             ]);
 
             // Update Branch Stock

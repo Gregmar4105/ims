@@ -52,6 +52,7 @@ interface Product {
     description: string | null;
     variations: Variation[] | null;
     image_path: string | null;
+    price: number | null;
 }
 
 interface Props {
@@ -69,6 +70,7 @@ export default function Edit({ product, brands, categories }: Props) {
         quantity: String(product.quantity),
         physical_location: product.physical_location || '',
         description: product.description || '',
+        price: product.price || '',
         variations: product.variations || [] as Variation[],
         image: null as File | null,
     });
@@ -190,15 +192,31 @@ export default function Edit({ product, brands, categories }: Props) {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="physical_location">Physical Location</Label>
-                            <Input
-                                id="physical_location"
-                                value={data.physical_location}
-                                onChange={e => setData('physical_location', e.target.value)}
-                                placeholder="e.g. Aisle 3, Shelf B"
-                            />
-                            {errors.physical_location && <p className="text-sm text-red-500">{errors.physical_location}</p>}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="price">Price (₱)</Label>
+                                <Input
+                                    id="price"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={data.price}
+                                    onChange={e => setData('price', e.target.value)}
+                                    placeholder="0.00"
+                                />
+                                {errors.price && <p className="text-sm text-red-500">{errors.price}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="physical_location">Physical Location</Label>
+                                <Input
+                                    id="physical_location"
+                                    value={data.physical_location}
+                                    onChange={e => setData('physical_location', e.target.value)}
+                                    placeholder="e.g. Aisle 3, Shelf B"
+                                />
+                                {errors.physical_location && <p className="text-sm text-red-500">{errors.physical_location}</p>}
+                            </div>
                         </div>
 
                         <div className="space-y-2">

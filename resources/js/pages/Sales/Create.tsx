@@ -18,6 +18,7 @@ interface Product {
     name: string;
     barcode: string | null;
     qr_code: string | null;
+    price: number | null;
     available_quantity: number;
 }
 
@@ -369,6 +370,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 </div>
                                                 <div className="flex items-center gap-4">
                                                     <div className="flex items-center gap-2">
+                                                        <div className="flex flex-col items-end mr-4">
+                                                            <span className="text-sm font-bold">₱{item.product.price ? (Number(item.product.price) * item.quantity).toFixed(2) : '0.00'}</span>
+                                                            <span className="text-[10px] text-muted-foreground">₱{item.product.price ? Number(item.product.price).toFixed(2) : '0.00'} ea</span>
+                                                        </div>
                                                         <Button
                                                             variant="outline"
                                                             size="icon"
@@ -407,6 +412,9 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                 <div className="w-full flex justify-between items-center">
                                     <div className="text-sm text-muted-foreground">
                                         Total Items: <span className="font-medium text-foreground">{cart.reduce((acc, item) => acc + item.quantity, 0)}</span>
+                                        <div className="text-xl font-bold text-primary mt-1">
+                                            Total: ₱{cart.reduce((acc, item) => acc + (item.quantity * (Number(item.product.price) || 0)), 0).toFixed(2)}
+                                        </div>
                                     </div>
                                     <Button
                                         size="lg"
