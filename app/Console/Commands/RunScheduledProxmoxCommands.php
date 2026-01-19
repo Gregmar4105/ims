@@ -54,6 +54,19 @@ class RunScheduledProxmoxCommands extends Command
                 
                 $cmd->update(['status' => 'completed']);
                 Log::info("Scheduled Proxmox command {$cmd->id} completed.");
+
+                if ($cmd->is_recurring) {
+                    $nextRun = $cmd->scheduled_at->copy()->addDay();
+                    ScheduledCommand::create([
+                        'command' => $cmd->command,
+                        'target_servers' => $cmd->target_servers,
+                        'scheduled_at' => $nextRun,
+                        'status' => 'pending',
+                        'user_id' => $cmd->user_id,
+                        'is_recurring' => true,
+                    ]);
+                    Log::info("Rescheduled Proxmox command {$cmd->id} for $nextRun.");
+                }
             } catch (\Exception $e) {
                 $cmd->update(['status' => 'failed']);
                 Log::error("Scheduled Proxmox command {$cmd->id} failed: " . $e->getMessage());

@@ -14,11 +14,14 @@ class ScheduledCommand extends Model
         'target_servers',
         'scheduled_at',
         'status',
-        'user_id'
+        'user_id',
+        'is_recurring',
     ];
 
     protected $casts = [
+        'target_servers' => 'array',
         'scheduled_at' => 'datetime',
+        'is_recurring' => 'boolean',
     ];
 
     public function user()

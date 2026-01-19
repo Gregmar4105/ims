@@ -93,6 +93,7 @@ class ProxmoxService
         }
         
         $s = $status->json()['data'];
+        $storage = $this->getStorageStats($host, $token, $nodeName);
         
         return [
             'status' => 'online',
@@ -105,7 +106,21 @@ class ProxmoxService
             'disk_total' => isset($s['rootfs']['total']) ? $s['rootfs']['total'] : 0,
             'disk_percent' => isset($s['rootfs']['total']) && $s['rootfs']['total'] > 0 ? round(($s['rootfs']['used'] / $s['rootfs']['total']) * 100, 2) : 0,
             'uptime' => isset($s['uptime']) ? $s['uptime'] : 0,
+            'storage' => $storage,
         ];
+    }
+
+    protected function getStorageStats($host, $token, $nodeName)
+    {
+        $response = Http::withoutVerifying()
+            ->withHeaders(['Authorization' => $token])
+            ->get("https://{$host}/api2/json/nodes/{$nodeName}/storage");
+
+        if ($response->failed()) {
+            return [];
+        }
+
+        return $response->json()['data'] ?? [];
     }
 
     /**

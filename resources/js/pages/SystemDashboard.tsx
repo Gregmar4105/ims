@@ -29,6 +29,17 @@ interface ServerStats {
     disk_total: number;
     disk_percent: number;
     uptime: number;
+    storage: {
+        content: string;
+        type: string;
+        active: number;
+        enabled: number;
+        shared: number;
+        storage: string;
+        total: number;
+        used: number;
+        used_fraction: number;
+    }[];
 }
 
 interface Schedule {
@@ -37,6 +48,7 @@ interface Schedule {
     target_servers: string;
     scheduled_at: string;
     status: string;
+    is_recurring: boolean;
 }
 
 export default function SystemDashboard() {
@@ -48,6 +60,7 @@ export default function SystemDashboard() {
 
     const { data, setData, post, processing, reset, errors } = useForm({
         scheduled_at: '',
+        is_recurring: false,
     });
 
     const fetchStats = async () => {
@@ -121,15 +134,16 @@ export default function SystemDashboard() {
 
     const handleSchedule = (e: React.FormEvent) => {
         e.preventDefault();
-        // Manually post using fetch for API consistency or use Inertia form
-        // Using fetch to stay on page without reload
         fetch('/system-dashboard/api/schedule', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
             },
-            body: JSON.stringify({ scheduled_at: data.scheduled_at })
+            body: JSON.stringify({
+                scheduled_at: data.scheduled_at,
+                is_recurring: data.is_recurring
+            })
         }).then(async res => {
             if (res.ok) {
                 toast.success('Shutdown scheduled');
@@ -189,7 +203,7 @@ export default function SystemDashboard() {
                             <span className="text-xs text-muted-foreground">{formatBytes(data.ram_used)} / {formatBytes(data.ram_total)}</span>
                         </div>
                         <div className="flex flex-col space-y-1">
-                            <span className="text-xs text-muted-foreground flex items-center gap-1"><HardDrive className="h-3 w-3" /> Disk Usage</span>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1"><HardDrive className="h-3 w-3" /> Root Disk</span>
                             <span className="text-2xl font-bold">{data.disk_percent}%</span>
                             <span className="text-xs text-muted-foreground">{formatBytes(data.disk_used)} / {formatBytes(data.disk_total)}</span>
                         </div>
@@ -197,6 +211,41 @@ export default function SystemDashboard() {
                             <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Uptime</span>
                             <span className="text-2xl font-bold">{Math.floor(data.uptime / 3600)}h {Math.floor((data.uptime % 3600) / 60)}m</span>
                         </div>
+                    </div>
+
+                    <div className="mt-6 space-y-4">
+                        <h4 className="text-sm font-medium flex items-center gap-2"><HardDrive className="h-4 w-4" /> Storage Pools</h4>
+                        {(!data.storage || data.storage.length === 0) ? (
+                            <p className="text-xs text-muted-foreground">No additional storage pools found.</p>
+                        ) : (
+                            <div className="space-y-4">
+                                {data.storage.map((pool, idx) => {
+                                    const percent = Math.round(pool.used_fraction * 100);
+                                    // Make sure percent is valid
+                                    const validPercent = isNaN(percent) ? 0 : percent;
+
+                                    return (
+                                        <div key={idx} className="space-y-1.5">
+                                            <div className="flex justify-between text-xs">
+                                                <span className="font-medium flex items-center gap-2">
+                                                    {pool.storage}
+                                                    <Badge variant="outline" className="text-[10px] h-4 py-0 px-1">{pool.type}</Badge>
+                                                </span>
+                                                <span className="text-muted-foreground">
+                                                    {formatBytes(pool.used)} / {formatBytes(pool.total)} ({validPercent}%)
+                                                </span>
+                                            </div>
+                                            <div className="h-2 w-full bg-secondary/50 rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full ${validPercent > 90 ? 'bg-destructive' : (validPercent > 75 ? 'bg-yellow-500' : 'bg-primary')} transition-all duration-500 ease-in-out`}
+                                                    style={{ width: `${validPercent}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>
@@ -249,10 +298,10 @@ export default function SystemDashboard() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" /> Schedule Shutdown</CardTitle>
-                            <CardDescription>Schedule a one-time shutdown for both servers.</CardDescription>
+                            <CardDescription>Schedule a one-time or daily shutdown for both servers.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={handleSchedule} className="flex gap-4 items-end">
+                            <form onSubmit={handleSchedule} className="flex flex-col gap-4">
                                 <div className="grid w-full items-center gap-1.5">
                                     <label htmlFor="datetime" className="text-sm font-medium">Shutdown Time</label>
                                     <Input
@@ -264,7 +313,21 @@ export default function SystemDashboard() {
                                         min={new Date().toISOString().slice(0, 16)}
                                     />
                                 </div>
-                                <Button type="submit">Schedule</Button>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="recurring"
+                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                            checked={data.is_recurring}
+                                            onChange={e => setData('is_recurring', e.target.checked)}
+                                        />
+                                        <label htmlFor="recurring" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                            Repeat Daily
+                                        </label>
+                                    </div>
+                                    <Button type="submit">Schedule</Button>
+                                </div>
                             </form>
                         </CardContent>
                     </Card>
@@ -291,7 +354,12 @@ export default function SystemDashboard() {
                                     <TableBody>
                                         {schedules.map((schedule) => (
                                             <TableRow key={schedule.id}>
-                                                <TableCell className="font-medium capitalize">{schedule.command} (All)</TableCell>
+                                                <TableCell className="font-medium capitalize">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span>{schedule.command} (All)</span>
+                                                        {schedule.is_recurring && <Badge variant="secondary" className="w-fit text-[10px] h-5 px-1.5">Daily</Badge>}
+                                                    </div>
+                                                </TableCell>
                                                 <TableCell>{new Date(schedule.scheduled_at).toLocaleString()}</TableCell>
                                                 <TableCell className="text-right">
                                                     <Button variant="ghost" size="icon" onClick={() => cancelSchedule(schedule.id)}>

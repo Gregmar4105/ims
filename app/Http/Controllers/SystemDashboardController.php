@@ -42,6 +42,7 @@ class SystemDashboardController extends Controller
     {
         $request->validate([
             'scheduled_at' => 'required|date|after:now',
+            'is_recurring' => 'boolean',
         ]);
 
         $scheduledAt = Carbon::parse($request->scheduled_at);
@@ -52,6 +53,7 @@ class SystemDashboardController extends Controller
             'scheduled_at' => $scheduledAt,
             'status' => 'pending',
             'user_id' => auth()->id(),
+            'is_recurring' => $request->boolean('is_recurring'),
         ]);
 
         return response()->json([
