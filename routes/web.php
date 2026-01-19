@@ -13,9 +13,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
-    Route::get('system-dashboard', function () {
-        return Inertia::render('SystemDashboard');
-    })->name('system.dashboard')->middleware('role:System Administrator');
+    Route::get('system-dashboard', [\App\Http\Controllers\SystemDashboardController::class, 'index'])
+        ->name('system.dashboard')->middleware('role:System Administrator');
+
+    Route::prefix('system-dashboard/api')->name('system.dashboard.')->middleware(['role:System Administrator'])->group(function () {
+        Route::get('/stats', [\App\Http\Controllers\SystemDashboardController::class, 'getData'])->name('stats');
+        Route::post('/shutdown', [\App\Http\Controllers\SystemDashboardController::class, 'shutdown'])->name('shutdown');
+        Route::post('/schedule', [\App\Http\Controllers\SystemDashboardController::class, 'scheduleShutdown'])->name('schedule');
+        Route::get('/schedules', [\App\Http\Controllers\SystemDashboardController::class, 'getSchedules'])->name('schedules');
+        Route::post('/schedules/{command}/cancel', [\App\Http\Controllers\SystemDashboardController::class, 'cancelSchedule'])->name('cancel');
+    });
     Route::get('branch-dashboard', [\App\Http\Controllers\BranchDashboardController::class, 'index'])
         ->name('branch.dashboard');
     Route::get('employee-dashboard', function () {
