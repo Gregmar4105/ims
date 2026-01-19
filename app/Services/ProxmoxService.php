@@ -5,7 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Facades\Log;
-use phpseclib3\Net\SSH2;
+use Illuminate\Support\Facades\Process;
 
 class ProxmoxService
 {
@@ -124,8 +124,8 @@ class ProxmoxService
     }
 
     /**
-     * Shutdown all servers immediately using SSH.
-     * Uses phpseclib for cross-platform SSH support.
+     * Shutdown all servers immediately using SSH (Native).
+     * Automatically attempts to use 'sshpass' if password is set.
      */
     public function shutdownAllNodes()
     {
@@ -138,25 +138,45 @@ class ProxmoxService
 
         foreach ($ips as $ip) {
             try {
-                $ssh = new SSH2($ip);
-                if (!$ssh->login($this->sshUser, $this->sshPassword)) {
-                    Log::error("SSH Login Failed for $ip");
-                    $results[$ip] = false;
-                    continue;
-                }
-
-                // Send shutdown command immediately
-                $ssh->exec('/sbin/shutdown -h now');
-                $ssh->disconnect();
+                $command = $this->buildSshCommand($ip, '/sbin/shutdown -h now');
                 
-                Log::info("SSH Shutdown command sent to $ip");
-                $results[$ip] = true;
+                $result = Process::run($command);
+                
+                if ($result->successful()) {
+                     Log::info("SSH Shutdown command sent to $ip via native process.");
+                     $results[$ip] = true;
+                } else {
+                     Log::error("SSH Failed for $ip: " . $result->errorOutput() . " | Output: " . $result->output());
+                     $results[$ip] = false;
+                }
             } catch (\Exception $e) {
-                 Log::error("SSH Failed for $ip: " . $e->getMessage());
+                 Log::error("SSH Exception for $ip: " . $e->getMessage());
                  $results[$ip] = false;
             }
         }
         
         return $results;
     }
+
+    /**
+     * Build the SSH command string, injecting sshpass if password is available.
+     */
+    protected function buildSshCommand($ip, $remoteCommand)
+    {
+        $user = $this->sshUser;
+        $pass = $this->sshPassword;
+        
+        // Basic SSH part with strict host checking disabled for automation
+        $sshPart = "ssh -o BatchMode=yes -o StrictHostKeyChecking=no -p 22 {$user}@{$ip} \"{$remoteCommand}\"";
+
+        if ($pass) {
+            // Check if sshpass is available (simple check could be improved)
+            // We wrap in sshpass to provide the password non-interactively
+            // This requires 'apt-get install sshpass' on the server running this code.
+            return "sshpass -p '{$pass}' " . $sshPart;
+        }
+
+        return $sshPart;
+    }
 }
+
