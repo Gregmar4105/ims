@@ -53,8 +53,19 @@ export default function SystemDashboard() {
     const fetchStats = async () => {
         setLoading(true);
         try {
-            const res = await fetch(route('system.dashboard.stats'));
+            const url = route('system.dashboard.stats');
+            console.log('Fetching stats from:', url);
+            const res = await fetch(url);
+            console.log('Response status:', res.status);
+
+            if (!res.ok) {
+                const text = await res.text();
+                console.error('Fetch error body:', text);
+                throw new Error(`HTTP ${res.status}: ${text}`);
+            }
+
             const data = await res.json();
+            console.log('Stats data:', data);
             setStats(data);
         } catch (error) {
             console.error('Failed to fetch stats', error);
