@@ -43,6 +43,7 @@ interface Category {
     id: number;
     name: string;
     slug: string;
+    products_count?: number;
 }
 
 // --- 1. Organized Data ---
@@ -155,15 +156,12 @@ export function AppHeader() {
                                     Dashboard
                                 </Link>
                                 <div className="grid gap-2">
-                                    <h4 className="font-medium text-muted-foreground">Categories</h4>
+                                    <h4 className="font-medium text-muted-foreground">Top Categories</h4>
                                     {categories.map((item) => (
                                         <Link key={item.id} href={`/shop/${item.slug}`} className="block py-1 text-sm hover:underline">
                                             {item.name}
                                         </Link>
                                     ))}
-                                    {categories.length === 0 && (
-                                        <span className="text-sm text-muted-foreground">No categories available</span>
-                                    )}
                                 </div>
                             </div>
                         </SheetContent>
@@ -211,42 +209,35 @@ export function AppHeader() {
                                                 </ListItem>
                                             </div>
                                         ))}
-                                        <div className="ml-3 h-40 w-77">
-                                            <iframe
-                                                src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d2704.390268520652!2d120.32140132065776!3d16.547015982846894!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x339185f2599e5a3d%3A0xdfb1df35ec51792d!2sLM2%20Bicycle%20Trading!5e0!3m2!1sen!2sph!4v1764396662532!5m2!1sen!2sph"
-                                                className="w-full h-full"
-                                                loading="lazy"
-                                                style={{ border: 0 }} // Optional: removes default border
-                                            ></iframe>
-                                        </div>
                                     </ul>
                                 </NavigationMenuContent>
                             </NavigationMenuItem>
 
-                            {/* Categories Dropdown (Dynamic) */}
-                            <NavigationMenuItem>
-                                <NavigationMenuTrigger className="bg-ghost">Shop</NavigationMenuTrigger>
-                                <NavigationMenuContent>
-                                    <div className="p-3 text-lg font-medium flex items-center">
-                                        Categories <ShoppingBag className="ml-2 h-5 w-5" />
-                                    </div>
-                                    <ul className="grid w-[600px] md:w-[600px] md:grid-cols-2 lg:w-[800px] gap-2 p-4">
-                                        {categories.length > 0 ? (
-                                            categories.map((category) => (
-                                                <ListItem
-                                                    key={category.id}
-                                                    title={category.name}
-                                                    href={`/shop/${category.slug}`}
-                                                >
-                                                    Explore our wide range of {category.name}.
-                                                </ListItem>
-                                            ))
-                                        ) : (
-                                            <div className="col-span-2 text-sm text-gray-500 italic">No categories found.</div>
-                                        )}
-                                    </ul>
-                                </NavigationMenuContent>
-                            </NavigationMenuItem>
+                            {/* Dynamically Render Top Categories as Separate Dropdowns */}
+                            {categories.map((category) => (
+                                <NavigationMenuItem key={category.id}>
+                                    <NavigationMenuTrigger className="bg-ghost">
+                                        <Link href={`/shop/${category.slug}`}>{category.name}</Link>
+                                    </NavigationMenuTrigger>
+                                    <NavigationMenuContent>
+                                        <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] lg:w-[300px]">
+                                            <ListItem
+                                                href={`/shop/${category.slug}`}
+                                                title={`View all ${category.name}`}
+                                            >
+                                                See our entire collection of {category.name}.
+                                            </ListItem>
+                                            {/* We could potentially add subcategories here if they existed */}
+                                            {category.products_count !== undefined && (
+                                                <li className="text-xs text-muted-foreground px-3">
+                                                    {category.products_count} products available
+                                                </li>
+                                            )}
+                                        </ul>
+                                    </NavigationMenuContent>
+                                </NavigationMenuItem>
+                            ))}
+
 
                             {/* Support/Contact Dropdown */}
                             <NavigationMenuItem>
@@ -272,42 +263,9 @@ export function AppHeader() {
 
                 {/* --- Right: Actions & Auth --- */}
                 <div className="ml-auto flex items-center space-x-2">
-
                     <div>
                         <Search className="h-5 w-5" />
                     </div>
-
-                    {/* Search & Tooltip Icons (Hidden on Mobile) */}
-                    <div className="flex items-center space-x-1">
-
-                        <div className="hidden lg:flex">
-                            {rightNavItems.map((item) => (
-                                <TooltipProvider key={item.title} delayDuration={0}>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <a
-                                                href={resolveUrl(item.href)}
-                                                rel="noopener noreferrer"
-                                                className="group inline-flex h-9 w-9 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                            >
-                                                {item.icon && (
-                                                    <Icon
-                                                        iconNode={item.icon}
-                                                        className="h-5 w-5 opacity-80 group-hover:opacity-100"
-                                                    />
-                                                )}
-                                                <span className="sr-only">{item.title}</span>
-                                            </a>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>{item.title}</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            ))}
-                        </div>
-                    </div>
-
                     {/* Auth Logic */}
                     {auth.user ? (
                         <DropdownMenu>

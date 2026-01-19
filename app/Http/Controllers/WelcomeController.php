@@ -22,17 +22,10 @@ class WelcomeController extends Controller
         ->take(8)
         ->get();
 
-        $categories = Category::where('status', 'Active')
-            ->withCount('products')
-            ->orderByDesc('products_count')
-            ->take(5)
-            ->get();
-
         return Inertia::render('welcome', [
             'canLogin' => Route::has('login'),
             'canRegister' => Features::enabled(Features::registration()),
             'products' => $products,
-            'categories' => $categories,
         ]);
     }
 }

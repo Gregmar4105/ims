@@ -54,6 +54,11 @@ class HandleInertiaRequests extends Middleware
                     : [],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'categories' => \App\Models\Category::where('status', 'Active')
+                ->withCount('products')
+                ->orderByDesc('products_count')
+                ->take(5)
+                ->get(),
         ];
     }
 }
