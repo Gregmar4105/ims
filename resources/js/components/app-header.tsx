@@ -44,6 +44,11 @@ interface Category {
     name: string;
     slug: string;
     products_count?: number;
+    brands?: {
+        id: number;
+        name: string;
+        slug: string;
+    }[];
 }
 
 // --- 1. Organized Data ---
@@ -220,20 +225,40 @@ export function AppHeader() {
                                         <Link href={`/shop/${category.slug}`}>{category.name}</Link>
                                     </NavigationMenuTrigger>
                                     <NavigationMenuContent>
-                                        <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] lg:w-[300px]">
-                                            <ListItem
-                                                href={`/shop/${category.slug}`}
-                                                title={`View all ${category.name}`}
-                                            >
-                                                See our entire collection of {category.name}.
-                                            </ListItem>
-                                            {/* We could potentially add subcategories here if they existed */}
-                                            {category.products_count !== undefined && (
-                                                <li className="text-xs text-muted-foreground px-3">
-                                                    {category.products_count} products available
-                                                </li>
-                                            )}
-                                        </ul>
+                                        <div className="flex w-[500px] p-4 lg:w-[600px]">
+                                            {/* Left Col: Main Link & Info */}
+                                            <div className="w-1/3 border-r pr-4">
+                                                <ul className="grid gap-3">
+                                                    <ListItem
+                                                        href={`/shop/${category.slug}`}
+                                                        title={`View all ${category.name}`}
+                                                    >
+                                                        See all {category.products_count} products.
+                                                    </ListItem>
+                                                </ul>
+                                            </div>
+
+                                            {/* Right Col: Brands */}
+                                            <div className="w-2/3 pl-4">
+                                                <h4 className="mb-2 text-sm font-medium leading-none text-muted-foreground">Popular Brands</h4>
+                                                {category.brands && category.brands.length > 0 ? (
+                                                    <ul className="grid grid-cols-2 gap-2">
+                                                        {category.brands.map((brand) => (
+                                                            <li key={brand.id}>
+                                                                <Link
+                                                                    href={`/shop/${category.slug}?brand=${brand.slug}`}
+                                                                    className="block select-none rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                                >
+                                                                    {brand.name}
+                                                                </Link>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                ) : (
+                                                    <p className="text-sm text-muted-foreground">No specific brands available.</p>
+                                                )}
+                                            </div>
+                                        </div>
                                     </NavigationMenuContent>
                                 </NavigationMenuItem>
                             ))}

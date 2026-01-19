@@ -58,7 +58,16 @@ class HandleInertiaRequests extends Middleware
                 ->withCount('products')
                 ->orderByDesc('products_count')
                 ->take(5)
-                ->get(),
+                ->get()
+                ->map(function ($category) {
+                    $category->setRelation('brands', \App\Models\Brand::whereHas('products', function ($q) use ($category) {
+                        $q->where('category_id', $category->id)
+                          ->whereHas('branches', function ($bq) {
+                              $bq->whereIn('branch_name', ['Main Branch', 'LM2 Bicycle Trading']);
+                          });
+                    })->take(5)->get(['id', 'name', 'slug']));
+                    return $category;
+                }),
         ];
     }
 }
