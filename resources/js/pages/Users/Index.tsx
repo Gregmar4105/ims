@@ -198,7 +198,6 @@ export default function Index({ users, branches, roles }: any) {
                             <TableRow>
                                 <TableHead>ID</TableHead>
                                 <TableHead>Name</TableHead>
-                                <TableHead>Verification</TableHead>
                                 <TableHead>Date Created</TableHead>
                                 <TableHead>Account Status</TableHead>
                                 <TableHead>Branch</TableHead>
@@ -240,19 +239,6 @@ export default function Index({ users, branches, roles }: any) {
                                                     </span>
                                                 </div>
                                             </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            {email_verified_at ? (
-                                                <Badge variant="secondary" className="bg-blue-600 text-white hover:bg-blue-700 gap-1">
-                                                    <BadgeCheckIcon className="w-3 h-3" />
-                                                    Verified
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="destructive" className="gap-1">
-                                                    <BadgeAlert className="w-3 h-3" />
-                                                    Unverified
-                                                </Badge>
-                                            )}
                                         </TableCell>
                                         <TableCell>
                                             {/* Format the date to be human-readable */}
