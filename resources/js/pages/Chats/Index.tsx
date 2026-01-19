@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useState, useRef } from 'react';
-import { Send, Search, MessageSquare, MoreVertical, ArrowLeft, Truck, Clock, FileText, Paperclip, X } from 'lucide-react';
+import { Send, Search, MessageSquare, MoreVertical, ArrowLeft, Truck, Clock, FileText, Paperclip, X, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -56,6 +56,59 @@ interface Transfer {
     source_branch: Branch;
 }
 
+// Utility to compress image
+const compressImage = async (file: File): Promise<File> => {
+    // If file is already small, return it
+    if (file.size < 2 * 1024 * 1024) return file;
+
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            // Max dimension constraint
+            const MAX_DIMENSION = 1920;
+            if (width > height) {
+                if (width > MAX_DIMENSION) {
+                    height = Math.round((height * MAX_DIMENSION) / width);
+                    width = MAX_DIMENSION;
+                }
+            } else {
+                if (height > MAX_DIMENSION) {
+                    width = Math.round((width * MAX_DIMENSION) / height);
+                    height = MAX_DIMENSION;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+
+            // Attempt compression
+            canvas.toBlob(
+                (blob) => {
+                    if (!blob) {
+                        reject(new Error('Canvas to Blob failed'));
+                        return;
+                    }
+                    const compressedFile = new File([blob], file.name, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now(),
+                    });
+                    resolve(compressedFile);
+                },
+                'image/jpeg',
+                0.7 // Quality
+            );
+        };
+        img.onerror = (error) => reject(error);
+    });
+};
+
 export default function ChatsIndex({ branches, activeTransfers = [] }: { branches: Branch[], activeTransfers?: Transfer[] }) {
     const { auth } = usePage().props as any;
     const user = auth.user as User;
@@ -68,6 +121,8 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
     const scrollRef = useRef<HTMLDivElement>(null);
     const selectedBranchRef = useRef<Branch | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
+    const [isCompressing, setIsCompressing] = useState(false);
 
     // Contextual transfers for selected branch
     const branchTransfers = selectedBranch ? activeTransfers.filter(t => {
@@ -157,16 +212,30 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
         };
     }, [user.branch_id]);
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) {
-                alert("File size must be less than 2MB");
-                return;
+            setIsCompressing(true);
+            try {
+                const processedFile = await compressImage(file);
+
+                // Double check size
+                if (processedFile.size > 2 * 1024 * 1024) {
+                    alert("Image is still too large after compression. Please try a smaller image.");
+                    setAttachment(null);
+                    setPreviewUrl(null);
+                    return;
+                }
+
+                setAttachment(processedFile);
+                const url = URL.createObjectURL(processedFile);
+                setPreviewUrl(url);
+            } catch (error) {
+                console.error("Compression failed", error);
+                alert("Failed to process image.");
+            } finally {
+                setIsCompressing(false);
             }
-            setAttachment(file);
-            const url = URL.createObjectURL(file);
-            setPreviewUrl(url);
         }
     };
 
@@ -418,10 +487,15 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                                             <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-lg w-fit">
                                                 <div className="relative h-16 w-16">
                                                     <img src={previewUrl} alt="Preview" className="h-full w-full object-cover rounded" />
+                                                    {isCompressing && (
+                                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[10px] rounded">
+                                                            Processing...
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="text-xs truncate max-w-[150px]">
-                                                    {attachment?.name}
-                                                    <div className="opacity-50">{(attachment!.size / 1024 / 1024).toFixed(2)} MB</div>
+                                                    {isCompressing ? 'Compressing...' : attachment?.name}
+                                                    {attachment && <div className="opacity-50">{(attachment.size / 1024 / 1024).toFixed(2)} MB</div>}
                                                 </div>
                                                 <button onClick={clearAttachment} className="p-1 hover:bg-muted-foreground/20 rounded-full">
                                                     <X className="w-4 h-4" />
@@ -430,6 +504,7 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                                         )}
 
                                         <form onSubmit={handleSendMessage} className="flex gap-2 items-end">
+                                            {/* File Input */}
                                             <input
                                                 type="file"
                                                 ref={fileInputRef}
@@ -437,15 +512,38 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                                                 accept="image/*"
                                                 onChange={handleFileSelect}
                                             />
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                className="rounded-full h-10 w-10 shrink-0 text-muted-foreground hover:bg-muted"
-                                                onClick={() => fileInputRef.current?.click()}
-                                            >
-                                                <Paperclip className="w-5 h-5" />
-                                            </Button>
+                                            {/* Camera Input */}
+                                            <input
+                                                type="file"
+                                                ref={cameraInputRef}
+                                                className="hidden"
+                                                accept="image/*"
+                                                capture="environment"
+                                                onChange={handleFileSelect}
+                                            />
+
+                                            <div className="flex gap-1 shrink-0">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="rounded-full h-10 w-10 text-muted-foreground hover:bg-muted"
+                                                    onClick={() => cameraInputRef.current?.click()}
+                                                    title="Take Photo"
+                                                >
+                                                    <Camera className="w-5 h-5" />
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="rounded-full h-10 w-10 text-muted-foreground hover:bg-muted"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    title="Attach File"
+                                                >
+                                                    <Paperclip className="w-5 h-5" />
+                                                </Button>
+                                            </div>
 
                                             <Textarea
                                                 ref={textareaRef}
@@ -465,7 +563,7 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                                                 type="submit"
                                                 size="icon"
                                                 className="rounded-full h-10 w-10 shrink-0"
-                                                disabled={!newMessage.trim() && !attachment}
+                                                disabled={(!newMessage.trim() && !attachment) || isCompressing}
                                             >
                                                 <Send className="w-4 h-4" />
                                             </Button>
