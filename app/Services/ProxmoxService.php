@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Facades\Log;
+use phpseclib3\Net\SSH2;
 
 class ProxmoxService
 {
@@ -12,6 +13,8 @@ class ProxmoxService
     protected $server2;
     protected $token1;
     protected $token2;
+    protected $sshUser;
+    protected $sshPassword;
 
     public function __construct()
     {
@@ -20,6 +23,9 @@ class ProxmoxService
         
         $this->token1 = "PVEAPIToken=" . env('PROXMOX_1_TOKEN_ID') . "=" . env('PROXMOX_1_SECRET');
         $this->token2 = "PVEAPIToken=" . env('PROXMOX_2_TOKEN_ID') . "=" . env('PROXMOX_2_SECRET');
+
+        $this->sshUser = env('PROXMOX_SSH_USER');
+        $this->sshPassword = env('PROXMOX_SSH_PASSWORD');
     }
 
     /**
@@ -27,12 +33,6 @@ class ProxmoxService
      */
     public function getSystemStats()
     {
-        // We can't query the node status directly without knowing the node name. 
-        // Best practice: Query /api2/json/nodes first to get the list of nodes, then query status.
-        // Or we can assume the user provided ID "main" and "backup" are the node names? 
-        // "larable-api@main" -> main? 
-        // Let's stick to dynamic discovery.
-
         $responses = Http::pool(fn (Pool $pool) => [
             $pool->as('server1')->withoutVerifying()
                 ->withHeaders(['Authorization' => $this->token1])
@@ -124,40 +124,39 @@ class ProxmoxService
     }
 
     /**
-     * Shutdown all servers immediately in parallel.
+     * Shutdown all servers immediately using SSH.
+     * Uses phpseclib for cross-platform SSH support.
      */
     public function shutdownAllNodes()
     {
-        // 1. Get Node names first (parallel)
-        $nodeResponses = Http::pool(fn (Pool $pool) => [
-            $pool->as('s1')->withoutVerifying()->withHeaders(['Authorization' => $this->token1])->get("https://{$this->server1}/api2/json/nodes"),
-            $pool->as('s2')->withoutVerifying()->withHeaders(['Authorization' => $this->token2])->get("https://{$this->server2}/api2/json/nodes"),
-        ]);
-        
-        $node1 = $nodeResponses['s1']->successful() ? ($nodeResponses['s1']->json()['data'][0]['node'] ?? null) : null;
-        $node2 = $nodeResponses['s2']->successful() ? ($nodeResponses['s2']->json()['data'][0]['node'] ?? null) : null;
-        
-        // 2. Send Shutdown command (parallel)
-        $shutdownResponses = Http::pool(fn (Pool $pool) => [
-             $node1 ? $pool->as('s1')->withoutVerifying()->asForm()
-                ->withHeaders(['Authorization' => $this->token1])
-                ->post("https://{$this->server1}/api2/json/nodes/{$node1}/status", ['command' => 'shutdown']) : null,
-                
-             $node2 ? $pool->as('s2')->withoutVerifying()->asForm()
-                ->withHeaders(['Authorization' => $this->token2])
-                ->post("https://{$this->server2}/api2/json/nodes/{$node2}/status", ['command' => 'shutdown']) : null,
-        ]);
-
-        if (isset($shutdownResponses['s1']) && $shutdownResponses['s1']->failed()) {
-            Log::error("Shutdown Failed Server 1: " . $shutdownResponses['s1']->body());
-        }
-        if (isset($shutdownResponses['s2']) && $shutdownResponses['s2']->failed()) {
-            Log::error("Shutdown Failed Server 2: " . $shutdownResponses['s2']->body());
-        }
-        
-        return [
-            'server1' => isset($shutdownResponses['s1']) ? $shutdownResponses['s1']->successful() : false,
-            'server2' => isset($shutdownResponses['s2']) ? $shutdownResponses['s2']->successful() : false,
+        $ips = [
+            explode(':', $this->server1)[0],
+            explode(':', $this->server2)[0]
         ];
+
+        $results = [];
+
+        foreach ($ips as $ip) {
+            try {
+                $ssh = new SSH2($ip);
+                if (!$ssh->login($this->sshUser, $this->sshPassword)) {
+                    Log::error("SSH Login Failed for $ip");
+                    $results[$ip] = false;
+                    continue;
+                }
+
+                // Send shutdown command immediately
+                $ssh->exec('/sbin/shutdown -h now');
+                $ssh->disconnect();
+                
+                Log::info("SSH Shutdown command sent to $ip");
+                $results[$ip] = true;
+            } catch (\Exception $e) {
+                 Log::error("SSH Failed for $ip: " . $e->getMessage());
+                 $results[$ip] = false;
+            }
+        }
+        
+        return $results;
     }
 }

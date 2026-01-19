@@ -44,12 +44,7 @@ class RunScheduledProxmoxCommands extends Command
             
             try {
                 if ($cmd->command === 'shutdown') {
-                    if ($cmd->target_servers === 'all' || $cmd->target_servers === 'both') {
-                        $proxmoxService->shutdownAllNodes();
-                    } else {
-                        // Implement single server shutdown if needed later, for now logic is "all" primarily based on request
-                         $proxmoxService->shutdownAllNodes();
-                    }
+                    $proxmoxService->shutdownAllNodes();
                 }
                 
                 $cmd->update(['status' => 'completed']);
