@@ -10,6 +10,7 @@ class Message extends Model
         'sender_id',
         'receiver_branch_id',
         'content',
+        'attachment_path',
     ];
 
     public function sender()

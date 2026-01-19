@@ -77,20 +77,27 @@ class ChatController extends Controller
     public function store(\Illuminate\Http\Request $request, \App\Models\Branch $branch, \App\Services\OneSignalService $oneSignal)
     {
         $request->validate([
-            'content' => 'required|string'
+            'content' => 'required_without:attachment|string|nullable',
+            'attachment' => 'nullable|image|max:2048', // Max 2MB
         ]);
 
         $senderBranchId = auth()->user()->branch_id;
-        // Fallback for System Admin or user without branch -> likely 0 or null?
-        // Schema likely requires integer. If nullable, we need to handle it. 
-        // Assuming strict branch-to-branch chat, user MUST have a branch.
-        // But we just enabled index() for no-branch users. 
-        // If they try to chat, it might crash here if DB column is NOT NULL. 
         
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            // Timestamped filename: YYYYMMDDHHMMSS_uniqid.ext
+            $filename = date('YmdHis') . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            // Store in storage/app/public/chat_photos
+            $path = $file->storeAs('chat_photos', $filename, 'public');
+            $attachmentPath = $path;
+        }
+
         $message = \App\Models\Message::create([
             'sender_id' => auth()->id(),
             'receiver_branch_id' => $branch->id,
-            'content' => $request->content
+            'content' => $request->content ?? '', // Allow empty content if attachment exists
+            'attachment_path' => $attachmentPath,
         ]);
 
         // Broadcast event

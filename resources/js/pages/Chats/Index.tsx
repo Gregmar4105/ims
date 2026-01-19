@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useState, useRef } from 'react';
-import { Send, Search, MessageSquare, MoreVertical, ArrowLeft, Truck, Clock, FileText } from 'lucide-react';
+import { Send, Search, MessageSquare, MoreVertical, ArrowLeft, Truck, Clock, FileText, Paperclip, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -41,6 +41,7 @@ interface Message {
     sender_id: number;
     receiver_branch_id: number;
     content: string;
+    attachment_path?: string | null;
     created_at: string;
     sender: User;
 }
@@ -61,9 +62,12 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
     const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
+    const [attachment, setAttachment] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const scrollRef = useRef<HTMLDivElement>(null);
     const selectedBranchRef = useRef<Branch | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Contextual transfers for selected branch
     const branchTransfers = selectedBranch ? activeTransfers.filter(t => {
@@ -153,20 +157,52 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
         };
     }, [user.branch_id]);
 
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                alert("File size must be less than 2MB");
+                return;
+            }
+            setAttachment(file);
+            const url = URL.createObjectURL(file);
+            setPreviewUrl(url);
+        }
+    };
+
+    const clearAttachment = () => {
+        setAttachment(null);
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || !selectedBranch) return;
+        if ((!newMessage.trim() && !attachment) || !selectedBranch) return;
 
-        const tempMessage = newMessage;
+        const formData = new FormData();
+        formData.append('content', newMessage);
+        if (attachment) {
+            formData.append('attachment', attachment);
+        }
+
+        // Optimistic UI could go here, but for files it's tricky.
+        // We'll rely on the comprehensive response.
+
         setNewMessage('');
+        clearAttachment();
 
-        axios.post(`/chats/${selectedBranch.id}`, {
-            content: tempMessage
+        axios.post(`/chats/${selectedBranch.id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
         }).then(response => {
             setMessages(prev => [...prev, response.data]);
             scrollToBottom();
         }).catch(error => {
             console.error("Failed to send", error);
+            alert("Failed to send message. Please try again.");
         });
     };
 
@@ -351,7 +387,17 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                                                                 ? "bg-primary text-primary-foreground rounded-tr-none"
                                                                 : "bg-card border rounded-tl-none"
                                                         )}>
-                                                            <p className="text-sm">{msg.content}</p>
+                                                            {msg.attachment_path && (
+                                                                <div className="mb-2">
+                                                                    <img
+                                                                        src={`/storage/${msg.attachment_path}`}
+                                                                        alt="Attachment"
+                                                                        className="rounded-lg max-h-60 object-contain cursor-pointer"
+                                                                        onClick={() => window.open(`/storage/${msg.attachment_path}`, '_blank')}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            {msg.content && <p className="text-sm">{msg.content}</p>}
                                                             <span className="text-[10px] opacity-70 mt-1 block">
                                                                 {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </span>
@@ -366,25 +412,65 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
 
                                 {/* Input */}
                                 <div className="p-4 border-t bg-background">
-                                    <form onSubmit={handleSendMessage} className="flex gap-2 max-w-3xl mx-auto items-end">
-                                        <Textarea
-                                            ref={textareaRef}
-                                            value={newMessage}
-                                            onChange={e => setNewMessage(e.target.value)}
-                                            onKeyDown={e => {
-                                                if (e.key === 'Enter' && !e.shiftKey) {
-                                                    e.preventDefault();
-                                                    handleSendMessage(e);
-                                                }
-                                            }}
-                                            placeholder="Type a message..."
-                                            className="flex-1 min-h-[40px] max-h-[120px] resize-none rounded-2xl py-3"
-                                            rows={1}
-                                        />
-                                        <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!newMessage.trim()}>
-                                            <Send className="w-4 h-4" />
-                                        </Button>
-                                    </form>
+                                    <div className="max-w-3xl mx-auto">
+                                        {/* Preview Area */}
+                                        {previewUrl && (
+                                            <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-lg w-fit">
+                                                <div className="relative h-16 w-16">
+                                                    <img src={previewUrl} alt="Preview" className="h-full w-full object-cover rounded" />
+                                                </div>
+                                                <div className="text-xs truncate max-w-[150px]">
+                                                    {attachment?.name}
+                                                    <div className="opacity-50">{(attachment!.size / 1024 / 1024).toFixed(2)} MB</div>
+                                                </div>
+                                                <button onClick={clearAttachment} className="p-1 hover:bg-muted-foreground/20 rounded-full">
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        <form onSubmit={handleSendMessage} className="flex gap-2 items-end">
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={handleFileSelect}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="rounded-full h-10 w-10 shrink-0 text-muted-foreground hover:bg-muted"
+                                                onClick={() => fileInputRef.current?.click()}
+                                            >
+                                                <Paperclip className="w-5 h-5" />
+                                            </Button>
+
+                                            <Textarea
+                                                ref={textareaRef}
+                                                value={newMessage}
+                                                onChange={e => setNewMessage(e.target.value)}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        handleSendMessage(e);
+                                                    }
+                                                }}
+                                                placeholder="Type a message..."
+                                                className="flex-1 min-h-[40px] max-h-[120px] resize-none rounded-2xl py-3"
+                                                rows={1}
+                                            />
+                                            <Button
+                                                type="submit"
+                                                size="icon"
+                                                className="rounded-full h-10 w-10 shrink-0"
+                                                disabled={!newMessage.trim() && !attachment}
+                                            >
+                                                <Send className="w-4 h-4" />
+                                            </Button>
+                                        </form>
+                                    </div>
                                 </div>
                             </>
                         ) : (
