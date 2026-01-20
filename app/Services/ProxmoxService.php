@@ -136,7 +136,7 @@ class ProxmoxService
         }
 
         try {
-            $response = Http::post($url);
+            $response = Http::withoutVerifying()->post($url);
 
             if ($response->successful()) {
                 Log::info("Shutdown webhook triggered successfully.");

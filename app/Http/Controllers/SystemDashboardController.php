@@ -37,7 +37,7 @@ class SystemDashboardController extends Controller
         }
 
         try {
-            $response = \Illuminate\Support\Facades\Http::post($url);
+            $response = \Illuminate\Support\Facades\Http::withoutVerifying()->post($url);
 
             if ($response->successful()) {
                 return response()->json([
