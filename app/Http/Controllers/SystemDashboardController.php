@@ -29,13 +29,29 @@ class SystemDashboardController extends Controller
 
     public function shutdown(Request $request)
     {
-        // Immediate shutdown
-        $result = $this->proxmox->shutdownAllNodes();
-        
-        return response()->json([
-            'message' => 'Shutdown command sent to all servers',
-            'result' => $result
-        ]);
+        $url = config('services.webhook.shutdown');
+
+        if (!$url) {
+            \Illuminate\Support\Facades\Log::error('Shutdown Webhook URL is not configured.');
+            return response()->json(['message' => 'Shutdown URL not configured'], 500);
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::post($url);
+
+            if ($response->successful()) {
+                return response()->json([
+                    'message' => 'Shutdown command sent associated webhook',
+                    'result' => true
+                ]);
+            }
+
+            \Illuminate\Support\Facades\Log::error("Shutdown webhook failed: " . $response->status());
+            return response()->json(['message' => 'Failed to trigger shutdown webhook'], 500);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Shutdown webhook exception: " . $e->getMessage());
+            return response()->json(['message' => 'Error processing shutdown request'], 500);
+        }
     }
 
     public function scheduleShutdown(Request $request)
