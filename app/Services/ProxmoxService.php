@@ -128,7 +128,7 @@ class ProxmoxService
      */
     public function shutdownAllNodes()
     {
-        $url = env('SHUTDOWN_WEBHOOK_URL');
+        $url = config('services.webhook.shutdown');
 
         if (!$url) {
             Log::error("Shutdown Webhook URL is not configured.");

@@ -40,4 +40,8 @@ return [
         'rest_api_key' => env('ONESIGNAL_APK_REST_API'),
     ],
 
+    'webhook' => [
+        'shutdown' => env('SHUTDOWN_WEBHOOK_URL'),
+    ],
+
 ];
