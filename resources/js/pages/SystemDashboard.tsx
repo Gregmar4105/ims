@@ -119,13 +119,18 @@ export default function SystemDashboard() {
                     'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
                 }
             });
+
+            const data = await res.json();
+
             if (res.ok) {
-                toast.success('Shutdown command sent to all servers');
+                toast.success(data.message || 'Shutdown command sent to all servers');
                 setShutdownDialogOpen(false);
             } else {
-                toast.error('Failed to send shutdown command');
+                console.error('Shutdown failed:', res.status, data);
+                toast.error(data.message || 'Failed to send shutdown command');
             }
         } catch (error) {
+            console.error('Shutdown error:', error);
             toast.error('Error sending shutdown command');
         } finally {
             setShutdownLoading(false);
