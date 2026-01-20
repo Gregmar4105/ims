@@ -124,38 +124,31 @@ class ProxmoxService
     }
 
     /**
-     * Shutdown all servers immediately using SSH (Native).
-     * Automatically attempts to use 'sshpass' if password is set.
+     * Shutdown all servers via n8n Webhook.
      */
     public function shutdownAllNodes()
     {
-        $ips = [
-            explode(':', $this->server1)[0],
-            explode(':', $this->server2)[0]
-        ];
+        $url = env('SHUTDOWN_WEBHOOK_URL');
 
-        $results = [];
-
-        foreach ($ips as $ip) {
-            try {
-                $command = $this->buildSshCommand($ip, '/sbin/shutdown -h now');
-                
-                $result = Process::run($command);
-                
-                if ($result->successful()) {
-                     Log::info("SSH Shutdown command sent to $ip via native process.");
-                     $results[$ip] = true;
-                } else {
-                     Log::error("SSH Failed for $ip: " . $result->errorOutput() . " | Output: " . $result->output());
-                     $results[$ip] = false;
-                }
-            } catch (\Exception $e) {
-                 Log::error("SSH Exception for $ip: " . $e->getMessage());
-                 $results[$ip] = false;
-            }
+        if (!$url) {
+            Log::error("Shutdown Webhook URL is not configured.");
+            return ['error' => 'Shutdown Webhook URL is not configured'];
         }
-        
-        return $results;
+
+        try {
+            $response = Http::post($url);
+
+            if ($response->successful()) {
+                Log::info("Shutdown webhook triggered successfully.");
+                return ['success' => true, 'message' => 'Shutdown command sent via webhook'];
+            } else {
+                Log::error("Shutdown webhook failed: " . $response->status());
+                return ['success' => false, 'message' => 'Failed to trigger shutdown webhook'];
+            }
+        } catch (\Exception $e) {
+            Log::error("Shutdown webhook exception: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Exception triggering shutdown webhook'];
+        }
     }
 
     /**
