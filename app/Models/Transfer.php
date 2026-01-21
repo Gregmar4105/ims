@@ -9,6 +9,8 @@ class Transfer extends Model
     protected $fillable = [
         'source_branch_id',
         'destination_branch_id',
+        'supplier_id',
+        'status',
         'status',
         'readied_by',
         'approved_by',
@@ -19,6 +21,11 @@ class Transfer extends Model
     public function sourceBranch()
     {
         return $this->belongsTo(Branch::class, 'source_branch_id');
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function destinationBranch()

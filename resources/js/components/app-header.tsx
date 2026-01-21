@@ -60,6 +60,11 @@ const rightNavItems: NavItem[] = [
         icon: MapPlus,
     },
     {
+        title: 'Suppliers',
+        href: '/suppliers',
+        icon: ShoppingBag,
+    },
+    {
         title: 'Learn More',
         href: 'https://larable.dev',
         icon: Bike,
