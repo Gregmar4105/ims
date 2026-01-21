@@ -16,7 +16,7 @@ class SupplierPortalController extends Controller
     {
         return Inertia::render('Suppliers/Portal', [
             'suppliers' => Supplier::orderBy('name')->get(['id', 'name']),
-            'branches' => Branch::orderBy('name')->get(['id', 'name']),
+            'branches' => Branch::orderBy('branch_name')->get(['id', 'branch_name as name']),
             'products' => Product::with('brand')->orderBy('name')->get(['id', 'name', 'brand_id']),
         ]);
     }
