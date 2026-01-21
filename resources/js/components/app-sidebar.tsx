@@ -85,6 +85,11 @@ const Products = {
             icon: Tag,
         },
         {
+            title: "Product Suppliers",
+            url: "/product-suppliers",
+            icon: Users,
+        },
+        {
             title: "QR & Barcodes",
             url: "/qr-barcodes",
             icon: ScanBarcode,

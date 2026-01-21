@@ -42,6 +42,11 @@ interface Category {
     name: string;
 }
 
+interface Supplier {
+    id: number;
+    name: string;
+}
+
 interface Product {
     id: number;
     name: string;
@@ -53,20 +58,23 @@ interface Product {
     variations: Variation[] | null;
     image_path: string | null;
     price: number | null;
+    supplier_id: number | null;
 }
 
 interface Props {
     product: Product;
     brands: Brand[];
     categories: Category[];
+    suppliers: Supplier[];
 }
 
-export default function Edit({ product, brands, categories }: Props) {
+export default function Edit({ product, brands, categories, suppliers }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
         name: product.name,
         brand_id: String(product.brand_id),
         category_id: String(product.category_id),
+        supplier_id: product.supplier_id ? String(product.supplier_id) : '',
         quantity: String(product.quantity),
         physical_location: product.physical_location || '',
         description: product.description || '',
@@ -161,6 +169,23 @@ export default function Edit({ product, brands, categories }: Props) {
                                     </SelectContent>
                                 </Select>
                                 {errors.category_id && <p className="text-sm text-red-500">{errors.category_id}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="supplier">Supplier (Optional)</Label>
+                                <Select value={data.supplier_id} onValueChange={(val) => setData('supplier_id', val)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Supplier" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {suppliers.map((supplier) => (
+                                            <SelectItem key={supplier.id} value={String(supplier.id)}>
+                                                {supplier.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.supplier_id && <p className="text-sm text-red-500">{errors.supplier_id}</p>}
                             </div>
                         </div>
 

@@ -37,6 +37,11 @@ interface Brand {
     name: string;
 }
 
+interface Supplier {
+    id: number;
+    name: string;
+}
+
 interface Category {
     id: number;
     name: string;
@@ -45,13 +50,15 @@ interface Category {
 interface Props {
     brands: Brand[];
     categories: Category[];
+    suppliers: Supplier[];
 }
 
-export default function Create({ brands, categories }: Props) {
+export default function Create({ brands, categories, suppliers }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         brand_id: '',
         category_id: '',
+        supplier_id: '',
         quantity: '',
         physical_location: '',
         description: '',
@@ -144,6 +151,23 @@ export default function Create({ brands, categories }: Props) {
                                     </SelectContent>
                                 </Select>
                                 {errors.category_id && <p className="text-sm text-red-500">{errors.category_id}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="supplier">Supplier (Optional)</Label>
+                                <Select value={data.supplier_id} onValueChange={(val) => setData('supplier_id', val)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Supplier" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {suppliers.map((supplier) => (
+                                            <SelectItem key={supplier.id} value={String(supplier.id)}>
+                                                {supplier.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.supplier_id && <p className="text-sm text-red-500">{errors.supplier_id}</p>}
                             </div>
                         </div>
 

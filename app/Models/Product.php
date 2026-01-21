@@ -21,6 +21,7 @@ class Product extends Model
         'qr_code',
         'created_by',
         'price',
+        'supplier_id',
     ];
 
     protected $casts = [
@@ -52,5 +53,10 @@ class Product extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
     }
 }

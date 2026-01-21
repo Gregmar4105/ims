@@ -25,7 +25,7 @@ class ProductController extends Controller
         $user = auth()->user();
         $isSystemAdmin = $user->hasRole('System Administrator');
         
-        $query = Product::with(['brand', 'category', 'creator']);
+        $query = Product::with(['brand', 'category', 'creator', 'supplier']);
 
         if (!$isSystemAdmin) {
             if (!$user->branch_id) {
@@ -159,6 +159,8 @@ class ProductController extends Controller
         $brands = $brandsQuery->pluck('name')->unique()->values();
         $categories = $categoriesQuery->pluck('name')->unique()->values();
 
+        $suppliers = \App\Models\Supplier::all(['id', 'name']);
+
         return Inertia::render('Products/Index', [
             'products' => $products,
             'filters' => [
@@ -174,6 +176,7 @@ class ProductController extends Controller
                 'categories' => $categories,
             ],
             'isSystemAdmin' => $isSystemAdmin,
+            'suppliers' => $suppliers,
         ]);
     }
 
@@ -214,9 +217,12 @@ class ProductController extends Controller
                 ->get();
         }
 
+        $suppliers = \App\Models\Supplier::all(['id', 'name']);
+
         return Inertia::render('Products/Create', [
             'brands' => $brands,
             'categories' => $categories,
+            'suppliers' => $suppliers,
         ]);
     }
 
@@ -234,6 +240,7 @@ class ProductController extends Controller
             'variations.*.options' => 'required|string', // Comma separated
             'image' => 'required|image|max:2048', // 2MB Max
             'price' => 'nullable|numeric|min:0',
+            'supplier_id' => 'nullable|exists:suppliers,id',
         ]);
 
         $user = auth()->user();
@@ -278,6 +285,7 @@ class ProductController extends Controller
                 'barcode' => 'P-' . Str::random(8), // Placeholder
                 'qr_code' => 'QR-' . Str::random(8), // Placeholder
                 'price' => $validated['price'] ?? null,
+                'supplier_id' => $validated['supplier_id'] ?? null,
             ]);
 
             // Create Branch Product (Stock)
@@ -321,10 +329,13 @@ class ProductController extends Controller
         $brands = Brand::where('status', 'Active')->get();
         $categories = Category::where('status', 'Active')->get();
 
+        $suppliers = \App\Models\Supplier::all(['id', 'name']);
+
         return Inertia::render('Products/Edit', [
             'product' => $product,
             'brands' => $brands,
             'categories' => $categories,
+            'suppliers' => $suppliers,
         ]);
     }
 
@@ -345,6 +356,7 @@ class ProductController extends Controller
             'variations.*.options' => 'required|string',
             'image' => 'nullable|image|max:2048',
             'price' => 'nullable|numeric|min:0', 
+            'supplier_id' => 'nullable|exists:suppliers,id',
         ]);
 
         // Handle Image Upload if provided
@@ -369,6 +381,7 @@ class ProductController extends Controller
                 'variations' => $validated['variations'] ?? null,
                 'image_path' => $validated['image_path'] ?? $product->image_path,
                 'price' => $validated['price'] ?? $product->price,
+                'supplier_id' => $validated['supplier_id'] ?? $product->supplier_id,
             ]);
 
             // Update Branch Stock
