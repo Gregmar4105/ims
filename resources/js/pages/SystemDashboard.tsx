@@ -58,6 +58,14 @@ export default function SystemDashboard() {
     const [shutdownDialogOpen, setShutdownDialogOpen] = useState(false);
     const [shutdownLoading, setShutdownLoading] = useState(false);
 
+    // Helper to get cookie by name
+    const getCookie = (name: string) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop()?.split(';').shift();
+        return '';
+    };
+
     const { data, setData, post, processing, reset, errors } = useForm({
         scheduled_at: '',
         is_recurring: false,
@@ -117,7 +125,7 @@ export default function SystemDashboard() {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                    'X-XSRF-TOKEN': decodeURIComponent(getCookie('XSRF-TOKEN') || ''),
                 }
             });
 
@@ -144,7 +152,7 @@ export default function SystemDashboard() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                'X-XSRF-TOKEN': decodeURIComponent(getCookie('XSRF-TOKEN') || ''),
             },
             body: JSON.stringify({
                 scheduled_at: data.scheduled_at,
@@ -167,7 +175,7 @@ export default function SystemDashboard() {
             await fetch(`/system-dashboard/api/schedules/${id}/cancel`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                    'X-XSRF-TOKEN': decodeURIComponent(getCookie('XSRF-TOKEN') || ''),
                 }
             });
             toast.success('Schedule cancelled');
