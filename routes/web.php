@@ -28,9 +28,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
     Route::get('branch-dashboard', [\App\Http\Controllers\BranchDashboardController::class, 'index'])
         ->name('branch.dashboard');
-    Route::get('employee-dashboard', function () {
-        return Inertia::render('EmployeeDashboard');
-    })->name('employee.dashboard')->middleware('role:Employee');
+    Route::get('employee-dashboard', [\App\Http\Controllers\EmployeeDashboardController::class, 'index'])
+        ->name('employee.dashboard')->middleware('role:Employee');
 
     Route::get('users' , [UserController::class , 'index'])->name('users.index');
     Route::get('users.create' , [UserController::class , 'create'])->name('users.create');
