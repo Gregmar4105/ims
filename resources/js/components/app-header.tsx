@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/tooltip';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { cn, resolveUrl } from '@/lib/utils';
-import { dashboard } from '@/routes';
+
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { Menu, Search, Bike, Mars, Venus, Cog, Wind, HatGlasses, MapPlus, ShoppingBag } from 'lucide-react';
@@ -138,8 +138,26 @@ ListItem.displayName = "ListItem"
 // --- 3. Main Component ---
 
 export function AppHeader() {
-    const page = usePage<SharedData & { categories?: Category[] }>();
+    const page = usePage<SharedData & { categories?: Category[]; auth: { roles: string[] } }>();
     const { auth, categories = [] } = page.props;
+
+    // Get the dashboard URL based on user role
+    const getDashboardUrl = (): string => {
+        const roles = (auth as any)?.roles || [];
+
+        if (roles.includes('System Administrator')) {
+            return '/system-dashboard';
+        }
+        if (roles.includes('Branch Manager') || roles.includes('Branch')) {
+            return '/branch-dashboard';
+        }
+        if (roles.includes('Employee')) {
+            return '/employee-dashboard';
+        }
+
+        // Default fallback
+        return '/branch-dashboard';
+    };
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-sidebar-border/80  bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -162,9 +180,11 @@ export function AppHeader() {
                                 </div>
                             </SheetHeader>
                             <div className="ml-4 flex flex-col gap-4">
-                                <Link href={dashboard()} className="flex items-center gap-2 text-lg font-medium">
-                                    Dashboard
-                                </Link>
+                                {auth.user && (
+                                    <Link href={getDashboardUrl()} className="flex items-center gap-2 text-lg font-medium">
+                                        Dashboard
+                                    </Link>
+                                )}
                                 <div className="grid gap-2">
                                     <h4 className="font-medium text-muted-foreground">Top Categories</h4>
                                     {categories.map((item) => (

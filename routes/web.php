@@ -13,9 +13,6 @@ Route::get('/suppliers', [\App\Http\Controllers\SupplierPortalController::class,
 Route::post('/suppliers/send', [\App\Http\Controllers\SupplierPortalController::class, 'store'])->name('suppliers.send');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
     Route::get('system-dashboard', [\App\Http\Controllers\SystemDashboardController::class, 'index'])
         ->name('system.dashboard')->middleware('role:System Administrator');
 

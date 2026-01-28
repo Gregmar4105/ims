@@ -1,4 +1,4 @@
-import { dashboard, login, register } from '@/routes';
+import { login, register } from '@/routes';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/welcome-layout';
@@ -7,6 +7,7 @@ import AppLogoIcon from '@/components/app-logo-icon';
 import { Badge } from '@/components/ui/badge';
 import Footer from '@/components/Footer';
 import { PackageOpen } from 'lucide-react';
+import { DashboardPopup } from '@/components/dashboard-popup';
 
 interface Product {
     id: number;
@@ -57,6 +58,7 @@ export default function Welcome({
 
     return (
         <>
+            <DashboardPopup />
             <AppLayout>
                 <Head title="Welcome">
                     <link rel="preconnect" href="https://fonts.bunny.net" />
