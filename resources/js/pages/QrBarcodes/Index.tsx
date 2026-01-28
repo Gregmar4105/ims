@@ -22,7 +22,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { QrCode, ScanBarcode, Sparkles } from 'lucide-react';
+import { QrCode, ScanBarcode, Sparkles, Pencil } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import { Badge } from "@/components/ui/badge";
 
@@ -176,7 +176,7 @@ export default function Index({ products }: Props) {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <Button size="sm" onClick={() => openGenerateDialog(product)}>
-                                                <Sparkles className="mr-2 h-4 w-4" /> Generate Codes
+                                                <Pencil className="mr-2 h-4 w-4" /> Add Codes
                                             </Button>
                                         </TableCell>
                                     </TableRow>
@@ -194,7 +194,7 @@ export default function Index({ products }: Props) {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Generate Codes for {editingProduct?.name}</DialogTitle>
+                        <DialogTitle>Add Codes for {editingProduct?.name}</DialogTitle>
                         <DialogDescription>
                             Enter custom codes manually or leave blank to auto-generate based on system format.
                         </DialogDescription>
