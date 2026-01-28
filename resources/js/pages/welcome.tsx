@@ -37,10 +37,12 @@ export default function Welcome({
     canRegister = true,
     products = [],
     categories = [],
+    bannerUrl = 'https://specialized.com.ph/cdn/shop/collections/plp-banner_Bikes_2000x.progressive.jpg?v=1587621713',
 }: {
     canRegister?: boolean;
     products?: Product[];
     categories?: Category[];
+    bannerUrl?: string;
 }) {
     const { auth } = usePage<SharedData>().props;
     const currentYear = new Date().getFullYear();
@@ -67,7 +69,7 @@ export default function Welcome({
                     <div className="relative h-145 w-full overflow-hidden rounded-xl border border-black dark:border-sidebar-border">
                         <img
                             className="absolute inset-0 h-full w-full object-cover object-[60%_center]"
-                            src="https://specialized.com.ph/cdn/shop/collections/plp-banner_Bikes_2000x.progressive.jpg?v=1587621713"
+                            src={bannerUrl}
                             alt="Bike shop banner"
                         />
                     </div>

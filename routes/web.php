@@ -19,6 +19,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('system-dashboard', [\App\Http\Controllers\SystemDashboardController::class, 'index'])
         ->name('system.dashboard')->middleware('role:System Administrator');
 
+    // Personalization Routes
+    Route::get('personalization', [\App\Http\Controllers\PersonalizationController::class, 'index'])
+        ->name('personalization.index')->middleware('role:System Administrator');
+    Route::post('personalization/banner', [\App\Http\Controllers\PersonalizationController::class, 'updateBanner'])
+        ->name('personalization.banner')->middleware('role:System Administrator');
+    Route::post('personalization/banner/reset', [\App\Http\Controllers\PersonalizationController::class, 'resetBanner'])
+        ->name('personalization.banner.reset')->middleware('role:System Administrator');
+
     Route::prefix('system-dashboard/api')->name('system.dashboard.')->middleware(['role:System Administrator'])->group(function () {
         Route::get('/stats', [\App\Http\Controllers\SystemDashboardController::class, 'getData'])->name('stats');
         Route::post('/shutdown', [\App\Http\Controllers\SystemDashboardController::class, 'shutdown'])->name('shutdown');
