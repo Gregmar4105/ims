@@ -21,11 +21,8 @@ interface UserMenuContentProps {
 export function UserMenuContent({ user }: UserMenuContentProps) {
     const cleanup = useMobileNavigation();
 
-    // 3. ADD: Get the current URL and auth roles
-    const { url, auth } = usePage<SharedData & { auth: { roles: string[] } }>().props;
-
-    // 4. ADD: Define the condition (Are we on the Welcome/Landing page?)
-    const isLandingPage = url === '/';
+    // Get auth roles for dashboard URL logic
+    const { auth } = usePage<SharedData & { auth: { roles: string[] } }>().props;
 
     // Get the dashboard URL based on user role
     const getDashboardUrl = (): string => {
@@ -60,24 +57,21 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
 
             <DropdownMenuSeparator />
 
-            {/* 5. IMPLEMENTATION: Only show this block if isLandingPage is true */}
-            {isLandingPage && (
-                <>
-                    <DropdownMenuItem asChild>
-                        <Link
-                            className="block w-full"
-                            href={getDashboardUrl()}
-                            as="button"
-                            onClick={cleanup}
-                        >
-                            {/* Using LayoutDashboard icon for better semantics */}
-                            <LayoutDashboard className="mr-2 h-4 w-4" />
-                            Dashboard
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                </>
-            )}
+            <DropdownMenuGroup>
+                <DropdownMenuItem asChild>
+                    <Link
+                        className="block w-full"
+                        href={getDashboardUrl()}
+                        as="button"
+                        onClick={cleanup}
+                    >
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Dashboard
+                    </Link>
+                </DropdownMenuItem>
+            </DropdownMenuGroup>
+
+            <DropdownMenuSeparator />
 
             <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
