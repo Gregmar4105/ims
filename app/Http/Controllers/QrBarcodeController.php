@@ -45,6 +45,8 @@ class QrBarcodeController extends Controller
         $request->validate([
             'product_id' => 'required_without:generate_all|exists:products,id',
             'generate_all' => 'boolean',
+            'barcode' => 'nullable|string|max:255',
+            'qr_code' => 'nullable|string',
         ]);
 
         $user = auth()->user();
@@ -85,12 +87,12 @@ class QrBarcodeController extends Controller
              }
         }
 
-        $this->generateCodesForProduct($product);
+        $this->generateCodesForProduct($product, $request->barcode, $request->qr_code);
 
         return redirect()->back()->with('success', 'Codes generated successfully.');
     }
 
-    private function generateCodesForProduct(Product $product)
+    private function generateCodesForProduct(Product $product, $customBarcode = null, $customQrCode = null)
     {
         // Generate Barcode: 12 digit number (EAN-13 style without check digit logic for simplicity, or just random)
         // Format: P-{BranchId}-{ProductId}-{Random4}
@@ -99,13 +101,17 @@ class QrBarcodeController extends Controller
         
         $userBranchId = auth()->user()->branch_id ?? 0;
 
-        if (!$product->barcode) {
+        if ($customBarcode) {
+            $product->barcode = $customBarcode;
+        } elseif (!$product->barcode) {
              // Use user's branch ID for the barcode generation to track origin of the barcode assignment
             $product->barcode = 'P-' . str_pad($userBranchId, 3, '0', STR_PAD_LEFT) . '-' . str_pad($product->id, 5, '0', STR_PAD_LEFT) . '-' . strtoupper(Str::random(4));
         }
 
         // Generate QR Code Content: JSON with ID and Name, or a URL
-        if (!$product->qr_code) {
+        if ($customQrCode) {
+            $product->qr_code = $customQrCode;
+        } elseif (!$product->qr_code) {
             $product->qr_code = json_encode([
                 'id' => $product->id,
                 'name' => $product->name,

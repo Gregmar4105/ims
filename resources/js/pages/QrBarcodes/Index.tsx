@@ -1,3 +1,15 @@
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useState } from 'react';
+
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
@@ -52,12 +64,28 @@ interface Props {
 
 export default function Index({ products }: Props) {
     const { flash } = usePage().props as any;
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [barcode, setBarcode] = useState('');
+    const [qrCode, setQrCode] = useState('');
 
-    function generateCodes(productId: number) {
+    function openGenerateDialog(product: Product) {
+        setEditingProduct(product);
+        setBarcode(product.barcode || '');
+        setQrCode(product.qr_code || '');
+        setIsDialogOpen(true);
+    }
+
+    function handleSaveCodes() {
+        if (!editingProduct) return;
+
         router.post('/qr-barcodes', {
-            product_id: productId,
+            product_id: editingProduct.id,
+            barcode: barcode,
+            qr_code: qrCode,
         }, {
             preserveScroll: true,
+            onSuccess: () => setIsDialogOpen(false),
         });
     }
 
@@ -76,6 +104,7 @@ export default function Index({ products }: Props) {
             <Head title="QR & Barcodes" />
 
             <div className="mx-4 mt-4 flex flex-col gap-4 mb-6">
+                {/* ... existing header content ... */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center">
                         <ScanBarcode className="size-14 mr-3" />
@@ -146,7 +175,7 @@ export default function Index({ products }: Props) {
                                             {new Date(product.updated_at).toLocaleString()}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button size="sm" onClick={() => generateCodes(product.id)}>
+                                            <Button size="sm" onClick={() => openGenerateDialog(product)}>
                                                 <Sparkles className="mr-2 h-4 w-4" /> Generate Codes
                                             </Button>
                                         </TableCell>
@@ -161,6 +190,47 @@ export default function Index({ products }: Props) {
                     <Pagination links={products.links} />
                 </div>
             </div>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Generate Codes for {editingProduct?.name}</DialogTitle>
+                        <DialogDescription>
+                            Enter custom codes manually or leave blank to auto-generate based on system format.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="barcode" className="text-right">
+                                Barcode
+                            </Label>
+                            <Input
+                                id="barcode"
+                                value={barcode}
+                                onChange={(e) => setBarcode(e.target.value)}
+                                placeholder="Leave blank to auto-generate"
+                                className="col-span-3"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="qr-code" className="text-right">
+                                QR Code
+                            </Label>
+                            <Input
+                                id="qr-code"
+                                value={qrCode}
+                                onChange={(e) => setQrCode(e.target.value)}
+                                placeholder="Leave blank to auto-generate"
+                                className="col-span-3"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaveCodes}>Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

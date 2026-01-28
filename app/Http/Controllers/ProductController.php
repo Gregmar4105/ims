@@ -281,9 +281,9 @@ class ProductController extends Controller
                 'variations' => $validated['variations'] ?? null,
                 'image_path' => $validated['image_path'],
                 'created_by' => $user->id,
-                // Generate barcode/QR if needed, or let model/observer handle it
-                'barcode' => 'P-' . Str::random(8), // Placeholder
-                'qr_code' => 'QR-' . Str::random(8), // Placeholder
+                // Barcode and QR code will be generated manually via /qr-barcodes
+                'barcode' => null,
+                'qr_code' => null,
                 'price' => $validated['price'] ?? null,
                 'supplier_id' => $validated['supplier_id'] ?? null,
             ]);
