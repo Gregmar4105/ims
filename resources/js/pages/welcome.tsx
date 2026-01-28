@@ -7,7 +7,6 @@ import AppLogoIcon from '@/components/app-logo-icon';
 import { Badge } from '@/components/ui/badge';
 import Footer from '@/components/Footer';
 import { PackageOpen } from 'lucide-react';
-import { DashboardPopup } from '@/components/dashboard-popup';
 
 interface Product {
     id: number;
@@ -58,7 +57,6 @@ export default function Welcome({
 
     return (
         <>
-            <DashboardPopup />
             <AppLayout>
                 <Head title="Welcome">
                     <link rel="preconnect" href="https://fonts.bunny.net" />
