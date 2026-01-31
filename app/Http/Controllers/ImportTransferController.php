@@ -36,7 +36,10 @@ class ImportTransferController extends Controller
                     ?? $raw['inventory_items']
                     ?? [];
 
-                return back()->with('analysis_result', ['inventory_items' => $items]);
+                return Inertia::render('Transfers/Import/Index', [
+                    'analysis_result' => ['inventory_items' => $items],
+                    'success' => 'Analysis complete. Found ' . count($items) . ' items.'
+                ]);
             } else {
                 return back()->with('error', 'Failed to process image. Status: ' . $response->status());
             }

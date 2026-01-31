@@ -18,28 +18,34 @@ interface AnalysisResult {
 }
 
 export default function ImportTransferIndex() {
-    const { flash } = usePage().props as any;
     const { data, setData, post, processing, errors } = useForm({
         image: null as File | null,
     });
 
-    // Props from controller redirect
-    const pageProps = usePage().props as any;
-    const analysisResult = pageProps.flash?.analysis_result as AnalysisResult | undefined;
+    // Props from controller
+    const { analysis_result, flash } = usePage().props as any;
 
-    // Local state for editable items
+    // Local state
     const [items, setItems] = useState<InventoryItem[]>([]);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     useEffect(() => {
-        if (analysisResult?.inventory_items) {
-            setItems(analysisResult.inventory_items);
-            toast.success(`Found ${analysisResult.inventory_items.length} items`);
+        // Check both prop (from render) and flash (fallback)
+        const result = analysis_result || flash?.analysis_result;
+        if (result?.inventory_items) {
+            setItems(result.inventory_items);
+            if (!flash?.success && !analysis_result) {
+                // Only toast if we didn't just get a success message from backend to avoid double toast
+                // But actually backend now sends success prop or flash.
+            }
         }
-    }, [analysisResult]);
+    }, [analysis_result, flash]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setData('image', e.target.files[0]);
+            const file = e.target.files[0];
+            setData('image', file);
+            setPreviewUrl(URL.createObjectURL(file));
         }
     };
 
@@ -51,6 +57,7 @@ export default function ImportTransferIndex() {
         }
         post('/import-transfer', {
             preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
                 // Toast handled in useEffect upon flash data arrival
             },
@@ -102,8 +109,19 @@ export default function ImportTransferIndex() {
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         onChange={handleFileChange}
                                     />
-                                    <div className="flex flex-col items-center gap-2 pointer-events-none">
-                                        {data.image ? (
+                                    <div className="flex flex-col items-center gap-2 pointer-events-none w-full h-full justify-center">
+                                        {previewUrl ? (
+                                            <div className="relative w-full h-full p-2">
+                                                <img
+                                                    src={previewUrl}
+                                                    alt="Preview"
+                                                    className="w-full h-full object-contain rounded-md"
+                                                />
+                                                <div className="absolute bottom-2 left-0 right-0 text-center bg-black/50 text-white text-xs py-1 rounded-b-md mx-2">
+                                                    Click to change
+                                                </div>
+                                            </div>
+                                        ) : data.image ? (
                                             <>
                                                 <FileImage className="h-10 w-10 text-primary" />
                                                 <span className="font-medium text-sm">{data.image.name}</span>
@@ -119,10 +137,10 @@ export default function ImportTransferIndex() {
                                     </div>
                                 </div>
                                 {errors.image && <span className="text-sm text-red-500">{errors.image}</span>}
-                                {pageProps.flash?.error && (
+                                {flash?.error && (
                                     <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-center gap-2">
                                         <AlertCircle className="w-4 h-4" />
-                                        {pageProps.flash.error}
+                                        {flash.error}
                                     </div>
                                 )}
 
