@@ -226,12 +226,12 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             
                             /* QR Left */
                             .qr-section {
-                                width: 10mm;
+                                width: 12mm; /* Increased from 10mm */
                                 border-right: 0.5px solid black;
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
-                                padding: 0.5mm;
+                                padding: 0.2mm; /* Reduced padding */
                             }
                             .qr-section svg {
                                 width: 100% !important;
@@ -243,27 +243,36 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 flex: 1;
                                 display: flex;
                                 flex-direction: column;
+                                overflow: hidden; /* Ensure no spill */
                             }
                             
                             /* Barcode Row */
                             .barcode-row {
                                 flex: 1;
                                 border-bottom: 0.5px solid black;
-                                padding: 0.5mm;
+                                padding: 0.2mm;
                                 display: flex;
                                 flex-direction: column;
                                 justify-content: center;
+                                overflow: hidden;
+                            }
+                            .barcode-row svg {
+                                width: 100% !important;
+                                height: 100% !important;
+                                max-height: 10mm;
                             }
                             .field-label {
                                 font-size: 3px;
                                 text-transform: uppercase;
-                                margin-bottom: 0.5px;
+                                margin-bottom: 0px;
+                                line-height: 1;
                             }
                             .field-value {
                                 font-size: 5px;
                                 font-weight: bold;
                                 white-space: nowrap;
                                 overflow: hidden;
+                                line-height: 1.1;
                             }
                             
                             /* Codes Split Row */
@@ -712,7 +721,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             <div className="flex flex-col items-center code-section">
                                 <Label className="mb-2 label">QR Code</Label>
                                 <div className="p-2 bg-white border rounded-lg">
-                                    <QRCode value={viewCodeProduct.qr_code} size={150} />
+                                    <QRCode value={viewCodeProduct.qr_code} size={512} />
                                 </div>
                             </div>
                         ) : (
@@ -723,7 +732,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             <div className="flex flex-col items-center w-full code-section">
                                 <Label className="mb-2 label">Barcode</Label>
                                 <div className="p-2 bg-white border rounded-lg w-full flex justify-center overflow-hidden">
-                                    <Barcode value={viewCodeProduct.barcode} width={1.5} height={50} fontSize={14} />
+                                    <Barcode value={viewCodeProduct.barcode} width={4} height={150} fontSize={14} />
                                 </div>
                             </div>
                         ) : (
