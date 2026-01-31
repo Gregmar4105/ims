@@ -32,7 +32,7 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
-    const { data, setData, post, processing, errors, recentlySuccessful, reset } = useForm<{
+    const { data, setData, post, processing, errors, recentlySuccessful, reset, transform } = useForm<{
         banner: File | Blob | null;
     }>({
         banner: null,
@@ -47,6 +47,7 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 setBannerPreview(e.target?.result as string);
+                setZoom(1); // Reset zoom on new image
             };
             reader.readAsDataURL(file);
         }
@@ -61,7 +62,7 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
 
         if (bannerPreview && croppedAreaPixels) {
             try {
-                const croppedImage = await getCroppedImg(
+                const croppedBlob = await getCroppedImg(
                     bannerPreview,
                     croppedAreaPixels
                 );
@@ -75,7 +76,7 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
                 // Simple way: setData wait? No.
                 // useForm provides `transform` callback in options.
 
-                // Let's stick to the current plan: 
+                // Let's stick to the current plan:
                 // We can't await `setData` inside submit handler easily before `post`.
                 // Alternative: Use `router.post`.
                 // OR: Construct FormData manually?
@@ -100,43 +101,48 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
         // Or simply:
 
         if (bannerPreview && croppedAreaPixels) {
-            const croppedBlob = await getCroppedImg(bannerPreview, croppedAreaPixels);
-            if (!croppedBlob) return;
+            try {
+                const croppedBlob = await getCroppedImg(bannerPreview, croppedAreaPixels);
+                if (!croppedBlob) return;
 
-            // Create a File from Blob to preserve name if possible, or just send blob
-            const file = new File([croppedBlob], "banner.jpg", { type: "image/jpeg" });
+                // Create a File from Blob to preserve name if possible, or just send blob
+                const file = new File([croppedBlob], "banner.jpg", { type: "image/jpeg" });
 
-            // We can't update useForm data synchronously and submit.
-            // We have to use the `data` arg of post? No `post` uses internal data.
-            // WORKAROUND: use `router.post` directly for this one, bypassing useForm's submit slightly
-            // but keeping useForm for errors/processing state is nice.
+                // We can't update useForm data synchronously and submit.
+                // We have to use the `data` arg of post? No `post` uses internal data.
+                // WORKAROUND: use `router.post` directly for this one, bypassing useForm's submit slightly
+                // but keeping useForm for errors/processing state is nice.
 
-            // Actually, useForm `transform` is the way.
-            // But I declared useForm above.
+                // Actually, useForm `transform` is the way.
+                // But I declared useForm above.
 
-            // Let's just use `router.post` for the submission with the processed file.
-            // BUT we lose `processing` state from useForm.
-            // Ok, let's just use `setData` and `useEffect`? Too complex.
+                // Let's just use `router.post` for the submission with the processed file.
+                // BUT we lose `processing` state from useForm.
+                // Ok, let's just use `setData` and `useEffect`? Too complex.
 
-            // Simplest: `data` argument in `transform`? 
-            // `post(url, { transform: (data) => ({ ...data, banner: file }) })`
+                // Simplest: `data` argument in `transform`?
+                // `post(url, { transform: (data) => ({ ...data, banner: file }) })`
 
-            post('/personalization/banner', {
-                preserveScroll: true,
-                forceFormData: true,
-                transform: (currentData) => ({
+                transform((currentData) => ({
                     ...currentData,
                     banner: file,
-                }),
-                onSuccess: () => {
-                    reset();
-                    setBannerPreview(null);
-                    setZoom(1);
-                    if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                    }
-                },
-            } as any);
+                }));
+
+                post('/personalization/banner', {
+                    preserveScroll: true,
+                    forceFormData: true,
+                    onSuccess: () => {
+                        reset();
+                        setBannerPreview(null);
+                        setZoom(1);
+                        if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                        }
+                    },
+                });
+            } catch (e) {
+                console.error(e);
+            }
             return;
         }
 
