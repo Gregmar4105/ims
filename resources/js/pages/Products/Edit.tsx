@@ -59,6 +59,9 @@ interface Product {
     image_path: string | null;
     price: number | null;
     supplier_id: number | null;
+    code: string | null;
+    code_2: string | null;
+    sku: string | null;
 }
 
 interface Props {
@@ -79,6 +82,9 @@ export default function Edit({ product, brands, categories, suppliers }: Props) 
         physical_location: product.physical_location || '',
         description: product.description || '',
         price: product.price || '',
+        code: product.code || '',
+        code_2: product.code_2 || '',
+        sku: product.sku || '',
         variations: product.variations || [] as Variation[],
         image: null as File | null,
     });
@@ -214,6 +220,39 @@ export default function Edit({ product, brands, categories, suppliers }: Props) 
                                     required
                                 />
                                 {errors.quantity && <p className="text-sm text-red-500">{errors.quantity}</p>}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="code">Code</Label>
+                                <Input
+                                    id="code"
+                                    value={data.code}
+                                    onChange={e => setData('code', e.target.value)}
+                                    placeholder="Product Code"
+                                />
+                                {errors.code && <p className="text-sm text-red-500">{errors.code}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="code_2">2Code</Label>
+                                <Input
+                                    id="code_2"
+                                    value={data.code_2}
+                                    onChange={e => setData('code_2', e.target.value)}
+                                    placeholder="Secondary Code"
+                                />
+                                {errors.code_2 && <p className="text-sm text-red-500">{errors.code_2}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="sku">SKU</Label>
+                                <Input
+                                    id="sku"
+                                    value={data.sku}
+                                    onChange={e => setData('sku', e.target.value)}
+                                    placeholder="Stock Keeping Unit"
+                                />
+                                {errors.sku && <p className="text-sm text-red-500">{errors.sku}</p>}
                             </div>
                         </div>
 

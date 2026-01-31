@@ -21,6 +21,9 @@ class ProductController extends Controller
         $filterBrand = $request->query('brand');
         $filterCategory = $request->query('category');
         $filterStock = $request->query('stock');
+        $filterCode = $request->query('code');
+        $filterCode2 = $request->query('code_2');
+        $filterSku = $request->query('sku');
         
         $user = auth()->user();
         $isSystemAdmin = $user->hasRole('System Administrator');
@@ -81,6 +84,18 @@ class ProductController extends Controller
             $query->whereHas('category', function ($q) use ($filterCategory) {
                 $q->where('name', $filterCategory);
             });
+        }
+
+        if ($filterCode && $filterCode !== 'all') {
+            $query->where('code', $filterCode);
+        }
+
+        if ($filterCode2 && $filterCode2 !== 'all') {
+            $query->where('code_2', $filterCode2);
+        }
+
+        if ($filterSku && $filterSku !== 'all') {
+            $query->where('sku', $filterSku);
         }
 
         // Stock filter needs to check the pivot table quantity
@@ -159,6 +174,11 @@ class ProductController extends Controller
         $brands = $brandsQuery->pluck('name')->unique()->values();
         $categories = $categoriesQuery->pluck('name')->unique()->values();
 
+
+        $codes = Product::whereNotNull('code')->pluck('code')->unique()->values();
+        $code2s = Product::whereNotNull('code_2')->pluck('code_2')->unique()->values();
+        $skus = Product::whereNotNull('sku')->pluck('sku')->unique()->values();
+
         $suppliers = \App\Models\Supplier::all(['id', 'name']);
 
         return Inertia::render('Products/Index', [
@@ -169,11 +189,17 @@ class ProductController extends Controller
                 'brand' => $filterBrand,
                 'category' => $filterCategory,
                 'stock' => $filterStock,
+                'code' => $filterCode,
+                'code_2' => $filterCode2,
+                'sku' => $filterSku,
             ],
             'options' => [
                 'branches' => $branches,
                 'brands' => $brands,
                 'categories' => $categories,
+                'codes' => $codes,
+                'code2s' => $code2s,
+                'skus' => $skus,
             ],
             'isSystemAdmin' => $isSystemAdmin,
             'suppliers' => $suppliers,
@@ -230,6 +256,9 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:255',
+            'code_2' => 'nullable|string|max:255',
+            'sku' => 'nullable|string|max:255',
             'brand_id' => 'required|exists:brands,id',
             'category_id' => 'required|exists:categories,id',
             'quantity' => 'required|integer|min:0',
@@ -276,7 +305,11 @@ class ProductController extends Controller
             $product = Product::create([
                 'brand_id' => $validated['brand_id'],
                 'category_id' => $validated['category_id'],
+
                 'name' => $validated['name'],
+                'code' => $validated['code'] ?? null,
+                'code_2' => $validated['code_2'] ?? null,
+                'sku' => $validated['sku'] ?? null,
                 'description' => $validated['description'] ?? null,
                 'variations' => $validated['variations'] ?? null,
                 'image_path' => $validated['image_path'],
@@ -346,6 +379,9 @@ class ProductController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:255',
+            'code_2' => 'nullable|string|max:255',
+            'sku' => 'nullable|string|max:255',
             'brand_id' => 'required|exists:brands,id',
             'category_id' => 'required|exists:categories,id',
             'quantity' => 'required|integer|min:0',
@@ -375,6 +411,9 @@ class ProductController extends Controller
             // Update Global Product Details
             $product->update([
                 'name' => $validated['name'],
+                'code' => $validated['code'] ?? null,
+                'code_2' => $validated['code_2'] ?? null,
+                'sku' => $validated['sku'] ?? null,
                 'brand_id' => $validated['brand_id'],
                 'category_id' => $validated['category_id'],
                 'description' => $validated['description'] ?? null,

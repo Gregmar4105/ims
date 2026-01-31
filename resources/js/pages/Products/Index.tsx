@@ -58,11 +58,17 @@ interface Props {
         brand?: string;
         category?: string;
         stock?: string;
+        code?: string;
+        code_2?: string;
+        sku?: string;
     };
     options: {
         branches: string[];
         brands: string[];
         categories: string[];
+        codes: string[];
+        code2s: string[];
+        skus: string[];
     };
     isSystemAdmin: boolean;
 }
@@ -76,6 +82,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const [brand, setBrand] = useState<string>(filters?.brand || "all");
     const [category, setCategory] = useState<string>(filters?.category || "all");
     const [stock, setStock] = useState<string>(filters?.stock || "all");
+    const [code, setCode] = useState<string>(filters?.code || "all");
+    const [code2, setCode2] = useState<string>(filters?.code_2 || "all");
+    const [sku, setSku] = useState<string>(filters?.sku || "all");
 
     const debounceTimer = useRef<number | null>(null);
 
@@ -85,6 +94,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         setBrand(filters?.brand || "all");
         setCategory(filters?.category || "all");
         setStock(filters?.stock || "all");
+        setCode(filters?.code || "all");
+        setCode2(filters?.code_2 || "all");
+        setSku(filters?.sku || "all");
     }, [filters]);
 
     function updateParams(newParams: any) {
@@ -130,10 +142,13 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         setBrand("all");
         setCategory("all");
         setStock("all");
+        setCode("all");
+        setCode2("all");
+        setSku("all");
         router.get("/products");
     };
 
-    const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all';
+    const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all' || code !== 'all' || code2 !== 'all' || sku !== 'all';
 
     const [viewCodeProduct, setViewCodeProduct] = useState<Product | null>(null);
 
@@ -273,6 +288,42 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             <SelectContent>
                                 <SelectItem value="all">All Categories</SelectItem>
                                 {options.categories.map((c) => (
+                                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={code} onValueChange={(val) => { setCode(val); updateParams({ code: val }); }}>
+                            <SelectTrigger className="w-[160px]">
+                                <SelectValue placeholder="Code" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Codes</SelectItem>
+                                {options.codes?.map((c) => (
+                                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={code2} onValueChange={(val) => { setCode2(val); updateParams({ code_2: val }); }}>
+                            <SelectTrigger className="w-[160px]">
+                                <SelectValue placeholder="2Code" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All 2Codes</SelectItem>
+                                {options.code2s?.map((c) => (
+                                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={sku} onValueChange={(val) => { setSku(val); updateParams({ sku: val }); }}>
+                            <SelectTrigger className="w-[160px]">
+                                <SelectValue placeholder="SKU" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All SKUs</SelectItem>
+                                {options.skus?.map((c) => (
                                     <SelectItem key={c} value={c}>{c}</SelectItem>
                                 ))}
                             </SelectContent>
