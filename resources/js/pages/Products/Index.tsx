@@ -161,66 +161,222 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     function handlePrint() {
         if (!viewCodeProduct) return;
 
-        const printWindow = window.open('', '', 'width=800,height=600');
+        const printWindow = window.open('', '', 'width=600,height=600');
         if (printWindow) {
-            const content = document.getElementById('printable-codes');
-            if (content) {
-                printWindow.document.write(`
-                    <html>
-                        <head>
-                            <title>Print Codes - ${viewCodeProduct.name}</title>
-                            <style>
-                                body {
-                                    font-family: sans-serif;
-                                    display: flex;
-                                    flex-direction: column;
-                                    align-items: center;
-                                    justify-content: center;
-                                    padding: 40px;
-                                }
-                                .container {
-                                    text-align: center;
-                                    width: 100%;
-                                    max-width: 600px;
-                                }
-                                h2 { margin-bottom: 5px; font-size: 24px; }
-                                p { margin-top: 0; color: #666; font-size: 16px; margin-bottom: 30px; }
-                                .code-section {
-                                    margin-bottom: 40px;
-                                    display: flex;
-                                    flex-direction: column;
-                                    align-items: center;
-                                }
-                                .label {
-                                    font-weight: bold;
-                                    margin-bottom: 10px;
-                                    font-size: 18px;
-                                }
-                                svg, canvas, img {
-                                    max-width: 100%;
-                                    height: auto;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="container">
-                                <h2>${viewCodeProduct.name}</h2>
-                                <p>${viewCodeProduct.branch?.branch_name || ''}</p>
-                                ${content.innerHTML}
+            // We'll generate the QR/Barcode SVGs/Canvas URIs dynamically if needed, 
+            // but for this layout, we might need to rely on the library rendering them into the print window 
+            // or cloning nodes. Simplest is to re-render them or grab distinct values.
+
+            // Since we can't easily transfer the React component state to the new window exactly as is 
+            // without re-rendering, we will build a raw HTML string with the data.
+            // Note: For Barcode/QR, we might normally need to generate base64, but let's try 
+            // simple text/css layout first or assume we can invoke a script.
+            // actually, easiest way to print React components is to have a hidden print ref, 
+            // but here we are writing raw HTML.
+
+            // For QR/Barcode in raw HTML without React in the new window, we can use an img tag 
+            // if we convert the current view's SVGs to data URLs, OR we use a library that runs in the popup.
+            // A quick dirty way: Grab the SVG outerHTML from the current DOM if it exists.
+
+            const qrSvg = document.querySelector('#printable-codes svg')?.outerHTML || '<!-- QR Error -->';
+            // Barcode libraries often output SVG or Canvas. React-barcode usually SVG.
+            // Let's assume we can grab it. If not, we might fallback to text for now or improve later.
+            // The user's previous code rendered them in a dialog. We can grab them from there.
+            const barcodeSvg = document.querySelectorAll('#printable-codes svg')[1]?.outerHTML || '<!-- Barcode Error -->';
+
+
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Print Label</title>
+                        <style>
+                            @page {
+                                size: 28mm 20mm;
+                                margin: 0;
+                            }
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                font-family: 'Arial', sans-serif;
+                                width: 28mm;
+                                height: 20mm;
+                                overflow: hidden;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                background: white;
+                            }
+                            .label-container {
+                                width: 27mm; /* Safety margin */
+                                height: 19mm;
+                                border: 1px solid black; /* Optional: remove if pre-printed labels */
+                                display: flex;
+                                flex-direction: column;
+                                box-sizing: border-box;
+                                padding: 0.5mm;
+                                position: relative;
+                            }
+                            
+                            /* Main Upper Section */
+                            .upper-section {
+                                display: flex;
+                                height: 13mm;
+                                border-bottom: 0.5px solid black;
+                            }
+                            
+                            /* QR Left */
+                            .qr-section {
+                                width: 10mm;
+                                border-right: 0.5px solid black;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                padding: 0.5mm;
+                            }
+                            .qr-section svg {
+                                width: 100% !important;
+                                height: auto !important;
+                            }
+
+                            /* Right Info Stack */
+                            .info-right {
+                                flex: 1;
+                                display: flex;
+                                flex-direction: column;
+                            }
+                            
+                            /* Barcode Row */
+                            .barcode-row {
+                                flex: 1;
+                                border-bottom: 0.5px solid black;
+                                padding: 0.5mm;
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: center;
+                            }
+                            .field-label {
+                                font-size: 3px;
+                                text-transform: uppercase;
+                                margin-bottom: 0.5px;
+                            }
+                            .field-value {
+                                font-size: 5px;
+                                font-weight: bold;
+                                white-space: nowrap;
+                                overflow: hidden;
+                            }
+                            
+                            /* Codes Split Row */
+                            .codes-row {
+                                flex: 1;
+                                display: flex;
+                            }
+                            .code-box {
+                                flex: 1;
+                                padding: 0.5mm;
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: center;
+                            }
+                            .code-box:first-child {
+                                border-right: 0.5px solid black;
+                            }
+
+                            /* Bottom Section */
+                            .bottom-section {
+                                flex: 1;
+                                display: flex;
+                                flex-direction: column;
+                            }
+                            
+                            /* Supplier | SKU Row */
+                            .meta-row {
+                                display: flex;
+                                height: 3mm; /* Fixed height for this row */
+                                border-bottom: 0.5px solid black;
+                                align-items: center;
+                            }
+                            .supplier-box {
+                                flex: 1;
+                                border-right: 0.5px solid black;
+                                padding: 0 1mm;
+                                font-size: 3.5px;
+                                font-weight: bold;
+                                overflow: hidden;
+                                white-space: nowrap;
+                                line-height: 3mm;
+                            }
+                            .sku-box {
+                                flex: 1;
+                                padding: 0 1mm;
+                                font-size: 3.5px;
+                                display: flex;
+                                align-items: center;
+                                overflow: hidden;
+                                white-space: nowrap;
+                            }
+
+                            /* Price Row */
+                            .price-row {
+                                flex: 1;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-weight: 800;
+                                font-size: 7px;
+                            }
+
+                        </style>
+                    </head>
+                    <body>
+                        <div class="label-container">
+                            <div class="upper-section">
+                                <div class="qr-section">
+                                    ${qrSvg}
+                                </div>
+                                <div class="info-right">
+                                    <div class="barcode-row">
+                                        <div class="field-label">Barcode</div>
+                                        <div class="field-value">${viewCodeProduct.barcode || '-'}</div>
+                                    </div>
+                                    <div class="codes-row">
+                                        <div class="code-box">
+                                            <div class="field-label">Code</div>
+                                            <div class="field-value">${viewCodeProduct.code || '-'}</div>
+                                        </div>
+                                        <div class="code-box">
+                                            <div class="field-label">2Code</div>
+                                            <div class="field-value">${viewCodeProduct.code_2 || '-'}</div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <script>
-                                window.onload = function() {
-                                    window.print();
-                                    window.onafterprint = function() {
-                                        window.close();
-                                    }
+                            
+                            <div class="bottom-section">
+                                <div class="meta-row">
+                                    <div class="supplier-box">${viewCodeProduct.supplier?.name || 'NO SUPPLIER'}</div>
+                                    <div class="sku-box">
+                                        <span style="font-size: 2.5px; margin-right: 1px; color:#555;">SKU</span> 
+                                        <b>${viewCodeProduct.sku || '-'}</b>
+                                    </div>
+                                </div>
+                                <div class="price-row">
+                                    PHP ${viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                                </div>
+                            </div>
+                        </div>
+                        <script>
+                            window.onload = function() {
+                                window.print();
+                                window.onafterprint = function() {
+                                    window.close();
                                 }
-                            </script>
-                        </body>
-                    </html>
-                `);
-                printWindow.document.close();
-            }
+                            }
+                        </script>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
         }
     }
 
