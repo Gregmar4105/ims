@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info } from 'lucide-react';
+import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import Pagination from '@/components/Pagination';
@@ -372,43 +372,37 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         {productList.map((product: Product) => (
-                            <Card key={product.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl">
+                            <div key={product.id} className="group relative flex w-full flex-col overflow-hidden rounded-xl border border-black/10 bg-white transition-all hover:shadow-lg dark:border-sidebar-border dark:bg-transparent">
                                 {/* Image Section */}
-                                <div className="aspect-[4/3] relative bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 dark:border-gray-700">
-                                    {product.image_path ? (
-                                        <img
-                                            src={`/storage/${product.image_path}`}
-                                            alt={product.name}
-                                            className="object-contain w-full h-full transition-transform duration-500 group-hover:scale-105 p-4"
-                                        />
-                                    ) : (
-                                        <PackageOpen className="h-16 w-16 text-gray-300" />
-                                    )}
+                                <div className="relative aspect-square overflow-hidden bg-neutral-50 dark:bg-white/5">
+                                    <Link href={`/products/${product.id}`} className="block h-full w-full">
+                                        {product.image_path ? (
+                                            <img
+                                                className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
+                                                src={`/storage/${product.image_path}`}
+                                                alt={product.name}
+                                            />
+                                        ) : (
+                                            <div className="flex h-full w-full items-center justify-center">
+                                                <PackageOpen className="h-20 w-20 text-gray-300" />
+                                            </div>
+                                        )}
+                                    </Link>
 
-                                    {/* Badges */}
-                                    <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
-                                        <Badge className={`backdrop-blur-md shadow-sm border-0 ${product.quantity === 0 ? 'bg-red-500/90 hover:bg-red-600' :
-                                            product.quantity <= 5 ? 'bg-amber-500/90 hover:bg-amber-600' :
-                                                'bg-emerald-600/90 hover:bg-emerald-700'
+                                    {/* Vibrant Quantity Badge */}
+                                    <div className="absolute top-2 right-2">
+                                        <Badge className={`shadow-sm border-0 font-bold ${product.quantity === 0 ? 'bg-red-600 hover:bg-red-700 text-white' :
+                                                product.quantity <= 5 ? 'bg-amber-500 hover:bg-amber-600 text-white' :
+                                                    'bg-emerald-500 hover:bg-emerald-600 text-white'
                                             }`}>
                                             Qty: {product.quantity}
                                         </Badge>
-                                        {product.physical_location && (
-                                            <Badge variant="outline" className="bg-white/80 dark:bg-black/50 backdrop-blur-md text-[10px] gap-1 shadow-sm">
-                                                <MapPin className="h-3 w-3" />
-                                                {product.physical_location}
-                                            </Badge>
-                                        )}
                                     </div>
 
-                                    {/* Hover Actions Overlay */}
-                                    <Link href={`/products/${product.id}`} className="absolute inset-0 z-10">
-                                        <span className="sr-only">View Details</span>
-                                    </Link>
-
-                                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 z-20 pointer-events-none">
+                                    {/* Hover Overlay for Quick Actions */}
+                                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none">
                                         <div className="pointer-events-auto flex flex-col gap-2">
-                                            <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg">
+                                            <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white">
                                                 <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
                                             </Button>
                                             <Link href={`/products/${product.id}/edit`}>
@@ -421,124 +415,74 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 </div>
 
                                 {/* Content Section */}
-                                <CardHeader className="p-4 pb-2 space-y-2 relative z-20">
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-                                                {product.branch && (
-                                                    <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400" title="Branch">
-                                                        <Layers className="h-3 w-3" />
-                                                        {product.branch.branch_name}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <Link href={`/products/${product.id}`} className="hover:underline">
-                                                <CardTitle className="text-lg font-bold leading-tight line-clamp-2 min-h-[1.5em] group-hover:text-blue-600 transition-colors" title={product.name}>
+                                <div className="flex flex-1 flex-col justify-between gap-3 p-3">
+                                    {/* Header & Price */}
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between items-start gap-2">
+                                            <Link href={`/products/${product.id}`} className="hover:underline flex-1">
+                                                <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1 text-base group-hover:text-blue-600 transition-colors" title={product.name}>
                                                     {product.name}
-                                                </CardTitle>
+                                                </h3>
                                             </Link>
-                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                                                {product.brand && (
-                                                    <span className="font-semibold">{product.brand.name}</span>
-                                                )}
-                                                {product.brand && product.category && <span>•</span>}
-                                                {product.category && (
-                                                    <span>{product.category.name}</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <span className="text-lg font-extrabold text-black dark:text-white block">
+                                            <span className="text-base font-extrabold text-black dark:text-white whitespace-nowrap">
                                                 ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
                                             </span>
                                         </div>
-                                    </div>
-                                </CardHeader>
 
-                                <CardContent className="p-4 pt-0 space-y-3 flex-grow relative z-20">
-                                    {/* Codes Grid */}
-                                    <div className="grid grid-cols-2 gap-2 text-xs bg-gray-50 dark:bg-gray-900/50 p-2.5 rounded-lg border border-gray-100 dark:border-gray-800 mb-2">
-                                        <div className="space-y-0.5">
-                                            <span className="text-muted-foreground text-[10px] uppercase flex items-center gap-1">
-                                                <Package className="h-3 w-3" /> SKU
-                                            </span>
-                                            <span className="font-mono font-medium truncate block" title={product.sku || '-'}>
-                                                {product.sku || <span className="text-gray-300">-</span>}
-                                            </span>
-                                        </div>
-                                        <div className="space-y-0.5">
-                                            <span className="text-muted-foreground text-[10px] uppercase flex items-center gap-1">
-                                                <Tag className="h-3 w-3" /> Code
-                                            </span>
-                                            <span className="font-mono font-medium truncate block" title={product.code || '-'}>
-                                                {product.code || <span className="text-gray-300">-</span>}
-                                            </span>
-                                        </div>
-                                        {/* Optional 2nd Row for details */}
-                                        <div className="col-span-2 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-2 mt-1">
-                                            <div className="space-y-0.5 flex-1 has-tooltip" title={product.code_2 || 'No 2Code'}>
-                                                <span className="text-muted-foreground text-[10px] uppercase flex items-center gap-1">
-                                                    <ScanBarcode className="h-3 w-3" /> 2Code
-                                                </span>
-                                                <span className="font-mono font-medium truncate block max-w-[100px]">
-                                                    {product.code_2 || <span className="text-center text-gray-300">-</span>}
-                                                </span>
-                                            </div>
-                                            {product.supplier && (
-                                                <div className="space-y-0.5 text-right flex-1 truncate pl-2">
-                                                    <span className="text-muted-foreground text-[10px] uppercase flex items-center justify-end gap-1">
-                                                        <Truck className="h-3 w-3" /> Supplier
-                                                    </span>
-                                                    <span className="font-medium truncate block" title={product.supplier.name}>
-                                                        {product.supplier.name}
-                                                    </span>
-                                                </div>
+                                        {/* Brand Pop */}
+                                        <div className="flex items-center gap-2">
+                                            {product.brand && (
+                                                <Badge variant="outline" className="rounded text-[10px] font-bold uppercase tracking-wider bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600">
+                                                    {product.brand.name}
+                                                </Badge>
+                                            )}
+                                            {product.category && (
+                                                <span className="text-[10px] text-gray-500">{product.category.name}</span>
                                             )}
                                         </div>
-                                    </div>
 
-                                    {/* Description (Moved below grid) */}
-                                    {product.description && (
-                                        <p className="text-xs text-gray-500 line-clamp-2 border-l-2 border-gray-200 pl-2 italic">
-                                            {product.description}
-                                        </p>
-                                    )}
-
-                                    {/* Physical Location if exists */}
-                                    {product.physical_location && (
-                                        <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-medium">
-                                            <MapPin className="h-3.5 w-3.5" />
-                                            <span>{product.physical_location}</span>
-                                        </div>
-                                    )}
-
-                                    {/* Variations */}
-                                    <div className="space-y-2">
-                                        {product.variations && product.variations.length > 0 && (
-                                            <div className="flex flex-wrap gap-1">
-                                                {product.variations.slice(0, 3).map((v, i) => (
-                                                    <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 h-5 font-normal bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-transparent hover:border-gray-300">
-                                                        <span className="font-semibold mr-1">{v.name}:</span> {v.options}
-                                                    </Badge>
-                                                ))}
-                                                {product.variations.length > 3 && (
-                                                    <Badge variant="outline" className="text-[10px] px-1.5 h-5">
-                                                        +{product.variations.length - 3}
-                                                    </Badge>
-                                                )}
-                                            </div>
+                                        {/* Description - Not italic, not grayed out */}
+                                        {product.description ? (
+                                            <p className="line-clamp-2 text-xs text-gray-700 dark:text-gray-300 mt-1">
+                                                {product.description}
+                                            </p>
+                                        ) : (
+                                            <p className="line-clamp-2 text-xs text-gray-400 mt-1">No description.</p>
                                         )}
                                     </div>
-                                </CardContent>
 
-                                <CardFooter className="p-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 text-xs text-muted-foreground flex justify-end items-center">
-                                    <Link href={`/products/${product.id}`}>
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-gray-900">
-                                            <Info className="h-4 w-4" />
-                                        </Button>
-                                    </Link>
-                                </CardFooter>
-                            </Card>
+                                    {/* Codes Grid (Compact) */}
+                                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] bg-gray-50 dark:bg-gray-900/50 p-2 rounded border border-gray-100 dark:border-gray-800">
+                                        <div className="flex flex-col">
+                                            <span className="text-gray-400 uppercase text-[9px]">SKU</span>
+                                            <span className="font-mono font-medium truncate" title={product.sku || ''}>{product.sku || '-'}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-gray-400 uppercase text-[9px]">Code</span>
+                                            <span className="font-mono font-medium truncate" title={product.code || ''}>{product.code || '-'}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Footer: Details CTA */}
+                                    <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-800 mt-1">
+                                        <div className="flex items-center gap-1 min-w-0">
+                                            {product.branch && (
+                                                <span className="text-[10px] text-orange-600 dark:text-orange-400 truncate flex items-center gap-1 font-medium">
+                                                    <Layers className="h-3 w-3" />
+                                                    {product.branch.branch_name}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <Link href={`/products/${product.id}`}>
+                                            <button className="group/btn flex items-center gap-1 text-xs font-bold text-gray-900 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400">
+                                                View Details
+                                                <ArrowRight className="h-3 w-3 -translate-x-1 transition-transform group-hover/btn:translate-x-0" />
+                                            </button>
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 )}
@@ -589,6 +533,6 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </AppLayout >
+        </AppLayout>
     );
 }
