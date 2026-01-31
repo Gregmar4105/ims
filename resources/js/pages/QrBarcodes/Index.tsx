@@ -209,7 +209,7 @@ export default function Index({ products }: Props) {
                                     id="barcode"
                                     value={barcode}
                                     onChange={(e) => setBarcode(e.target.value)}
-                                    placeholder="Leave blank to auto-generate"
+                                    placeholder="Optional"
                                     className={errors?.barcode ? "border-red-500" : ""}
                                 />
                                 {errors?.barcode && (
@@ -226,7 +226,7 @@ export default function Index({ products }: Props) {
                                     id="qr-code"
                                     value={qrCode}
                                     onChange={(e) => setQrCode(e.target.value)}
-                                    placeholder="Leave blank to auto-generate"
+                                    placeholder="Optional"
                                     className={errors?.qr_code ? "border-red-500" : ""}
                                 />
                                 {errors?.qr_code && (

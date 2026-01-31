@@ -89,9 +89,13 @@ class QrBarcodeController extends Controller
              }
         }
 
-        $this->generateCodesForProduct($product, $request->barcode, $request->qr_code);
+        // For single product update, we strictly follow the user input.
+        // User requested NO auto-generation for single items unless "Generate All" is used.
+        $product->barcode = $request->barcode;
+        $product->qr_code = $request->qr_code;
+        $product->save();
 
-        return redirect()->back()->with('success', 'Codes generated successfully.');
+        return redirect()->back()->with('success', 'Codes updated successfully.');
     }
 
     private function generateCodesForProduct(Product $product, $customBarcode = null, $customQrCode = null)
