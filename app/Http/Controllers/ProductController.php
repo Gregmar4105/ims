@@ -206,6 +206,36 @@ class ProductController extends Controller
         ]);
     }
 
+    public function show(Product $product)
+    {
+        $user = auth()->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+        
+        $product->load(['brand', 'category', 'supplier', 'creator', 'branches' => function($q) use ($user, $isSystemAdmin) {
+            if (!$isSystemAdmin && $user->branch_id) {
+                $q->where('branches.id', $user->branch_id);
+            }
+        }]);
+
+        // Transform for specific view logic if needed (similar to index)
+        if (!$isSystemAdmin && $user->branch_id) {
+            $branchData = $product->branches->first();
+            $product->quantity = $branchData ? $branchData->pivot->quantity : 0;
+            $product->physical_location = $branchData ? $branchData->pivot->physical_location : null;
+            if ($branchData) {
+                $product->description = $branchData->pivot->description ?? $product->description;
+                $product->variations = $branchData->pivot->variations ?? $product->variations;
+            }
+        } else {
+             // Admin sees aggregate or raw
+             $product->quantity = $product->branches->sum('pivot.quantity');
+        }
+
+        return Inertia::render('Products/Show', [
+            'product' => $product,
+        ]);
+    }
+
     public function create()
     {
         $user = auth()->user();

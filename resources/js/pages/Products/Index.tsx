@@ -402,20 +402,26 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     </div>
 
                                     {/* Hover Actions Overlay */}
-                                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2">
-                                        <Button variant="secondary" size="sm" onClick={() => setViewCodeProduct(product)} className="w-32 shadow-lg">
-                                            <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
-                                        </Button>
-                                        <Link href={`/products/${product.id}/edit`}>
-                                            <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
-                                                Edit Product
+                                    <Link href={`/products/${product.id}`} className="absolute inset-0 z-10">
+                                        <span className="sr-only">View Details</span>
+                                    </Link>
+
+                                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 z-20 pointer-events-none">
+                                        <div className="pointer-events-auto flex flex-col gap-2">
+                                            <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg">
+                                                <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
                                             </Button>
-                                        </Link>
+                                            <Link href={`/products/${product.id}/edit`}>
+                                                <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
+                                                    Edit Product
+                                                </Button>
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Content Section */}
-                                <CardHeader className="p-4 pb-2 space-y-2">
+                                <CardHeader className="p-4 pb-2 space-y-2 relative z-20">
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
@@ -426,9 +432,11 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                     </span>
                                                 )}
                                             </div>
-                                            <CardTitle className="text-lg font-bold leading-tight line-clamp-2 min-h-[1.5em] group-hover:text-blue-600 transition-colors" title={product.name}>
-                                                {product.name}
-                                            </CardTitle>
+                                            <Link href={`/products/${product.id}`} className="hover:underline">
+                                                <CardTitle className="text-lg font-bold leading-tight line-clamp-2 min-h-[1.5em] group-hover:text-blue-600 transition-colors" title={product.name}>
+                                                    {product.name}
+                                                </CardTitle>
+                                            </Link>
                                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                                                 {product.brand && (
                                                     <span className="font-semibold">{product.brand.name}</span>
@@ -447,23 +455,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     </div>
                                 </CardHeader>
 
-                                <CardContent className="p-4 pt-0 space-y-3 flex-grow">
-                                    {/* Description */}
-                                    {product.description && (
-                                        <p className="text-xs text-gray-500 line-clamp-2 border-l-2 border-gray-200 pl-2 italic">
-                                            {product.description}
-                                        </p>
-                                    )}
-
-                                    {/* Physical Location if exists */}
-                                    {product.physical_location && (
-                                        <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-medium">
-                                            <MapPin className="h-3.5 w-3.5" />
-                                            <span>{product.physical_location}</span>
-                                        </div>
-                                    )}
+                                <CardContent className="p-4 pt-0 space-y-3 flex-grow relative z-20">
                                     {/* Codes Grid */}
-                                    <div className="grid grid-cols-2 gap-2 text-xs bg-gray-50 dark:bg-gray-900/50 p-2.5 rounded-lg border border-gray-100 dark:border-gray-800">
+                                    <div className="grid grid-cols-2 gap-2 text-xs bg-gray-50 dark:bg-gray-900/50 p-2.5 rounded-lg border border-gray-100 dark:border-gray-800 mb-2">
                                         <div className="space-y-0.5">
                                             <span className="text-muted-foreground text-[10px] uppercase flex items-center gap-1">
                                                 <Package className="h-3 w-3" /> SKU
@@ -503,7 +497,22 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         </div>
                                     </div>
 
-                                    {/* Description & Variations */}
+                                    {/* Description (Moved below grid) */}
+                                    {product.description && (
+                                        <p className="text-xs text-gray-500 line-clamp-2 border-l-2 border-gray-200 pl-2 italic">
+                                            {product.description}
+                                        </p>
+                                    )}
+
+                                    {/* Physical Location if exists */}
+                                    {product.physical_location && (
+                                        <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-medium">
+                                            <MapPin className="h-3.5 w-3.5" />
+                                            <span>{product.physical_location}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Variations */}
                                     <div className="space-y-2">
                                         {product.variations && product.variations.length > 0 && (
                                             <div className="flex flex-wrap gap-1">
@@ -522,16 +531,12 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     </div>
                                 </CardContent>
 
-                                <CardFooter className="p-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 text-xs text-muted-foreground flex justify-between items-center">
-                                    <div className="flex items-center gap-1.5" title="Branch Location">
-                                        <Layers className="h-3.5 w-3.5 text-blue-500" />
-                                        <span className="font-medium max-w-[120px] truncate">
-                                            {product.branch?.branch_name}
-                                        </span>
-                                    </div>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-gray-900">
-                                        <Info className="h-4 w-4" />
-                                    </Button>
+                                <CardFooter className="p-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 text-xs text-muted-foreground flex justify-end items-center">
+                                    <Link href={`/products/${product.id}`}>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-gray-900">
+                                            <Info className="h-4 w-4" />
+                                        </Button>
+                                    </Link>
                                 </CardFooter>
                             </Card>
                         ))}
