@@ -388,8 +388,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     {/* Badges */}
                                     <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
                                         <Badge className={`backdrop-blur-md shadow-sm border-0 ${product.quantity === 0 ? 'bg-red-500/90 hover:bg-red-600' :
-                                                product.quantity <= 5 ? 'bg-amber-500/90 hover:bg-amber-600' :
-                                                    'bg-emerald-600/90 hover:bg-emerald-700'
+                                            product.quantity <= 5 ? 'bg-amber-500/90 hover:bg-amber-600' :
+                                                'bg-emerald-600/90 hover:bg-emerald-700'
                                             }`}>
                                             Qty: {product.quantity}
                                         </Badge>
@@ -402,7 +402,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     </div>
 
                                     {/* Hover Actions Overlay */}
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 backdrop-blur-[1px]">
+                                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2">
                                         <Button variant="secondary" size="sm" onClick={() => setViewCodeProduct(product)} className="w-32 shadow-lg">
                                             <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
                                         </Button>
@@ -419,29 +419,49 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-                                                {product.brand && (
-                                                    <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
-                                                        {product.brand.name}
+                                                {product.branch && (
+                                                    <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400" title="Branch">
+                                                        <Layers className="h-3 w-3" />
+                                                        {product.branch.branch_name}
                                                     </span>
+                                                )}
+                                            </div>
+                                            <CardTitle className="text-lg font-bold leading-tight line-clamp-2 min-h-[1.5em] group-hover:text-blue-600 transition-colors" title={product.name}>
+                                                {product.name}
+                                            </CardTitle>
+                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                                {product.brand && (
+                                                    <span className="font-semibold">{product.brand.name}</span>
                                                 )}
                                                 {product.brand && product.category && <span>•</span>}
                                                 {product.category && (
                                                     <span>{product.category.name}</span>
                                                 )}
                                             </div>
-                                            <CardTitle className="text-lg font-bold leading-tight line-clamp-2 min-h-[1.5em] group-hover:text-blue-600 transition-colors" title={product.name}>
-                                                {product.name}
-                                            </CardTitle>
                                         </div>
                                         <div className="text-right">
-                                            <span className="text-lg font-extrabold text-green-700 dark:text-green-400 block">
+                                            <span className="text-lg font-extrabold text-black dark:text-white block">
                                                 ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
                                             </span>
                                         </div>
                                     </div>
                                 </CardHeader>
 
-                                <CardContent className="p-4 pt-0 space-y-4 flex-grow">
+                                <CardContent className="p-4 pt-0 space-y-3 flex-grow">
+                                    {/* Description */}
+                                    {product.description && (
+                                        <p className="text-xs text-gray-500 line-clamp-2 border-l-2 border-gray-200 pl-2 italic">
+                                            {product.description}
+                                        </p>
+                                    )}
+
+                                    {/* Physical Location if exists */}
+                                    {product.physical_location && (
+                                        <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-medium">
+                                            <MapPin className="h-3.5 w-3.5" />
+                                            <span>{product.physical_location}</span>
+                                        </div>
+                                    )}
                                     {/* Codes Grid */}
                                     <div className="grid grid-cols-2 gap-2 text-xs bg-gray-50 dark:bg-gray-900/50 p-2.5 rounded-lg border border-gray-100 dark:border-gray-800">
                                         <div className="space-y-0.5">
