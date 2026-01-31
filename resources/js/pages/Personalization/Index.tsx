@@ -207,7 +207,7 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
                             {/* Cropper UI if custom image selected */}
                             {bannerPreview ? (
                                 <div className="space-y-4">
-                                    <div className="relative w-full h-80 bg-gray-900 rounded-lg overflow-hidden">
+                                    <div className="relative w-full max-w-xl h-60 bg-gray-900 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 mx-auto md:mx-0">
                                         <Cropper
                                             image={bannerPreview}
                                             crop={crop}
@@ -218,8 +218,8 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
                                             onZoomChange={setZoom}
                                         />
                                     </div>
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-sm font-medium">Zoom</span>
+                                    <div className="flex items-center gap-4 max-w-xl">
+                                        <span className="text-sm font-medium w-10">Zoom</span>
                                         <input
                                             type="range"
                                             value={zoom}
@@ -228,7 +228,7 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
                                             step={0.1}
                                             aria-labelledby="Zoom"
                                             onChange={(e) => setZoom(Number(e.target.value))}
-                                            className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                            className="flex-1 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                                         />
                                     </div>
                                     <div className="flex justify-end gap-2">
@@ -275,7 +275,7 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
                         <div className="flex items-center gap-4">
                             <Button
                                 type="submit"
-                                disabled={!data.banner || processing}
+                                disabled={(!data.banner && !bannerPreview) || processing}
                                 className="gap-2"
                             >
                                 <Upload className="h-4 w-4" />
