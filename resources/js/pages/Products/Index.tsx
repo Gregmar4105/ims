@@ -392,8 +392,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     {/* Vibrant Quantity Badge */}
                                     <div className="absolute top-2 right-2">
                                         <Badge className={`shadow-sm border-0 font-bold ${product.quantity === 0 ? 'bg-red-600 hover:bg-red-700 text-white' :
-                                                product.quantity <= 5 ? 'bg-amber-500 hover:bg-amber-600 text-white' :
-                                                    'bg-emerald-500 hover:bg-emerald-600 text-white'
+                                            product.quantity <= 5 ? 'bg-amber-500 hover:bg-amber-600 text-white' :
+                                                'bg-emerald-500 hover:bg-emerald-600 text-white'
                                             }`}>
                                             Qty: {product.quantity}
                                         </Badge>
@@ -430,7 +430,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         </div>
 
                                         {/* Brand Pop */}
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 mb-2">
                                             {product.brand && (
                                                 <Badge variant="outline" className="rounded text-[10px] font-bold uppercase tracking-wider bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600">
                                                     {product.brand.name}
@@ -441,32 +441,49 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             )}
                                         </div>
 
-                                        {/* Description - Not italic, not grayed out */}
+                                        {/* Codes Grid (Expanded Font & Added 2Code) */}
+                                        <div className="grid grid-cols-3 gap-2 text-[10px] bg-gray-50 dark:bg-gray-900/50 p-2 rounded border border-gray-100 dark:border-gray-800">
+                                            <div className="flex flex-col">
+                                                <span className="text-gray-400 uppercase text-[9px]">SKU</span>
+                                                <span className="font-mono font-bold text-xs truncate" title={product.sku || ''}>{product.sku || '-'}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-gray-400 uppercase text-[9px]">Code</span>
+                                                <span className="font-mono font-bold text-xs truncate" title={product.code || ''}>{product.code || '-'}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-gray-400 uppercase text-[9px]">2Code</span>
+                                                <span className="font-mono font-bold text-xs truncate" title={product.code_2 || ''}>{product.code_2 || '-'}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Description - Below Codes */}
                                         {product.description ? (
-                                            <p className="line-clamp-2 text-xs text-gray-700 dark:text-gray-300 mt-1">
+                                            <p className="line-clamp-2 text-xs text-gray-700 dark:text-gray-300 mt-2">
                                                 {product.description}
                                             </p>
                                         ) : (
-                                            <p className="line-clamp-2 text-xs text-gray-400 mt-1">No description.</p>
+                                            <p className="line-clamp-2 text-xs text-gray-400 mt-2">No description.</p>
                                         )}
                                     </div>
 
-                                    {/* Codes Grid (Compact) */}
-                                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] bg-gray-50 dark:bg-gray-900/50 p-2 rounded border border-gray-100 dark:border-gray-800">
-                                        <div className="flex flex-col">
-                                            <span className="text-gray-400 uppercase text-[9px]">SKU</span>
-                                            <span className="font-mono font-medium truncate" title={product.sku || ''}>{product.sku || '-'}</span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-gray-400 uppercase text-[9px]">Code</span>
-                                            <span className="font-mono font-medium truncate" title={product.code || ''}>{product.code || '-'}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Footer: Details CTA */}
-                                    <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-800 mt-1">
-                                        <div className="flex items-center gap-1 min-w-0">
-                                            {product.branch && (
+                                    {/* Footer: Variations & Details CTA */}
+                                    <div className="flex items-end justify-between pt-1 border-t border-gray-100 dark:border-gray-800 mt-1 min-h-[30px]">
+                                        {/* Variations on Left */}
+                                        <div className="flex flex-col gap-1 flex-1 min-w-0 mr-2">
+                                            {product.variations && product.variations.length > 0 && (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {product.variations.slice(0, 2).map((v, i) => (
+                                                        <span key={i} className="text-[10px] inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-medium whitespace-nowrap overflow-hidden max-w-full">
+                                                            <span className="font-bold mr-1">{v.name}:</span> <span className="truncate">{v.options}</span>
+                                                        </span>
+                                                    ))}
+                                                    {product.variations.length > 2 && (
+                                                        <span className="text-[9px] text-gray-400">+{product.variations.length - 2}</span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {!product.variations?.length && product.branch && (
                                                 <span className="text-[10px] text-orange-600 dark:text-orange-400 truncate flex items-center gap-1 font-medium">
                                                     <Layers className="h-3 w-3" />
                                                     {product.branch.branch_name}
@@ -474,8 +491,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             )}
                                         </div>
 
-                                        <Link href={`/products/${product.id}`}>
-                                            <button className="group/btn flex items-center gap-1 text-xs font-bold text-gray-900 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400">
+                                        <Link href={`/products/${product.id}`} className="shrink-0">
+                                            <button className="group/btn flex items-center gap-1 text-xs font-bold text-gray-900 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400 whitespace-nowrap">
                                                 View Details
                                                 <ArrowRight className="h-3 w-3 -translate-x-1 transition-transform group-hover/btn:translate-x-0" />
                                             </button>
