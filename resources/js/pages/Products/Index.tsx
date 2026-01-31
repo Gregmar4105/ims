@@ -228,15 +228,15 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Products" />
 
-            <div className="flex flex-col gap-4 mb-6">
+            <div className="flex flex-col gap-4">
                 {/* Mobile Header (Sticky-ish feel) */}
                 <div className="sticky top-0 z-30 bg-gray-50/95 dark:bg-black/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 px-4 py-3 md:static md:bg-transparent md:border-0 md:p-0">
                     <div className="flex flex-col gap-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <PackageOpen className="h-8 w-8 md:h-12 md:w-12 text-blue-600 dark:text-blue-400" />
+                                <PackageOpen className="h-8 w-8 md:h-12 md:w-12 text-black dark:text-white" />
                                 <div>
-                                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-black dark:text-white">
                                         Product List
                                     </h2>
                                     <p className="hidden md:block text-sm text-muted-foreground">
@@ -245,11 +245,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 </div>
                             </div>
                             <Link href="/products/create">
-                                <Button size="sm" className="hidden md:flex">
+                                <Button size="sm" className="bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black">
                                     <Plus className="mr-2 h-4 w-4" /> Add Product
-                                </Button>
-                                <Button size="icon" className="md:hidden h-9 w-9 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700">
-                                    <Plus className="h-5 w-5" />
                                 </Button>
                             </Link>
                         </div>
@@ -392,7 +389,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                 </div>
             </div>
 
-            <div className="p-4 h-[calc(100vh-280px)] overflow-y-auto">
+            <div className="p-4 flex-1 overflow-y-auto min-h-0">
                 {productList.length === 0 ? (
                     <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed">
                         <PackageOpen className="mx-auto h-12 w-12 text-gray-400" />
