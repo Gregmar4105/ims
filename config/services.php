@@ -44,4 +44,8 @@ return [
         'shutdown' => env('SHUTDOWN_WEBHOOK_URL'),
     ],
 
+    'n8n' => [
+        'webhook_url' => env('N8N_WEBHOOK_URL'),
+    ],
+
 ];

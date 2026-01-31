@@ -63,6 +63,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('transfers/{transfer}/confirm', [\App\Http\Controllers\TransferController::class, 'confirmReceipt'])->name('transfers.confirm');
     Route::get('incoming', [\App\Http\Controllers\TransferController::class, 'incoming'])->name('transfers.incoming');
     Route::get('transfer-list', [\App\Http\Controllers\TransferController::class, 'index'])->name('transfers.index');
+    Route::get('import-transfer', [\App\Http\Controllers\ImportTransferController::class, 'index'])->name('transfers.import');
+    Route::post('import-transfer', [\App\Http\Controllers\ImportTransferController::class, 'store'])->name('transfers.import.store');
 
     // Sales routes
     Route::get('sales-list', [\App\Http\Controllers\SaleController::class, 'index'])->name('sales.index');
