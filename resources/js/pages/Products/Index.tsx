@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2 } from 'lucide-react';
+import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import Pagination from '@/components/Pagination';
@@ -36,7 +36,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 interface Product {
     id: number;
     name: string;
-    branch_id: number;
+    brand_id: number;
+    category_id: number;
     quantity: number;
     physical_location: string | null;
     description: string | null;
@@ -44,10 +45,14 @@ interface Product {
     image_path: string | null;
     barcode: string | null;
     qr_code: string | null;
-    branch?: {
-        branch_name: string;
-    };
     price: number | null;
+    code: string | null;
+    code_2: string | null;
+    sku: string | null;
+    branch?: { branch_name: string };
+    brand?: { name: string };
+    category?: { name: string };
+    supplier?: { name: string };
 }
 
 interface Props {
@@ -367,77 +372,146 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         {productList.map((product: Product) => (
-                            <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col text-sm">
-                                <div className="aspect-square relative bg-white flex items-center justify-center overflow-hidden group p-2 border-b">
+                            <Card key={product.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl">
+                                {/* Image Section */}
+                                <div className="aspect-[4/3] relative bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 dark:border-gray-700">
                                     {product.image_path ? (
                                         <img
                                             src={`/storage/${product.image_path}`}
                                             alt={product.name}
-                                            className="object-contain w-full h-full transition-transform duration-500 group-hover:scale-110"
+                                            className="object-contain w-full h-full transition-transform duration-500 group-hover:scale-105 p-4"
                                         />
                                     ) : (
-                                        <PackageOpen className="h-12 w-12 text-gray-300" />
+                                        <PackageOpen className="h-16 w-16 text-gray-300" />
                                     )}
-                                    <div className="absolute top-2 right-2">
-                                        <Badge className={`backdrop-blur-sm text-[10px] px-1.5 py-0.5 ${product.quantity === 0 ? 'bg-red-500/90 hover:bg-red-600/90' : 'bg-black/70 hover:bg-black/80'}`}>
+
+                                    {/* Badges */}
+                                    <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                                        <Badge className={`backdrop-blur-md shadow-sm border-0 ${product.quantity === 0 ? 'bg-red-500/90 hover:bg-red-600' :
+                                                product.quantity <= 5 ? 'bg-amber-500/90 hover:bg-amber-600' :
+                                                    'bg-emerald-600/90 hover:bg-emerald-700'
+                                            }`}>
                                             Qty: {product.quantity}
                                         </Badge>
+                                        {product.physical_location && (
+                                            <Badge variant="outline" className="bg-white/80 dark:bg-black/50 backdrop-blur-md text-[10px] gap-1 shadow-sm">
+                                                <MapPin className="h-3 w-3" />
+                                                {product.physical_location}
+                                            </Badge>
+                                        )}
                                     </div>
-                                    {/* Overlay Action Button */}
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2">
-                                        <Button variant="secondary" size="sm" onClick={() => setViewCodeProduct(product)}>
-                                            View Codes
+
+                                    {/* Hover Actions Overlay */}
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 backdrop-blur-[1px]">
+                                        <Button variant="secondary" size="sm" onClick={() => setViewCodeProduct(product)} className="w-32 shadow-lg">
+                                            <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
                                         </Button>
                                         <Link href={`/products/${product.id}/edit`}>
-                                            <Button variant="secondary" size="sm">
+                                            <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
                                                 Edit Product
                                             </Button>
                                         </Link>
                                     </div>
                                 </div>
-                                <CardHeader className="p-3 pb-1">
-                                    <CardTitle className="text-base font-bold line-clamp-1" title={product.name}>
-                                        {product.name}
-                                    </CardTitle>
-                                    <div className="flex items-center justify-between mt-1">
-                                        <div className="flex items-center text-xs text-muted-foreground">
-                                            <MapPin className="h-3 w-3 mr-1" />
-                                            <span className="truncate max-w-[80px]">{product.physical_location || 'No loc'}</span>
+
+                                {/* Content Section */}
+                                <CardHeader className="p-4 pb-2 space-y-2">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+                                                {product.brand && (
+                                                    <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                                                        {product.brand.name}
+                                                    </span>
+                                                )}
+                                                {product.brand && product.category && <span>•</span>}
+                                                {product.category && (
+                                                    <span>{product.category.name}</span>
+                                                )}
+                                            </div>
+                                            <CardTitle className="text-lg font-bold leading-tight line-clamp-2 min-h-[1.5em] group-hover:text-blue-600 transition-colors" title={product.name}>
+                                                {product.name}
+                                            </CardTitle>
                                         </div>
-                                        <Badge variant="outline" className="text-xs font-bold bg-green-50 text-green-700 border-green-200">
-                                            ₱{product.price ? Number(product.price).toFixed(2) : '0.00'}
-                                        </Badge>
+                                        <div className="text-right">
+                                            <span className="text-lg font-extrabold text-green-700 dark:text-green-400 block">
+                                                ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                                            </span>
+                                        </div>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="p-3 pt-1 flex-grow space-y-2">
-                                    {product.description && (
-                                        <p className="text-xs text-gray-500 line-clamp-2" title={product.description}>
-                                            {product.description}
-                                        </p>
-                                    )}
 
-                                    {product.variations && product.variations.length > 0 && (
-                                        <div className="flex flex-wrap gap-1 mt-2">
-                                            {product.variations.slice(0, 2).map((v, i) => (
-                                                <Badge key={i} variant="secondary" className="text-[10px] px-1 py-0 h-4">
-                                                    {v.name}: {v.options}
-                                                </Badge>
-                                            ))}
-                                            {product.variations.length > 2 && (
-                                                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
-                                                    +{product.variations.length - 2}
-                                                </Badge>
+                                <CardContent className="p-4 pt-0 space-y-4 flex-grow">
+                                    {/* Codes Grid */}
+                                    <div className="grid grid-cols-2 gap-2 text-xs bg-gray-50 dark:bg-gray-900/50 p-2.5 rounded-lg border border-gray-100 dark:border-gray-800">
+                                        <div className="space-y-0.5">
+                                            <span className="text-muted-foreground text-[10px] uppercase flex items-center gap-1">
+                                                <Package className="h-3 w-3" /> SKU
+                                            </span>
+                                            <span className="font-mono font-medium truncate block" title={product.sku || '-'}>
+                                                {product.sku || <span className="text-gray-300">-</span>}
+                                            </span>
+                                        </div>
+                                        <div className="space-y-0.5">
+                                            <span className="text-muted-foreground text-[10px] uppercase flex items-center gap-1">
+                                                <Tag className="h-3 w-3" /> Code
+                                            </span>
+                                            <span className="font-mono font-medium truncate block" title={product.code || '-'}>
+                                                {product.code || <span className="text-gray-300">-</span>}
+                                            </span>
+                                        </div>
+                                        {/* Optional 2nd Row for details */}
+                                        <div className="col-span-2 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-2 mt-1">
+                                            <div className="space-y-0.5 flex-1 has-tooltip" title={product.code_2 || 'No 2Code'}>
+                                                <span className="text-muted-foreground text-[10px] uppercase flex items-center gap-1">
+                                                    <ScanBarcode className="h-3 w-3" /> 2Code
+                                                </span>
+                                                <span className="font-mono font-medium truncate block max-w-[100px]">
+                                                    {product.code_2 || <span className="text-center text-gray-300">-</span>}
+                                                </span>
+                                            </div>
+                                            {product.supplier && (
+                                                <div className="space-y-0.5 text-right flex-1 truncate pl-2">
+                                                    <span className="text-muted-foreground text-[10px] uppercase flex items-center justify-end gap-1">
+                                                        <Truck className="h-3 w-3" /> Supplier
+                                                    </span>
+                                                    <span className="font-medium truncate block" title={product.supplier.name}>
+                                                        {product.supplier.name}
+                                                    </span>
+                                                </div>
                                             )}
                                         </div>
-                                    )}
+                                    </div>
+
+                                    {/* Description & Variations */}
+                                    <div className="space-y-2">
+                                        {product.variations && product.variations.length > 0 && (
+                                            <div className="flex flex-wrap gap-1">
+                                                {product.variations.slice(0, 3).map((v, i) => (
+                                                    <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 h-5 font-normal bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-transparent hover:border-gray-300">
+                                                        <span className="font-semibold mr-1">{v.name}:</span> {v.options}
+                                                    </Badge>
+                                                ))}
+                                                {product.variations.length > 3 && (
+                                                    <Badge variant="outline" className="text-[10px] px-1.5 h-5">
+                                                        +{product.variations.length - 3}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </CardContent>
-                                <CardFooter className="p-3 pt-0 border-t bg-gray-50/50 mt-auto">
-                                    <div className="flex items-center justify-between w-full text-xs text-muted-foreground">
-                                        <span className="flex items-center">
-                                            <Layers className="h-3 w-3 mr-1" />
+
+                                <CardFooter className="p-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 text-xs text-muted-foreground flex justify-between items-center">
+                                    <div className="flex items-center gap-1.5" title="Branch Location">
+                                        <Layers className="h-3.5 w-3.5 text-blue-500" />
+                                        <span className="font-medium max-w-[120px] truncate">
                                             {product.branch?.branch_name}
                                         </span>
                                     </div>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-gray-900">
+                                        <Info className="h-4 w-4" />
+                                    </Button>
                                 </CardFooter>
                             </Card>
                         ))}
