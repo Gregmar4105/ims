@@ -1,10 +1,11 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Upload, FileImage, Loader2, AlertCircle } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface InventoryItem {
@@ -18,37 +19,23 @@ interface AnalysisResult {
 
 export default function ImportTransferIndex() {
     const { flash } = usePage().props as any;
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         image: null as File | null,
     });
 
-    // We can also get result from flash session if redirect back with data
-    // typically in inertia we receive it as props if we return it from controller
-    // but in controller I used `with('analysis_result', $data)`.
-    // Let's check if it comes through flash or we need to access it differently.
-    // Usually `with` puts it in session, so it appears in `flash` or similar prop depending on HandleInertiaRequests middleware.
-    // I will assume for now it might be in `flash.analysis_result` or I should have passed it as prop.
-    // Let's look at how I implemented controller: `return back()->with('analysis_result', $data);`
-    // Standard Laravel Inertia middleware often shares 'flash' key.
-
-    // Let's rely on usePage().props to find it.
+    // Props from controller redirect
     const pageProps = usePage().props as any;
-    // Check where 'analysis_result' lands. Usually distinct from flash if not configured.
-    // To be safe, I'll check both or assume it might be a root prop if I shared it, 
-    // but standard `with()` just puts it in session. Inertia's `HandleInertiaRequests` usually grabs 'success', 'error' from session.
-    // If 'analysis_result' is not manually added to HandleInertiaRequests, it won't show up.
-
-    // ADJUSTMENT: The controller uses `back()->with(...)`. Unless I modified HandleInertiaRequests, this data won't be available!
-    // I should probably have returned `Inertia::render` with the data, OR I need to ensure HandleInertiaRequests shares it.
-    // Since I can't easily check middleware right now, let's assume I might need to fix Controller to use Inertia::render if validation passes.
-    // BUT, `back()` is nice for errors.
-    // Let's trust `flash` might contain it if I mapped all session keys, but likely standard only maps specific ones.
-
-    // ACTUALLY: The best pattern for this "Stateful" upload is to stay on page.
-    // I will stick to this View code, but I might need to update Controller to `Inertia::render` with data if `back()` doesn't work.
-    // However, I will check if `flash.analysis_result` works. If not I'll fix it.
-
     const analysisResult = pageProps.flash?.analysis_result as AnalysisResult | undefined;
+
+    // Local state for editable items
+    const [items, setItems] = useState<InventoryItem[]>([]);
+
+    useEffect(() => {
+        if (analysisResult?.inventory_items) {
+            setItems(analysisResult.inventory_items);
+            toast.success(`Found ${analysisResult.inventory_items.length} items`);
+        }
+    }, [analysisResult]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -65,12 +52,26 @@ export default function ImportTransferIndex() {
         post('/import-transfer', {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success("Analysis complete");
+                // Toast handled in useEffect upon flash data arrival
             },
             onError: () => {
                 toast.error("Failed to analyze image");
             }
         });
+    };
+
+    const updateItem = (index: number, field: keyof InventoryItem, value: string | number) => {
+        const newItems = [...items];
+        newItems[index] = { ...newItems[index], [field]: value };
+        setItems(newItems);
+    };
+
+    const removeItem = (index: number) => {
+        setItems(items.filter((_, i) => i !== index));
+    };
+
+    const addItem = () => {
+        setItems([...items, { item_name: '', quantity: 1 }]);
     };
 
     return (
@@ -81,20 +82,20 @@ export default function ImportTransferIndex() {
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Import Transfer from Image</h2>
                     <p className="text-muted-foreground">
-                        Upload a photo of a packing list or invoice to automatically extract items.
+                        Upload a photo of a packing list to extract items, then review and edit the results.
                     </p>
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
                     {/* Upload Section */}
-                    <Card>
+                    <Card className="h-fit">
                         <CardHeader>
                             <CardTitle>Upload Image</CardTitle>
                             <CardDescription>Supported formats: JPG, PNG</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={submit} className="space-y-4">
-                                <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-pointer relative">
+                                <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-pointer relative h-48 bg-muted/5">
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -141,44 +142,74 @@ export default function ImportTransferIndex() {
 
                     {/* Results Section */}
                     <div className="space-y-6">
-                        {analysisResult ? (
-                            <Card className="border-green-200 bg-green-50/20">
-                                <CardHeader>
-                                    <CardTitle className="text-green-700 flex items-center gap-2">
-                                        Analysis Results
-                                    </CardTitle>
+                        {items.length > 0 ? (
+                            <Card className="border-green-200 bg-white shadow-md">
+                                <CardHeader className="bg-green-50/50 pb-4">
+                                    <div className="flex justify-between items-center">
+                                        <CardTitle className="text-green-800 flex items-center gap-2">
+                                            Analysis Results
+                                        </CardTitle>
+                                        <Button size="sm" variant="outline" onClick={addItem} className="h-8 gap-1 bg-white">
+                                            <Plus className="w-3 h-3" /> Add Item
+                                        </Button>
+                                    </div>
                                     <CardDescription>
-                                        Found {analysisResult.inventory_items.length} items
+                                        Review extracted items ({items.length}). You can edit details before creating the transfer.
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent className="p-0 overflow-hidden">
+                                <CardContent className="p-0 overflow-hidden max-h-[600px] overflow-y-auto">
                                     <Table>
-                                        <TableHeader>
+                                        <TableHeader className="bg-muted/30 sticky top-0 z-10 backdrop-blur">
                                             <TableRow>
                                                 <TableHead>Item Name</TableHead>
-                                                <TableHead className="text-right">Qty</TableHead>
+                                                <TableHead className="w-[100px]">Qty</TableHead>
+                                                <TableHead className="w-[50px]"></TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {analysisResult.inventory_items.map((item, idx) => (
+                                            {items.map((item, idx) => (
                                                 <TableRow key={idx}>
-                                                    <TableCell className="font-medium">{item.item_name}</TableCell>
-                                                    <TableCell className="text-right">{item.quantity}</TableCell>
+                                                    <TableCell className="p-2">
+                                                        <Input
+                                                            value={item.item_name}
+                                                            onChange={(e) => updateItem(idx, 'item_name', e.target.value)}
+                                                            className="h-8 border-transparent hover:border-input focus:border-primary bg-transparent"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="p-2">
+                                                        <Input
+                                                            type="number"
+                                                            value={item.quantity}
+                                                            onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value) || 0)}
+                                                            className="h-8 w-20 border-transparent hover:border-input focus:border-primary bg-transparent text-right"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="p-2 text-right">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                                            onClick={() => removeItem(idx)}
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>
                                     </Table>
                                 </CardContent>
-                                <CardFooter className="bg-green-100/30 p-4 border-t border-green-200">
-                                    <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => toast.info("Conversion to transfer not implemented yet.")}>
+                                <CardFooter className="bg-green-50/50 p-4 border-t">
+                                    <Button className="w-full bg-green-600 hover:bg-green-700 shadow-sm" onClick={() => toast.info(`Ready to create transfer with ${items.length} items (Implementation pending)`)}>
+                                        <Save className="w-4 h-4 mr-2" />
                                         Create Transfer
                                     </Button>
                                 </CardFooter>
                             </Card>
                         ) : (
-                            <div className="h-full flex flex-col items-center justify-center p-8 border rounded-lg bg-muted/10 text-muted-foreground border-dashed">
-                                <FileImage className="h-12 w-12 mb-3 opacity-20" />
-                                <p>Results will appear here after analysis</p>
+                            <div className="h-full min-h-[300px] flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg bg-muted/5 text-muted-foreground">
+                                <FileImage className="h-12 w-12 mb-3 opacity-10" />
+                                <p>Upload an image to see analysis results here.</p>
                             </div>
                         )}
                     </div>

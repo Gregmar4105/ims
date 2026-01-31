@@ -28,11 +28,17 @@ class ImportTransferController extends Controller
             )->post(config('services.n8n.webhook_url'));
 
             if ($response->successful()) {
-                $data = $response->json();
-                // Return the data directly to the frontend to display
-                return back()->with('analysis_result', $data);
+                $raw = $response->json();
+                // Handle n8n output structure: [{ "output": { "inventory_items": [...] } }]
+                // Or sometimes it might be just the object. Check both.
+                $items = $raw[0]['output']['inventory_items']
+                    ?? $raw['output']['inventory_items']
+                    ?? $raw['inventory_items']
+                    ?? [];
+
+                return back()->with('analysis_result', ['inventory_items' => $items]);
             } else {
-                return back()->with('error', 'Failed to process image with AI service. Status: ' . $response->status());
+                return back()->with('error', 'Failed to process image. Status: ' . $response->status());
             }
 
         } catch (\Exception $e) {
