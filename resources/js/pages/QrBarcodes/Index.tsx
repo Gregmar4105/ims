@@ -63,7 +63,7 @@ interface Props {
 }
 
 export default function Index({ products }: Props) {
-    const { flash } = usePage().props as any;
+    const { flash, errors } = usePage().props as any;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [barcode, setBarcode] = useState('');
@@ -204,25 +204,35 @@ export default function Index({ products }: Props) {
                             <Label htmlFor="barcode" className="text-right">
                                 Barcode
                             </Label>
-                            <Input
-                                id="barcode"
-                                value={barcode}
-                                onChange={(e) => setBarcode(e.target.value)}
-                                placeholder="Leave blank to auto-generate"
-                                className="col-span-3"
-                            />
+                            <div className="col-span-3">
+                                <Input
+                                    id="barcode"
+                                    value={barcode}
+                                    onChange={(e) => setBarcode(e.target.value)}
+                                    placeholder="Leave blank to auto-generate"
+                                    className={errors?.barcode ? "border-red-500" : ""}
+                                />
+                                {errors?.barcode && (
+                                    <span className="text-xs text-red-500 mt-1 block">{errors.barcode}</span>
+                                )}
+                            </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="qr-code" className="text-right">
                                 QR Code
                             </Label>
-                            <Input
-                                id="qr-code"
-                                value={qrCode}
-                                onChange={(e) => setQrCode(e.target.value)}
-                                placeholder="Leave blank to auto-generate"
-                                className="col-span-3"
-                            />
+                            <div className="col-span-3">
+                                <Input
+                                    id="qr-code"
+                                    value={qrCode}
+                                    onChange={(e) => setQrCode(e.target.value)}
+                                    placeholder="Leave blank to auto-generate"
+                                    className={errors?.qr_code ? "border-red-500" : ""}
+                                />
+                                {errors?.qr_code && (
+                                    <span className="text-xs text-red-500 mt-1 block">{errors.qr_code}</span>
+                                )}
+                            </div>
                         </div>
                     </div>
                     <DialogFooter>
