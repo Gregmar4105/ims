@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight } from 'lucide-react';
+import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import Pagination from '@/components/Pagination';
@@ -90,6 +90,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const [code, setCode] = useState<string>(filters?.code || "all");
     const [code2, setCode2] = useState<string>(filters?.code_2 || "all");
     const [sku, setSku] = useState<string>(filters?.sku || "all");
+    const [showFilters, setShowFilters] = useState(false);
 
     const debounceTimer = useRef<number | null>(null);
 
@@ -227,29 +228,61 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Products" />
 
-            <div className="mx-4 mt-4 flex flex-col gap-4 mb-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                        <PackageOpen className="size-14 mr-3" />
-                        <div className="space-y-1">
-                            <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                                Product List
-                            </h2>
-                            <p className="text-sm text-muted-foreground">
-                                Manage your inventory and products.
-                            </p>
+            <div className="flex flex-col gap-4 mb-6">
+                {/* Mobile Header (Sticky-ish feel) */}
+                <div className="sticky top-0 z-30 bg-gray-50/95 dark:bg-black/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 px-4 py-3 md:static md:bg-transparent md:border-0 md:p-0">
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <PackageOpen className="h-8 w-8 md:h-12 md:w-12 text-blue-600 dark:text-blue-400" />
+                                <div>
+                                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                                        Product List
+                                    </h2>
+                                    <p className="hidden md:block text-sm text-muted-foreground">
+                                        Manage your inventory.
+                                    </p>
+                                </div>
+                            </div>
+                            <Link href="/products/create">
+                                <Button size="sm" className="hidden md:flex">
+                                    <Plus className="mr-2 h-4 w-4" /> Add Product
+                                </Button>
+                                <Button size="icon" className="md:hidden h-9 w-9 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700">
+                                    <Plus className="h-5 w-5" />
+                                </Button>
+                            </Link>
+                        </div>
+
+                        {/* Mobile Main Controls */}
+                        <div className="flex items-center gap-2 md:hidden">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                                <Input
+                                    type="text"
+                                    placeholder="Search..."
+                                    value={search}
+                                    onChange={handleSearchChange}
+                                    className="pl-9 h-10 bg-white dark:bg-gray-800"
+                                />
+                            </div>
+                            <Button
+                                variant={showFilters || hasActiveFilters ? "default" : "outline"}
+                                size="icon"
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`h-10 w-10 shrink-0 ${hasActiveFilters ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900 dark:text-blue-100" : ""}`}
+                            >
+                                <Filter className="h-4 w-4" />
+                            </Button>
                         </div>
                     </div>
-                    <Link href="/products/create">
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" /> Add Product
-                        </Button>
-                    </Link>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border shadow-sm space-y-4">
-                    <div className="flex flex-col md:flex-row gap-4 flex-wrap">
-                        <div className="flex-1 relative min-w-[200px]">
+                {/* Filters Section (Collapsible on Mobile, Visible on Desktop) */}
+                <div className={`mx-4 md:mx-0 bg-white dark:bg-gray-800 p-4 rounded-lg border shadow-sm transition-all duration-300 ease-in-out ${showFilters ? 'block' : 'hidden md:block'}`}>
+                    <div className="flex flex-col md:flex-row gap-3 flex-wrap">
+                        {/* Desktop Search (Hidden on Mobile) */}
+                        <div className="hidden md:block flex-1 relative min-w-[200px]">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <Input
                                 type="text"
@@ -260,95 +293,99 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             />
                         </div>
 
-                        {isSystemAdmin && (
-                            <Select value={branch} onValueChange={(val) => { setBranch(val); updateParams({ branch: val }); }}>
-                                <SelectTrigger className="w-[160px]">
-                                    <SelectValue placeholder="Branch" />
+                        {/* Filter Group - wrapped for mobile Layout */}
+                        <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
+                            {isSystemAdmin && (
+                                <Select value={branch} onValueChange={(val) => { setBranch(val); updateParams({ branch: val }); }}>
+                                    <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
+                                        <SelectValue placeholder="Branch" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Branches</SelectItem>
+                                        {options.branches.map((b) => (
+                                            <SelectItem key={b} value={b}>{b}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+
+                            <Select value={brand} onValueChange={(val) => { setBrand(val); updateParams({ brand: val }); }}>
+                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
+                                    <SelectValue placeholder="Brand" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Branches</SelectItem>
-                                    {options.branches.map((b) => (
+                                    <SelectItem value="all">All Brands</SelectItem>
+                                    {options.brands.map((b) => (
                                         <SelectItem key={b} value={b}>{b}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                        )}
 
-                        <Select value={brand} onValueChange={(val) => { setBrand(val); updateParams({ brand: val }); }}>
-                            <SelectTrigger className="w-[160px]">
-                                <SelectValue placeholder="Brand" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Brands</SelectItem>
-                                {options.brands.map((b) => (
-                                    <SelectItem key={b} value={b}>{b}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                            <Select value={category} onValueChange={(val) => { setCategory(val); updateParams({ category: val }); }}>
+                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
+                                    <SelectValue placeholder="Category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Categories</SelectItem>
+                                    {options.categories.map((c) => (
+                                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
 
-                        <Select value={category} onValueChange={(val) => { setCategory(val); updateParams({ category: val }); }}>
-                            <SelectTrigger className="w-[160px]">
-                                <SelectValue placeholder="Category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Categories</SelectItem>
-                                {options.categories.map((c) => (
-                                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                            <Select value={stock} onValueChange={(val) => { setStock(val); updateParams({ stock: val }); }}>
+                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Status</SelectItem>
+                                    <SelectItem value="in_stock">In Stock</SelectItem>
+                                    <SelectItem value="low_stock">Low Stock</SelectItem>
+                                    <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                                </SelectContent>
+                            </Select>
 
-                        <Select value={code} onValueChange={(val) => { setCode(val); updateParams({ code: val }); }}>
-                            <SelectTrigger className="w-[160px]">
-                                <SelectValue placeholder="Code" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Codes</SelectItem>
-                                {options.codes?.map((c) => (
-                                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                            {/* Advanced Filters (Codes etc) - Toggleable within filters? Or just stacked */}
+                            <Select value={code} onValueChange={(val) => { setCode(val); updateParams({ code: val }); }}>
+                                <SelectTrigger className="w-full md:w-[120px] h-9 text-xs md:text-sm bg-gray-50/50">
+                                    <SelectValue placeholder="Code" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Codes</SelectItem>
+                                    {options.codes?.map((c) => (
+                                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
 
-                        <Select value={code2} onValueChange={(val) => { setCode2(val); updateParams({ code_2: val }); }}>
-                            <SelectTrigger className="w-[160px]">
-                                <SelectValue placeholder="2Code" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All 2Codes</SelectItem>
-                                {options.code2s?.map((c) => (
-                                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                            <Select value={code2} onValueChange={(val) => { setCode2(val); updateParams({ code_2: val }); }}>
+                                <SelectTrigger className="w-full md:w-[120px] h-9 text-xs md:text-sm bg-gray-50/50">
+                                    <SelectValue placeholder="2Code" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All 2Codes</SelectItem>
+                                    {options.code2s?.map((c) => (
+                                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
 
-                        <Select value={sku} onValueChange={(val) => { setSku(val); updateParams({ sku: val }); }}>
-                            <SelectTrigger className="w-[160px]">
-                                <SelectValue placeholder="SKU" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All SKUs</SelectItem>
-                                {options.skus?.map((c) => (
-                                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        <Select value={stock} onValueChange={(val) => { setStock(val); updateParams({ stock: val }); }}>
-                            <SelectTrigger className="w-[160px]">
-                                <SelectValue placeholder="Stock Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Stock</SelectItem>
-                                <SelectItem value="in_stock">In Stock</SelectItem>
-                                <SelectItem value="low_stock">Low Stock (≤5)</SelectItem>
-                                <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-                            </SelectContent>
-                        </Select>
+                            <Select value={sku} onValueChange={(val) => { setSku(val); updateParams({ sku: val }); }}>
+                                <SelectTrigger className="w-full md:w-[120px] h-9 text-xs md:text-sm bg-gray-50/50">
+                                    <SelectValue placeholder="SKU" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All SKUs</SelectItem>
+                                    {options.skus?.map((c) => (
+                                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
 
                         {hasActiveFilters && (
-                            <Button variant="ghost" size="icon" onClick={clearFilters} title="Clear Filters">
-                                <X className="h-4 w-4" />
+                            <Button variant="ghost" size="sm" onClick={clearFilters} title="Clear Filters" className="h-9 px-2 text-red-500 hover:text-red-700 hover:bg-red-50">
+                                <X className="h-4 w-4 mr-1" /> <span className="md:hidden">Clear</span>
                             </Button>
                         )}
                     </div>
