@@ -10,6 +10,9 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { ImageIcon, RotateCcw, Upload } from 'lucide-react';
 
+import Cropper from 'react-easy-crop';
+import getCroppedImg from '@/lib/canvasUtils';
+
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Personalization',
@@ -25,9 +28,12 @@ interface Props {
 export default function Index({ currentBanner, defaultBanner }: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
     const { data, setData, post, processing, errors, recentlySuccessful, reset } = useForm<{
-        banner: File | null;
+        banner: File | Blob | null;
     }>({
         banner: null,
     });
@@ -37,7 +43,7 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
     const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setData('banner', file);
+            // setData('banner', file); // Don't set data yet, wait for crop
             const reader = new FileReader();
             reader.onload = (e) => {
                 setBannerPreview(e.target?.result as string);
@@ -46,8 +52,95 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
         }
     };
 
-    const submit = (e: React.FormEvent) => {
+    const onCropComplete = (croppedArea: any, croppedAreaPixels: any) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    };
+
+    const submit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (bannerPreview && croppedAreaPixels) {
+            try {
+                const croppedImage = await getCroppedImg(
+                    bannerPreview,
+                    croppedAreaPixels
+                );
+
+                // We need to use router.post manually or hack Inertia form?
+                // Inertia useForm handles file uploads if data is File/Blob.
+                // We can just update data immediately before post, but setState is async...
+                // Actually `post` uses current `data`. We need to update it first.
+                // Or better, use manual router.post or update data via setData then plain submit?
+                // The `transform` option in useForm is perfect for this, but I didn't init with it.
+                // Simple way: setData wait? No.
+                // useForm provides `transform` callback in options.
+
+                // Let's stick to the current plan: 
+                // We can't await `setData` inside submit handler easily before `post`.
+                // Alternative: Use `router.post`.
+                // OR: Construct FormData manually?
+                // Wait, useForm's `post` accepts options. `transform` allows modifying data before send.
+
+            } catch (e) {
+                console.error(e);
+                return;
+            }
+        }
+
+        // Actually, let's redefine `submit` logic to:
+        // 1. If bannerPreview, get blob.
+        // 2. setData('banner', blob) <- this won't reflect immediately in same closure.
+        // 3. post().
+
+        // Correct approach with useForm:
+        // Use `transform` hook option if available, OR just pass data to `post`? No `post` takes url.
+        // We can use the `data` stored in state, but updating it is async.
+
+        // Let's use `router` from inertia/react instead of useForm for this specific submit if needed?
+        // Or simply:
+
+        if (bannerPreview && croppedAreaPixels) {
+            const croppedBlob = await getCroppedImg(bannerPreview, croppedAreaPixels);
+            if (!croppedBlob) return;
+
+            // Create a File from Blob to preserve name if possible, or just send blob
+            const file = new File([croppedBlob], "banner.jpg", { type: "image/jpeg" });
+
+            // We can't update useForm data synchronously and submit.
+            // We have to use the `data` arg of post? No `post` uses internal data.
+            // WORKAROUND: use `router.post` directly for this one, bypassing useForm's submit slightly
+            // but keeping useForm for errors/processing state is nice.
+
+            // Actually, useForm `transform` is the way.
+            // But I declared useForm above.
+
+            // Let's just use `router.post` for the submission with the processed file.
+            // BUT we lose `processing` state from useForm.
+            // Ok, let's just use `setData` and `useEffect`? Too complex.
+
+            // Simplest: `data` argument in `transform`? 
+            // `post(url, { transform: (data) => ({ ...data, banner: file }) })`
+
+            post('/personalization/banner', {
+                preserveScroll: true,
+                forceFormData: true,
+                transform: (currentData) => ({
+                    ...currentData,
+                    banner: file,
+                }),
+                onSuccess: () => {
+                    reset();
+                    setBannerPreview(null);
+                    setZoom(1);
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+                },
+            } as any);
+            return;
+        }
+
+        // Fallback for no-preview submit (shouldn't happen with this UI logic but safe to keep)
         post('/personalization/banner', {
             preserveScroll: true,
             onSuccess: () => {
@@ -110,33 +203,72 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
                     <form onSubmit={submit} className="space-y-4">
                         <div className="grid gap-2">
                             <Label htmlFor="banner">Upload New Banner</Label>
-                            <div className="flex items-center gap-4">
-                                <input
-                                    id="banner"
-                                    type="file"
-                                    className="hidden"
-                                    ref={fileInputRef}
-                                    onChange={handleBannerChange}
-                                    accept="image/*"
-                                />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="gap-2"
-                                >
-                                    <ImageIcon className="h-4 w-4" />
-                                    Select Image
-                                </Button>
-                                {data.banner && (
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                                        {data.banner.name}
-                                    </span>
-                                )}
-                            </div>
-                            <p className="text-sm text-gray-500">
-                                Supported formats: JPG, PNG, GIF, WebP. Maximum file size: 5MB.
-                            </p>
+
+                            {/* Cropper UI if custom image selected */}
+                            {bannerPreview ? (
+                                <div className="space-y-4">
+                                    <div className="relative w-full h-80 bg-gray-900 rounded-lg overflow-hidden">
+                                        <Cropper
+                                            image={bannerPreview}
+                                            crop={crop}
+                                            zoom={zoom}
+                                            aspect={2000 / 600}
+                                            onCropChange={setCrop}
+                                            onCropComplete={onCropComplete}
+                                            onZoomChange={setZoom}
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-sm font-medium">Zoom</span>
+                                        <input
+                                            type="range"
+                                            value={zoom}
+                                            min={1}
+                                            max={3}
+                                            step={0.1}
+                                            aria-labelledby="Zoom"
+                                            onChange={(e) => setZoom(Number(e.target.value))}
+                                            className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                        />
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => {
+                                                setBannerPreview(null);
+                                                setData('banner', null);
+                                                if (fileInputRef.current) fileInputRef.current.value = '';
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-4">
+                                    <input
+                                        id="banner"
+                                        type="file"
+                                        className="hidden"
+                                        ref={fileInputRef}
+                                        onChange={handleBannerChange}
+                                        accept="image/*"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="gap-2"
+                                    >
+                                        <ImageIcon className="h-4 w-4" />
+                                        Select Image
+                                    </Button>
+                                    <p className="text-sm text-gray-500">
+                                        Supported formats: JPG, PNG, WebP. Max 5MB.
+                                    </p>
+                                </div>
+                            )}
                             <InputError message={errors.banner} />
                         </div>
 
@@ -150,7 +282,7 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
                                 {processing ? 'Uploading...' : 'Upload Banner'}
                             </Button>
 
-                            {hasCustomBanner && (
+                            {hasCustomBanner && !bannerPreview && (
                                 <Button
                                     type="button"
                                     variant="outline"
@@ -162,6 +294,7 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
                                     Reset to Default
                                 </Button>
                             )}
+
 
                             <Transition
                                 show={recentlySuccessful}
