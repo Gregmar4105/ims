@@ -178,11 +178,12 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
             // if we convert the current view's SVGs to data URLs, OR we use a library that runs in the popup.
             // A quick dirty way: Grab the SVG outerHTML from the current DOM if it exists.
 
-            const qrSvg = document.querySelector('#printable-codes svg')?.outerHTML || '<!-- QR Error -->';
+            // USE THE HIDDEN HIGH-RES SOURCE
+            const qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
             // Barcode libraries often output SVG or Canvas. React-barcode usually SVG.
             // Let's assume we can grab it. If not, we might fallback to text for now or improve later.
             // The user's previous code rendered them in a dialog. We can grab them from there.
-            const barcodeSvg = document.querySelectorAll('#printable-codes svg')[1]?.outerHTML || '<!-- Barcode Error -->';
+            const barcodeSvg = document.querySelectorAll('#hidden-print-codes svg')[1]?.outerHTML || '<!-- Barcode Error -->';
 
 
             printWindow.document.write(`
@@ -721,7 +722,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             <div className="flex flex-col items-center code-section">
                                 <Label className="mb-2 label">QR Code</Label>
                                 <div className="p-2 bg-white border rounded-lg">
-                                    <QRCode value={viewCodeProduct.qr_code} size={512} />
+                                    <QRCode value={viewCodeProduct.qr_code} size={150} />
                                 </div>
                             </div>
                         ) : (
@@ -732,11 +733,21 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             <div className="flex flex-col items-center w-full code-section">
                                 <Label className="mb-2 label">Barcode</Label>
                                 <div className="p-2 bg-white border rounded-lg w-full flex justify-center overflow-hidden">
-                                    <Barcode value={viewCodeProduct.barcode} width={4} height={150} fontSize={14} />
+                                    <Barcode value={viewCodeProduct.barcode} width={1.5} height={50} fontSize={14} />
                                 </div>
                             </div>
                         ) : (
                             <p className="text-muted-foreground text-sm">No Barcode generated.</p>
+                        )}
+                    </div>
+
+                    {/* Hidden High-Res Codes for Printing */}
+                    <div id="hidden-print-codes" className="hidden">
+                        {viewCodeProduct?.qr_code && (
+                            <QRCode value={viewCodeProduct.qr_code} size={512} />
+                        )}
+                        {viewCodeProduct?.barcode && (
+                            <Barcode value={viewCodeProduct.barcode} width={4} height={150} fontSize={14} />
                         )}
                     </div>
                     <DialogFooter className="sm:justify-between">
