@@ -1,18 +1,19 @@
-import { useState, useEffect } from 'react';
-import { Bell, Store, MessageSquare, ArrowRightLeft, ShoppingBag } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Bell, MessageSquare, ArrowRightLeft, ShoppingBag } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
+    DropdownMenuLabel,
+    DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import axios from 'axios';
 import { Link } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface NotificationCounts {
     chats: number;
@@ -27,6 +28,19 @@ interface NotificationData {
     sales: any[];
     transfers: any[];
 }
+
+type NotificationItem = {
+    id: string | number;
+    type: 'chat' | 'sale' | 'transfer';
+    title: string;
+    description: string;
+    time: string; // ISO string
+    timestamp: number; // For sorting
+    read: boolean;
+    link: string;
+    icon: any; // Lucide icon component or string url for avatar
+    isAvatar?: boolean;
+};
 
 export function NotificationBell() {
     const [data, setData] = useState<NotificationData>({
@@ -48,10 +62,81 @@ export function NotificationBell() {
 
     useEffect(() => {
         fetchNotifications();
-        // Poll every 10 seconds
-        const interval = setInterval(fetchNotifications, 10000);
+        const interval = setInterval(fetchNotifications, 10000); // 10s poll
         return () => clearInterval(interval);
     }, []);
+
+    // Helper to format relative time
+    const getRelativeTime = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        if (seconds < 60) return 'Just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days}d ago`;
+        return date.toLocaleDateString();
+    };
+
+    // Unified and Sorted Feed
+    const allNotifications = useMemo(() => {
+        const items: NotificationItem[] = [];
+
+        // Process Chats
+        data.chats.forEach((chat) => {
+            items.push({
+                id: `chat-${chat.id}`,
+                type: 'chat',
+                title: chat.sender?.name || 'Unknown',
+                description: chat.content || 'Sent an attachment',
+                time: chat.created_at,
+                timestamp: new Date(chat.created_at).getTime(),
+                read: false, // Chats in this list are unread by definition from backend
+                link: '/chats',
+                icon: chat.sender?.avatar || chat.sender?.name?.charAt(0) || '?',
+                isAvatar: true // Placeholder: assuming we might have avatar logic later, but strictly logic here
+            });
+        });
+
+        // Process Sales
+        data.sales.forEach((sale) => {
+            items.push({
+                id: `sale-${sale.id}`,
+                type: 'sale',
+                title: `New Sale #${sale.id}`,
+                description: `Status: ${sale.status} - waiting for approval`,
+                time: sale.created_at,
+                timestamp: new Date(sale.created_at).getTime(),
+                read: false,
+                link: '/sales-list',
+                icon: ShoppingBag,
+                isAvatar: false
+            });
+        });
+
+        // Process Transfers
+        data.transfers.forEach((transfer) => {
+            items.push({
+                id: `transfer-${transfer.id}`,
+                type: 'transfer',
+                title: 'Incoming Transfer',
+                description: `From ${transfer.source_branch?.branch_name}`,
+                time: transfer.created_at,
+                timestamp: new Date(transfer.created_at).getTime(),
+                read: false,
+                link: '/incoming',
+                icon: ArrowRightLeft,
+                isAvatar: false
+            });
+        });
+
+        // Sort by newest first
+        return items.sort((a, b) => b.timestamp - a.timestamp);
+    }, [data]);
 
     const hasNotifications = data.total > 0;
 
@@ -73,97 +158,85 @@ export function NotificationBell() {
                             </span>
                             <Badge
                                 variant="destructive"
-                                className="absolute -top-1 -right-1 px-1 min-w-[1.25rem] h-5 flex items-center justify-center text-[10px] rounded-full ring-2 ring-background pointer-events-none"
+                                className="absolute -top-1 -right-1 h-4 w-4 min-w-[1rem] flex items-center justify-center p-0 text-[10px] rounded-full ring-2 ring-background pointer-events-none"
                             >
                                 {data.total > 99 ? '99+' : data.total}
                             </Badge>
                         </>
                     )}
-                    <span className="sr-only">Toggle notifications</span>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                <DropdownMenuSeparator />
+            <DropdownMenuContent align="end" className="w-[360px] p-0 overflow-hidden rounded-xl shadow-xl border-border/50">
+                <div className="p-4 border-b border-border/40 flex items-center justify-between bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+                    <h2 className="text-xl font-bold tracking-tight">Notifications</h2>
+                    <div className="flex gap-1">
+                        <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">All</span>
+                    </div>
+                </div>
 
-                <div className="max-h-[400px] overflow-y-auto">
-                    {data.total === 0 ? (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
-                            No new notifications
+                <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden scrollbar-thin">
+                    {allNotifications.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground gap-2">
+                            <Bell className="h-8 w-8 opacity-20" />
+                            <p>No notifications</p>
                         </div>
                     ) : (
-                        <>
-                            {data.counts.chats > 0 && (
-                                <>
-                                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                                        Unread Messages
-                                    </DropdownMenuLabel>
-                                    {data.chats.map((chat) => (
-                                        <DropdownMenuItem key={chat.id} asChild>
-                                            <Link href="/chats" className="flex cursor-pointer items-start gap-2 p-2">
-                                                <MessageSquare className="mt-1 h-4 w-4 shrink-0" />
-                                                <div className="flex flex-col gap-1">
-                                                    <span className="text-sm font-medium leading-none">
-                                                        {chat.sender?.name}
-                                                    </span>
-                                                    <span className="text-xs text-muted-foreground line-clamp-1">
-                                                        {chat.content || 'Attachment sent'}
-                                                    </span>
-                                                </div>
-                                            </Link>
-                                        </DropdownMenuItem>
-                                    ))}
-                                    <DropdownMenuSeparator />
-                                </>
-                            )}
+                        <div className="flex flex-col">
+                            {allNotifications.map((item) => (
+                                <DropdownMenuItem key={item.id} asChild className="focus:bg-muted/50 p-0 rounded-none cursor-pointer">
+                                    <Link href={item.link} className="flex gap-3 p-3 transition-colors hover:bg-muted/40 relative group border-b border-border/20 last:border-0">
 
-                            {data.counts.sales > 0 && (
-                                <>
-                                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                                        Pending Sales
-                                    </DropdownMenuLabel>
-                                    {data.sales.map((sale) => (
-                                        <DropdownMenuItem key={sale.id} asChild>
-                                            <Link href="/sales-list" className="flex cursor-pointer items-start gap-2 p-2">
-                                                <ShoppingBag className="mt-1 h-4 w-4 shrink-0" />
-                                                <div className="flex flex-col gap-1">
-                                                    <span className="text-sm font-medium leading-none">
-                                                        Sale #{sale.id}
-                                                    </span>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        Status: {sale.status}
-                                                    </span>
+                                        {/* Icon / Avatar Section */}
+                                        <div className="shrink-0 mt-1">
+                                            {item.type === 'chat' ? (
+                                                <Avatar className="h-10 w-10 border border-border/50">
+                                                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                                        {String(item.title).charAt(0)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                            ) : (
+                                                <div className={cn(
+                                                    "h-10 w-10 rounded-full flex items-center justify-center border border-border/50",
+                                                    item.type === 'sale' ? "bg-orange-500/10 text-orange-600" : "bg-blue-500/10 text-blue-600"
+                                                )}>
+                                                    {item.isAvatar ? null : <item.icon className="h-5 w-5" />}
                                                 </div>
-                                            </Link>
-                                        </DropdownMenuItem>
-                                    ))}
-                                    <DropdownMenuSeparator />
-                                </>
-                            )}
+                                            )}
+                                            <div className="absolute bottom-3 right-[calc(100%-2.75rem)] h-5 w-5 rounded-full bg-background flex items-center justify-center ring-2 ring-background">
+                                                {item.type === 'chat' && <MessageSquare className="h-3 w-3 text-primary fill-primary/20" />}
+                                                {item.type === 'sale' && <ShoppingBag className="h-3 w-3 text-orange-600 fill-orange-600/20" />}
+                                                {item.type === 'transfer' && <ArrowRightLeft className="h-3 w-3 text-blue-600" />}
+                                            </div>
+                                        </div>
 
-                            {data.counts.transfers > 0 && (
-                                <>
-                                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                                        Incoming Transfers
-                                    </DropdownMenuLabel>
-                                    {data.transfers.map((transfer) => (
-                                        <DropdownMenuItem key={transfer.id} asChild>
-                                            <Link href="/incoming" className="flex cursor-pointer items-start gap-2 p-2">
-                                                <ArrowRightLeft className="mt-1 h-4 w-4 shrink-0" />
-                                                <div className="flex flex-col gap-1">
-                                                    <span className="text-sm font-medium leading-none">
-                                                        From {transfer.source_branch?.branch_name}
-                                                    </span>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        Status: {transfer.status}
-                                                    </span>
-                                                </div>
-                                            </Link>
-                                        </DropdownMenuItem>
-                                    ))}
-                                </>
-                            )}
-                        </>
+                                        {/* Content Section */}
+                                        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                                            <div className="flex justify-between items-start w-full">
+                                                <span className="font-semibold text-sm leading-tight text-foreground line-clamp-2">
+                                                    {item.title}
+                                                </span>
+                                            </div>
+                                            <p className="text-[13px] text-muted-foreground line-clamp-2 leading-snug">
+                                                {item.description}
+                                            </p>
+                                            <span className={cn(
+                                                "text-xs font-medium mt-1",
+                                                item.type === 'sale' ? "text-orange-600/80" : "text-primary/70"
+                                            )}>
+                                                {getRelativeTime(item.time)}
+                                            </span>
+                                        </div>
+
+                                        {/* Unread Indicator */}
+                                        {!item.read && (
+                                            <div className="shrink-0 mt-3">
+                                                <div className="h-2.5 w-2.5 rounded-full bg-blue-600 ring-2 ring-background"></div>
+                                            </div>
+                                        )}
+                                    </Link>
+                                </DropdownMenuItem>
+                            ))}
+                        </div>
                     )}
                 </div>
             </DropdownMenuContent>
