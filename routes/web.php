@@ -8,6 +8,7 @@ use Laravel\Fortify\Features;
 
 Route::get('/', [\App\Http\Controllers\WelcomeController::class, 'index'])->name('home');
 Route::get('/shop/{slug}', [\App\Http\Controllers\ShopController::class, 'show'])->name('shop.category');
+Route::get('/product/{product}', [\App\Http\Controllers\WelcomeController::class, 'show'])->name('product.show');
 
 Route::get('/suppliers', [\App\Http\Controllers\SupplierPortalController::class, 'index'])->name('suppliers.portal');
 Route::post('/suppliers/send', [\App\Http\Controllers\SupplierPortalController::class, 'store'])->name('suppliers.send');

@@ -23,7 +23,7 @@ class WelcomeController extends Controller
         })
         ->with(['category', 'brand'])
         ->latest()
-        ->take(8)
+        ->take(20)
         ->get();
 
         // Get custom banner or use default
@@ -35,6 +35,17 @@ class WelcomeController extends Controller
             'canRegister' => Features::enabled(Features::registration()),
             'products' => $products,
             'bannerUrl' => $bannerUrl,
+        ]);
+    }
+    
+    public function show(Product $product)
+    {
+        $product->load(['category', 'brand', 'branches' => function($q) {
+             $q->whereIn('branch_name', ['Main Branch', 'LM2 Bicycle Trading']);
+        }]);
+
+        return Inertia::render('Shop/Show', [
+            'product' => $product,
         ]);
     }
 }

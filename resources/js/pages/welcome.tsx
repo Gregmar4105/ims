@@ -25,6 +25,7 @@ interface Product {
     brand?: {
         name: string;
     };
+    price: number | string;
 }
 
 interface Category {
@@ -88,7 +89,7 @@ export default function Welcome({
                                 <div key={product.id} className="group relative flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-black/10 bg-white transition-all hover:shadow-lg dark:border-sidebar-border dark:bg-transparent">
                                     {/* Image Section */}
                                     <div className="relative aspect-square overflow-hidden bg-neutral-50 dark:bg-white/5">
-                                        <Link href="/register">
+                                        <Link href={`/product/${product.id}`}>
                                             {product.image_path ? (
                                                 <img
                                                     className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
@@ -117,6 +118,9 @@ export default function Welcome({
                                             <div className="flex justify-between items-start">
                                                 <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-1" title={product.name}>{product.name}</h3>
                                             </div>
+                                            <p className="font-bold text-lg text-gray-900 dark:text-white">
+                                                ₱{Number(product.price).toLocaleString()}
+                                            </p>
                                             <p className="line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
                                                 {product.description || 'No description available.'}
                                             </p>
@@ -133,7 +137,7 @@ export default function Welcome({
                                             </div>
 
                                             {/* Subtle View Details */}
-                                            <Link href="/register">
+                                            <Link href={`/product/${product.id}`}>
                                                 <button className="group/btn flex items-center gap-2 text-sm font-medium text-gray-600 transition-colors hover:text-black dark:text-gray-400 dark:hover:text-white">
                                                     View Details
                                                     <svg

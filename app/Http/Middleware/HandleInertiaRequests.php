@@ -57,8 +57,11 @@ class HandleInertiaRequests extends Middleware
             'categories' => \App\Models\Category::where('status', 'Active')
                 ->withCount('products')
                 ->orderByDesc('products_count')
-                ->take(5)
+                ->take(20) // Take more initially to allow for filtering
                 ->get()
+                ->unique('name') // Keep only one category per name (first one found, which is highest count due to order)
+                ->take(5) // Limit to top 5 unique categories
+                ->values() // Reset keys
                 ->map(function ($category) {
                     $category->setRelation('brands', \App\Models\Brand::whereHas('products', function ($q) use ($category) {
                         $q->where('category_id', $category->id)
