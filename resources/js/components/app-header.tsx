@@ -331,38 +331,53 @@ export function AppHeader() {
                 </div>
 
                 {/* --- Right: Actions & Auth --- */}
-                <div className="ml-auto flex items-center space-x-2">
-                    <div className="relative">
-                        {isSearchOpen ? (
-                            <form onSubmit={handleSearchSubmit} className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center bg-white dark:bg-zinc-900 border rounded-full px-2 py-1 shadow-lg w-[200px] sm:w-[300px] z-50">
-                                <Search className="h-4 w-4 text-gray-400 ml-2" />
+                <div className="ml-auto flex items-center gap-2">
+                    <div className={cn(
+                        "relative flex items-center transition-all duration-300 ease-in-out",
+                        isSearchOpen ? "w-[250px] sm:w-[350px]" : "w-9"
+                    )}>
+                        <div className={cn(
+                            "absolute inset-0 flex items-center overflow-hidden rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-gray-700 transition-all duration-300",
+                            isSearchOpen ? "opacity-100 shadow-sm" : "opacity-0 border-transparent shadow-none pointer-events-none"
+                        )}>
+                            <form onSubmit={handleSearchSubmit} className="flex h-full w-full items-center px-3">
+                                <Search className="h-4 w-4 shrink-0 text-gray-500" />
                                 <Input
                                     ref={searchInputRef}
                                     type="text"
                                     placeholder="Search products..."
-                                    className="border-0 focus-visible:ring-0 bg-transparent h-8 text-sm w-full"
+                                    className="h-full w-full border-0 bg-transparent px-2 text-sm focus-visible:ring-0 placeholder:text-gray-400"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onBlur={() => {
-                                        // Optional: close on blur if empty, but might be annoying if clicking away
-                                        // setIsSearchOpen(false); 
+                                        // Keep open if needed, or close if empty? 
+                                        // User might click X to close.
                                     }}
                                 />
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
-                                    onClick={() => setIsSearchOpen(false)}
+                                    className="h-6 w-6 shrink-0 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
+                                    onClick={() => {
+                                        setIsSearchOpen(false);
+                                        setSearchQuery('');
+                                    }}
                                 >
-                                    <X className="h-3 w-3" />
+                                    <X className="h-3 w-3 text-gray-400" />
                                 </Button>
                             </form>
-                        ) : (
-                            <Button variant="ghost" size="icon" onClick={toggleSearch}>
+                        </div>
+
+                        {/* Trigger Button (Visible when closed) */}
+                        <div className={cn(
+                            "absolute right-0 top-0 flex items-center justify-center transition-all duration-300",
+                            isSearchOpen ? "opacity-0 scale-90 pointer-events-none" : "opacity-100 scale-100"
+                        )}>
+                            <Button variant="ghost" size="icon" onClick={toggleSearch} className="rounded-full">
                                 <Search className="h-5 w-5" />
                             </Button>
-                        )}
+                        </div>
                     </div>
                     {/* Auth Logic */}
                     {auth.user ? (
