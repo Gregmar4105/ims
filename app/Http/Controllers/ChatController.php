@@ -58,6 +58,14 @@ class ChatController extends Controller
                   });
             });
 
+        // Mark unread messages as read
+        \App\Models\Message::where('receiver_branch_id', $currentBranchId)
+            ->whereHas('sender', function($q) use ($branch) {
+                $q->where('branch_id', $branch->id);
+            })
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
         // Search functionality
         if ($request->has('query') && !empty($request->input('query'))) {
             $searchTerm = '%' . $request->input('query') . '%';

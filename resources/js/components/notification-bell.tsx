@@ -58,17 +58,26 @@ export function NotificationBell() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
+                <Button variant="ghost" size="icon" className="relative group">
                     <Bell
                         className={cn(
-                            "h-5 w-5 text-muted-foreground transition-all duration-500",
-                            hasNotifications && "animate-pulse text-primary"
+                            "h-5 w-5 text-muted-foreground transition-all duration-300 group-hover:text-foreground",
+                            hasNotifications && "animate-bell-ring text-foreground"
                         )}
                     />
                     {hasNotifications && (
-                        <span className="absolute top-1.5 right-1.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground animate-in zoom-in-50 duration-300">
-                            {data.total > 99 ? '99+' : data.total}
-                        </span>
+                        <>
+                            <span className="absolute top-2 right-2 flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
+                            </span>
+                            <Badge
+                                variant="destructive"
+                                className="absolute -top-1 -right-1 px-1 min-w-[1.25rem] h-5 flex items-center justify-center text-[10px] rounded-full ring-2 ring-background pointer-events-none"
+                            >
+                                {data.total > 99 ? '99+' : data.total}
+                            </Badge>
+                        </>
                     )}
                     <span className="sr-only">Toggle notifications</span>
                 </Button>

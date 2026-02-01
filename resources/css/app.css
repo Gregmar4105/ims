@@ -141,3 +141,18 @@
         @apply bg-background text-foreground;
     }
 }
+
+@keyframes bell-ring {
+    0%, 100% { transform: rotate(0); }
+    15% { transform: rotate(15deg); }
+    30% { transform: rotate(-15deg); }
+    45% { transform: rotate(10deg); }
+    60% { transform: rotate(-10deg); }
+    75% { transform: rotate(5deg); }
+    90% { transform: rotate(-5deg); }
+}
+
+.animate-bell-ring {
+    animation: bell-ring 2s ease-in-out infinite;
+    transform-origin: top center;
+}
