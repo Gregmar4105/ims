@@ -152,13 +152,10 @@ export function NotificationBell() {
                     />
                     {hasNotifications && (
                         <>
-                            <span className="absolute top-2 right-2 flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
-                            </span>
+                            <span className="absolute -top-1 -right-1 h-4 w-4 min-w-[1rem] rounded-full bg-destructive animate-ping opacity-75"></span>
                             <Badge
                                 variant="destructive"
-                                className="absolute -top-1 -right-1 h-4 w-4 min-w-[1rem] flex items-center justify-center p-0 text-[10px] rounded-full ring-2 ring-background pointer-events-none"
+                                className="absolute -top-1 -right-1 h-4 w-4 min-w-[1rem] flex items-center justify-center p-0 text-[10px] rounded-full ring-2 ring-background pointer-events-none z-10"
                             >
                                 {data.total > 99 ? '99+' : data.total}
                             </Badge>
