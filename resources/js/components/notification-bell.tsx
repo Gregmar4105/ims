@@ -89,22 +89,27 @@ export function NotificationBell() {
                 osc.connect(gain);
                 gain.connect(ctx.destination);
 
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, ctx.currentTime); // High pitch ding
-                osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.1); // Drop pitch
+                // "Irritating" settings: Sawtooth wave (harsh) + High Pitch + Rapid slide
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(1200, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(1500, ctx.currentTime + 0.1); // Upward chirp
 
-                gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
 
                 osc.start();
                 osc.stop(ctx.currentTime + 0.1);
             };
 
-            // Play immediately
+            // Play immediately when count > 0 (staggered double beep)
             playTone();
+            setTimeout(playTone, 150);
 
-            // Loop every 4 seconds
-            soundInterval = setInterval(playTone, 4000);
+            // Loop every 3 seconds
+            soundInterval = setInterval(() => {
+                playTone();
+                setTimeout(playTone, 150);
+            }, 3000);
         }
 
         return () => {
