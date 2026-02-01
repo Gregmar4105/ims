@@ -4,6 +4,7 @@ import Footer from '@/components/Footer';
 import { PackageOpen } from 'lucide-react';
 import { type SharedData } from '@/types';
 import Pagination from '@/components/Pagination';
+import { Badge } from '@/components/ui/badge';
 
 interface Product {
     id: number;
@@ -70,7 +71,7 @@ export default function CategoryPage({ category, products }: Props) {
                                     <div key={product.id} className="group relative flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-black/10 bg-white transition-all hover:shadow-lg dark:border-sidebar-border dark:bg-transparent">
                                         {/* Image Section */}
                                         <div className="relative aspect-square overflow-hidden bg-neutral-50 dark:bg-white/5">
-                                            <Link href="/register">
+                                            <Link href={`/product/${product.id}`}>
                                                 {product.image_path ? (
                                                     <img
                                                         className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
@@ -93,25 +94,47 @@ export default function CategoryPage({ category, products }: Props) {
 
                                         {/* Content Section */}
                                         <div className="flex flex-1 flex-col justify-between gap-4 p-5">
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between items-start gap-2">
-                                                    <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-1" title={product.name}>{product.name}</h3>
-                                                    <span className="font-bold text-sm bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-100 whitespace-nowrap">
-                                                        ₱{product.price ? Number(product.price).toFixed(2) : '0.00'}
-                                                    </span>
+
+                                            {/* Header & Description */}
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-start gap-4">
+                                                    <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight flex-1" title={product.name}>
+                                                        {product.name}
+                                                    </h3>
+                                                    <p className="font-bold text-lg text-gray-900 dark:text-white whitespace-nowrap">
+                                                        ₱{product.price ? Number(product.price).toLocaleString() : '0.00'}
+                                                    </p>
                                                 </div>
+
                                                 <p className="line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
                                                     {product.description || 'No description available.'}
                                                 </p>
+
+                                                {/* Variations */}
+                                                {product.variations && Array.isArray(product.variations) && product.variations.length > 0 && (
+                                                    <div className="space-y-1">
+                                                        <span className="text-xs font-semibold text-gray-900 dark:text-white">Variations:</span>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {product.variations.map((v: any, idx: number) => (
+                                                                <span key={idx} className="text-xs text-gray-500 bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded">
+                                                                    {v.name}: {v.options}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
 
+                                            {/* Footer: Brand & Details */}
                                             <div className="flex items-center justify-between pt-2">
-                                                <div className="flex items-center gap-2">
-                                                    {product.brand && (
-                                                        <span className="text-xs text-gray-500 border px-1.5 py-0.5 rounded">{product.brand.name}</span>
-                                                    )}
-                                                </div>
-                                                <Link href="/register">
+
+                                                {product.brand && (
+                                                    <div className="border border-gray-300 px-2 py-0.5 rounded text-xs text-black font-medium dark:text-white dark:border-gray-600">
+                                                        {product.brand.name}
+                                                    </div>
+                                                )}
+
+                                                <Link href={`/product/${product.id}`}>
                                                     <button className="group/btn flex items-center gap-2 text-sm font-medium text-gray-600 transition-colors hover:text-black dark:text-gray-400 dark:hover:text-white">
                                                         View Details
                                                         <svg
