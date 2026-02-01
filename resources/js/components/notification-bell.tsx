@@ -14,8 +14,6 @@ import { Link } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
-declare var route: any;
-
 interface NotificationCounts {
     chats: number;
     sales: number;
@@ -92,7 +90,7 @@ export function NotificationBell() {
                                 </DropdownMenuLabel>
                                 {data.chats.map((chat) => (
                                     <DropdownMenuItem key={chat.id} asChild>
-                                        <Link href={route('chats.index')} className="flex cursor-pointer items-start gap-2 p-2">
+                                        <Link href="/chats" className="flex cursor-pointer items-start gap-2 p-2">
                                             <MessageSquare className="mt-1 h-4 w-4 shrink-0" />
                                             <div className="flex flex-col gap-1">
                                                 <span className="text-sm font-medium leading-none">
@@ -116,7 +114,7 @@ export function NotificationBell() {
                                 </DropdownMenuLabel>
                                 {data.sales.map((sale) => (
                                     <DropdownMenuItem key={sale.id} asChild>
-                                        <Link href={route('sales.index')} className="flex cursor-pointer items-start gap-2 p-2">
+                                        <Link href="/sales-list" className="flex cursor-pointer items-start gap-2 p-2">
                                             <ShoppingBag className="mt-1 h-4 w-4 shrink-0" />
                                             <div className="flex flex-col gap-1">
                                                 <span className="text-sm font-medium leading-none">
@@ -140,7 +138,7 @@ export function NotificationBell() {
                                 </DropdownMenuLabel>
                                 {data.transfers.map((transfer) => (
                                     <DropdownMenuItem key={transfer.id} asChild>
-                                        <Link href={route('transfers.incoming')} className="flex cursor-pointer items-start gap-2 p-2">
+                                        <Link href="/incoming" className="flex cursor-pointer items-start gap-2 p-2">
                                             <ArrowRightLeft className="mt-1 h-4 w-4 shrink-0" />
                                             <div className="flex flex-col gap-1">
                                                 <span className="text-sm font-medium leading-none">
