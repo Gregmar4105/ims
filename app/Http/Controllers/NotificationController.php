@@ -35,32 +35,40 @@ class NotificationController extends Controller
         // Let's return individual unread messages but limit to recent 5 for dropdown
         // The total count is what matters most for the badge.
 
-        // 2. Pending Sales (Sales in this branch with status 'pending')
+        // 2. Pending Sales (Sales in this branch waiting for approval)
+        // Status is 'readied' when first created and waiting for admin approval
         $pendingSales = Sale::where('branch_id', $branchId)
-            ->where('status', 'pending')
+            ->where('status', 'readied')
             ->latest()
             ->get();
 
         // 3. Incoming Transfers (Transfers TO this branch with status 'outgoing')
-        // 'outgoing' from source means it's on the way to destination.
         $incomingTransfers = Transfer::with('sourceBranch')
             ->where('destination_branch_id', $branchId)
             ->where('status', 'outgoing')
             ->latest()
             ->get();
 
-        $total = $unreadChats->count() + $pendingSales->count() + $incomingTransfers->count();
+        // 4. Pending Outgoing Transfers (Transfers FROM this branch waiting for initiation)
+        // Status is 'readied' when created, needs admin to 'initiate' (change to outgoing)
+        $readiedTransfers = Transfer::with('destinationBranch')
+            ->where('source_branch_id', $branchId)
+            ->where('status', 'readied')
+            ->latest()
+            ->get();
+
+        $total = $unreadChats->count() + $pendingSales->count() + $incomingTransfers->count() + $readiedTransfers->count();
 
         return response()->json([
             'total' => $total,
             'counts' => [
                 'chats' => $unreadChats->count(),
                 'sales' => $pendingSales->count(),
-                'transfers' => $incomingTransfers->count(),
+                'transfers' => $incomingTransfers->count() + $readiedTransfers->count(),
             ],
             'chats' => $unreadChats->take(20),
             'sales' => $pendingSales->take(20),
-            'transfers' => $incomingTransfers->take(20),
+            'transfers' => $incomingTransfers->merge($readiedTransfers)->sortByDesc('created_at')->take(20)->values(),
         ]);
     }
 }

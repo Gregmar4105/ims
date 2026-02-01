@@ -118,17 +118,24 @@ export function NotificationBell() {
             });
         });
 
-        // Process Transfers
+        // Process Transfers (Both Incoming and Readied)
         data.transfers.forEach((transfer) => {
+            const isIncoming = transfer.status === 'outgoing';
+            const title = isIncoming ? 'Incoming Transfer' : 'Transfer Request';
+            const description = isIncoming
+                ? `From ${transfer.source_branch?.branch_name}`
+                : `To ${transfer.destination_branch?.branch_name} - Needs Approval`;
+            const link = isIncoming ? '/incoming' : '/outgoing'; // Assuming /outgoing is the route for readied transfers
+
             items.push({
                 id: `transfer-${transfer.id}`,
                 type: 'transfer',
-                title: 'Incoming Transfer',
-                description: `From ${transfer.source_branch?.branch_name}`,
+                title: title,
+                description: description,
                 time: transfer.created_at,
                 timestamp: new Date(transfer.created_at).getTime(),
                 read: false,
-                link: '/incoming',
+                link: link,
                 icon: ArrowRightLeft,
                 isAvatar: false
             });
