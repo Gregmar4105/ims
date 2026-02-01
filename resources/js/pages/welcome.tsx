@@ -114,6 +114,7 @@ export default function Welcome({
                                     <div className="flex flex-1 flex-col justify-between gap-4 p-5">
 
                                         {/* Header & Description */}
+                                        {/* Header & Description */}
                                         <div className="space-y-3">
                                             <div className="flex justify-between items-start gap-4">
                                                 <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight flex-1" title={product.name}>
@@ -124,32 +125,34 @@ export default function Welcome({
                                                 </p>
                                             </div>
 
-                                            <div className="flex flex-wrap gap-2">
-                                                {product.brand && (
-                                                    <Badge variant="secondary" className="font-medium">
-                                                        {product.brand.name}
-                                                    </Badge>
-                                                )}
-                                            </div>
-
-                                            {/* Variations */}
-                                            {product.variations && Array.isArray(product.variations) && product.variations.length > 0 && (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {product.variations.map((v: any, idx: number) => (
-                                                        <span key={idx} className="text-xs text-gray-500 bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded">
-                                                            {v.name}: {v.options}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
-
                                             <p className="line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
                                                 {product.description || 'No description available.'}
                                             </p>
+
+                                            {/* Variations */}
+                                            {product.variations && Array.isArray(product.variations) && product.variations.length > 0 && (
+                                                <div className="space-y-1">
+                                                    <span className="text-xs font-semibold text-gray-900 dark:text-white">Variations:</span>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {product.variations.map((v: any, idx: number) => (
+                                                            <span key={idx} className="text-xs text-gray-500 bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded">
+                                                                {v.name}: {v.options}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
-                                        {/* Footer: Details */}
-                                        <div className="flex items-center justify-end pt-2">
+                                        {/* Footer: Brand & Details */}
+                                        <div className="flex items-center justify-between pt-2">
+
+                                            {product.brand && (
+                                                <div className="border border-gray-300 px-2 py-0.5 rounded text-xs text-black font-medium dark:text-white dark:border-gray-600">
+                                                    {product.brand.name}
+                                                </div>
+                                            )}
+
                                             <Link href={`/product/${product.id}`}>
                                                 <button className="group/btn flex items-center gap-2 text-sm font-medium text-gray-600 transition-colors hover:text-black dark:text-gray-400 dark:hover:text-white">
                                                     View Details
