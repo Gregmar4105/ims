@@ -66,7 +66,7 @@ export default function Welcome({
                     />
                 </Head>
                 <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                    <div className="relative h-145 w-full overflow-hidden rounded-xl border border-black dark:border-sidebar-border">
+                    <div className="relative h-145 w-full overflow-hidden rounded-xl border dark:border-sidebar-border">
                         <img
                             className="absolute inset-0 h-full w-full object-cover object-[60%_center]"
                             src={bannerUrl}
