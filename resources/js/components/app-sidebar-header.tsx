@@ -4,6 +4,7 @@ import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
 import { Store } from 'lucide-react';
+import { NotificationBell } from './notification-bell';
 
 export function AppSidebarHeader({
     breadcrumbs = [],
@@ -20,14 +21,17 @@ export function AppSidebarHeader({
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
 
-            {branchName && (
-                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-border/50">
-                    <Store className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                        {branchName}
-                    </span>
-                </div>
-            )}
+            <div className="flex items-center gap-2">
+                <NotificationBell />
+                {branchName && (
+                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-border/50">
+                        <Store className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">
+                            {branchName}
+                        </span>
+                    </div>
+                )}
+            </div>
         </header>
     );
 }
