@@ -6,6 +6,13 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import {
     NavigationMenu,
     NavigationMenuContent,
     NavigationMenuItem,
@@ -143,7 +150,9 @@ export function AppHeader() {
     const { auth, categories = [] } = page.props;
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [suggestions, setSuggestions] = useState<any[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -153,9 +162,35 @@ export function AppHeader() {
         }
     };
 
+    const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const query = e.target.value;
+        setSearchQuery(query);
+
+        if (debounceTimeout.current) {
+            clearTimeout(debounceTimeout.current);
+        }
+
+        if (query.trim().length > 1) {
+            debounceTimeout.current = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/shop/suggestions?q=${encodeURIComponent(query)}`);
+                    const data = await res.json();
+                    setSuggestions(data);
+                } catch (error) {
+                    console.error("Failed to fetch suggestions", error);
+                }
+            }, 300);
+        } else {
+            setSuggestions([]);
+        }
+    };
+
     const toggleSearch = () => {
         setIsSearchOpen(!isSearchOpen);
+        // Suggestions clearing
         if (!isSearchOpen) {
+            setSuggestions([]);
+            setSearchQuery('');
             setTimeout(() => searchInputRef.current?.focus(), 100);
         }
     };
@@ -332,53 +367,67 @@ export function AppHeader() {
 
                 {/* --- Right: Actions & Auth --- */}
                 <div className="ml-auto flex items-center gap-2">
-                    <div className={cn(
-                        "relative flex items-center transition-all duration-300 ease-in-out",
-                        isSearchOpen ? "w-[250px] sm:w-[350px]" : "w-9"
-                    )}>
-                        <div className={cn(
-                            "absolute inset-0 flex items-center overflow-hidden rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-gray-700 transition-all duration-300",
-                            isSearchOpen ? "opacity-100 shadow-sm" : "opacity-0 border-transparent shadow-none pointer-events-none"
-                        )}>
-                            <form onSubmit={handleSearchSubmit} className="flex h-full w-full items-center px-3">
-                                <Search className="h-4 w-4 shrink-0 text-gray-500" />
-                                <Input
-                                    ref={searchInputRef}
-                                    type="text"
-                                    placeholder="Search products..."
-                                    className="h-full w-full border-0 bg-transparent px-2 text-sm focus-visible:ring-0 placeholder:text-gray-400"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    onBlur={() => {
-                                        // Keep open if needed, or close if empty? 
-                                        // User might click X to close.
-                                    }}
-                                />
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 shrink-0 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
-                                    onClick={() => {
-                                        setIsSearchOpen(false);
-                                        setSearchQuery('');
-                                    }}
-                                >
-                                    <X className="h-3 w-3 text-gray-400" />
-                                </Button>
-                            </form>
-                        </div>
-
-                        {/* Trigger Button (Visible when closed) */}
-                        <div className={cn(
-                            "absolute right-0 top-0 flex items-center justify-center transition-all duration-300",
-                            isSearchOpen ? "opacity-0 scale-90 pointer-events-none" : "opacity-100 scale-100"
-                        )}>
-                            <Button variant="ghost" size="icon" onClick={toggleSearch} className="rounded-full">
+                    <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="rounded-full">
                                 <Search className="h-5 w-5" />
                             </Button>
-                        </div>
-                    </div>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden gap-0">
+                            <div className="flex items-center border-b px-3">
+                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                <form onSubmit={handleSearchSubmit} className="flex h-full w-full">
+                                    <Input
+                                        ref={searchInputRef}
+                                        className="flex h-12 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground border-none focus-visible:ring-0 shadow-none"
+                                        placeholder="Search products..."
+                                        value={searchQuery}
+                                        onChange={handleSearchInput}
+                                    />
+                                </form>
+                            </div>
+                            {suggestions.length > 0 && (
+                                <div className="max-h-[300px] overflow-y-auto p-2">
+                                    <h4 className="mb-2 px-2 text-xs font-semibold text-muted-foreground">Suggestions</h4>
+                                    {suggestions.map((product) => (
+                                        <Link
+                                            key={product.id}
+                                            href={`/product/${product.id}`} // Or product slug if available
+                                            className="flex items-center gap-3 rounded-md p-2 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+                                            onClick={() => setIsSearchOpen(false)}
+                                        >
+                                            {product.image_path ? (
+                                                <img src={`/storage/${product.image_path}`} alt={product.name} className="h-10 w-10 object-contain rounded bg-white p-1 border" />
+                                            ) : (
+                                                <div className="h-10 w-10 flex items-center justify-center bg-gray-100 rounded text-gray-400">
+                                                    <Bike className="h-5 w-5" />
+                                                </div>
+                                            )}
+                                            <div className="flex-1 overflow-hidden">
+                                                <div className="truncate font-medium">{product.name}</div>
+                                                <div className="text-xs text-muted-foreground truncate">
+                                                    {product.brand?.name} • ₱{product.price ? Number(product.price).toLocaleString() : '0.00'}
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                    <div className="border-t mt-2 pt-2">
+                                        <button
+                                            onClick={(e) => handleSearchSubmit(e as any)}
+                                            className="w-full text-left px-2 py-1.5 text-sm text-blue-600 hover:underline"
+                                        >
+                                            View all results for "{searchQuery}"
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                            {suggestions.length === 0 && searchQuery.length > 1 && (
+                                <div className="py-6 text-center text-sm text-muted-foreground">
+                                    No products found.
+                                </div>
+                            )}
+                        </DialogContent>
+                    </Dialog>
                     {/* Auth Logic */}
                     {auth.user ? (
                         <DropdownMenu>

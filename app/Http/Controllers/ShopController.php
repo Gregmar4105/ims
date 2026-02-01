@@ -50,6 +50,31 @@ class ShopController extends Controller
         ]);
     }
 
+    public function suggestions(Request $request)
+    {
+        $query = $request->input('q');
+        if (!$query) {
+            return response()->json([]);
+        }
+
+        $products = Product::whereHas('branches', function ($q) {
+                $q->whereIn('branch_name', ['Main Branch', 'LM2 Bicycle Trading']);
+            })
+            ->where(function($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('description', 'like', "%{$query}%")
+                  ->orWhereHas('brand', function($bq) use ($query) {
+                      $bq->where('name', 'like', "%{$query}%");
+                  });
+            })
+            ->with('brand')
+            ->take(5)
+            ->get(['id', 'name', 'price', 'image_path', 'brand_id' /* Ensure brand_id is fetched for relationship */]);
+
+        // Transform if needed, or return direct
+        return response()->json($products);
+    }
+
     public function show($slug, Request $request)
     {
         $category = Category::where('slug', $slug)
