@@ -114,29 +114,42 @@ export default function Welcome({
                                     <div className="flex flex-1 flex-col justify-between gap-4 p-5">
 
                                         {/* Header & Description */}
-                                        <div className="space-y-1">
-                                            <div className="flex justify-between items-start">
-                                                <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-1" title={product.name}>{product.name}</h3>
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-start gap-4">
+                                                <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight flex-1" title={product.name}>
+                                                    {product.name}
+                                                </h3>
+                                                <p className="font-bold text-lg text-gray-900 dark:text-white whitespace-nowrap">
+                                                    ₱{Number(product.price).toLocaleString()}
+                                                </p>
                                             </div>
-                                            <p className="font-bold text-lg text-gray-900 dark:text-white">
-                                                ₱{Number(product.price).toLocaleString()}
-                                            </p>
+
+                                            <div className="flex flex-wrap gap-2">
+                                                {product.brand && (
+                                                    <Badge variant="secondary" className="font-medium">
+                                                        {product.brand.name}
+                                                    </Badge>
+                                                )}
+                                            </div>
+
+                                            {/* Variations */}
+                                            {product.variations && Array.isArray(product.variations) && product.variations.length > 0 && (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {product.variations.map((v: any, idx: number) => (
+                                                        <span key={idx} className="text-xs text-gray-500 bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded">
+                                                            {v.name}: {v.options}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+
                                             <p className="line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
                                                 {product.description || 'No description available.'}
                                             </p>
                                         </div>
 
-                                        {/* Footer: Details & CTA */}
-                                        <div className="flex items-center justify-between pt-2">
-
-                                            {/* Brand Tag */}
-                                            <div className="flex items-center gap-2">
-                                                {product.brand && (
-                                                    <span className="text-xs text-gray-500 border px-1.5 py-0.5 rounded">{product.brand.name}</span>
-                                                )}
-                                            </div>
-
-                                            {/* Subtle View Details */}
+                                        {/* Footer: Details */}
+                                        <div className="flex items-center justify-end pt-2">
                                             <Link href={`/product/${product.id}`}>
                                                 <button className="group/btn flex items-center gap-2 text-sm font-medium text-gray-600 transition-colors hover:text-black dark:text-gray-400 dark:hover:text-white">
                                                     View Details

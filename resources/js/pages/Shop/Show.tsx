@@ -98,29 +98,26 @@ export default function Show({ product }: { product: Product }) {
                                     <Separator />
                                     <div>
                                         <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Options</h3>
-                                        {/* Render variations here if structure is known */}
-                                        {/* For now just dumping as JSON or basic list if structure is array of objects */}
-                                        <div className="space-y-2">
-                                            {/* Example rendering assuming variations is array of objects or strings */}
-                                            <pre className="text-xs bg-gray-100 p-2 rounded dark:bg-zinc-800 hidden">
-                                                {JSON.stringify(product.variations, null, 2)}
-                                            </pre>
+                                        <div className="space-y-3">
+                                            {product.variations.map((v: any, idx: number) => (
+                                                <div key={idx} className="flex flex-col gap-1">
+                                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{v.name}</span>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {v.options.split(',').map((opt: string, oIdx: number) => (
+                                                            <Badge key={oIdx} variant="outline" className="px-3 py-1 font-normal">
+                                                                {opt.trim()}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 </>
                             )}
 
                             <div className="mt-8 flex gap-4">
-                                <Button size="lg" className="w-full md:w-auto" disabled>
-                                    Out of Stock (Quantity Hidden)
-                                </Button>
-                                {/* Note: User asked to hide quantity. Usually that implies not showing 'Out of Stock' based on quantity? 
-                                    Or just hiding the number. If availability is unknown, maybe just a "Contact Us" or "Visit Store" button? 
-                                    The user didn't specify CTA. Since it's a welcome page, maybe "Visit Store" is better.
-                                */}
-                                <Button variant="outline" size="lg" asChild>
-                                    <Link href="/locations">Visit Store</Link>
-                                </Button>
+                                {/* Buttons removed per user request */}
                             </div>
                         </div>
                     </div>
