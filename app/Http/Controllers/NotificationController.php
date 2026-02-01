@@ -58,9 +58,9 @@ class NotificationController extends Controller
                 'sales' => $pendingSales->count(),
                 'transfers' => $incomingTransfers->count(),
             ],
-            'chats' => $unreadChats->take(5),
-            'sales' => $pendingSales->take(5),
-            'transfers' => $incomingTransfers->take(5),
+            'chats' => $unreadChats->take(20),
+            'sales' => $pendingSales->take(20),
+            'transfers' => $incomingTransfers->take(20),
         ]);
     }
 }

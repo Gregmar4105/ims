@@ -86,84 +86,86 @@ export function NotificationBell() {
                 <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                 <DropdownMenuSeparator />
 
-                {data.total === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                        No new notifications
-                    </div>
-                ) : (
-                    <>
-                        {data.counts.chats > 0 && (
-                            <>
-                                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                                    Unread Messages
-                                </DropdownMenuLabel>
-                                {data.chats.map((chat) => (
-                                    <DropdownMenuItem key={chat.id} asChild>
-                                        <Link href="/chats" className="flex cursor-pointer items-start gap-2 p-2">
-                                            <MessageSquare className="mt-1 h-4 w-4 shrink-0" />
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-sm font-medium leading-none">
-                                                    {chat.sender?.name}
-                                                </span>
-                                                <span className="text-xs text-muted-foreground line-clamp-1">
-                                                    {chat.content || 'Attachment sent'}
-                                                </span>
-                                            </div>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                ))}
-                                <DropdownMenuSeparator />
-                            </>
-                        )}
+                <div className="max-h-[400px] overflow-y-auto">
+                    {data.total === 0 ? (
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                            No new notifications
+                        </div>
+                    ) : (
+                        <>
+                            {data.counts.chats > 0 && (
+                                <>
+                                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                                        Unread Messages
+                                    </DropdownMenuLabel>
+                                    {data.chats.map((chat) => (
+                                        <DropdownMenuItem key={chat.id} asChild>
+                                            <Link href="/chats" className="flex cursor-pointer items-start gap-2 p-2">
+                                                <MessageSquare className="mt-1 h-4 w-4 shrink-0" />
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-sm font-medium leading-none">
+                                                        {chat.sender?.name}
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground line-clamp-1">
+                                                        {chat.content || 'Attachment sent'}
+                                                    </span>
+                                                </div>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    ))}
+                                    <DropdownMenuSeparator />
+                                </>
+                            )}
 
-                        {data.counts.sales > 0 && (
-                            <>
-                                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                                    Pending Sales
-                                </DropdownMenuLabel>
-                                {data.sales.map((sale) => (
-                                    <DropdownMenuItem key={sale.id} asChild>
-                                        <Link href="/sales-list" className="flex cursor-pointer items-start gap-2 p-2">
-                                            <ShoppingBag className="mt-1 h-4 w-4 shrink-0" />
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-sm font-medium leading-none">
-                                                    Sale #{sale.id}
-                                                </span>
-                                                <span className="text-xs text-muted-foreground">
-                                                    Status: {sale.status}
-                                                </span>
-                                            </div>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                ))}
-                                <DropdownMenuSeparator />
-                            </>
-                        )}
+                            {data.counts.sales > 0 && (
+                                <>
+                                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                                        Pending Sales
+                                    </DropdownMenuLabel>
+                                    {data.sales.map((sale) => (
+                                        <DropdownMenuItem key={sale.id} asChild>
+                                            <Link href="/sales-list" className="flex cursor-pointer items-start gap-2 p-2">
+                                                <ShoppingBag className="mt-1 h-4 w-4 shrink-0" />
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-sm font-medium leading-none">
+                                                        Sale #{sale.id}
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Status: {sale.status}
+                                                    </span>
+                                                </div>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    ))}
+                                    <DropdownMenuSeparator />
+                                </>
+                            )}
 
-                        {data.counts.transfers > 0 && (
-                            <>
-                                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                                    Incoming Transfers
-                                </DropdownMenuLabel>
-                                {data.transfers.map((transfer) => (
-                                    <DropdownMenuItem key={transfer.id} asChild>
-                                        <Link href="/incoming" className="flex cursor-pointer items-start gap-2 p-2">
-                                            <ArrowRightLeft className="mt-1 h-4 w-4 shrink-0" />
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-sm font-medium leading-none">
-                                                    From {transfer.source_branch?.branch_name}
-                                                </span>
-                                                <span className="text-xs text-muted-foreground">
-                                                    Status: {transfer.status}
-                                                </span>
-                                            </div>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                ))}
-                            </>
-                        )}
-                    </>
-                )}
+                            {data.counts.transfers > 0 && (
+                                <>
+                                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                                        Incoming Transfers
+                                    </DropdownMenuLabel>
+                                    {data.transfers.map((transfer) => (
+                                        <DropdownMenuItem key={transfer.id} asChild>
+                                            <Link href="/incoming" className="flex cursor-pointer items-start gap-2 p-2">
+                                                <ArrowRightLeft className="mt-1 h-4 w-4 shrink-0" />
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-sm font-medium leading-none">
+                                                        From {transfer.source_branch?.branch_name}
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Status: {transfer.status}
+                                                    </span>
+                                                </div>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    ))}
+                                </>
+                            )}
+                        </>
+                    )}
+                </div>
             </DropdownMenuContent>
         </DropdownMenu>
     );
