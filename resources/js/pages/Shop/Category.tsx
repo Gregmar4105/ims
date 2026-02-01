@@ -60,7 +60,7 @@ export default function CategoryPage({ category, products }: Props) {
                             {category.name}
                         </h1>
                         <p className="mx-auto mt-4 max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
-                            Explore our collection of {category.name}.
+                            {category.description || `Explore our collection of ${category.name}.`}
                         </p>
                     </div>
 

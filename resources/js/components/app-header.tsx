@@ -31,12 +31,13 @@ import { UserMenuContent } from '@/components/user-menu-content';
 import { cn, resolveUrl } from '@/lib/utils';
 
 import { type NavItem, type SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
-import { Menu, Search, Bike, Mars, Venus, Cog, Wind, HatGlasses, MapPlus, ShoppingBag } from 'lucide-react';
-import React from 'react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { Menu, Search, Bike, Mars, Venus, Cog, Wind, HatGlasses, MapPlus, ShoppingBag, X } from 'lucide-react';
+import React, { useState, useRef } from 'react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
 
 // --- Types ---
 interface Category {
@@ -140,6 +141,24 @@ ListItem.displayName = "ListItem"
 export function AppHeader() {
     const page = usePage<SharedData & { categories?: Category[]; auth: { roles: string[] } }>();
     const { auth, categories = [] } = page.props;
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    const handleSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            router.get('/shop', { search: searchQuery });
+            setIsSearchOpen(false);
+        }
+    };
+
+    const toggleSearch = () => {
+        setIsSearchOpen(!isSearchOpen);
+        if (!isSearchOpen) {
+            setTimeout(() => searchInputRef.current?.focus(), 100);
+        }
+    };
 
     // Get the dashboard URL based on user role
     const getDashboardUrl = (): string => {
@@ -313,8 +332,37 @@ export function AppHeader() {
 
                 {/* --- Right: Actions & Auth --- */}
                 <div className="ml-auto flex items-center space-x-2">
-                    <div>
-                        <Search className="h-5 w-5" />
+                    <div className="relative">
+                        {isSearchOpen ? (
+                            <form onSubmit={handleSearchSubmit} className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center bg-white dark:bg-zinc-900 border rounded-full px-2 py-1 shadow-lg w-[200px] sm:w-[300px] z-50">
+                                <Search className="h-4 w-4 text-gray-400 ml-2" />
+                                <Input
+                                    ref={searchInputRef}
+                                    type="text"
+                                    placeholder="Search products..."
+                                    className="border-0 focus-visible:ring-0 bg-transparent h-8 text-sm w-full"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onBlur={() => {
+                                        // Optional: close on blur if empty, but might be annoying if clicking away
+                                        // setIsSearchOpen(false); 
+                                    }}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
+                                    onClick={() => setIsSearchOpen(false)}
+                                >
+                                    <X className="h-3 w-3" />
+                                </Button>
+                            </form>
+                        ) : (
+                            <Button variant="ghost" size="icon" onClick={toggleSearch}>
+                                <Search className="h-5 w-5" />
+                            </Button>
+                        )}
                     </div>
                     {/* Auth Logic */}
                     {auth.user ? (
