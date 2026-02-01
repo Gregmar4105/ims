@@ -66,6 +66,14 @@ interface DashboardProps {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
+const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+    }).format(amount);
+};
+
 export default function BranchDashboard({ stats, chartData, pieData, leaderboard, filters }: DashboardProps) {
     const [startDate, setStartDate] = useState<string>(filters.start_date || '');
     const [endDate, setEndDate] = useState<string>(filters.end_date || '');
@@ -97,42 +105,42 @@ export default function BranchDashboard({ stats, chartData, pieData, leaderboard
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Daily Sales (Qty)</CardTitle>
+                            <CardTitle className="text-sm font-medium">Daily Revenue</CardTitle>
                             <DollarSign className="text-muted-foreground h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.daily}</div>
-                            <p className="text-muted-foreground text-xs">Products sold today</p>
+                            <div className="text-2xl font-bold">{formatCurrency(stats.daily)}</div>
+                            <p className="text-muted-foreground text-xs">Revenue today</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Weekly Sales (Qty)</CardTitle>
+                            <CardTitle className="text-sm font-medium">Weekly Revenue</CardTitle>
                             <Users className="text-muted-foreground h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.weekly}</div>
-                            <p className="text-muted-foreground text-xs">Products sold this week</p>
+                            <div className="text-2xl font-bold">{formatCurrency(stats.weekly)}</div>
+                            <p className="text-muted-foreground text-xs">Revenue this week</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Monthly Sales (Qty)</CardTitle>
+                            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
                             <CreditCard className="text-muted-foreground h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.monthly}</div>
-                            <p className="text-muted-foreground text-xs">Products sold this month</p>
+                            <div className="text-2xl font-bold">{formatCurrency(stats.monthly)}</div>
+                            <p className="text-muted-foreground text-xs">Revenue this month</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Year To Date (Qty)</CardTitle>
+                            <CardTitle className="text-sm font-medium">YTD Revenue</CardTitle>
                             <Activity className="text-muted-foreground h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.ytd}</div>
-                            <p className="text-muted-foreground text-xs">Total products sold this year</p>
+                            <div className="text-2xl font-bold">{formatCurrency(stats.ytd)}</div>
+                            <p className="text-muted-foreground text-xs">Total revenue this year</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -166,12 +174,14 @@ export default function BranchDashboard({ stats, chartData, pieData, leaderboard
                                         tickLine={false}
                                         axisLine={false}
                                         tickMargin={10}
-                                        width={40}
+                                        width={80}
+                                        tickFormatter={(value) => formatCurrency(value)}
                                     />
                                     <Tooltip
                                         contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
                                         itemStyle={{ color: 'hsl(var(--foreground))' }}
                                         cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '4 4' }}
+                                        formatter={(value: number) => [formatCurrency(value), 'Revenue']}
                                     />
                                     <Area
                                         type="monotone"
@@ -190,7 +200,7 @@ export default function BranchDashboard({ stats, chartData, pieData, leaderboard
                     <div className="flex flex-col gap-4">
                         <Card className="flex-1">
                             <CardHeader>
-                                <CardTitle>Sales Distribution (YTD)</CardTitle>
+                                <CardTitle>Sales Distribution (YTD Revenue)</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <ResponsiveContainer width="100%" height={250}>
@@ -209,7 +219,7 @@ export default function BranchDashboard({ stats, chartData, pieData, leaderboard
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
-                                        <Tooltip />
+                                        <Tooltip formatter={(value: number) => [formatCurrency(value), 'Revenue']} />
                                     </PieChart>
                                 </ResponsiveContainer>
                             </CardContent>
@@ -241,9 +251,9 @@ export default function BranchDashboard({ stats, chartData, pieData, leaderboard
                                     </div>
                                 </div>
                                 <div className="rounded-lg border p-4 bg-muted/50">
-                                    <p className="text-sm font-medium">Items Sold in Range</p>
+                                    <p className="text-sm font-medium">Revenue in Range</p>
                                     <div className="mt-2 text-3xl font-bold text-primary">
-                                        {filters.selectedDateSales ?? 0}
+                                        {formatCurrency(filters.selectedDateSales ?? 0)}
                                     </div>
                                     <p className="text-xs text-muted-foreground mt-1">
                                         {startDate && endDate ? `${startDate} to ${endDate}` : 'Select a date range'}
@@ -257,7 +267,7 @@ export default function BranchDashboard({ stats, chartData, pieData, leaderboard
                 {/* Personnel Leaderboard */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Personnel Leaderboard (By Quantity Sold)</CardTitle>
+                        <CardTitle>Personnel Leaderboard (By Revenue)</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -270,7 +280,7 @@ export default function BranchDashboard({ stats, chartData, pieData, leaderboard
                                     <TableHead className="text-right">Daily</TableHead>
                                     <TableHead className="text-right">Weekly</TableHead>
                                     <TableHead className="text-right">Monthly</TableHead>
-                                    <TableHead className="text-right">Outgoing</TableHead>
+                                    <TableHead className="text-right">Outgoing (Qty)</TableHead>
                                     <TableHead className="text-right">Total Sales</TableHead>
                                     <TableHead className="text-right">Month Winner</TableHead>
                                 </TableRow>
@@ -287,11 +297,11 @@ export default function BranchDashboard({ stats, chartData, pieData, leaderboard
                                         <TableCell className="font-medium">{person.name}</TableCell>
                                         <TableCell>{person.role}</TableCell>
                                         <TableCell>{person.joined}</TableCell>
-                                        <TableCell className="text-right">{person.daily}</TableCell>
-                                        <TableCell className="text-right">{person.weekly}</TableCell>
-                                        <TableCell className="text-right">{person.monthlyContribution}</TableCell>
+                                        <TableCell className="text-right">{formatCurrency(person.daily)}</TableCell>
+                                        <TableCell className="text-right">{formatCurrency(person.weekly)}</TableCell>
+                                        <TableCell className="text-right">{formatCurrency(person.monthlyContribution)}</TableCell>
                                         <TableCell className="text-right">{person.outgoing}</TableCell>
-                                        <TableCell className="text-right">{person.sales}</TableCell>
+                                        <TableCell className="text-right">{formatCurrency(person.sales)}</TableCell>
                                         <TableCell className="text-right">
                                             {index === 0 && person.monthlyContribution > 0 && (
                                                 <span className="flex items-center justify-end gap-1 text-yellow-500 font-bold">

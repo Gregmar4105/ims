@@ -25,14 +25,22 @@ class BranchDashboardController extends Controller
             });
         };
 
-        // --- Stats Cards (Based on Quantity) ---
-        $dailySales = $salesQuery(SaleItem::query())->whereHas('sale', fn($q) => $q->whereDate('created_at', Carbon::today()))->sum('quantity');
+        // --- Stats Cards (Based on Revenue) ---
+        $dailySales = $salesQuery(SaleItem::query())
+            ->whereHas('sale', fn($q) => $q->whereDate('created_at', Carbon::today()))
+            ->sum(DB::raw('quantity * price'));
         
-        $weeklySales = $salesQuery(SaleItem::query())->whereHas('sale', fn($q) => $q->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]))->sum('quantity');
+        $weeklySales = $salesQuery(SaleItem::query())
+            ->whereHas('sale', fn($q) => $q->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]))
+            ->sum(DB::raw('quantity * price'));
         
-        $monthlySales = $salesQuery(SaleItem::query())->whereHas('sale', fn($q) => $q->whereMonth('created_at', Carbon::now()->month)->whereYear('created_at', Carbon::now()->year))->sum('quantity');
+        $monthlySales = $salesQuery(SaleItem::query())
+            ->whereHas('sale', fn($q) => $q->whereMonth('created_at', Carbon::now()->month)->whereYear('created_at', Carbon::now()->year))
+            ->sum(DB::raw('quantity * price'));
         
-        $ytdSales = $salesQuery(SaleItem::query())->whereHas('sale', fn($q) => $q->whereYear('created_at', Carbon::now()->year))->sum('quantity');
+        $ytdSales = $salesQuery(SaleItem::query())
+            ->whereHas('sale', fn($q) => $q->whereYear('created_at', Carbon::now()->year))
+            ->sum(DB::raw('quantity * price'));
 
         // --- Manual Date Tracking ---
         // Handle Range: start_date to end_date
@@ -43,12 +51,12 @@ class BranchDashboardController extends Controller
         if ($startDate && $endDate) {
              $selectedDateSales = $salesQuery(SaleItem::query())
                 ->whereHas('sale', fn($q) => $q->whereBetween('created_at', [$startDate, $endDate]))
-                ->sum('quantity');
+                ->sum(DB::raw('quantity * price'));
         } elseif ($startDate) {
              // Fallback if only start date provided (though frontend should enforce both or handle logic)
              $selectedDateSales = $salesQuery(SaleItem::query())
                 ->whereHas('sale', fn($q) => $q->whereDate('created_at', $startDate))
-                ->sum('quantity');
+                ->sum(DB::raw('quantity * price'));
         }
 
         // --- Charts ---
@@ -56,11 +64,14 @@ class BranchDashboardController extends Controller
         $salesTrend = [];
         for ($i = 6; $i >= 0; $i--) {
             $day = Carbon::today()->subDays($i);
-            $qty = $salesQuery(SaleItem::query())->whereHas('sale', fn($q) => $q->whereDate('created_at', $day))->sum('quantity');
-            $salesTrend[] = ['name' => $day->format('M d'), 'sales' => (int)$qty];
+            $revenue = $salesQuery(SaleItem::query())
+                ->whereHas('sale', fn($q) => $q->whereDate('created_at', $day))
+                ->sum(DB::raw('quantity * price'));
+            $salesTrend[] = ['name' => $day->format('M d'), 'sales' => (float)$revenue];
         }
 
         // Sales Distribution (By Category) - Eloquent Collection approaches for reliability
+        // Only select what we need to avoid memory issues, though usually acceptable for small datasets
         $salesDistribution = SaleItem::with(['product.category'])
             ->whereHas('sale', function ($query) use ($branchId) {
                 $query->where('branch_id', $branchId)
@@ -69,7 +80,7 @@ class BranchDashboardController extends Controller
             ->get()
             ->groupBy(fn($item) => $item->product?->category?->name ?? 'Uncategorized')
             ->map(function ($items, $categoryName) {
-                return ['name' => $categoryName, 'value' => (int)$items->sum('quantity')];
+                return ['name' => $categoryName, 'value' => (float)$items->sum(fn($item) => $item->quantity * $item->price)];
             })
             ->values()
             ->sortByDesc('value')
@@ -81,19 +92,22 @@ class BranchDashboardController extends Controller
         $users = User::where('branch_id', $branchId)->get();
         
         $leaderboard = $users->map(function ($employee) use ($branchId) {
-            // Helper to get quantities for this specific user
-            $getUserQty = function ($query) use ($employee, $branchId) {
+            // Helper to get revenue for this specific user
+            $getUserRevenue = function ($query) use ($employee, $branchId) {
                 return $query->whereHas('sale', function ($q) use ($employee, $branchId) {
                     $q->where('branch_id', $branchId)->where('readied_by', $employee->id);
-                })->sum('quantity');
+                })->sum(DB::raw('quantity * price'));
             };
 
-            $daily = $getUserQty(SaleItem::whereHas('sale', fn($q) => $q->whereDate('created_at', Carbon::today())));
-            $weekly = $getUserQty(SaleItem::whereHas('sale', fn($q) => $q->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])));
-            $monthly = $getUserQty(SaleItem::whereHas('sale', fn($q) => $q->whereMonth('created_at', Carbon::now()->month)->whereYear('created_at', Carbon::now()->year)));
-            $total = $getUserQty(SaleItem::query());
+            $daily = $getUserRevenue(SaleItem::whereHas('sale', fn($q) => $q->whereDate('created_at', Carbon::today())));
+            $weekly = $getUserRevenue(SaleItem::whereHas('sale', fn($q) => $q->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])));
+            $monthly = $getUserRevenue(SaleItem::whereHas('sale', fn($q) => $q->whereMonth('created_at', Carbon::now()->month)->whereYear('created_at', Carbon::now()->year)));
+            $total = $getUserRevenue(SaleItem::query());
             
-            // Outgoing Transfers
+            // Outgoing Transfers (count remains count?)
+            // Usually dashboard counts items, but maybe revenue too? 
+            // The prompt asks for "sales dashboard", usually transfers are internal operations.
+            // I'll keep outgoing as count for now as it's not "sales revenue".
             $outgoing = 0;
              if (class_exists(\App\Models\Transfer::class)) {
                 $outgoing = \App\Models\Transfer::where('source_branch_id', $branchId)
@@ -107,20 +121,20 @@ class BranchDashboardController extends Controller
                 'role' => $employee->getRoleNames()->first() ?? 'Employee',
                 'joined' => $employee->created_at->format('Y-m-d'),
                 'profile_photo_url' => $employee->profile_photo_url,
-                'daily' => (int)$daily,
-                'weekly' => (int)$weekly,
-                'monthlyContribution' => (int)$monthly,
-                'sales' => (int)$total,
+                'daily' => (float)$daily,
+                'weekly' => (float)$weekly,
+                'monthlyContribution' => (float)$monthly,
+                'sales' => (float)$total,
                 'outgoing' => $outgoing,
             ];
         })->sortByDesc('monthlyContribution')->values();
 
         return Inertia::render('BranchDashboard', [
             'stats' => [
-                'daily' => (int)$dailySales,
-                'weekly' => (int)$weeklySales,
-                'monthly' => (int)$monthlySales,
-                'ytd' => (int)$ytdSales,
+                'daily' => (float)$dailySales,
+                'weekly' => (float)$weeklySales,
+                'monthly' => (float)$monthlySales,
+                'ytd' => (float)$ytdSales,
             ],
             'chartData' => $salesTrend,
             'pieData' => $salesDistribution,
@@ -128,7 +142,7 @@ class BranchDashboardController extends Controller
             'filters' => [
                 'start_date' => $startDate ? $startDate->format('Y-m-d') : null,
                 'end_date' => $endDate ? $endDate->format('Y-m-d') : null,
-                'selectedDateSales' => (int)$selectedDateSales,
+                'selectedDateSales' => (float)$selectedDateSales,
             ],
         ]);
     }
