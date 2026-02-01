@@ -89,28 +89,22 @@ const features: { title: string; href: string; description: string }[] = [
 
 const contacts = [
     {
-        title: "Customer Support",
-        href: "/contact/support",
+        title: "Suppliers Portal",
+        href: "/suppliers",
         description:
-            "Need help with an online order, shipping, or returns? Reach out to our support team.",
+            "System for suppliers.",
     },
     {
-        title: "Service Center",
-        href: "/contact/service",
-        description:
-            "Book a tune-up, flat repair, or full overhaul with our certified mechanics.",
-    },
-    {
-        title: "Visit Showroom",
+        title: "Visit Branches",
         href: "/locations",
         description:
             "Find our physical store location to test ride bikes and get professional fitting advice.",
     },
     {
-        title: "General Inquiries",
-        href: "/contact/general",
+        title: "About Larable",
+        href: "https://larable.dev",
         description:
-            "Have a question not related to an order? Send us a message or check our FAQ.",
+            "Developed by Larable.",
     },
 ]
 
@@ -356,7 +350,7 @@ export function AppHeader() {
 
                             {/* Support/Contact Dropdown */}
                             <NavigationMenuItem>
-                                <NavigationMenuTrigger className="bg-ghost">Support</NavigationMenuTrigger>
+                                <NavigationMenuTrigger className="bg-ghost">More</NavigationMenuTrigger>
                                 <NavigationMenuContent>
                                     <ul className="grid w-[600px] gap-3 md:w-[600px] md:grid-cols-2 lg:w-[600px] p-4">
                                         {contacts.map((component) => (
