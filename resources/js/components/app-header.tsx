@@ -284,13 +284,24 @@ export function AppHeader() {
                                             </NavigationMenuLink>
                                         </li>
                                         {features.map((component) => (
-                                            <div className='w-77' key={component.title}>
+                                            <div className='w-full' key={component.title}>
                                                 <ListItem
                                                     title={component.title}
                                                     href={component.href}
                                                 >
                                                     {component.description}
                                                 </ListItem>
+                                                {component.href.includes('google.com/maps/embed') && (
+                                                    <div className="mt-2 aspect-video w-full overflow-hidden rounded-md border text-xs text-muted-foreground">
+                                                        <iframe
+                                                            src={component.href}
+                                                            className="h-full w-full border-0"
+                                                            allowFullScreen
+                                                            loading="lazy"
+                                                            referrerPolicy="no-referrer-when-downgrade"
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </ul>
