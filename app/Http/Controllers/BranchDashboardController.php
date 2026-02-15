@@ -21,7 +21,8 @@ class BranchDashboardController extends Controller
         // Base Query Helpers
         $salesQuery = function($query) use ($branchId) {
             return $query->whereHas('sale', function ($q) use ($branchId) {
-                $q->where('branch_id', $branchId);
+                $q->where('branch_id', $branchId)
+                  ->where('status', 'completed');
             });
         };
 
@@ -75,6 +76,7 @@ class BranchDashboardController extends Controller
         $salesDistribution = SaleItem::with(['product.category'])
             ->whereHas('sale', function ($query) use ($branchId) {
                 $query->where('branch_id', $branchId)
+                      ->where('status', 'completed')
                       ->whereYear('created_at', Carbon::now()->year);
             })
             ->get()
@@ -95,7 +97,9 @@ class BranchDashboardController extends Controller
             // Helper to get revenue for this specific user
             $getUserRevenue = function ($query) use ($employee, $branchId) {
                 return $query->whereHas('sale', function ($q) use ($employee, $branchId) {
-                    $q->where('branch_id', $branchId)->where('readied_by', $employee->id);
+                    $q->where('branch_id', $branchId)
+                      ->where('status', 'completed')
+                      ->where('readied_by', $employee->id);
                 })->sum(DB::raw('quantity * price'));
             };
 
