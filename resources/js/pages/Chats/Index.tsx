@@ -603,12 +603,24 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                                 {/* Messages */}
                                 <div
                                     className="flex-1 p-4 bg-muted/5 overflow-y-auto"
-                                    onScroll={handleScroll}
                                 >
                                     <div className="space-y-4 max-w-7xl mx-auto">
-                                        {isLoadingMore && (
+                                        {hasMoreMessages && (
                                             <div className="flex justify-center py-2">
-                                                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="text-xs text-muted-foreground"
+                                                    onClick={() => loadMoreMessages()}
+                                                    disabled={isLoadingMore}
+                                                >
+                                                    {isLoadingMore ? (
+                                                        <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                                                    ) : (
+                                                        <Clock className="w-3 h-3 mr-2" />
+                                                    )}
+                                                    Load Older Messages
+                                                </Button>
                                             </div>
                                         )}
                                         {messages.map((msg, index) => {
