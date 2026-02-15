@@ -183,6 +183,11 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
     const loadMoreMessages = async () => {
         if (!selectedBranch || !messages.length || isLoadingMore || !hasMoreMessages) return;
 
+        // Capture current scroll height before loading
+        const container = scrollRef.current?.parentElement;
+        const oldHeight = container?.scrollHeight || 0;
+        const oldScrollTop = container?.scrollTop || 0;
+
         setIsLoadingMore(true);
         const oldestMessageId = messages[0].id;
 
@@ -195,6 +200,18 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                 setHasMoreMessages(false);
             } else {
                 setMessages(prev => [...response.data, ...prev]);
+
+                // Restore scroll position after render
+                // We use requestAnimationFrame/setTimeout to ensure DOM updated
+                requestAnimationFrame(() => {
+                    if (container) {
+                        const newHeight = container.scrollHeight;
+                        // Determine how much height was added
+                        const heightDifference = newHeight - oldHeight;
+                        // Adjust scroll top to maintain visual position
+                        container.scrollTop = heightDifference + oldScrollTop;
+                    }
+                });
             }
         } catch (error) {
             console.error("Failed to load older messages", error);
@@ -205,7 +222,10 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
 
     // Handle Scroll for Pagination
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-        if (e.currentTarget.scrollTop === 0 && hasMoreMessages) {
+        // Add a small buffer (e.g., 10px) to trigger before hitting hard top, 
+        // but strictly checking 0 is fine if it works. 
+        // Added !isLoadingMore check to prevent double triggers
+        if (e.currentTarget.scrollTop === 0 && hasMoreMessages && !isLoadingMore) {
             loadMoreMessages();
         }
     };
