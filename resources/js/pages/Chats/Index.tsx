@@ -249,7 +249,8 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
             setHasMoreMessages(true);
             axios.get(`/chats/${selectedBranch.id}`)
                 .then(response => {
-                    setMessages(response.data);
+                    const sorted = response.data.sort((a: Message, b: Message) => a.id - b.id);
+                    setMessages(sorted);
                     scrollToBottom('auto');
                 });
         }

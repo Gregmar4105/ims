@@ -89,9 +89,9 @@ class ChatController extends Controller
         }
             
             $messages = $query->orderBy('created_at', 'desc')
-            ->take(50) // Increased from 20 to 50 to ensure more context
+            ->take(50)
             ->get()
-            ->reverse()
+            ->sortBy('id')
             ->values();
 
         return response()->json($messages);
