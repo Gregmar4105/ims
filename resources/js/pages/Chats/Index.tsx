@@ -296,7 +296,14 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                             const unique = newMessages.filter((nm: Message) => !prev.some(ex => ex.id === nm.id));
 
                             if (unique.length > 0) {
-                                setTimeout(() => scrollToBottom(), 100);
+                                // Check if user is near bottom before auto-scrolling
+                                const container = scrollRef.current?.parentElement;
+                                const isAtBottom = container ?
+                                    (container.scrollHeight - container.scrollTop - container.clientHeight < 200) : true;
+
+                                if (isAtBottom) {
+                                    setTimeout(() => scrollToBottom(), 100);
+                                }
                                 return [...prev, ...unique];
                             }
                             return prev;
