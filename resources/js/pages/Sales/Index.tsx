@@ -1,9 +1,11 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, CheckCircle, XCircle, Clock, User, ArrowRight, Barcode, QrCode, Store } from 'lucide-react';
+import { Package, CheckCircle, XCircle, Clock, User, ArrowRight, Barcode, QrCode, Store, Search, DollarSign, Briefcase } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 
 interface SaleItem {
@@ -44,6 +46,12 @@ interface PaginatedData<T> {
     total: number;
 }
 
+interface Stats {
+    total_sales: number;
+    total_revenue: number;
+    completed: number;
+}
+
 const breadcrumbs = [
     {
         title: 'Sales List',
@@ -51,7 +59,18 @@ const breadcrumbs = [
     },
 ];
 
-export default function Index({ sales }: { sales: PaginatedData<Sale> }) {
+export default function Index({ sales, stats, filters }: { sales: PaginatedData<Sale>, stats: Stats, filters: { search?: string } }) {
+    const [search, setSearch] = useState(filters.search || '');
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (search !== (filters.search || '')) {
+                router.get('/sales-list', { search }, { preserveState: true, replace: true, preserveScroll: true });
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [search]);
+
     const formatDate = (dateString: string) => {
         return new Intl.DateTimeFormat('en-US', {
             year: 'numeric',
@@ -89,10 +108,58 @@ export default function Index({ sales }: { sales: PaginatedData<Sale> }) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Sales List" />
             <div className="flex h-full flex-1 flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex flex-col gap-4">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Sales History</h1>
                         <p className="text-muted-foreground mt-1">View all completed and cancelled sales.</p>
+                    </div>
+                </div>
+
+                {/* Summary Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+                            <Store className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.total_sales}</div>
+                            <p className="text-xs text-muted-foreground">All time records</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                            <DollarSign className="h-4 w-4 text-green-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">${stats.total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <p className="text-xs text-muted-foreground">From completed sales</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Completed Count</CardTitle>
+                            <CheckCircle className="h-4 w-4 text-blue-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.completed}</div>
+                            <p className="text-xs text-muted-foreground">Successful transactions</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Search Bar */}
+                <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Search by ID, Branch..."
+                            className="pl-8 max-w-md"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
                     </div>
                 </div>
 
@@ -100,7 +167,7 @@ export default function Index({ sales }: { sales: PaginatedData<Sale> }) {
                     <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-xl bg-muted/30">
                         <Store className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
                         <h3 className="text-lg font-medium">No sales found</h3>
-                        <p className="text-muted-foreground">Completed sales will appear here.</p>
+                        <p className="text-muted-foreground">Try adjusting your search or filters.</p>
                     </div>
                 ) : (
                     <div className="grid gap-6">

@@ -1,9 +1,11 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, CheckCircle, Clock, User, ArrowRight, Barcode, QrCode } from 'lucide-react';
+import { Package, CheckCircle, Clock, User, ArrowRight, Barcode, QrCode, Search, XCircle, Truck } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 
 interface Branch {
@@ -54,6 +56,12 @@ interface PaginatedData<T> {
     total: number;
 }
 
+interface Stats {
+    total: number;
+    completed: number;
+    rejected: number;
+}
+
 const breadcrumbs = [
     {
         title: 'Transfer List',
@@ -61,7 +69,17 @@ const breadcrumbs = [
     },
 ];
 
-export default function Index({ transfers }: { transfers: PaginatedData<Transfer> }) {
+export default function Index({ transfers, stats, filters }: { transfers: PaginatedData<Transfer>, stats: Stats, filters: { search?: string } }) {
+    const [search, setSearch] = useState(filters.search || '');
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (search !== (filters.search || '')) {
+                router.get('/transfer-list', { search }, { preserveState: true, replace: true, preserveScroll: true });
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [search]);
 
     const formatDate = (dateString: string) => {
         return new Intl.DateTimeFormat('en-US', {
@@ -77,18 +95,66 @@ export default function Index({ transfers }: { transfers: PaginatedData<Transfer
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Transfer List" />
             <div className="flex h-full flex-1 flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex flex-col gap-4">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Transfer History</h1>
                         <p className="text-muted-foreground mt-1">View all completed and rejected transfers.</p>
                     </div>
                 </div>
 
+                {/* Summary Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Transfers</CardTitle>
+                            <Truck className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.total}</div>
+                            <p className="text-xs text-muted-foreground">All time history</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.completed}</div>
+                            <p className="text-xs text-muted-foreground">Successfully received</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+                            <XCircle className="h-4 w-4 text-red-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.rejected}</div>
+                            <p className="text-xs text-muted-foreground">Cancelled or returned</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Search Bar */}
+                <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Search by ID, Branch Name..."
+                            className="pl-8 max-w-md"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+                </div>
+
                 {transfers.data.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-xl bg-muted/30">
                         <CheckCircle className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
-                        <h3 className="text-lg font-medium">No completed transfers</h3>
-                        <p className="text-muted-foreground">Completed transfers will appear here.</p>
+                        <h3 className="text-lg font-medium">No transfers found</h3>
+                        <p className="text-muted-foreground">Try adjusting your search or filters.</p>
                     </div>
                 ) : (
                     <div className="grid gap-6">

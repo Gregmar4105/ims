@@ -259,15 +259,38 @@ class TransferController extends Controller
         return back()->with('success', 'Transfer rejected.');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $transfers = Transfer::with(['items.product', 'sourceBranch', 'destinationBranch', 'receivedBy'])
+        $query = Transfer::with(['items.product', 'sourceBranch', 'destinationBranch', 'receivedBy'])
             ->whereIn('status', ['completed', 'rejected'])
-            ->latest()
-            ->paginate(10);
+            ->latest();
+
+        // Search
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                  ->orWhereHas('sourceBranch', fn($q) => $q->where('branch_name', 'like', "%{$search}%"))
+                  ->orWhereHas('destinationBranch', fn($q) => $q->where('branch_name', 'like', "%{$search}%"));
+            });
+        }
+
+        // Stats (Calculate on base query or separate optimized queries)
+        // Since we are filtering by status in the main query, stats should probably reflect GLOBAL history for context, 
+        // or filtered history? usually users want to see "Totals" vs "What I'm searching".
+        // Let's do Global History Stats for the index page summary.
+        $stats = [
+            'total' => Transfer::whereIn('status', ['completed', 'rejected'])->count(),
+            'completed' => Transfer::where('status', 'completed')->count(),
+            'rejected' => Transfer::where('status', 'rejected')->count(),
+        ];
+
+        $transfers = $query->paginate(10)->withQueryString();
 
         return Inertia::render('Transfers/Index', [
-            'transfers' => $transfers
+            'transfers' => $transfers,
+            'stats' => $stats,
+            'filters' => $request->only(['search']),
         ]);
     }
 }

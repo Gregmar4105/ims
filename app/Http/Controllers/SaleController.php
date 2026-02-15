@@ -28,10 +28,38 @@ class SaleController extends Controller
             $query->where('branch_id', $user->branch_id);
         }
         
-        $sales = $query->paginate(10);
+        // Search
+        if (request('search')) {
+            $search = request('search');
+            $query->where(function($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                  ->orWhereHas('branch', fn($q) => $q->where('branch_name', 'like', "%{$search}%"));
+            });
+        }
+
+        // Clone query for stats (respecting current user branch filters but ignoring pagination/search for "Total" context if desired,
+        // or we can show "Totals matching search". 
+        // Usually top summary is "All Time" or "This Month". Let's do "All Time" respecting access control.
+        
+        $statsQuery = Sale::whereIn('status', ['completed', 'cancelled']);
+        if (!$user->hasRole('System Administrator') && $user->branch_id) {
+            $statsQuery->where('branch_id', $user->branch_id);
+        }
+
+        $stats = [
+            'total_sales' => $statsQuery->count(),
+            'total_revenue' => (clone $statsQuery)->where('status', 'completed')->with('items')->get()->sum(function($sale) {
+                 return $sale->items->sum(fn($item) => $item->quantity * $item->price);
+            }),
+            'completed' => (clone $statsQuery)->where('status', 'completed')->count(),
+        ];
+        
+        $sales = $query->paginate(10)->withQueryString();
         
         return Inertia::render('Sales/Index', [
             'sales' => $sales,
+            'stats' => $stats,
+            'filters' => request()->only(['search']),
         ]);
     }
 
