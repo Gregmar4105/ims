@@ -72,9 +72,20 @@ class ChatController extends Controller
             $query->where('content', 'like', $searchTerm);
         }
 
+
         // Pagination: Load older messages
         if ($request->has('before_id')) {
             $query->where('id', '<', $request->before_id);
+        }
+        
+        // Polling: Load newer messages
+        if ($request->has('after_id')) {
+            $query->where('id', '>', $request->after_id);
+            // When polling for new stuff, we usually want EVERYTHING new, effectively.
+            // But let's keep a sane limit or just pagination if really necessary.
+            // For chat polling, usually we just want all new messages.
+            $messages = $query->orderBy('created_at', 'asc')->get();
+            return response()->json($messages);
         }
             
         $messages = $query->orderBy('created_at', 'desc')

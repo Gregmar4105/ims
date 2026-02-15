@@ -123,6 +123,11 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
     const selectedBranchRef = useRef<Branch | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
+    const messagesRef = useRef<Message[]>(messages);
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
+
     const [isCompressing, setIsCompressing] = useState(false);
 
     // New Feature States
@@ -240,44 +245,40 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
         }
     }, [selectedBranch]);
 
-    // Listen for new messages
+    // Polling Logic
     useEffect(() => {
-        // Listen to my branch's channel
-        console.log(`Subscribing to channel: chat.branch.${user.branch_id}`);
-        const channel = window.Echo.channel(`chat.branch.${user.branch_id}`);
+        if (!selectedBranch) return;
 
-        channel.listen('.message.sent', (e: { message: Message }) => {
-            console.log('Message received:', e);
-            const currentSelectedBranch = selectedBranchRef.current;
+        const pollInterval = setInterval(() => {
+            const currentMsgs = messagesRef.current;
+            const lastMsg = currentMsgs.length > 0 ? currentMsgs[currentMsgs.length - 1] : null;
+            const afterId = lastMsg ? lastMsg.id : 0;
 
-            if (currentSelectedBranch) {
-                // Ignore my own messages (handled by handleSendMessage response)
-                if (e.message.sender_id === user.id) {
-                    console.log('Ignoring own message from Echo');
-                    return;
-                }
+            if (afterId > 0) {
+                axios.get(`/chats/${selectedBranch.id}`, {
+                    params: { after_id: afterId }
+                }).then(response => {
+                    const newMessages = response.data;
+                    if (newMessages && newMessages.length > 0) {
+                        setMessages(prev => {
+                            // Filter out any messages that already exist in state (e.g., from immediate send or race condition)
+                            const unique = newMessages.filter((nm: Message) => !prev.some(ex => ex.id === nm.id));
 
-                const isIncoming = e.message.sender.branch_id === currentSelectedBranch.id;
-                const isOutgoing = e.message.receiver_branch_id === currentSelectedBranch.id;
-
-                if (isIncoming || isOutgoing) {
-                    console.log('Message matches selected branch, adding to list');
-                    setMessages(prev => [...prev, e.message]);
-                    scrollToBottom();
-                } else {
-                    console.log('Message does not match selected branch', {
-                        msg: e.message,
-                        selectedBranchId: currentSelectedBranch.id
-                    });
-                }
+                            if (unique.length > 0) {
+                                setTimeout(() => scrollToBottom(), 100);
+                                return [...prev, ...unique];
+                            }
+                            return prev;
+                        });
+                    }
+                }).catch(err => {
+                    console.error("Polling error", err);
+                });
             }
-        });
+        }, 2000); // 2 seconds
 
-        return () => {
-            console.log(`Unsubscribing from channel: chat.branch.${user.branch_id}`);
-            channel.stopListening('.message.sent');
-        };
-    }, [user.branch_id]);
+        return () => clearInterval(pollInterval);
+    }, [selectedBranch]);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -334,7 +335,11 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                 'Content-Type': 'multipart/form-data'
             }
         }).then(response => {
-            setMessages(prev => [...prev, response.data]);
+            setMessages(prev => {
+                // Deduplicate immediate send response against any potential polling race
+                if (prev.some(m => m.id === response.data.id)) return prev;
+                return [...prev, response.data];
+            });
             scrollToBottom();
         }).catch(error => {
             console.error("Failed to send", error);
