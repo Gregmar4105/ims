@@ -51,6 +51,7 @@ class BranchController extends Controller
             'branch_name' => ['required', 'string', 'max:255', Rule::unique('branches', 'branch_name')],
             'location' => ['required', 'string', 'max:255'],
             'branch_status' => ['required', 'string', 'in:Active,Inactive'],
+            'google_maps_embed_code' => ['nullable', 'string'],
         ]);
 
         Branch::create($validated);
@@ -77,6 +78,7 @@ class BranchController extends Controller
             'branch_name' => ['required', 'string', 'max:255', Rule::unique('branches', 'branch_name')->ignore($branch->id)],
             'location' => ['required', 'string', 'max:255'],
             'branch_status' => ['required', 'string', 'in:Active,Inactive'],
+            'google_maps_embed_code' => ['nullable', 'string'],
         ]);
 
         $branch->update($validated);
@@ -87,9 +89,20 @@ class BranchController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+    /**
+     * Remove the specified resource from storage.
+     */
     public function destroy(Branch $branch)
     {
         $branch->delete();
         return redirect()->route('branches.index')->with('success', 'Branch deleted successfully.');
+    }
+
+    public function locations()
+    {
+        $branches = Branch::where('branch_status', 'Active')->get();
+        return Inertia::render('Locations/Index', [
+            'branches' => $branches
+        ]);
     }
 }

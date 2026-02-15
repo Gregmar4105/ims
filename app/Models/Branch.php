@@ -13,6 +13,8 @@ class Branch extends Model
         'branch_name',
         'location',
         'branch_status',
+        'google_maps_embed_code',
+    ];
     ];
     
     public function users(): HasMany{

@@ -58,6 +58,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('qr-and-barcode-scanner' , [QrAndBarcodeController::class, 'index']);
     
+    Route::get('locations', [\App\Http\Controllers\BranchController::class, 'locations'])->name('locations.index');
+
     Route::get('outgoing', [\App\Http\Controllers\TransferController::class, 'outgoing'])->name('transfers.outgoing');
     Route::get('transfers/create', [\App\Http\Controllers\TransferController::class, 'create'])->name('transfers.create');
     Route::post('transfers', [\App\Http\Controllers\TransferController::class, 'store'])->name('transfers.store');

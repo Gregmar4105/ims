@@ -18,7 +18,7 @@ import {
 
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowLeftRight, ArrowLeftToLine, ArrowRightFromLine, ArrowUpDown, BellRing, BookOpen, Brush, ChevronRight, Download, Folder, Frown, GalleryVertical, GalleryVerticalEnd, IdCardLanyard, LayoutDashboard, LayoutGrid, ListChecks, Mail, MapPlus, MessagesSquare, MonitorCog, NotebookText, PackageOpen, QrCode, ScanQrCode, Settings, ShoppingBag, ShoppingBasket, Sparkles, ScanBarcode, Settings2, Split, SquareTerminal, Tag, Store, TriangleAlert, UserCog, UserLock, UserPen, Users, Wallet, ShoppingCart, Plus, RotateCcw, FileImage } from 'lucide-react';
+import { ArrowLeftRight, ArrowLeftToLine, ArrowRightFromLine, ArrowUpDown, BellRing, BookOpen, Brush, ChevronRight, Download, Folder, Frown, GalleryVertical, GalleryVerticalEnd, IdCardLanyard, LayoutDashboard, LayoutGrid, ListChecks, Mail, MapPlus, MapPin, MessagesSquare, MonitorCog, NotebookText, PackageOpen, QrCode, ScanQrCode, Settings, ShoppingBag, ShoppingBasket, Sparkles, ScanBarcode, Settings2, Split, SquareTerminal, Tag, Store, TriangleAlert, UserCog, UserLock, UserPen, Users, Wallet, ShoppingCart, Plus, RotateCcw, FileImage } from 'lucide-react';
 import AppLogo from './app-logo';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@radix-ui/react-collapsible';
 import { usePermission } from '@/hooks/usePermission';
@@ -347,6 +347,16 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Locations">
+                            <MapPin />
+                            <a href="/locations">
+                                <span>Locations</span>
+                            </a>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

@@ -7,6 +7,7 @@ import { Head, useForm, Link } from '@inertiajs/react';
 import { Building, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from '@/components/ui/textarea';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -25,6 +26,7 @@ interface EditProps {
         branch_name: string;
         location: string;
         branch_status: string;
+        google_maps_embed_code: string;
     };
 }
 
@@ -33,6 +35,7 @@ export default function Edit({ branch }: EditProps) {
         branch_name: branch.branch_name || '',
         location: branch.location || '',
         branch_status: branch.branch_status || 'Active',
+        google_maps_embed_code: branch.google_maps_embed_code || '',
     });
 
     const submit = (e: React.FormEvent) => {
@@ -119,6 +122,18 @@ export default function Edit({ branch }: EditProps) {
                                     </SelectContent>
                                 </Select>
                                 {errors.branch_status && <p className="text-sm text-destructive">{errors.branch_status}</p>}
+                            </div>
+
+                            <div className="col-span-1 md:col-span-2 space-y-2">
+                                <Label htmlFor="google_maps_embed_code">Google Maps Embed Code</Label>
+                                <Textarea
+                                    id="google_maps_embed_code"
+                                    value={data.google_maps_embed_code}
+                                    onChange={(e) => setData('google_maps_embed_code', e.target.value)}
+                                    placeholder='<iframesrc="https://www.google.com/maps/embed?..."></iframe>'
+                                    className="min-h-[100px]"
+                                />
+                                {errors.google_maps_embed_code && <p className="text-sm text-destructive">{errors.google_maps_embed_code}</p>}
                             </div>
                         </div>
                     </form>
