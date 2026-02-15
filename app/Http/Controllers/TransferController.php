@@ -261,9 +261,19 @@ class TransferController extends Controller
 
     public function index(Request $request)
     {
+        $user = auth()->user();
+        
         $query = Transfer::with(['items.product', 'sourceBranch', 'destinationBranch', 'receivedBy'])
             ->whereIn('status', ['completed', 'rejected'])
             ->latest();
+
+        // Filter by branch for non-System Admins
+        if (!$user->hasRole('System Administrator') && $user->branch_id) {
+            $query->where(function($q) use ($user) {
+                $q->where('source_branch_id', $user->branch_id)
+                  ->orWhere('destination_branch_id', $user->branch_id);
+            });
+        }
 
         // Search
         if ($request->has('search') && $request->search) {
@@ -275,14 +285,20 @@ class TransferController extends Controller
             });
         }
 
-        // Stats (Calculate on base query or separate optimized queries)
-        // Since we are filtering by status in the main query, stats should probably reflect GLOBAL history for context, 
-        // or filtered history? usually users want to see "Totals" vs "What I'm searching".
-        // Let's do Global History Stats for the index page summary.
+        // Stats
+        $statsQuery = Transfer::whereIn('status', ['completed', 'rejected']);
+        
+        if (!$user->hasRole('System Administrator') && $user->branch_id) {
+            $statsQuery->where(function($q) use ($user) {
+                $q->where('source_branch_id', $user->branch_id)
+                  ->orWhere('destination_branch_id', $user->branch_id);
+            });
+        }
+
         $stats = [
-            'total' => Transfer::whereIn('status', ['completed', 'rejected'])->count(),
-            'completed' => Transfer::where('status', 'completed')->count(),
-            'rejected' => Transfer::where('status', 'rejected')->count(),
+            'total' => (clone $statsQuery)->count(),
+            'completed' => (clone $statsQuery)->where('status', 'completed')->count(),
+            'rejected' => (clone $statsQuery)->where('status', 'rejected')->count(),
         ];
 
         $transfers = $query->paginate(10)->withQueryString();
