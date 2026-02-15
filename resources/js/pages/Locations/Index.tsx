@@ -1,4 +1,4 @@
-import AppLayout from '@/layouts/app-layout';
+import AppLayout from '@/layouts/welcome-layout';
 import { Head } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

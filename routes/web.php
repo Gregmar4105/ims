@@ -11,6 +11,7 @@ Route::get('/shop', [\App\Http\Controllers\ShopController::class, 'index'])->nam
 Route::get('/shop/suggestions', [\App\Http\Controllers\ShopController::class, 'suggestions'])->name('shop.suggestions'); // Live Search Suggestions
 Route::get('/shop/{slug}', [\App\Http\Controllers\ShopController::class, 'show'])->name('shop.category');
 Route::get('/product/{product}', [\App\Http\Controllers\WelcomeController::class, 'show'])->name('product.show');
+Route::get('/locations', [\App\Http\Controllers\BranchController::class, 'locations'])->name('locations.index');
 
 Route::get('/suppliers', [\App\Http\Controllers\SupplierPortalController::class, 'index'])->name('suppliers.portal');
 Route::post('/suppliers/send', [\App\Http\Controllers\SupplierPortalController::class, 'store'])->name('suppliers.send');
@@ -58,7 +59,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('qr-and-barcode-scanner' , [QrAndBarcodeController::class, 'index']);
     
-    Route::get('locations', [\App\Http\Controllers\BranchController::class, 'locations'])->name('locations.index');
+
 
     Route::get('outgoing', [\App\Http\Controllers\TransferController::class, 'outgoing'])->name('transfers.outgoing');
     Route::get('transfers/create', [\App\Http\Controllers\TransferController::class, 'create'])->name('transfers.create');
