@@ -606,11 +606,11 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                                 >
                                     <div className="space-y-4 max-w-7xl mx-auto">
                                         {hasMoreMessages && (
-                                            <div className="flex justify-center py-2">
+                                            <div className="flex justify-center py-4">
                                                 <Button
-                                                    variant="outline"
+                                                    variant="secondary"
                                                     size="sm"
-                                                    className="text-xs text-muted-foreground"
+                                                    className="text-xs font-medium shadow-sm hover:bg-muted-foreground/20 transition-colors"
                                                     onClick={() => loadMoreMessages()}
                                                     disabled={isLoadingMore}
                                                 >
@@ -619,7 +619,7 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                                                     ) : (
                                                         <Clock className="w-3 h-3 mr-2" />
                                                     )}
-                                                    Load Older Messages
+                                                    Load Chat History
                                                 </Button>
                                             </div>
                                         )}
