@@ -582,44 +582,70 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
                                         )}
                                         {messages.map((msg, index) => {
                                             const isMe = msg.sender_id === user.id;
+                                            const showDateSeparator = index === 0 ||
+                                                new Date(msg.created_at).toDateString() !== new Date(messages[index - 1].created_at).toDateString();
+
+                                            const formatDateLabel = (dateString: string) => {
+                                                const date = new Date(dateString);
+                                                const today = new Date();
+                                                const yesterday = new Date();
+                                                yesterday.setDate(yesterday.getDate() - 1);
+
+                                                if (date.toDateString() === today.toDateString()) {
+                                                    return "Today";
+                                                } else if (date.toDateString() === yesterday.toDateString()) {
+                                                    return "Yesterday";
+                                                } else {
+                                                    return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                                }
+                                            };
+
                                             return (
-                                                <div
-                                                    key={msg.id || index}
-                                                    className={cn(
-                                                        "flex gap-2 max-w-[85%]",
-                                                        isMe ? "ml-auto flex-row-reverse" : ""
-                                                    )}
-                                                >
-                                                    {!isMe && (
-                                                        <Avatar className="w-8 h-8 mt-1">
-                                                            <AvatarImage src={msg.sender?.profile_photo_url} />
-                                                            <AvatarFallback>{msg.sender?.name?.substring(0, 1) || '?'}</AvatarFallback>
-                                                        </Avatar>
-                                                    )}
-                                                    <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
-                                                        <span className="text-[10px] text-muted-foreground mb-1 px-1">
-                                                            {msg.sender?.name || 'Unknown User'}
-                                                        </span>
-                                                        <div className={cn(
-                                                            "p-3 rounded-2xl shadow-sm",
-                                                            isMe
-                                                                ? "bg-primary text-primary-foreground rounded-tr-none"
-                                                                : "bg-card border rounded-tl-none"
-                                                        )}>
-                                                            {msg.attachment_path && (
-                                                                <div className="mb-2">
-                                                                    <img
-                                                                        src={`/storage/${msg.attachment_path}`}
-                                                                        alt="Attachment"
-                                                                        className="rounded-lg max-h-60 object-contain cursor-pointer"
-                                                                        onClick={() => window.open(`/storage/${msg.attachment_path}`, '_blank')}
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                            {msg.content && <p className="text-sm">{msg.content}</p>}
-                                                            <span className="text-[10px] opacity-70 mt-1 block">
-                                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                <div key={msg.id || index} className="flex flex-col gap-4">
+                                                    {showDateSeparator && (
+                                                        <div className="flex justify-center my-2 sticky top-0 z-10">
+                                                            <span className="text-xs font-medium text-muted-foreground bg-muted/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm border">
+                                                                {formatDateLabel(msg.created_at)}
                                                             </span>
+                                                        </div>
+                                                    )}
+                                                    <div
+                                                        className={cn(
+                                                            "flex gap-2 max-w-[85%]",
+                                                            isMe ? "ml-auto flex-row-reverse" : ""
+                                                        )}
+                                                    >
+                                                        {!isMe && (
+                                                            <Avatar className="w-8 h-8 mt-1">
+                                                                <AvatarImage src={msg.sender?.profile_photo_url} />
+                                                                <AvatarFallback>{msg.sender?.name?.substring(0, 1) || '?'}</AvatarFallback>
+                                                            </Avatar>
+                                                        )}
+                                                        <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
+                                                            <span className="text-[10px] text-muted-foreground mb-1 px-1">
+                                                                {msg.sender?.name || 'Unknown User'}
+                                                            </span>
+                                                            <div className={cn(
+                                                                "p-3 rounded-2xl shadow-sm",
+                                                                isMe
+                                                                    ? "bg-primary text-primary-foreground rounded-tr-none"
+                                                                    : "bg-card border rounded-tl-none"
+                                                            )}>
+                                                                {msg.attachment_path && (
+                                                                    <div className="mb-2">
+                                                                        <img
+                                                                            src={`/storage/${msg.attachment_path}`}
+                                                                            alt="Attachment"
+                                                                            className="rounded-lg max-h-60 object-contain cursor-pointer"
+                                                                            onClick={() => window.open(`/storage/${msg.attachment_path}`, '_blank')}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                                {msg.content && <p className="text-sm">{msg.content}</p>}
+                                                                <span className="text-[10px] opacity-70 mt-1 block">
+                                                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
