@@ -155,11 +155,21 @@ export default function ChatsIndex({ branches, activeTransfers = [] }: { branche
     );
 
     function scrollToBottom(behavior: ScrollBehavior = 'smooth') {
+        // Immediate attempt
+        if (scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behavior });
+        }
+        // Delayed attempts to account for rendering/image loading
         setTimeout(() => {
             if (scrollRef.current) {
                 scrollRef.current.scrollIntoView({ behavior });
             }
-        }, 100);
+        }, 300);
+        setTimeout(() => {
+            if (scrollRef.current) {
+                scrollRef.current.scrollIntoView({ behavior });
+            }
+        }, 1000);
     }
 
     // Fetch Media
