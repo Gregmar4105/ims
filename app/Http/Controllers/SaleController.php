@@ -253,32 +253,50 @@ class SaleController extends Controller
     /**
      * Display return items page
      */
-    public function returns()
+    public function returns(Request $request)
     {
         $user = auth()->user();
+        $search = $request->input('search');
         
-        $query = Sale::with(['items.product', 'branch', 'returns.product', 'returns.returnedBy'])
+        // Queries
+        $query = Sale::with(['items.product', 'branch', 'readiedBy', 'approvedBy'])
             ->where('status', 'completed')
             ->latest();
         
+        $returnsQuery = SaleReturn::with(['sale.branch', 'product', 'returnedBy'])->latest();
+
+        // Role Restrictions
         if (!$user->hasRole('System Administrator') && $user->branch_id) {
             $query->where('branch_id', $user->branch_id);
-        }
-        
-        $completedSales = $query->get();
-        
-        // Get recent returns
-        $returnsQuery = SaleReturn::with(['sale.branch', 'product', 'returnedBy'])->latest();
-        if (!$user->hasRole('System Administrator') && $user->branch_id) {
             $returnsQuery->whereHas('sale', function ($q) use ($user) {
                 $q->where('branch_id', $user->branch_id);
             });
         }
+        
+        // Search Filter
+        if ($search) {
+            // Filter Completed Sales (Dropdown Candidates)
+            $query->where(function($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                  ->orWhereHas('items.product', fn($q) => $q->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('branch', fn($q) => $q->where('branch_name', 'like', "%{$search}%"));
+            });
+
+            // Filter Recent Returns (Table)
+            $returnsQuery->where(function($q) use ($search) {
+                $q->whereHas('product', fn($q) => $q->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('sale', fn($q) => $q->where('id', 'like', "%{$search}%"))
+                  ->orWhereHas('returnedBy', fn($q) => $q->where('name', 'like', "%{$search}%"));
+            });
+        }
+        
+        $completedSales = $query->take(50)->get(); // Limit to 50 for performance
         $recentReturns = $returnsQuery->take(20)->get();
         
         return Inertia::render('Sales/Returns', [
             'completedSales' => $completedSales,
             'recentReturns' => $recentReturns,
+            'filters' => $request->only(['search']),
         ]);
     }
 

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Package, RotateCcw, Search, AlertCircle, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -46,9 +46,19 @@ interface Return {
     };
 }
 
-export default function Returns({ completedSales, recentReturns }: { completedSales: Sale[], recentReturns: Return[] }) {
+export default function Returns({ completedSales, recentReturns, filters }: { completedSales: Sale[], recentReturns: Return[], filters: { search?: string } }) {
     const [selectedSaleId, setSelectedSaleId] = useState<string>('');
     const [selectedProductId, setSelectedProductId] = useState<string>('');
+    const [search, setSearch] = useState(filters.search || '');
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (search !== (filters.search || '')) {
+                router.get('/return-items', { search }, { preserveState: true, replace: true, preserveScroll: true });
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [search]);
 
     const { data, setData, post, processing, reset, errors } = useForm({
         sale_id: '',
@@ -79,6 +89,22 @@ export default function Returns({ completedSales, recentReturns }: { completedSa
         <AppLayout breadcrumbs={[{ title: 'Return Items', href: '/return-items' }]}>
             <Head title="Return Items" />
             <div className="flex h-full flex-1 flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
+                {/* Header & Search */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        {/* Optional Title if needed, or keep breadcrumbs as title context */}
+                    </div>
+                    <div className="relative w-full sm:w-72">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Search Sale ID, Product..."
+                            className="pl-8"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+                </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Return Form */}
