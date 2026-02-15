@@ -44,18 +44,20 @@ class ChatController extends Controller
         // Get messages between current user's branch and target branch
         $currentBranchId = auth()->user()->branch_id;
         
+        $currentUserId = auth()->id();
+        
         $query = \App\Models\Message::with('sender')
             ->where(function($q) use ($currentBranchId, $branch) {
+                // Incoming: From target branch to my branch (or me if no branch)
                 $q->where('receiver_branch_id', $currentBranchId)
                   ->whereHas('sender', function($q) use ($branch) {
                       $q->where('branch_id', $branch->id);
                   });
             })
-            ->orWhere(function($q) use ($currentBranchId, $branch) {
+            ->orWhere(function($q) use ($branch, $currentUserId) {
+                // Outgoing: From me to target branch
                 $q->where('receiver_branch_id', $branch->id)
-                  ->whereHas('sender', function($q) use ($currentBranchId) {
-                      $q->where('branch_id', $currentBranchId);
-                  });
+                  ->where('sender_id', $currentUserId);
             });
 
         // Mark unread messages as read
