@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, RotateCcw, Search, AlertCircle, CheckCircle } from 'lucide-react';
+import { Package, RotateCcw, Search, AlertCircle, CheckCircle, Check, ChevronsUpDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
+import { Combobox, ComboboxInput, ComboboxButton, ComboboxOptions, ComboboxOption } from '@headlessui/react';
+import clsx from 'clsx';
 
 interface Sale {
     id: number;
@@ -47,9 +48,10 @@ interface Return {
 }
 
 export default function Returns({ completedSales, recentReturns, filters }: { completedSales: Sale[], recentReturns: Return[], filters: { search?: string } }) {
-    const [selectedSaleId, setSelectedSaleId] = useState<string>('');
+    const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
     const [selectedProductId, setSelectedProductId] = useState<string>('');
     const [search, setSearch] = useState(filters.search || '');
+    const [query, setQuery] = useState('');
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -60,6 +62,19 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
         return () => clearTimeout(timer);
     }, [search]);
 
+    // Sync query with search to allow typing in combobox to trigger server search
+    useEffect(() => {
+        setSearch(query);
+    }, [query]);
+
+    // Update selected sale if sales list changes (and current selection is still valid)
+    useEffect(() => {
+        if (selectedSale) {
+            const updated = completedSales.find(s => s.id === selectedSale.id);
+            if (updated) setSelectedSale(updated);
+        }
+    }, [completedSales]);
+
     const { data, setData, post, processing, reset, errors } = useForm({
         sale_id: '',
         product_id: '',
@@ -67,8 +82,8 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
         reason: '',
     });
 
-    const selectedSale = completedSales.find(s => s.id.toString() === selectedSaleId);
     const selectedItem = selectedSale?.items.find(i => i.product_id.toString() === selectedProductId);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -76,7 +91,7 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
             onSuccess: () => {
                 toast.success('Return processed successfully');
                 reset();
-                setSelectedSaleId('');
+                setSelectedSale(null);
                 setSelectedProductId('');
             },
             onError: () => {
@@ -92,17 +107,7 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
                 {/* Header & Search */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        {/* Optional Title if needed, or keep breadcrumbs as title context */}
-                    </div>
-                    <div className="relative w-full sm:w-72">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            type="search"
-                            placeholder="Search Sale ID, Product..."
-                            className="pl-8"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+                        {/* Optional Title */}
                     </div>
                 </div>
 
@@ -116,55 +121,106 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
                                     Process Return
                                 </CardTitle>
                                 <CardDescription>
-                                    Select a sale and product to return to inventory.
+                                    Search and select a sale to return.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div className="space-y-2">
                                         <Label>Select Sale</Label>
-                                        <Select
-                                            value={selectedSaleId}
-                                            onValueChange={(val) => {
-                                                setSelectedSaleId(val);
-                                                setData('sale_id', val);
+                                        <Combobox
+                                            value={selectedSale}
+                                            onChange={(val) => {
+                                                setSelectedSale(val);
+                                                setData('sale_id', val?.id.toString() || '');
                                                 setSelectedProductId('');
                                             }}
+                                            onClose={() => setQuery('')}
                                         >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a sale..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {completedSales.map((sale) => (
-                                                    <SelectItem key={sale.id} value={sale.id.toString()}>
-                                                        Sale #{sale.id} - {new Date(sale.created_at).toLocaleDateString()}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                            <div className="relative">
+                                                <div className="relative w-full cursor-default overflow-hidden rounded-md border border-input bg-background text-left focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 sm:text-sm">
+                                                    <ComboboxInput
+                                                        className="w-full border-none py-2 pl-3 pr-10 text-sm leading-5 text-gray-900 focus:ring-0 dark:text-gray-100 bg-transparent focus:outline-none"
+                                                        displayValue={(sale: Sale) => sale ? `Sale #${sale.id} - ${sale.branch.branch_name}` : ''}
+                                                        onChange={(event) => setQuery(event.target.value)}
+                                                        placeholder="Search Sale ID..."
+                                                    />
+                                                    <ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-2">
+                                                        <ChevronsUpDown
+                                                            className="h-4 w-4 text-muted-foreground"
+                                                            aria-hidden="true"
+                                                        />
+                                                    </ComboboxButton>
+                                                </div>
+                                                <ComboboxOptions className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-popover py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-50 border">
+                                                    {completedSales.length === 0 && query !== '' ? (
+                                                        <div className="relative cursor-default select-none py-2 px-4 text-muted-foreground">
+                                                            No sales found.
+                                                        </div>
+                                                    ) : (
+                                                        completedSales.map((sale) => (
+                                                            <ComboboxOption
+                                                                key={sale.id}
+                                                                className={({ active }) =>
+                                                                    clsx(
+                                                                        'relative cursor-default select-none py-2 pl-10 pr-4',
+                                                                        active ? 'bg-accent text-accent-foreground' : 'text-popover-foreground'
+                                                                    )
+                                                                }
+                                                                value={sale}
+                                                            >
+                                                                {({ selected, active }) => (
+                                                                    <>
+                                                                        <span
+                                                                            className={clsx(
+                                                                                'block truncate',
+                                                                                selected ? 'font-medium' : 'font-normal'
+                                                                            )}
+                                                                        >
+                                                                            Sale #{sale.id} - {new Date(sale.created_at).toLocaleDateString()}
+                                                                        </span>
+                                                                        {selected ? (
+                                                                            <span
+                                                                                className={clsx(
+                                                                                    'absolute inset-y-0 left-0 flex items-center pl-3 text-primary',
+                                                                                )}
+                                                                            >
+                                                                                <Check className="h-4 w-4" aria-hidden="true" />
+                                                                            </span>
+                                                                        ) : null}
+                                                                    </>
+                                                                )}
+                                                            </ComboboxOption>
+                                                        ))
+                                                    )}
+                                                </ComboboxOptions>
+                                            </div>
+                                        </Combobox>
                                     </div>
 
+                                    {/* Product Select (Keep as Select for simplicity, or convert to Combobox too?) 
+                                        Products are usually few per sale, so Select is fine. 
+                                        I'll keep it as Select but I need to adapt the logic since I changed standard state.
+                                    */}
                                     {selectedSale && (
                                         <div className="space-y-2">
                                             <Label>Select Product</Label>
-                                            <Select
+                                            <select
+                                                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                                 value={selectedProductId}
-                                                onValueChange={(val) => {
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
                                                     setSelectedProductId(val);
                                                     setData('product_id', val);
                                                 }}
                                             >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select product..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {selectedSale.items.map((item) => (
-                                                        <SelectItem key={item.product_id} value={item.product_id.toString()}>
-                                                            {item.product.name} (Qty: {item.quantity})
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                                <option value="" disabled>Select product...</option>
+                                                {selectedSale.items.map((item) => (
+                                                    <option key={item.product_id} value={item.product_id.toString()}>
+                                                        {item.product.name} (Qty: {item.quantity})
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
                                     )}
 
