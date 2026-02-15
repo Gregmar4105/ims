@@ -15,7 +15,7 @@ class Branch extends Model
         'branch_status',
         'google_maps_embed_code',
     ];
-    ];
+
     
     public function users(): HasMany{
         return $this->hasMany(User::class);
