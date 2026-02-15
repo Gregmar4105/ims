@@ -114,7 +114,7 @@ class TransferController extends Controller
             \Illuminate\Support\Facades\Log::error("Failed to send transfer notification: " . $e->getMessage());
         }
 
-        return redirect()->back()->with('success', 'Transfer readied successfully.');
+        return redirect()->route('transfers.outgoing')->with('success', 'Transfer readied successfully.');
     }
 
     public function incoming()
