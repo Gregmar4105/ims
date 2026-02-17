@@ -498,7 +498,7 @@ export function NotificationBell() {
                     )}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[95vw] sm:w-[360px] p-0 overflow-hidden rounded-xl shadow-xl border-border/50">
+            <DropdownMenuContent align="end" className="w-[95vw] sm:w-[360px] -mr-4 sm:mr-0 p-0 overflow-hidden rounded-xl shadow-xl border-border/50">
                 <div className="p-4 border-b border-border/40 bg-card/50 backdrop-blur-sm sticky top-0 z-10 space-y-3">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold tracking-tight">Notifications</h2>
