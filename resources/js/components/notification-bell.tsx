@@ -568,7 +568,7 @@ export function NotificationBell() {
                                 // All View - Grouped by Date
                                 groupedNotifications.map((group) => (
                                     <div key={group.title} className="flex flex-col">
-                                        <div className="sticky top-0 z-10 bg-background border-b border-border/30 px-4 py-1.5 text-xs font-semibold text-muted-foreground shadow-sm">
+                                        <div className="sticky top-0 z-10 bg-background border-b border-border/30 px-4 py-1.5 text-xs font-bold text-foreground shadow-sm">
                                             {group.title}
                                         </div>
                                         {group.items.map((item) => (
@@ -608,12 +608,12 @@ function NotificationItemRenderer({ item, onClick }: { item: NotificationItem, o
                 className={cn(
                     "flex gap-3 p-3 transition-colors relative group border-b border-border/20 last:border-0",
                     item.read
-                        ? "bg-background/50 hover:bg-muted/30 opacity-70"
+                        ? "bg-background/95 hover:bg-muted/20"
                         : "bg-primary/5 hover:bg-primary/10"
                 )}
                 onClick={onClick}
             >
-                <div className={cn("shrink-0 mt-1", item.read && "opacity-60")}>
+                <div className={cn("shrink-0 mt-1", item.read && "opacity-80")}>
                     {item.type === 'chat' ? (
                         <Avatar className="h-10 w-10 border border-border/50">
                             <AvatarImage src={item.icon || undefined} />
@@ -640,7 +640,7 @@ function NotificationItemRenderer({ item, onClick }: { item: NotificationItem, o
                     <div className="flex justify-between items-start w-full">
                         <span className={cn(
                             "font-semibold text-sm leading-tight line-clamp-2",
-                            item.read ? "text-muted-foreground" : "text-foreground"
+                            item.read ? "text-foreground/90 font-medium" : "text-foreground"
                         )}>
                             {item.title}
                         </span>
