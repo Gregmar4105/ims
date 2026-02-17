@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use App\Models\SiteSetting;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -71,6 +73,11 @@ class HandleInertiaRequests extends Middleware
                     })->take(5)->get(['id', 'name', 'slug']));
                     return $category;
                 }),
+
+            'notification_sound' => function () {
+                $path = SiteSetting::get('notification_sound');
+                return $path ? Storage::url($path) : '/audio/nokia_3310.mp3';
+            },
         ];
     }
 }

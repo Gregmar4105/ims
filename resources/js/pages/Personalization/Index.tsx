@@ -8,7 +8,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
-import { ImageIcon, RotateCcw, Upload } from 'lucide-react';
+import { ImageIcon, RotateCcw, Upload, Music } from 'lucide-react';
 
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '@/lib/canvasUtils';
@@ -23,10 +23,12 @@ const breadcrumbs: BreadcrumbItem[] = [
 interface Props {
     currentBanner: string | null;
     defaultBanner: string;
+    currentRingtone: string;
 }
 
-export default function Index({ currentBanner, defaultBanner }: Props) {
+export default function Index({ currentBanner, defaultBanner, currentRingtone }: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const ringtoneInputRef = useRef<HTMLInputElement>(null);
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -39,6 +41,43 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
     });
 
     const { post: resetPost, processing: resetProcessing } = useForm({});
+
+    const { data: ringtoneData, setData: setRingtoneData, post: postRingtone, processing: ringtoneProcessing, errors: ringtoneErrors, reset: resetRingtone, recentlySuccessful: ringtoneSuccessful } = useForm<{
+        ringtone: File | null;
+    }>({
+        ringtone: null,
+    });
+
+    const { post: resetRingtonePost, processing: resetRingtoneProcessing } = useForm({});
+
+    const handleRingtoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setRingtoneData('ringtone', file);
+        }
+    };
+
+    const submitRingtone = (e: React.FormEvent) => {
+        e.preventDefault();
+        postRingtone('/personalization/ringtone', {
+            preserveScroll: true,
+            onSuccess: () => {
+                resetRingtone();
+                if (ringtoneInputRef.current) {
+                    ringtoneInputRef.current.value = '';
+                }
+            },
+        });
+    };
+
+    const handleResetRingtone = () => {
+        if (confirm('Are you sure you want to reset the ringtone to the default option?')) {
+            resetRingtonePost('/personalization/ringtone/reset', {
+                preserveScroll: true,
+            });
+        }
+    };
+
 
     const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -314,7 +353,91 @@ export default function Index({ currentBanner, defaultBanner }: Props) {
                         </div>
                     </form>
                 </div>
+
+
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <HeadingSmall
+                        title="Notification Sound"
+                        description="Customize the ringtone for system notifications."
+                    />
+
+                    <div className="mt-6 space-y-6">
+                        <div className="space-y-2">
+                            <Label>Current Ringtone</Label>
+                            <div className="flex items-center gap-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                                <Music className="h-6 w-6 text-blue-500" />
+                                <div className="flex-1">
+                                    <audio controls src={currentRingtone} className="w-full h-10" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <form onSubmit={submitRingtone} className="space-y-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="ringtone">Upload New Ringtone</Label>
+                                <div className="flex items-center gap-4">
+                                    <input
+                                        id="ringtone"
+                                        type="file"
+                                        className="hidden"
+                                        ref={ringtoneInputRef}
+                                        onChange={handleRingtoneChange}
+                                        accept="audio/mp3,audio/wav"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => ringtoneInputRef.current?.click()}
+                                        className="gap-2"
+                                    >
+                                        <Music className="h-4 w-4" />
+                                        Select Audio
+                                    </Button>
+                                    <span className="text-sm text-gray-500">
+                                        {ringtoneData.ringtone ? ringtoneData.ringtone.name : 'No file selected'}
+                                    </span>
+                                </div>
+                                <p className="text-sm text-gray-500">
+                                    Supported formats: MP3, WAV. Max 5MB.
+                                </p>
+                                <InputError message={ringtoneErrors.ringtone} />
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                <Button
+                                    type="submit"
+                                    disabled={!ringtoneData.ringtone || ringtoneProcessing}
+                                    className="gap-2"
+                                >
+                                    <Upload className="h-4 w-4" />
+                                    {ringtoneProcessing ? 'Uploading...' : 'Upload Ringtone'}
+                                </Button>
+
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={handleResetRingtone}
+                                    disabled={resetRingtoneProcessing}
+                                    className="gap-2"
+                                >
+                                    <RotateCcw className="h-4 w-4" />
+                                    Reset to Default
+                                </Button>
+
+                                <Transition
+                                    show={ringtoneSuccessful}
+                                    enter="transition ease-in-out"
+                                    enterFrom="opacity-0"
+                                    leave="transition ease-in-out"
+                                    leaveTo="opacity-0"
+                                >
+                                    <p className="text-sm text-green-600">Ringtone updated!</p>
+                                </Transition>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-        </AppLayout>
+        </AppLayout >
     );
 }

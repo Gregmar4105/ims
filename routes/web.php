@@ -27,6 +27,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('personalization.banner')->middleware('role:System Administrator');
     Route::post('personalization/banner/reset', [\App\Http\Controllers\PersonalizationController::class, 'resetBanner'])
         ->name('personalization.banner.reset')->middleware('role:System Administrator');
+    Route::post('personalization/ringtone', [\App\Http\Controllers\PersonalizationController::class, 'updateRingtone'])
+        ->name('personalization.ringtone')->middleware('role:System Administrator');
+    Route::post('personalization/ringtone/reset', [\App\Http\Controllers\PersonalizationController::class, 'resetRingtone'])
+        ->name('personalization.ringtone.reset')->middleware('role:System Administrator');
 
     Route::prefix('system-dashboard/api')->name('system.dashboard.')->middleware(['role:System Administrator'])->group(function () {
         Route::get('/stats', [\App\Http\Controllers\SystemDashboardController::class, 'getData'])->name('stats');

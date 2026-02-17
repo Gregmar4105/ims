@@ -20,6 +20,7 @@ class PersonalizationController extends Controller
         return Inertia::render('Personalization/Index', [
             'currentBanner' => $bannerUrl,
             'defaultBanner' => 'https://specialized.com.ph/cdn/shop/collections/plp-banner_Bikes_2000x.progressive.jpg?v=1587621713',
+            'currentRingtone' => SiteSetting::get('notification_sound') ? Storage::url(SiteSetting::get('notification_sound')) : '/audio/nokia_3310.mp3',
         ]);
     }
 
@@ -65,5 +66,50 @@ class PersonalizationController extends Controller
         SiteSetting::where('key', 'homepage_banner')->delete();
 
         return back()->with('success', 'Homepage banner reset to default.');
+    }
+    }
+
+    /**
+     * Update the notification ringtone.
+     */
+    public function updateRingtone(Request $request)
+    {
+        $validated = $request->validate([
+            'ringtone' => 'required|mimes:mp3,wav|max:5120', // 5MB max
+        ]);
+
+        // Get old ringtone path
+        $oldPath = SiteSetting::get('notification_sound');
+
+        // Store new ringtone
+        $path = $request->file('ringtone')->store('ringtones', 'public');
+
+        // Update setting
+        SiteSetting::set('notification_sound', $path);
+
+        // Delete old ringtone if it exists
+        if ($oldPath && Storage::disk('public')->exists($oldPath)) {
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        return back()->with('success', 'Notification ringtone updated successfully.');
+    }
+
+    /**
+     * Reset the notification ringtone to default.
+     */
+    public function resetRingtone()
+    {
+        $currentPath = SiteSetting::get('notification_sound');
+
+        // Delete the current custom ringtone file
+        if ($currentPath && Storage::disk('public')->exists($currentPath)) {
+            Storage::disk('public')->delete($currentPath);
+        }
+
+        // Remove the setting
+        SiteSetting::where('key', 'notification_sound')->delete();
+
+        return back()->with('success', 'Notification ringtone reset to default.');
     }
 }
