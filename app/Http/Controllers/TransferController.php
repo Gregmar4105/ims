@@ -114,27 +114,7 @@ class TransferController extends Controller
             \Illuminate\Support\Facades\Log::error("Failed to send transfer notification (source): " . $e->getMessage());
         }
 
-        // Notify Branch Administrators (Destination)
-        try {
-            $destAdminPlayerIds = \App\Models\User::role('Branch Administrator')
-                ->where('branch_id', $request->destination_branch_id)
-                ->whereNotNull('onesignal_player_id')
-                ->pluck('onesignal_player_id')
-                ->toArray();
 
-            if (!empty($destAdminPlayerIds)) {
-                $sourceBranch = \App\Models\Branch::find($user->branch_id);
-                $sourceBranchName = $sourceBranch ? $sourceBranch->branch_name : 'Unknown Branch';
-                
-                $oneSignal->sendNotification(
-                    "Incoming Transfer #{$transfer->id} from {$sourceBranchName}",
-                    $destAdminPlayerIds,
-                    "New Transfer Created"
-                );
-            }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Failed to send transfer notification (dest): " . $e->getMessage());
-        }
 
         return redirect()->route('transfers.outgoing')->with('success', 'Transfer readied successfully.');
     }
@@ -158,7 +138,7 @@ class TransferController extends Controller
         ]);
     }
 
-    public function initiate(Transfer $transfer)
+    public function initiate(Transfer $transfer, \App\Services\OneSignalService $oneSignal)
     {
         $user = auth()->user();
 
@@ -193,6 +173,28 @@ class TransferController extends Controller
                 'approved_by' => $user->id,
             ]);
         });
+
+        // Notify Branch Administrators (Destination) - Moved from store
+        try {
+            $destAdminPlayerIds = \App\Models\User::role('Branch Administrator')
+                ->where('branch_id', $transfer->destination_branch_id)
+                ->whereNotNull('onesignal_player_id')
+                ->pluck('onesignal_player_id')
+                ->toArray();
+
+            if (!empty($destAdminPlayerIds)) {
+                $sourceBranch = \App\Models\Branch::find($user->branch_id);
+                $sourceBranchName = $sourceBranch ? $sourceBranch->branch_name : 'Unknown Branch';
+                
+                $oneSignal->sendNotification(
+                    "Incoming Transfer #{$transfer->id} from {$sourceBranchName}",
+                    $destAdminPlayerIds,
+                    "New Transfer Created"
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send transfer notification (dest): " . $e->getMessage());
+        }
 
         return back()->with('success', 'Transfer initiated successfully.');
     }
