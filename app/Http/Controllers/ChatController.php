@@ -61,7 +61,7 @@ class ChatController extends Controller
                           $q->where('branch_id', $branch->id);
                       });
                 })
-                })
+
                 ->orWhere(function($q) use ($branch, $currentBranchId, $currentUserId) {
                     // Outgoing: From me (or my branch) to target branch
                     $q->where('receiver_branch_id', $branch->id);
