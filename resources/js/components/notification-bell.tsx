@@ -102,12 +102,13 @@ export function NotificationBell() {
             // Stop if no notifications
             audio.pause();
             audio.currentTime = 0;
-            if (timeoutId) clearTimeout(timeoutId);
+            // timeoutId might not be assigned if loop hasn't started
+            try { clearTimeout(timeoutId!); } catch (e) { }
         }
 
         return () => {
             audio.removeEventListener('ended', handleEnded);
-            if (timeoutId) clearTimeout(timeoutId);
+            try { clearTimeout(timeoutId!); } catch (e) { }
             // Don't pause on unmount to allow sound to finish? No, better to stop.
             audio.pause();
             audio.currentTime = 0;
@@ -149,10 +150,10 @@ export function NotificationBell() {
                 description: chat.content || 'Sent an attachment',
                 time: chat.created_at,
                 timestamp: new Date(chat.created_at).getTime(),
-                read: false, // Chats in this list are unread by definition from backend
-                link: '/chats',
+                read: false,
+                link: `/chats/${chat.sender?.branch?.id || ''}`, // Direct to specific branch chat
                 icon: chat.sender?.avatar || chat.sender?.name?.charAt(0) || '?',
-                isAvatar: true // Placeholder: assuming we might have avatar logic later, but strictly logic here
+                isAvatar: true
             });
         });
 
@@ -166,20 +167,24 @@ export function NotificationBell() {
                 time: sale.created_at,
                 timestamp: new Date(sale.created_at).getTime(),
                 read: false,
-                link: '/sales-list',
+                link: '/new-sales', // Redirect to new sales page
                 icon: ShoppingBag,
                 isAvatar: false
             });
         });
 
-        // Process Transfers (Both Incoming and Readied)
+        // Process Transfers
         data.transfers.forEach((transfer) => {
             const isIncoming = transfer.status === 'outgoing';
             const title = isIncoming ? 'Incoming Transfer' : 'Transfer Request';
             const description = isIncoming
                 ? `From ${transfer.source_branch?.branch_name}`
                 : `To ${transfer.destination_branch?.branch_name} - Needs Approval`;
-            const link = isIncoming ? '/incoming' : '/outgoing'; // Assuming /outgoing is the route for readied transfers
+
+            // Redirect logic:
+            // Incoming -> /incoming
+            // Outgoing (Readied) -> /outgoing
+            const link = isIncoming ? '/incoming' : '/outgoing';
 
             items.push({
                 id: `transfer-${transfer.id}`,
@@ -198,6 +203,16 @@ export function NotificationBell() {
         // Sort by newest first
         return items.sort((a, b) => b.timestamp - a.timestamp);
     }, [data]);
+
+    const handleNotificationClick = () => {
+        // Stop audio immediately
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+        }
+        // Force re-fetch to update counts if backend status changed (optional but good)
+        // Or simply wait for next poll.
+    };
 
     const hasNotifications = data.total > 0;
 
@@ -242,7 +257,11 @@ export function NotificationBell() {
                         <div className="flex flex-col">
                             {allNotifications.map((item) => (
                                 <DropdownMenuItem key={item.id} asChild className="focus:bg-muted/50 p-0 rounded-none cursor-pointer">
-                                    <Link href={item.link} className="flex gap-3 p-3 transition-colors hover:bg-muted/40 relative group border-b border-border/20 last:border-0">
+                                    <Link
+                                        href={item.link}
+                                        className="flex gap-3 p-3 transition-colors hover:bg-muted/40 relative group border-b border-border/20 last:border-0"
+                                        onClick={handleNotificationClick}
+                                    >
 
                                         {/* Icon / Avatar Section */}
                                         <div className="shrink-0 mt-1">
