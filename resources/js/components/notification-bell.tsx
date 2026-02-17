@@ -246,7 +246,7 @@ export function NotificationBell() {
                 time: item.created_at,
                 timestamp: date.getTime(),
                 read: backendIsRead,
-                link: `/chats/${item.sender.branch_id}`, // Go to chat with this branch
+                link: `/chats?branch_id=${item.sender.branch_id}`, // Go to chat page with query param
                 icon: item.sender.profile_photo_url,
                 isAvatar: true
             };
