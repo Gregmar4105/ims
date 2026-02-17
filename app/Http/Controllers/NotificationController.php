@@ -124,21 +124,27 @@ class NotificationController extends Controller
         $user = auth()->user();
         $branchId = $user->branch_id;
 
+        Log::info("Marking all as read for user {$user->id} branch {$branchId}");
+
         if (!$branchId) {
             return response()->json(['success' => false]);
         }
 
         DB::transaction(function () use ($user, $branchId) {
             // 1. Mark all chats as read
-            Message::where('receiver_branch_id', $branchId)
+            $affectedChats = Message::where('receiver_branch_id', $branchId)
                 ->whereNull('read_at')
                 ->update(['read_at' => now()]);
+            
+            Log::info("Marked {$affectedChats} chats as read");
 
             // 2. Mark all Sales as read (viewed)
             $pendingSales = Sale::where('branch_id', $branchId)
                 ->where('status', 'readied')
                 ->pluck('id');
             
+            Log::info("Found pending sales to mark: " . $pendingSales->count());
+
             foreach ($pendingSales as $saleId) {
                 UserNotificationView::firstOrCreate([
                     'user_id' => $user->id,
@@ -157,6 +163,8 @@ class NotificationController extends Controller
                 ->pluck('id');
             
             $allTransfers = $incomingTransfers->merge($readiedTransfers);
+
+            Log::info("Found pending transfers to mark: " . $allTransfers->count());
 
             foreach ($allTransfers as $transferId) {
                 UserNotificationView::firstOrCreate([
