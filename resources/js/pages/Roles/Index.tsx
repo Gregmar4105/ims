@@ -3,7 +3,8 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Head, Link, usePage, router } from '@inertiajs/react';
-import { Plus, Pencil, Trash, Search, Shield } from 'lucide-react';
+import { Plus, Pencil, Trash, Search, Shield, TriangleAlert } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
 import Pagination from '@/components/Pagination';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -125,6 +126,15 @@ export default function Index({ roles }: any) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Roles" />
+            <div className="mx-4 mt-4">
+                <Alert variant="destructive">
+                    <TriangleAlert className="h-4 w-4" />
+                    <AlertTitle>Critical Warning</AlertTitle>
+                    <AlertDescription>
+                        Do not change anything in this page, Doing so can damage the system permanently!!!
+                    </AlertDescription>
+                </Alert>
+            </div>
             <div className="mx-4 mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <div className="flex">
                     <Shield className="size-14 mr-3" />

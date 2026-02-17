@@ -52,8 +52,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
     // Role Management Routes
-    Route::resource('roles', \App\Http\Controllers\RoleController::class);
-    Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
+    Route::resource('roles', \App\Http\Controllers\RoleController::class)->middleware('password.confirm');
+    Route::resource('permissions', \App\Http\Controllers\PermissionController::class)->middleware('password.confirm');
     Route::resource('branches', \App\Http\Controllers\BranchController::class);
     Route::resource('brands', \App\Http\Controllers\BrandController::class);
     Route::resource('categories', \App\Http\Controllers\CategoryController::class);
