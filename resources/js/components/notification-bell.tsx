@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { toast } from 'sonner';
 import { Bell, MessageSquare, ArrowRightLeft, ShoppingBag } from 'lucide-react';
 import {
     DropdownMenu,
@@ -152,7 +153,7 @@ export function NotificationBell() {
                 timestamp: new Date(chat.created_at).getTime(),
                 read: false,
                 link: `/chats?branch_id=${chat.sender?.branch?.id || ''}`, // Direct to specific branch chat via query param
-                icon: chat.sender?.avatar || chat.sender?.name?.charAt(0) || '?',
+                icon: chat.sender?.profile_photo_url, // Pass URL directly here
                 isAvatar: true
             });
         });
@@ -203,6 +204,77 @@ export function NotificationBell() {
         // Sort by newest first
         return items.sort((a, b) => b.timestamp - a.timestamp);
     }, [data]);
+
+    // Track previous notification IDs to trigger toasts only for NEW ones
+    const [prevNotificationIds, setPrevNotificationIds] = useState<Set<string | number>>(new Set());
+    const isFirstLoad = useRef(true);
+
+    useEffect(() => {
+        // Skip on initial load to avoid spamming toasts for existing unread items
+        if (isFirstLoad.current) {
+            if (allNotifications.length > 0) {
+                const ids = new Set(allNotifications.map(n => n.id));
+                setPrevNotificationIds(ids);
+                isFirstLoad.current = false;
+            } else if (data.total === 0) {
+                // If loaded with 0, mark as loaded.
+                isFirstLoad.current = false;
+            }
+            return;
+        }
+
+        const newItems = allNotifications.filter(item => !prevNotificationIds.has(item.id));
+
+        if (newItems.length > 0) {
+            // Update seen set
+            setPrevNotificationIds(prev => {
+                const next = new Set(prev);
+                newItems.forEach(i => next.add(i.id));
+                return next;
+            });
+
+            // Trigger toasts
+            newItems.forEach(item => {
+                toast.custom((t) => (
+                    <Link
+                        href={item.link}
+                        onClick={() => {
+                            toast.dismiss(t);
+                            handleNotificationClick();
+                        }}
+                        className="flex w-full items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-lg transition-all hover:bg-accent/50 max-w-sm pointer-events-auto"
+                    >
+                        <div className="shrink-0">
+                            {item.type === 'chat' ? (
+                                <Avatar className="h-10 w-10 border border-border/50">
+                                    <AvatarImage src={item.icon || undefined} />
+                                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                        {String(item.title).charAt(0)}
+                                    </AvatarFallback>
+                                </Avatar>
+                            ) : (
+                                <div className={cn(
+                                    "h-10 w-10 rounded-full flex items-center justify-center border border-border/50",
+                                    item.type === 'sale' ? "bg-orange-500/10 text-orange-600" : "bg-blue-500/10 text-blue-600"
+                                )}>
+                                    {item.isAvatar ? null : <item.icon className="h-5 w-5" />}
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex-1 space-y-1">
+                            <p className="font-medium leading-none text-foreground">{item.title}</p>
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                                {item.description}
+                            </p>
+                        </div>
+                    </Link>
+                ), {
+                    duration: 4000,
+                    position: 'top-center'
+                });
+            });
+        }
+    }, [allNotifications]);
 
     const handleNotificationClick = () => {
         // Stop audio immediately
@@ -267,6 +339,7 @@ export function NotificationBell() {
                                         <div className="shrink-0 mt-1">
                                             {item.type === 'chat' ? (
                                                 <Avatar className="h-10 w-10 border border-border/50">
+                                                    <AvatarImage src={item.icon || undefined} />
                                                     <AvatarFallback className="bg-primary/10 text-primary font-bold">
                                                         {String(item.title).charAt(0)}
                                                     </AvatarFallback>

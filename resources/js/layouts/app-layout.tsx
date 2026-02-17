@@ -63,7 +63,7 @@ export default function AppLayout({ children, breadcrumbs, ...props }: AppLayout
     return (
         <AppLayoutTemplate breadcrumbs={breadcrumbs} {...props}>
             {children}
-            <Toaster position="top-center" richColors closeButton />
+            <Toaster position="top-center" richColors closeButton duration={3000} visibleToasts={5} />
         </AppLayoutTemplate>
     );
 }
