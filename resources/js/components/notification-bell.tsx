@@ -578,3 +578,4 @@ function NotificationItemRenderer({ item, onClick }: { item: NotificationItem, o
             </Link>
         </DropdownMenuItem>
     );
+}
