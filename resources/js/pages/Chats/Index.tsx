@@ -110,10 +110,10 @@ const compressImage = async (file: File): Promise<File> => {
     });
 };
 
-export default function ChatsIndex({ branches, activeTransfers = [] }: { branches: Branch[], activeTransfers?: Transfer[] }) {
+export default function ChatsIndex({ branches, activeTransfers = [], initialBranch }: { branches: Branch[], activeTransfers?: Transfer[], initialBranch?: Branch }) {
     const { auth } = usePage().props as any;
     const user = auth.user as User;
-    const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+    const [selectedBranch, setSelectedBranch] = useState<Branch | null>(initialBranch || null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [attachment, setAttachment] = useState<File | null>(null);

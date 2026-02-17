@@ -151,7 +151,7 @@ export function NotificationBell() {
                 time: chat.created_at,
                 timestamp: new Date(chat.created_at).getTime(),
                 read: false,
-                link: `/chats/${chat.sender?.branch?.id || ''}`, // Direct to specific branch chat
+                link: `/chats?branch_id=${chat.sender?.branch?.id || ''}`, // Direct to specific branch chat via query param
                 icon: chat.sender?.avatar || chat.sender?.name?.charAt(0) || '?',
                 isAvatar: true
             });
