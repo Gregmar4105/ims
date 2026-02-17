@@ -57,12 +57,14 @@ export function NotificationBell() {
     const [activeTab, setActiveTab] = useState<'today' | 'all'>('today');
     const [isMarkingAll, setIsMarkingAll] = useState(false);
     const [visibleLimit, setVisibleLimit] = useState(20);
+    const [hasFetched, setHasFetched] = useState(false);
 
     const fetchNotifications = async () => {
         try {
             const response = await axios.get('/notifications');
             console.log("Fetched notifications:", response.data); // Debug log
             setData(response.data);
+            setHasFetched(true);
         } catch (error) {
             console.error('Failed to fetch notifications:', error);
         }
@@ -381,23 +383,24 @@ export function NotificationBell() {
 
     // Track previous notification IDs to trigger toasts only for NEW ones
     const [prevNotificationIds, setPrevNotificationIds] = useState<Set<string | number>>(new Set());
-    const isFirstLoad = useRef(true);
+    const isFirstBatch = useRef(true);
 
     useEffect(() => {
-        // Skip on initial load to avoid spamming toasts for existing unread items
-        if (isFirstLoad.current) {
-            if (allNotifications.length > 0) {
-                const ids = new Set(allNotifications.map(n => n.id));
-                setPrevNotificationIds(ids);
-                isFirstLoad.current = false;
-            } else if (data.total === 0) {
-                // If loaded with 0, mark as loaded.
-                isFirstLoad.current = false;
-            }
+        // Wait for first successful fetch
+        if (!hasFetched) return;
+
+        // On first batch of data, just mark as seen, don't toast
+        if (isFirstBatch.current) {
+            const ids = new Set(allNotifications.map(n => n.id));
+            setPrevNotificationIds(ids);
+            isFirstBatch.current = false;
             return;
         }
 
-        const newItems = allNotifications.filter(item => !prevNotificationIds.has(item.id));
+        // Identify truly new items that are UNREAD
+        const newItems = allNotifications.filter(item =>
+            !prevNotificationIds.has(item.id) && !item.read
+        );
 
         if (newItems.length > 0) {
             // Update seen set
@@ -449,7 +452,7 @@ export function NotificationBell() {
                 });
             });
         }
-    }, [allNotifications]);
+    }, [allNotifications, hasFetched]);
 
     const handleNotificationClick = (id?: string | number, type?: string) => {
         // Stop audio immediately
