@@ -54,12 +54,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Role Management Routes
     Route::resource('roles', \App\Http\Controllers\RoleController::class)->middleware('password.confirm');
     Route::resource('permissions', \App\Http\Controllers\PermissionController::class)->middleware('password.confirm');
-    Route::resource('branches', \App\Http\Controllers\BranchController::class);
-    Route::resource('brands', \App\Http\Controllers\BrandController::class);
-    Route::resource('categories', \App\Http\Controllers\CategoryController::class);
-    Route::resource('qr-barcodes', \App\Http\Controllers\QrBarcodeController::class)->only(['index', 'store']);
-    Route::resource('products', \App\Http\Controllers\ProductController::class);
-    Route::resource('product-suppliers', \App\Http\Controllers\SupplierController::class)->parameters(['product-suppliers' => 'supplier']);
+    // Protected Resources (Read-only for Employees)
+    Route::middleware(['restrict.employee'])->group(function () {
+        Route::resource('branches', \App\Http\Controllers\BranchController::class);
+        Route::resource('brands', \App\Http\Controllers\BrandController::class);
+        Route::resource('categories', \App\Http\Controllers\CategoryController::class);
+        Route::resource('qr-barcodes', \App\Http\Controllers\QrBarcodeController::class)->only(['index', 'store']);
+        Route::resource('products', \App\Http\Controllers\ProductController::class);
+        Route::resource('product-suppliers', \App\Http\Controllers\SupplierController::class)->parameters(['product-suppliers' => 'supplier']);
+    });
 
     Route::get('qr-and-barcode-scanner' , [QrAndBarcodeController::class, 'index']);
     
