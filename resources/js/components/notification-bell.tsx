@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Bell, MessageSquare, ArrowRightLeft, ShoppingBag } from 'lucide-react';
 import {
     DropdownMenu,
@@ -62,31 +62,55 @@ export function NotificationBell() {
 
     // @ts-ignore
     const { notification_sound } = usePage().props;
-
-    const playNotificationSound = () => {
-        try {
-            const audio = new Audio(notification_sound as string);
-            audio.play().catch(e => console.error("Audio play failed", e));
-        } catch (error) {
-            console.error("Error playing notification sound:", error);
-        }
-    };
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
-        let soundInterval: NodeJS.Timeout;
+        if (!audioRef.current) {
+            audioRef.current = new Audio(notification_sound as string);
+        } else if (audioRef.current.src !== notification_sound) {
+            audioRef.current.src = notification_sound as string;
+        }
+    }, [notification_sound]);
+
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        let timeoutId: NodeJS.Timeout;
+
+        const playAudio = () => {
+            audio.play().catch(e => console.error("Audio play failed", e));
+        };
+
+        const handleEnded = () => {
+            // Wait 3 seconds before playing again
+            timeoutId = setTimeout(() => {
+                if (data.total > 0) {
+                    playAudio();
+                }
+            }, 3000);
+        };
+
+        audio.addEventListener('ended', handleEnded);
 
         if (data.total > 0) {
-            // Play immediately
-            playNotificationSound();
-
-            // Loop every 3 seconds
-            soundInterval = setInterval(() => {
-                playNotificationSound();
-            }, 3000);
+            // Check if already playing to avoid overlap/speed-up effect
+            if (audio.paused) {
+                playAudio();
+            }
+        } else {
+            // Stop if no notifications
+            audio.pause();
+            audio.currentTime = 0;
+            if (timeoutId) clearTimeout(timeoutId);
         }
 
         return () => {
-            if (soundInterval) clearInterval(soundInterval);
+            audio.removeEventListener('ended', handleEnded);
+            if (timeoutId) clearTimeout(timeoutId);
+            // Don't pause on unmount to allow sound to finish? No, better to stop.
+            audio.pause();
+            audio.currentTime = 0;
         };
     }, [data.total]);
 
