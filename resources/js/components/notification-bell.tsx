@@ -592,10 +592,15 @@ function NotificationItemRenderer({ item, onClick }: { item: NotificationItem, o
         <DropdownMenuItem asChild className="focus:bg-muted/50 p-0 rounded-none cursor-pointer">
             <Link
                 href={item.link}
-                className="flex gap-3 p-3 transition-colors hover:bg-muted/40 relative group border-b border-border/20 last:border-0"
+                className={cn(
+                    "flex gap-3 p-3 transition-colors relative group border-b border-border/20 last:border-0",
+                    item.read
+                        ? "bg-background/50 hover:bg-muted/30 opacity-70"
+                        : "bg-primary/5 hover:bg-primary/10"
+                )}
                 onClick={onClick}
             >
-                <div className="shrink-0 mt-1">
+                <div className={cn("shrink-0 mt-1", item.read && "opacity-70 grayscale-[0.3]")}>
                     {item.type === 'chat' ? (
                         <Avatar className="h-10 w-10 border border-border/50">
                             <AvatarImage src={item.icon || undefined} />
@@ -620,16 +625,22 @@ function NotificationItemRenderer({ item, onClick }: { item: NotificationItem, o
 
                 <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                     <div className="flex justify-between items-start w-full">
-                        <span className="font-semibold text-sm leading-tight text-foreground line-clamp-2">
+                        <span className={cn(
+                            "font-semibold text-sm leading-tight line-clamp-2",
+                            item.read ? "text-muted-foreground" : "text-foreground"
+                        )}>
                             {item.title}
                         </span>
                     </div>
-                    <p className="text-[13px] text-muted-foreground line-clamp-2 leading-snug">
+                    <p className={cn(
+                        "text-[13px] line-clamp-2 leading-snug",
+                        item.read ? "text-muted-foreground/80" : "text-muted-foreground"
+                    )}>
                         {item.description}
                     </p>
                     <span className={cn(
                         "text-xs font-medium mt-1",
-                        item.type === 'sale' ? "text-orange-600/80" : "text-primary/70"
+                        item.read ? "text-muted-foreground/60" : (item.type === 'sale' ? "text-orange-600/80" : "text-primary/70")
                     )}>
                         {getRelativeTime(item.time)}
                     </span>
@@ -637,7 +648,7 @@ function NotificationItemRenderer({ item, onClick }: { item: NotificationItem, o
 
                 {!item.read && (
                     <div className="shrink-0 mt-3">
-                        <div className="h-2.5 w-2.5 rounded-full bg-blue-600 ring-2 ring-background"></div>
+                        <div className="h-2.5 w-2.5 rounded-full bg-blue-600 ring-2 ring-background shadow-sm animate-pulse"></div>
                     </div>
                 )}
             </Link>
