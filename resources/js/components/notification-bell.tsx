@@ -65,40 +65,49 @@ export function NotificationBell() {
         }
     };
 
-    const markAsRead = async (id: string | number, type: string) => {
-        try {
-            // Optimistic update
-            // Remove from data immediately
-            setData(prev => {
-                const newChats = type === 'chat' ? prev.chats.filter(c => `chat-${c.id}` !== id) : prev.chats;
-                const newSales = type === 'sale' ? prev.sales.filter(s => `sale-${s.id}` !== id) : prev.sales;
-                const newTransfers = type === 'transfer' ? prev.transfers.filter(t => `transfer-${t.id}` !== id) : prev.transfers;
+    const markAsRead = (id: string | number, type: string) => {
+        // Optimistic update
+        // Remove from data immediately
+        setData(prev => {
+            const newChats = type === 'chat' ? prev.chats.filter(c => `chat-${c.id}` !== id) : prev.chats;
+            const newSales = type === 'sale' ? prev.sales.filter(s => `sale-${s.id}` !== id) : prev.sales;
+            const newTransfers = type === 'transfer' ? prev.transfers.filter(t => `transfer-${t.id}` !== id) : prev.transfers;
 
-                const newTotal = newChats.length + newSales.length + newTransfers.length;
+            const newTotal = newChats.length + newSales.length + newTransfers.length;
 
-                return {
-                    ...prev,
-                    total: newTotal,
-                    chats: newChats,
-                    sales: newSales,
-                    transfers: newTransfers,
-                    counts: {
-                        chats: newChats.length,
-                        sales: newSales.length,
-                        transfers: newTransfers.length
-                    }
-                };
-            });
+            return {
+                ...prev,
+                total: newTotal,
+                chats: newChats,
+                sales: newSales,
+                transfers: newTransfers,
+                counts: {
+                    chats: newChats.length,
+                    sales: newSales.length,
+                    transfers: newTransfers.length
+                }
+            };
+        });
 
-            // Extract raw ID if needed (e.g. "chat-123" -> "123")
-            const rawId = String(id).split('-')[1];
-            await axios.post('/notifications/mark-read', { type, id: rawId });
+        // Extract raw ID if needed (e.g. "chat-123" -> "123")
+        const rawId = String(id).split('-')[1];
 
-            // Re-fetch to sync
-            fetchNotifications();
-        } catch (error) {
-            console.error("Failed to mark as read", error);
-        }
+        // Use fetch with keepalive to ensure request survives navigation
+        // Grab CSRF token from meta tag
+        const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
+
+        fetch('/notifications/mark-read', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken || ''
+            },
+            body: JSON.stringify({ type, id: rawId }),
+            keepalive: true
+        }).catch(err => console.error("Failed to mark as read", err));
+
+        // We don't await this because we might navigate away immediately.
+        // The optimistic update handles the UI.
     };
 
     const markAllAsRead = async () => {
@@ -134,6 +143,7 @@ export function NotificationBell() {
         }
     }, [notification_sound]);
 
+    // Audio Loop Logic
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
@@ -147,35 +157,40 @@ export function NotificationBell() {
         const handleEnded = () => {
             // Wait 3 seconds before playing again
             timeoutId = setTimeout(() => {
-                if (data.total > 0) {
-                    playAudio();
-                }
+                // Check Ref data total to ensure we still have notifications in current state? 
+                // We rely on the fact that if data.total becomes 0, the effect cleanup runs/re-runs with new prop?
+                // Actually, if we use hasNotifications as dependency, this effect only re-runs when it toggles 0 <-> >0
+                // So inside this closure, we need to be careful?
+                // The loop should continue as long as the effect is active.
+                playAudio();
             }, 3000);
         };
 
         audio.addEventListener('ended', handleEnded);
 
         if (data.total > 0) {
-            // Check if already playing to avoid overlap/speed-up effect
             if (audio.paused) {
                 playAudio();
             }
         } else {
-            // Stop if no notifications
             audio.pause();
             audio.currentTime = 0;
-            // timeoutId might not be assigned if loop hasn't started
-            try { clearTimeout(timeoutId!); } catch (e) { }
         }
 
         return () => {
             audio.removeEventListener('ended', handleEnded);
             try { clearTimeout(timeoutId!); } catch (e) { }
-            // Don't pause on unmount to allow sound to finish? No, better to stop.
+            // Only pause if we are truly stopping (handled by dependency change to false?)
+            // If data.total changes from 1 to 2, we don't want to stop.
+            // But we can't easily distinguish why we are cleaning up without refs.
+            // Simplified: If total > 0, we want it playing.
+
+            // To be safe and avoid "stuck" audio, we pause on cleanup.
+            // To avoid "restart" on count change, we only depend on `hasNotifications`.
             audio.pause();
             audio.currentTime = 0;
         };
-    }, [data.total]);
+    }, [data.total > 0]); // Only re-run when "has notifications" status changes
 
     useEffect(() => {
         fetchNotifications();
