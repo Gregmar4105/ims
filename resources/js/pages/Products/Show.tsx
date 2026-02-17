@@ -1,6 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { SharedData } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Layers, Package, Tag, ScanBarcode, Truck, Edit, Info, ArrowLeft } from 'lucide-react';
@@ -38,6 +39,8 @@ interface Props {
 }
 
 export default function Show({ product }: Props) {
+    const { auth } = usePage<SharedData>().props;
+    const isEmployee = auth.roles.includes('Employee');
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Products',
@@ -70,13 +73,15 @@ export default function Show({ product }: Props) {
                             </div>
                         </div>
                     </div>
-                    <div className="flex gap-2">
-                        <Link href={`/products/${product.id}/edit`}>
-                            <Button>
-                                <Edit className="mr-2 h-4 w-4" /> Edit Product
-                            </Button>
-                        </Link>
-                    </div>
+                    {!isEmployee && (
+                        <div className="flex gap-2">
+                            <Link href={`/products/${product.id}/edit`}>
+                                <Button>
+                                    <Edit className="mr-2 h-4 w-4" /> Edit Product
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -104,8 +109,8 @@ export default function Show({ product }: Props) {
                             <div className="flex justify-between items-center border-b pb-4">
                                 <span className="text-gray-500">Stock Status</span>
                                 <Badge className={`${product.quantity === 0 ? 'bg-red-500' :
-                                        product.quantity <= 5 ? 'bg-amber-500' :
-                                            'bg-emerald-600'
+                                    product.quantity <= 5 ? 'bg-amber-500' :
+                                        'bg-emerald-600'
                                     }`}>
                                     Qty: {product.quantity}
                                 </Badge>
