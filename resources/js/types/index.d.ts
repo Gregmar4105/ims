@@ -3,6 +3,8 @@ import { LucideIcon } from 'lucide-react';
 
 export interface Auth {
     user: User;
+    roles: string[];
+    permissions: string[];
 }
 
 export interface BreadcrumbItem {
@@ -28,6 +30,10 @@ export interface SharedData {
     auth: Auth;
     sidebarOpen: boolean;
     notification_sound: string;
+    flash: {
+        success?: string;
+        error?: string;
+    };
     [key: string]: unknown;
 }
 

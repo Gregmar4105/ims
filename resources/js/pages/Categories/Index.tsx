@@ -1,6 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router, usePage } from '@inertiajs/react';
+import { SharedData } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,6 +64,8 @@ interface Props {
 }
 
 export default function Index({ categories, filters }: Props) {
+    const { auth } = usePage<SharedData>().props;
+    const isEmployee = auth.roles.includes('Employee');
     const [search, setSearch] = useState(filters.search || '');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -130,9 +133,11 @@ export default function Index({ categories, filters }: Props) {
                             </p>
                         </div>
                     </div>
-                    <Button onClick={openCreateDialog}>
-                        <Plus className="mr-2 h-4 w-4" /> Add Category
-                    </Button>
+                    {!isEmployee && (
+                        <Button onClick={openCreateDialog}>
+                            <Plus className="mr-2 h-4 w-4" /> Add Category
+                        </Button>
+                    )}
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border shadow-sm">
@@ -193,14 +198,16 @@ export default function Index({ categories, filters }: Props) {
                                             {new Date(category.updated_at).toLocaleString()}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button variant="ghost" size="icon" onClick={() => openEditDialog(category)}>
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" onClick={() => deleteCategory(category.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
+                                            {!isEmployee && (
+                                                <div className="flex justify-end gap-2">
+                                                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(category)}>
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" onClick={() => deleteCategory(category.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))

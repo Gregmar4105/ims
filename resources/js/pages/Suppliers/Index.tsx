@@ -1,6 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router, usePage } from '@inertiajs/react';
+import { SharedData } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,6 +53,8 @@ interface Props {
 }
 
 export default function Index({ suppliers, filters }: Props) {
+    const { auth } = usePage<SharedData>().props;
+    const isEmployee = auth.roles.includes('Employee');
     const [search, setSearch] = useState(filters.search || '');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
@@ -125,9 +128,11 @@ export default function Index({ suppliers, filters }: Props) {
                             <p className="text-muted-foreground">Manage your product suppliers inventory source.</p>
                         </div>
                     </div>
-                    <Button onClick={() => { setEditingSupplier(null); setIsCreateOpen(true); }}>
-                        <Plus className="mr-2 h-4 w-4" /> Add Supplier
-                    </Button>
+                    {!isEmployee && (
+                        <Button onClick={() => { setEditingSupplier(null); setIsCreateOpen(true); }}>
+                            <Plus className="mr-2 h-4 w-4" /> Add Supplier
+                        </Button>
+                    )}
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg border shadow-sm p-4">
@@ -170,12 +175,16 @@ export default function Index({ suppliers, filters }: Props) {
                                             <TableCell>{supplier.email || '-'}</TableCell>
                                             <TableCell>{supplier.phone || '-'}</TableCell>
                                             <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" onClick={() => setEditingSupplier(supplier)}>
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700" onClick={() => handleDelete(supplier.id)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
+                                                {!isEmployee && (
+                                                    <div className="flex justify-end">
+                                                        <Button variant="ghost" size="icon" onClick={() => setEditingSupplier(supplier)}>
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700" onClick={() => handleDelete(supplier.id)}>
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))

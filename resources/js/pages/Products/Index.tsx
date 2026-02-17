@@ -1,6 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { SharedData } from '@/types';
 import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
@@ -79,6 +80,9 @@ interface Props {
 }
 
 export default function Index({ products, filters, options, isSystemAdmin }: Props) {
+    const { auth } = usePage<SharedData>().props;
+    const isEmployee = auth.roles.includes('Employee');
+
     const productList = products?.data || [];
     const links = products?.links || [];
 
@@ -410,11 +414,13 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     </p>
                                 </div>
                             </div>
-                            <Link href="/products/create">
-                                <Button size="sm" className="bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black">
-                                    <Plus className="mr-2 h-4 w-4" /> Add Product
-                                </Button>
-                            </Link>
+                            {!isEmployee && (
+                                <Link href="/products/create">
+                                    <Button size="sm" className="bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black">
+                                        <Plus className="mr-2 h-4 w-4" /> Add Product
+                                    </Button>
+                                </Link>
+                            )}
                         </div>
 
                         {/* Mobile Main Controls */}
@@ -605,11 +611,13 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white">
                                                 <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
                                             </Button>
-                                            <Link href={`/products/${product.id}/edit`}>
-                                                <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
-                                                    Edit Product
-                                                </Button>
-                                            </Link>
+                                            {!isEmployee && (
+                                                <Link href={`/products/${product.id}/edit`}>
+                                                    <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
+                                                        Edit Product
+                                                    </Button>
+                                                </Link>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

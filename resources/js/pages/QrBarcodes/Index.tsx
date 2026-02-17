@@ -13,6 +13,7 @@ import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
+import { SharedData } from '@/types';
 import { Button } from "@/components/ui/button";
 import {
     Table,
@@ -63,7 +64,8 @@ interface Props {
 }
 
 export default function Index({ products }: Props) {
-    const { flash, errors } = usePage().props as any;
+    const { flash, errors, auth } = usePage<SharedData>().props;
+    const isEmployee = auth.roles.includes('Employee');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [barcode, setBarcode] = useState('');
@@ -117,9 +119,11 @@ export default function Index({ products }: Props) {
                             </p>
                         </div>
                     </div>
-                    <Button onClick={generateAllCodes}>
-                        <Sparkles className="mr-2 h-4 w-4" /> Generate All
-                    </Button>
+                    {!isEmployee && (
+                        <Button onClick={generateAllCodes}>
+                            <Sparkles className="mr-2 h-4 w-4" /> Generate All
+                        </Button>
+                    )}
                 </div>
 
                 {flash?.success && (
@@ -175,9 +179,11 @@ export default function Index({ products }: Props) {
                                             {new Date(product.updated_at).toLocaleString()}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button size="sm" onClick={() => openGenerateDialog(product)}>
-                                                <Pencil className="mr-2 h-4 w-4" /> Add Codes
-                                            </Button>
+                                            {!isEmployee && (
+                                                <Button size="sm" onClick={() => openGenerateDialog(product)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Add Codes
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))
