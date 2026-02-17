@@ -66,16 +66,16 @@ export default function Show({ product }: Props) {
                             <span>{product.category?.name}</span>
                         </div>
                     </div>
+                    {!isEmployee && (
+                        <div className="flex gap-2">
+                            <Link href={`/products/${product.id}/edit`}>
+                                <Button>
+                                    <Edit className="mr-2 h-4 w-4" /> Edit Product
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
                 </div>
-                {!isEmployee && (
-                    <div className="flex gap-2">
-                        <Link href={`/products/${product.id}/edit`}>
-                            <Button>
-                                <Edit className="mr-2 h-4 w-4" /> Edit Product
-                            </Button>
-                        </Link>
-                    </div>
-                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
