@@ -56,7 +56,7 @@ export default function Show({ product }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Product - ${product.name}`} />
 
-            <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+            <div className="p-4 md:p-8 space-y-6">
                 <div className="flex items-center justify-between gap-4 w-full">
                     <div className="space-y-1">
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white text-left">{product.name}</h1>
