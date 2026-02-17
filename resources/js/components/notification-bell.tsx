@@ -56,6 +56,7 @@ export function NotificationBell() {
 
     const [activeTab, setActiveTab] = useState<'today' | 'all'>('today');
     const [isMarkingAll, setIsMarkingAll] = useState(false);
+    const [visibleLimit, setVisibleLimit] = useState(20);
 
     const fetchNotifications = async () => {
         try {
@@ -294,6 +295,11 @@ export function NotificationBell() {
         return items.sort((a, b) => b.timestamp - a.timestamp);
     }, [data]);
 
+    // Derived list for display with infinite scroll
+    const visibleNotifications = useMemo(() => {
+        return allNotifications.slice(0, visibleLimit);
+    }, [allNotifications, visibleLimit]);
+
     const todayNotifications = useMemo(() => {
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
@@ -303,7 +309,8 @@ export function NotificationBell() {
     const groupedNotifications = useMemo(() => {
         const groups: { [key: string]: NotificationItem[] } = {};
 
-        allNotifications.forEach(item => {
+        // Use visibleNotifications instead of allNotifications
+        visibleNotifications.forEach(item => {
             const date = new Date(item.timestamp);
             const today = new Date();
             const yesterday = new Date();
@@ -330,7 +337,7 @@ export function NotificationBell() {
         // Simple approach: The object keys iteration order is not guaranteed. We should return an array of groups.
 
         // Re-approach: Unique keys from sorted items
-        const sortedKeys = Array.from(new Set(allNotifications.map(item => {
+        const sortedKeys = Array.from(new Set(visibleNotifications.map(item => {
             const date = new Date(item.timestamp);
             const today = new Date();
             const yesterday = new Date();
@@ -347,7 +354,7 @@ export function NotificationBell() {
 
         return sortedKeys.map(key => ({
             title: key,
-            items: allNotifications.filter(item => {
+            items: visibleNotifications.filter(item => {
                 const date = new Date(item.timestamp);
                 const today = new Date();
                 const yesterday = new Date();
@@ -361,7 +368,17 @@ export function NotificationBell() {
             })
         }));
 
-    }, [allNotifications]);
+    }, [visibleNotifications]);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+        // Check if near bottom (50px buffer)
+        if (scrollHeight - scrollTop <= clientHeight + 50) {
+            if (visibleLimit < allNotifications.length) {
+                setVisibleLimit(prev => Math.min(prev + 20, allNotifications.length));
+            }
+        }
+    };
 
     // Track previous notification IDs to trigger toasts only for NEW ones
     const [prevNotificationIds, setPrevNotificationIds] = useState<Set<string | number>>(new Set());
@@ -516,8 +533,11 @@ export function NotificationBell() {
                     </div>
                 </div>
 
-                <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden scrollbar-thin">
-                    {(activeTab === 'today' ? todayNotifications : allNotifications).length === 0 ? (
+                <div
+                    className="max-h-[70vh] overflow-y-auto overflow-x-hidden scrollbar-thin"
+                    onScroll={handleScroll}
+                >
+                    {(activeTab === 'today' ? todayNotifications : visibleNotifications).length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground gap-2">
                             <Bell className="h-8 w-8 opacity-20" />
                             <p>No notifications {activeTab === 'today' ? 'today' : ''}</p>
@@ -533,7 +553,7 @@ export function NotificationBell() {
                                 // All View - Grouped by Date
                                 groupedNotifications.map((group) => (
                                     <div key={group.title} className="flex flex-col">
-                                        <div className="sticky top-0 z-0 bg-background/95 backdrop-blur-sm px-4 py-1.5 text-xs font-semibold text-muted-foreground border-b border-border/30 shadow-sm">
+                                        <div className="sticky top-0 z-10 bg-background border-b border-border/30 px-4 py-1.5 text-xs font-semibold text-muted-foreground shadow-sm">
                                             {group.title}
                                         </div>
                                         {group.items.map((item) => (

@@ -40,7 +40,7 @@ class NotificationController extends Controller
         $chats = Message::with('sender.branch')
             ->where('receiver_branch_id', $branchId)
             ->latest()
-            ->take(50)
+            ->take(100)
             ->get()
             ->map(function ($chat) {
                 $chat->is_read = !is_null($chat->read_at);
@@ -51,7 +51,7 @@ class NotificationController extends Controller
         $sales = Sale::where('branch_id', $branchId)
             ->where('status', 'readied')
             ->latest()
-            ->take(50)
+            ->take(100)
             ->get()
             ->map(function ($sale) use ($viewedSales) {
                 $sale->is_read = $viewedSales->contains($sale->id);
@@ -63,7 +63,7 @@ class NotificationController extends Controller
             ->where('destination_branch_id', $branchId)
             ->where('status', 'outgoing')
             ->latest()
-            ->take(50)
+            ->take(100)
             ->get()
             ->map(function ($transfer) use ($viewedTransfers) {
                 $transfer->is_read = $viewedTransfers->contains($transfer->id);
