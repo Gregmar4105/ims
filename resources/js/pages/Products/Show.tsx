@@ -57,10 +57,10 @@ export default function Show({ product }: Props) {
             <Head title={`Product - ${product.name}`} />
 
             <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
-                <div className="flex items-center justify-between text-left">
-                    <div className="text-left">
+                <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white text-left">{product.name}</h1>
-                        <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
+                        <div className="flex items-center gap-2 text-sm text-gray-500 justify-start">
                             <span className="font-semibold text-blue-600">{product.brand?.name}</span>
                             <span>•</span>
                             <span>{product.category?.name}</span>
