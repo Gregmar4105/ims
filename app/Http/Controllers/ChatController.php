@@ -61,10 +61,20 @@ class ChatController extends Controller
                           $q->where('branch_id', $branch->id);
                       });
                 })
-                ->orWhere(function($q) use ($branch, $currentUserId) {
-                    // Outgoing: From me to target branch
-                    $q->where('receiver_branch_id', $branch->id)
-                      ->where('sender_id', $currentUserId);
+                })
+                ->orWhere(function($q) use ($branch, $currentBranchId, $currentUserId) {
+                    // Outgoing: From me (or my branch) to target branch
+                    $q->where('receiver_branch_id', $branch->id);
+                    
+                    if ($currentBranchId) {
+                        // If I have a branch, show messages from ANYONE in my branch
+                        $q->whereHas('sender', function($sq) use ($currentBranchId) {
+                            $sq->where('branch_id', $currentBranchId);
+                        });
+                    } else {
+                        // If I am system admin (no branch), show my messages
+                        $q->where('sender_id', $currentUserId);
+                    }
                 });
             });
 
