@@ -15,7 +15,7 @@ class NotificationController extends Controller
         $user = auth()->user();
         $branchId = $user->branch_id;
 
-        if (!$branchId) {
+        if (!$branchId || $user->hasRole('Employee')) {
             return response()->json([
                 'total' => 0,
                 'chats' => [],
