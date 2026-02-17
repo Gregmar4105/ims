@@ -59,6 +59,7 @@ export function NotificationBell() {
     const fetchNotifications = async () => {
         try {
             const response = await axios.get('/notifications');
+            console.log("Fetched notifications:", response.data); // Debug log
             setData(response.data);
         } catch (error) {
             console.error('Failed to fetch notifications:', error);
@@ -366,6 +367,7 @@ export function NotificationBell() {
 
             // Trigger toasts
             newItems.forEach(item => {
+                console.log("Triggering toast for:", item); // Debug log
                 toast.custom((t) => (
                     <Link
                         href={item.link}
@@ -373,7 +375,7 @@ export function NotificationBell() {
                             toast.dismiss(t);
                             handleNotificationClick();
                         }}
-                        className="flex w-full items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-lg transition-all hover:bg-accent/50 max-w-sm pointer-events-auto"
+                        className="flex w-full md:w-[360px] md:max-w-none items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-lg transition-all hover:bg-accent/50 pointer-events-auto"
                     >
                         <div className="shrink-0">
                             {item.type === 'chat' ? (

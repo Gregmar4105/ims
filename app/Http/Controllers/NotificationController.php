@@ -75,8 +75,8 @@ class NotificationController extends Controller
                 'sales' => $pendingSales->count(),
                 'transfers' => $incomingTransfers->count() + $readiedTransfers->count(),
             ],
-            'chats' => $unreadChats->take(20),
-            'sales' => $pendingSales->take(20),
+            'chats' => $unreadChats->take(20)->values(), // Ensure array
+            'sales' => $pendingSales->take(20)->values(), // Ensure array
             'transfers' => $incomingTransfers->merge($readiedTransfers)->sortByDesc('created_at')->take(20)->values(),
         ]);
     }
