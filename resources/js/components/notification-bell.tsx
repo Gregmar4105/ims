@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check, Bell, MessageSquare, ArrowRightLeft, ShoppingBag } from 'lucide-react';
+import { SharedData } from '@/types';
 
 interface NotificationCounts {
     chats: number;
@@ -68,24 +69,42 @@ export function NotificationBell() {
 
     const markAsRead = (id: string | number, type: string) => {
         // Optimistic update
-        // Remove from data immediately
+        // Find item and mark as read, decrement count
         setData(prev => {
-            const newChats = type === 'chat' ? prev.chats.filter(c => `chat-${c.id}` !== id) : prev.chats;
-            const newSales = type === 'sale' ? prev.sales.filter(s => `sale-${s.id}` !== id) : prev.sales;
-            const newTransfers = type === 'transfer' ? prev.transfers.filter(t => `transfer-${t.id}` !== id) : prev.transfers;
+            const rawId = String(id).split('-')[1]; // ID from compound
 
-            const newTotal = newChats.length + newSales.length + newTransfers.length;
+            // Helper to update read status
+            const updateRead = (list: any[]) => list.map(item => {
+                // Check if this is the item to mark read
+                // The item.id is likely number, rawId is string
+                if (String(item.id) === rawId) {
+                    return { ...item, is_read: true };
+                }
+                return item;
+            });
+
+            // Update lists
+            const newChats = type === 'chat' ? updateRead(prev.chats) : prev.chats;
+            const newSales = type === 'sale' ? updateRead(prev.sales) : prev.sales;
+            const newTransfers = type === 'transfer' ? updateRead(prev.transfers) : prev.transfers;
+
+            // Recalculate totals (count where is_read is false)
+            const countUnread = (list: any[]) => list.filter(i => !i.is_read).length;
+
+            const newChatsCount = countUnread(newChats);
+            const newSalesCount = countUnread(newSales);
+            const newTransfersCount = countUnread(newTransfers);
 
             return {
                 ...prev,
-                total: newTotal,
+                total: newChatsCount + newSalesCount + newTransfersCount,
                 chats: newChats,
                 sales: newSales,
                 transfers: newTransfers,
                 counts: {
-                    chats: newChats.length,
-                    sales: newSales.length,
-                    transfers: newTransfers.length
+                    chats: newChatsCount,
+                    sales: newSalesCount,
+                    transfers: newTransfersCount
                 }
             };
         });
@@ -115,13 +134,18 @@ export function NotificationBell() {
         if (data.total === 0) return;
         setIsMarkingAll(true);
         try {
-            // Optimistic clear
-            setData({
-                total: 0,
-                counts: { chats: 0, sales: 0, transfers: 0 },
-                chats: [],
-                sales: [],
-                transfers: [],
+            // Optimistic clear - Mark all as read but keep them
+            setData(prev => {
+                const markAllRead = (list: any[]) => list.map(item => ({ ...item, is_read: true }));
+
+                return {
+                    ...prev,
+                    total: 0,
+                    counts: { chats: 0, sales: 0, transfers: 0 },
+                    chats: markAllRead(prev.chats),
+                    sales: markAllRead(prev.sales),
+                    transfers: markAllRead(prev.transfers),
+                };
             });
             await axios.post('/notifications/mark-all-read');
             fetchNotifications();
@@ -204,64 +228,66 @@ export function NotificationBell() {
     // Unified and Sorted Feed
     const allNotifications = useMemo(() => {
         const items: NotificationItem[] = [];
+        const { auth } = usePage<SharedData>().props;
+        const userBranchId = auth.user.branch_id;
 
         // Process Chats
-        data.chats.forEach((chat) => {
-            items.push({
-                id: `chat-${chat.id}`,
+        const chats = (data.chats || []).map((item: any) => {
+            const date = new Date(item.created_at);
+            const backendIsRead = item.is_read || !!item.read_at; // Support both structures
+
+            return {
+                id: `chat-${item.id}`,
                 type: 'chat',
-                title: chat.sender?.name || 'Unknown',
-                description: chat.content || 'Sent an attachment',
-                time: chat.created_at,
-                timestamp: new Date(chat.created_at).getTime(),
-                read: false,
-                link: `/chats?branch_id=${chat.sender?.branch?.id || ''}`, // Direct to specific branch chat via query param
-                icon: chat.sender?.profile_photo_url, // Pass URL directly here
+                title: item.sender.name,
+                description: item.content || 'Sent an attachment',
+                time: item.created_at,
+                timestamp: date.getTime(),
+                read: backendIsRead,
+                link: `/chats/${item.sender.branch_id}`, // Go to chat with this branch
+                icon: item.sender.profile_photo_url,
                 isAvatar: true
-            });
+            };
         });
 
         // Process Sales
-        data.sales.forEach((sale) => {
-            items.push({
-                id: `sale-${sale.id}`,
+        const sales = (data.sales || []).map((item: any) => {
+            const date = new Date(item.created_at);
+            return {
+                id: `sale-${item.id}`,
                 type: 'sale',
-                title: `New Sale #${sale.id}`,
-                description: `Status: ${sale.status} - waiting for approval`,
-                time: sale.created_at,
-                timestamp: new Date(sale.created_at).getTime(),
-                read: false,
-                link: '/new-sales', // Redirect to new sales page
+                title: `New Sale Ready`,
+                description: `Sale #${item.id} is ready for processing`,
+                time: item.created_at,
+                timestamp: date.getTime(),
+                read: item.is_read, // Uses UserNotificationView check from backend
+                link: `/sales-list?highlight=${item.id}`,
                 icon: ShoppingBag,
                 isAvatar: false
-            });
+            };
         });
 
         // Process Transfers
-        data.transfers.forEach((transfer) => {
-            const isIncoming = transfer.status === 'outgoing';
-            const title = isIncoming ? 'Incoming Transfer' : 'Transfer Request';
-            const description = isIncoming
-                ? `From ${transfer.source_branch?.branch_name}`
-                : `To ${transfer.destination_branch?.branch_name} - Needs Approval`;
+        const transfers = (data.transfers || []).map((item: any) => {
+            const date = new Date(item.created_at);
+            const isIncoming = item.destination_branch_id === userBranchId;
+            const title = isIncoming ? 'Incoming Transfer' : 'Transfer Readied';
+            const desc = isIncoming
+                ? `From ${item.source_branch?.branch_name || 'Unknown'}`
+                : `To ${item.destination_branch?.branch_name || 'Unknown'}`;
 
-            // Redirect logic:
-            // Incoming -> /incoming
-            // Outgoing (Readied) -> /outgoing
-            const link = isIncoming ? '/incoming' : '/outgoing';
-
-            items.push({
-                id: `transfer-${transfer.id}`,
+            return {
+                id: `transfer-${item.id}`,
                 type: 'transfer',
                 title: title,
-                description: description,
-                time: transfer.created_at,
-                timestamp: new Date(transfer.created_at).getTime(),
-                read: false,
-                link: link,
+                description: desc,
+                time: item.created_at,
+                timestamp: date.getTime(),
+                read: item.is_read, // Uses UserNotificationView check from backend
+                link: isIncoming ? '/incoming' : '/outgoing',
                 icon: ArrowRightLeft,
                 isAvatar: false
-            });
+            };
         });
 
         // Sort by newest first

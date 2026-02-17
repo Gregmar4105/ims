@@ -36,48 +36,69 @@ class NotificationController extends Controller
             ->where('viewable_type', 'transfer')
             ->pluck('viewable_id');
 
-        // 1. Unread Chats (Messages to this branch, not read yet)
-        $unreadChats = Message::with('sender.branch')
+        // 1. Chats (Read & Unread)
+        $chats = Message::with('sender.branch')
             ->where('receiver_branch_id', $branchId)
-            ->whereNull('read_at')
             ->latest()
-            ->get();
+            ->take(50)
+            ->get()
+            ->map(function ($chat) {
+                $chat->is_read = !is_null($chat->read_at);
+                return $chat;
+            });
 
-        // 2. Pending Sales
-        $pendingSales = Sale::where('branch_id', $branchId)
+        // 2. Sales (Read & Unread)
+        $sales = Sale::where('branch_id', $branchId)
             ->where('status', 'readied')
-            ->whereNotIn('id', $viewedSales)
             ->latest()
-            ->get();
+            ->take(50)
+            ->get()
+            ->map(function ($sale) use ($viewedSales) {
+                $sale->is_read = $viewedSales->contains($sale->id);
+                return $sale;
+            });
 
         // 3. Incoming Transfers
         $incomingTransfers = Transfer::with('sourceBranch')
             ->where('destination_branch_id', $branchId)
             ->where('status', 'outgoing')
-            ->whereNotIn('id', $viewedTransfers)
             ->latest()
-            ->get();
+            ->take(50)
+            ->get()
+            ->map(function ($transfer) use ($viewedTransfers) {
+                $transfer->is_read = $viewedTransfers->contains($transfer->id);
+                return $transfer;
+            });
 
         // 4. Pending Outgoing Transfers
         $readiedTransfers = Transfer::with('destinationBranch')
             ->where('source_branch_id', $branchId)
             ->where('status', 'readied')
-            ->whereNotIn('id', $viewedTransfers)
             ->latest()
-            ->get();
+            ->take(50)
+            ->get()
+            ->map(function ($transfer) use ($viewedTransfers) {
+                $transfer->is_read = $viewedTransfers->contains($transfer->id);
+                return $transfer;
+            });
 
-        $total = $unreadChats->count() + $pendingSales->count() + $incomingTransfers->count() + $readiedTransfers->count();
+        // Calculate counts based on UNREAD
+        $unreadChatsCount = $chats->where('is_read', false)->count();
+        $unreadSalesCount = $sales->where('is_read', false)->count();
+        $unreadTransfersCount = $incomingTransfers->where('is_read', false)->count() + $readiedTransfers->where('is_read', false)->count();
+
+        $total = $unreadChatsCount + $unreadSalesCount + $unreadTransfersCount;
 
         return response()->json([
             'total' => $total,
             'counts' => [
-                'chats' => $unreadChats->count(),
-                'sales' => $pendingSales->count(),
-                'transfers' => $incomingTransfers->count() + $readiedTransfers->count(),
+                'chats' => $unreadChatsCount,
+                'sales' => $unreadSalesCount,
+                'transfers' => $unreadTransfersCount,
             ],
-            'chats' => $unreadChats->take(20)->values(), // Ensure array
-            'sales' => $pendingSales->take(20)->values(), // Ensure array
-            'transfers' => $incomingTransfers->merge($readiedTransfers)->sortByDesc('created_at')->take(20)->values(),
+            'chats' => $chats->values(),
+            'sales' => $sales->values(),
+            'transfers' => $incomingTransfers->merge($readiedTransfers)->sortByDesc('created_at')->values(),
         ]);
     }
 
