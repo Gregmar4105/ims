@@ -67,7 +67,7 @@ class PersonalizationController extends Controller
 
         return back()->with('success', 'Homepage banner reset to default.');
     }
-    }
+
 
     /**
      * Update the notification ringtone.
