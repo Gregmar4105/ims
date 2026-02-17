@@ -228,7 +228,6 @@ export function NotificationBell() {
 
     // Unified and Sorted Feed
     const allNotifications = useMemo(() => {
-        const items: NotificationItem[] = [];
         const { auth } = usePage<SharedData>().props;
         const userBranchId = auth.user.branch_id;
 
@@ -239,7 +238,7 @@ export function NotificationBell() {
 
             return {
                 id: `chat-${item.id}`,
-                type: 'chat',
+                type: 'chat' as const,
                 title: item.sender.name,
                 description: item.content || 'Sent an attachment',
                 time: item.created_at,
@@ -256,7 +255,7 @@ export function NotificationBell() {
             const date = new Date(item.created_at);
             return {
                 id: `sale-${item.id}`,
-                type: 'sale',
+                type: 'sale' as const,
                 title: `New Sale Ready`,
                 description: `Sale #${item.id} is ready for processing`,
                 time: item.created_at,
@@ -279,7 +278,7 @@ export function NotificationBell() {
 
             return {
                 id: `transfer-${item.id}`,
-                type: 'transfer',
+                type: 'transfer' as const,
                 title: title,
                 description: desc,
                 time: item.created_at,
@@ -291,8 +290,8 @@ export function NotificationBell() {
             };
         });
 
-        // Sort by newest first
-        return items.sort((a, b) => b.timestamp - a.timestamp);
+        // Combine and sort
+        return [...chats, ...sales, ...transfers].sort((a, b) => b.timestamp - a.timestamp);
     }, [data]);
 
     // Derived list for display with infinite scroll
