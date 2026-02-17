@@ -59,6 +59,13 @@ export function NotificationBell() {
     const [visibleLimit, setVisibleLimit] = useState(20);
     const [hasFetched, setHasFetched] = useState(false);
 
+    // Auto-switch to 'all' if 'today' is empty after fetch
+    useEffect(() => {
+        if (hasFetched && todayNotifications.length === 0 && allNotifications.length > 0) {
+            setActiveTab('all');
+        }
+    }, [hasFetched]); // Only run once when fetched state settles or we could depend on lengths but that might jump around
+
     const fetchNotifications = async () => {
         try {
             const response = await axios.get('/notifications');
@@ -513,24 +520,30 @@ export function NotificationBell() {
                         <button
                             onClick={() => setActiveTab('today')}
                             className={cn(
-                                "flex-1 text-sm font-medium py-1.5 rounded-md transition-all",
+                                "flex-1 text-sm font-medium py-1.5 rounded-md transition-all flex items-center justify-center gap-2",
                                 activeTab === 'today'
                                     ? "bg-background text-foreground shadow-sm"
                                     : "text-muted-foreground hover:text-foreground hover:bg-background/50"
                             )}
                         >
                             Today
+                            <span className="text-[10px] bg-primary/10 px-1.5 py-0.5 rounded-full text-primary">
+                                {todayNotifications.length}
+                            </span>
                         </button>
                         <button
                             onClick={() => setActiveTab('all')}
                             className={cn(
-                                "flex-1 text-sm font-medium py-1.5 rounded-md transition-all",
+                                "flex-1 text-sm font-medium py-1.5 rounded-md transition-all flex items-center justify-center gap-2",
                                 activeTab === 'all'
                                     ? "bg-background text-foreground shadow-sm"
                                     : "text-muted-foreground hover:text-foreground hover:bg-background/50"
                             )}
                         >
                             All
+                            <span className="text-[10px] bg-primary/10 px-1.5 py-0.5 rounded-full text-primary">
+                                {allNotifications.length}
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -600,7 +613,7 @@ function NotificationItemRenderer({ item, onClick }: { item: NotificationItem, o
                 )}
                 onClick={onClick}
             >
-                <div className={cn("shrink-0 mt-1", item.read && "opacity-70 grayscale-[0.3]")}>
+                <div className={cn("shrink-0 mt-1", item.read && "opacity-60")}>
                     {item.type === 'chat' ? (
                         <Avatar className="h-10 w-10 border border-border/50">
                             <AvatarImage src={item.icon || undefined} />
