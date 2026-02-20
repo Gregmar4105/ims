@@ -40,7 +40,7 @@ interface Props {
 
 export default function Show({ product }: Props) {
     const { auth } = usePage<SharedData>().props;
-    const isEmployee = auth.roles.includes('Employee');
+    const isEmployee = auth.roles.includes('Employee') && !auth.roles.includes('System Administrator') && !auth.roles.includes('Branch Administrator');
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Products',

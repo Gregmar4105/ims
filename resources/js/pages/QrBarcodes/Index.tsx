@@ -65,7 +65,7 @@ interface Props {
 
 export default function Index({ products }: Props) {
     const { flash, errors, auth } = usePage<SharedData>().props;
-    const isEmployee = auth.roles.includes('Employee');
+    const isEmployee = auth.roles.includes('Employee') && !auth.roles.includes('System Administrator') && !auth.roles.includes('Branch Administrator');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [barcode, setBarcode] = useState('');

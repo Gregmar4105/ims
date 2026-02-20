@@ -54,7 +54,7 @@ interface Props {
 
 export default function Index({ suppliers, filters }: Props) {
     const { auth } = usePage<SharedData>().props;
-    const isEmployee = auth.roles.includes('Employee');
+    const isEmployee = auth.roles.includes('Employee') && !auth.roles.includes('System Administrator') && !auth.roles.includes('Branch Administrator');
     const [search, setSearch] = useState(filters.search || '');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);

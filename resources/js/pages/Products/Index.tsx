@@ -81,7 +81,7 @@ interface Props {
 
 export default function Index({ products, filters, options, isSystemAdmin }: Props) {
     const { auth } = usePage<SharedData>().props;
-    const isEmployee = auth.roles.includes('Employee');
+    const isEmployee = auth.roles.includes('Employee') && !auth.roles.includes('System Administrator') && !auth.roles.includes('Branch Administrator');
 
     const productList = products?.data || [];
     const links = products?.links || [];
