@@ -66,6 +66,7 @@ export default function Create({ brands, categories, suppliers }: Props) {
         code: '',
         code_2: '',
         sku: '',
+        reorder_level: '',
         variations: [] as Variation[],
         image: null as File | null,
     });
@@ -199,6 +200,22 @@ export default function Create({ brands, categories, suppliers }: Props) {
                                     required
                                 />
                                 {errors.quantity && <p className="text-sm text-red-500">{errors.quantity}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor="reorder_level">Reorder Level</Label>
+                                </div>
+                                <Input
+                                    id="reorder_level"
+                                    type="number"
+                                    min="0"
+                                    value={data.reorder_level}
+                                    onChange={e => setData('reorder_level', e.target.value)}
+                                    placeholder="0"
+                                    title="Quantity at which to reorder"
+                                />
+                                {errors.reorder_level && <p className="text-sm text-red-500">{errors.reorder_level}</p>}
                             </div>
                         </div>
 

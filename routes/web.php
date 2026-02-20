@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\QrAndBarcodeController;
+use App\Http\Controllers\ReorderController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -101,6 +102,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/notifications/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.markRead');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
     
+    Route::get('/reorders', [ReorderController::class, 'index'])->name('reorders.index');
 });
 
 require __DIR__.'/settings.php';

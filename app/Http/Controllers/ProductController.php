@@ -302,6 +302,7 @@ class ProductController extends Controller
             'image' => 'required|image|max:2048', // 2MB Max
             'price' => 'nullable|numeric|min:0',
             'supplier_id' => 'nullable|exists:suppliers,id',
+            'reorder_level' => 'nullable|integer|min:0',
         ]);
 
         $isSystemAdmin = $user->hasRole('System Administrator');
@@ -351,6 +352,7 @@ class ProductController extends Controller
                 'qr_code' => null,
                 'price' => $validated['price'] ?? null,
                 'supplier_id' => $validated['supplier_id'] ?? null,
+                'reorder_level' => $validated['reorder_level'] ?? 0,
             ]);
 
             // Create Branch Product (Stock) if user has a branch
@@ -427,6 +429,7 @@ class ProductController extends Controller
             'image' => 'nullable|image|max:2048',
             'price' => 'nullable|numeric|min:0', 
             'supplier_id' => 'nullable|exists:suppliers,id',
+            'reorder_level' => 'nullable|integer|min:0',
         ]);
 
         // Handle Image Upload if provided
@@ -455,6 +458,7 @@ class ProductController extends Controller
                 'image_path' => $validated['image_path'] ?? $product->image_path,
                 'price' => $validated['price'] ?? $product->price,
                 'supplier_id' => $validated['supplier_id'] ?? $product->supplier_id,
+                'reorder_level' => $validated['reorder_level'] ?? $product->reorder_level,
             ]);
 
             // Update Branch Stock

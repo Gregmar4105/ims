@@ -75,6 +75,7 @@ const Products = {
     isActive: true,
     items: [
         { title: "Product List", url: "/products", icon: ListChecks },
+        { title: "Reorders", url: "/reorders", icon: ShoppingBasket },
         {
             title: "Prod. Category",
             url: "/categories",
