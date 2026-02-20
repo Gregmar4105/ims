@@ -302,19 +302,19 @@ class ProductController extends Controller
             'supplier_id' => 'nullable|exists:suppliers,id',
         ]);
 
-        $user = auth()->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
         
-        if (!$user->branch) {
+        if (!$user->branch && !$isSystemAdmin) {
             return back()->withErrors(['branch' => 'You must be assigned to a branch to add products.']);
         }
 
-        $branchName = $user->branch->branch_name;
+        $branchName = $user->branch ? $user->branch->branch_name : 'System';
         $brand = Brand::find($validated['brand_id']);
         $category = Category::find($validated['category_id']);
         
         $safeBranch = str_replace(' ', '', $branchName);
-        $safeBrand = str_replace(' ', '', $brand->name);
-        $safeCategory = str_replace(' ', '', $category->name);
+        $safeBrand = str_replace(' ', '', $brand ? $brand->name : 'Unknown');
+        $safeCategory = str_replace(' ', '', $category ? $category->name : 'Unknown');
         $safeProduct = str_replace(' ', '-', $validated['name']);
         
         $extension = $request->file('image')->getClientOriginalExtension();
@@ -351,15 +351,17 @@ class ProductController extends Controller
                 'supplier_id' => $validated['supplier_id'] ?? null,
             ]);
 
-            // Create Branch Product (Stock)
-            \App\Models\BranchProduct::create([
-                'branch_id' => $user->branch_id,
-                'product_id' => $product->id,
-                'quantity' => $validated['quantity'],
-                'physical_location' => $validated['physical_location'] ?? null,
-                'description' => $validated['description'] ?? null,
-                'variations' => $validated['variations'] ?? null,
-            ]);
+            // Create Branch Product (Stock) if user has a branch
+            if ($user->branch_id) {
+                \App\Models\BranchProduct::create([
+                    'branch_id' => $user->branch_id,
+                    'product_id' => $product->id,
+                    'quantity' => $validated['quantity'],
+                    'physical_location' => $validated['physical_location'] ?? null,
+                    'description' => $validated['description'] ?? null,
+                    'variations' => $validated['variations'] ?? null,
+                ]);
+            }
         });
 
         return redirect()->route('products.index')->with('success', 'Product added successfully.');
