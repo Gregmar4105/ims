@@ -34,6 +34,7 @@ export interface SharedData {
         success?: string;
         error?: string;
     };
+    reorderCount?: number;
     [key: string]: unknown;
 }
 

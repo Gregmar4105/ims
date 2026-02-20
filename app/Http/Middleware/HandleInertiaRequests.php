@@ -39,9 +39,37 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
+        
+        $reorderCount = 0;
+        if ($user = $request->user()) {
+            if ($user->hasRole('System Administrator')) {
+                $globalCount = \App\Models\Product::whereNotNull('reorder_level')
+                    ->where('reorder_level', '>', 0)
+                    ->doesntHave('branches')
+                    ->count();
+
+                $branchCount = \Illuminate\Support\Facades\DB::table('branch_products')
+                    ->join('products', 'branch_products.product_id', '=', 'products.id')
+                    ->whereNotNull('products.reorder_level')
+                    ->where('products.reorder_level', '>', 0)
+                    ->whereRaw('branch_products.quantity <= products.reorder_level')
+                    ->count();
+                    
+                $reorderCount = $globalCount + $branchCount;
+            } elseif ($user->branch_id) {
+                $reorderCount = \Illuminate\Support\Facades\DB::table('branch_products')
+                    ->join('products', 'branch_products.product_id', '=', 'products.id')
+                    ->where('branch_products.branch_id', $user->branch_id)
+                    ->whereNotNull('products.reorder_level')
+                    ->where('products.reorder_level', '>', 0)
+                    ->whereRaw('branch_products.quantity <= products.reorder_level')
+                    ->count();
+            }
+        }
 
         return [
             ...parent::share($request),
+            'reorderCount' => $reorderCount,
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [

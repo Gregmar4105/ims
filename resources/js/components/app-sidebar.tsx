@@ -114,6 +114,7 @@ const userManagement = {
 
 export function AppSidebar() {
     const { can } = usePermission();
+    const { reorderCount } = usePage<SharedData>().props;
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -326,6 +327,12 @@ export function AppSidebar() {
                                             <a href={subItem.url}>
                                                 {subItem.icon && <subItem.icon />}
                                                 <span>{subItem.title}</span>
+                                                {/* Reorders Badge */}
+                                                {subItem.title === 'Reorders' && reorderCount !== undefined && reorderCount > 0 && (
+                                                    <SidebarMenuBadge className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                                                        {reorderCount}
+                                                    </SidebarMenuBadge>
+                                                )}
                                             </a>
                                         </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>

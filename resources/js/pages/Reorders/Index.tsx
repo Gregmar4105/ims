@@ -2,7 +2,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Bike, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Bike, AlertTriangle, Printer } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import {
     Table,
@@ -61,7 +61,7 @@ export default function Index({ reorders }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Reorders" />
 
-            <div className="p-4 md:p-6 space-y-6">
+            <div className="p-4 md:p-6 space-y-6 print:hidden">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
@@ -74,6 +74,11 @@ export default function Index({ reorders }: Props) {
                             Products that have reached or dropped below their configured reorder level.
                         </p>
                     </div>
+
+                    <Button onClick={() => window.print()} variant="outline" className="flex items-center gap-2">
+                        <Printer className="w-4 h-4" />
+                        Print Reorder List
+                    </Button>
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-xl border shadow-sm flex flex-col">
@@ -186,6 +191,69 @@ export default function Index({ reorders }: Props) {
                         </Table>
                     </div>
                 </div>
+            </div>
+
+            {/* Print Only View */}
+            <div className="hidden print:block p-8 bg-white text-black">
+                <div className="text-center mb-8">
+                    <h1 className="text-2xl font-bold mb-2">Reorder List Report</h1>
+                    <p className="text-gray-600">Generated on {new Date().toLocaleDateString()}</p>
+                    <p className="text-gray-600">Showing {filteredReorders.length} items</p>
+                </div>
+
+                <table className="w-full border-collapse border border-gray-300 text-sm">
+                    <thead>
+                        <tr className="bg-gray-100">
+                            <th className="border border-gray-300 p-2 text-left">Product / SKU</th>
+                            <th className="border border-gray-300 p-2 text-left">Category & Brand</th>
+                            {isSystemAdmin && <th className="border border-gray-300 p-2 text-left">Location</th>}
+                            <th className="border border-gray-300 p-2 text-right">Current Stock</th>
+                            <th className="border border-gray-300 p-2 text-right">Reorder Level</th>
+                            <th className="border border-gray-300 p-2 text-left">Supplier Info</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredReorders.map((product, index) => (
+                            <tr key={`print-${product.id}-${index}`}>
+                                <td className="border border-gray-300 p-2">
+                                    <div className="font-medium">{product.name}</div>
+                                    <div className="text-xs text-gray-500">{product.sku || product.code || 'N/A'}</div>
+                                </td>
+                                <td className="border border-gray-300 p-2">
+                                    {product.category?.name || 'Uncategorized'} <br />
+                                    <span className="text-xs text-gray-500">{product.brand?.name || ''}</span>
+                                </td>
+                                {isSystemAdmin && (
+                                    <td className="border border-gray-300 p-2">
+                                        {product.branch ? product.branch.name : 'Global Stock'}
+                                    </td>
+                                )}
+                                <td className="border border-gray-300 p-2 text-right font-medium text-red-600">
+                                    {product.quantity}
+                                </td>
+                                <td className="border border-gray-300 p-2 text-right">
+                                    {product.reorder_level}
+                                </td>
+                                <td className="border border-gray-300 p-2 text-xs">
+                                    {product.supplier ? (
+                                        <>
+                                            <div className="font-semibold">{product.supplier.name}</div>
+                                            {product.supplier.contact_person && <div>Contact: {product.supplier.contact_person}</div>}
+                                            {product.supplier.phone && <div>Tel: {product.supplier.phone}</div>}
+                                        </>
+                                    ) : 'No Supplier Info'}
+                                </td>
+                            </tr>
+                        ))}
+                        {filteredReorders.length === 0 && (
+                            <tr>
+                                <td colSpan={isSystemAdmin ? 6 : 5} className="border border-gray-300 p-4 text-center text-gray-500">
+                                    No items found to print.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
         </AppLayout>
     );
