@@ -43,26 +43,19 @@ class HandleInertiaRequests extends Middleware
         $reorderCount = 0;
         if ($user = $request->user()) {
             if ($user->hasRole('System Administrator')) {
-                $globalCount = \App\Models\Product::whereNotNull('reorder_level')
-                    ->where('reorder_level', '>', 0)
-                    ->doesntHave('branches')
-                    ->count();
-
-                $branchCount = \Illuminate\Support\Facades\DB::table('branch_products')
-                    ->join('products', 'branch_products.product_id', '=', 'products.id')
-                    ->whereNotNull('products.reorder_level')
-                    ->where('products.reorder_level', '>', 0)
-                    ->whereRaw('branch_products.quantity <= products.reorder_level')
-                    ->count();
-                    
-                $reorderCount = $globalCount + $branchCount;
-            } elseif ($user->branch_id) {
+                // System admin sees the sum of all branches that need reordering
                 $reorderCount = \Illuminate\Support\Facades\DB::table('branch_products')
-                    ->join('products', 'branch_products.product_id', '=', 'products.id')
-                    ->where('branch_products.branch_id', $user->branch_id)
-                    ->whereNotNull('products.reorder_level')
-                    ->where('products.reorder_level', '>', 0)
-                    ->whereRaw('branch_products.quantity <= products.reorder_level')
+                    ->whereNotNull('reorder_level')
+                    ->where('reorder_level', '>', 0)
+                    ->whereRaw('quantity <= reorder_level')
+                    ->count();
+            } elseif ($user->branch_id) {
+                // Branch admin sees only their branch's items
+                $reorderCount = \Illuminate\Support\Facades\DB::table('branch_products')
+                    ->where('branch_id', $user->branch_id)
+                    ->whereNotNull('reorder_level')
+                    ->where('reorder_level', '>', 0)
+                    ->whereRaw('quantity <= reorder_level')
                     ->count();
             }
         }

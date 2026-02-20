@@ -144,7 +144,7 @@ export default function Index({ reorders }: Props) {
                                             {isSystemAdmin && (
                                                 <TableCell>
                                                     <div className="text-sm font-medium">
-                                                        {product.branch ? product.branch.name : 'Global Stock'}
+                                                        {product.branch ? product.branch.name : 'Unknown Location'}
                                                     </div>
                                                 </TableCell>
                                             )}
@@ -244,7 +244,7 @@ export default function Index({ reorders }: Props) {
                                 </td>
                                 {isSystemAdmin && (
                                     <td className="py-2 px-2 align-top font-medium text-gray-700">
-                                        {product.branch ? product.branch.name : 'Global Stock'}
+                                        {product.branch ? product.branch.name : 'Unknown Location'}
                                     </td>
                                 )}
                                 <td className="py-2 px-2 text-right align-top font-bold text-red-600">

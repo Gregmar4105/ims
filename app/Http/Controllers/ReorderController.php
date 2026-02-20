@@ -19,44 +19,20 @@ class ReorderController extends Controller
         $reorders = collect();
 
         if ($isSystemAdmin) {
-            // For System Admin, get products globally where global quantity or any branch quantity is <= reorder_level
-            // To simplify based on how quantity is handled (global vs branch), we'll fetch products that have a reorder_level > 0
+            // For System Admin, get products globally where ANY branch quantity is <= its specific reorder_level
             
-            // Get global products that need reorder (no branches = 0 stock)
-            $globalReorders = Product::whereNotNull('reorder_level')
-                ->where('reorder_level', '>', 0)
-                ->doesntHave('branches')
-                ->with(['brand', 'category', 'supplier'])
-                ->get();
-
             // Get branch-specific products that need reorder
-            $branchReorders = Product::whereNotNull('reorder_level')
-                ->where('reorder_level', '>', 0)
-                ->whereHas('branches', function ($query) {
-                    $query->whereRaw('branch_products.quantity <= products.reorder_level');
+            $branchReorders = Product::whereHas('branches', function ($query) {
+                    $query->whereNotNull('branch_products.reorder_level')
+                          ->where('branch_products.reorder_level', '>', 0)
+                          ->whereRaw('branch_products.quantity <= branch_products.reorder_level');
                 })
                 ->with(['brand', 'category', 'supplier', 'branches'])->get();
 
             // Format for frontend
-            foreach ($globalReorders as $product) {
-                $reorders->push([
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'code' => $product->code,
-                    'sku' => $product->sku,
-                    'image_path' => $product->image_path,
-                    'quantity' => $product->quantity ?? 0,
-                    'reorder_level' => $product->reorder_level,
-                    'brand' => $product->brand,
-                    'category' => $product->category,
-                    'supplier' => $product->supplier,
-                    'branch' => null
-                ]);
-            }
-
             foreach ($branchReorders as $product) {
                 foreach ($product->branches as $branch) {
-                    if ($branch->pivot->quantity <= $product->reorder_level) {
+                    if ($branch->pivot->reorder_level > 0 && $branch->pivot->quantity <= $branch->pivot->reorder_level) {
                         $reorders->push([
                             'id' => $product->id,
                             'name' => $product->name,
@@ -64,7 +40,7 @@ class ReorderController extends Controller
                             'sku' => $product->sku,
                             'image_path' => $product->image_path,
                             'quantity' => $branch->pivot->quantity,
-                            'reorder_level' => $product->reorder_level,
+                            'reorder_level' => $branch->pivot->reorder_level,
                             'brand' => $product->brand,
                             'category' => $product->category,
                             'supplier' => $product->supplier,
@@ -78,19 +54,22 @@ class ReorderController extends Controller
             }
 
         } else if ($user->branch_id) {
-            // For Branch Admin / Employee: Only fetch products in their branch where branch_products.quantity <= reorder_level
-            $branchProducts = Product::whereNotNull('reorder_level')
-                ->where('reorder_level', '>', 0)
-                ->whereHas('branches', function ($query) use ($user) {
+            // For Branch Admin / Employee: Only fetch products in their branch where branch_products.quantity <= branch_products.reorder_level
+            $branchProducts = Product::whereHas('branches', function ($query) use ($user) {
                     $query->where('branch_id', $user->branch_id)
-                          ->whereRaw('branch_products.quantity <= products.reorder_level');
+                          ->whereNotNull('branch_products.reorder_level')
+                          ->where('branch_products.reorder_level', '>', 0)
+                          ->whereRaw('branch_products.quantity <= branch_products.reorder_level');
                 })
                 ->with(['brand', 'category', 'supplier', 'branches' => function($query) use ($user) {
                     $query->where('branch_id', $user->branch_id);
                 }])->get();
 
             foreach ($branchProducts as $product) {
-                $branchQuantity = $product->branches->first()->pivot->quantity ?? 0;
+                $branchPivot = $product->branches->first()->pivot;
+                $branchQuantity = $branchPivot->quantity ?? 0;
+                $reorderLevel = $branchPivot->reorder_level ?? 0;
+                
                 $reorders->push([
                     'id' => $product->id,
                     'name' => $product->name,
@@ -98,7 +77,7 @@ class ReorderController extends Controller
                     'sku' => $product->sku,
                     'image_path' => $product->image_path,
                     'quantity' => $branchQuantity,
-                    'reorder_level' => $product->reorder_level,
+                    'reorder_level' => $reorderLevel,
                     'brand' => $product->brand,
                     'category' => $product->category,
                     'supplier' => $product->supplier,

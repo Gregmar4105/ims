@@ -352,7 +352,6 @@ class ProductController extends Controller
                 'qr_code' => null,
                 'price' => $validated['price'] ?? null,
                 'supplier_id' => $validated['supplier_id'] ?? null,
-                'reorder_level' => $validated['reorder_level'] ?? 0,
             ]);
 
             // Create Branch Product (Stock) if user has a branch
@@ -364,6 +363,7 @@ class ProductController extends Controller
                     'physical_location' => $validated['physical_location'] ?? null,
                     'description' => $validated['description'] ?? null,
                     'variations' => $validated['variations'] ?? null,
+                    'reorder_level' => $validated['reorder_level'] ?? 0,
                 ]);
             }
         });
@@ -392,6 +392,9 @@ class ProductController extends Controller
             if ($branchProduct) {
                 $product->description = $branchProduct->pivot->description ?? $product->description;
                 $product->variations = $branchProduct->pivot->variations ?? $product->variations;
+                $product->reorder_level = $branchProduct->pivot->reorder_level ?? 0;
+            } else {
+                $product->reorder_level = 0;
             }
         }
 
@@ -458,7 +461,6 @@ class ProductController extends Controller
                 'image_path' => $validated['image_path'] ?? $product->image_path,
                 'price' => $validated['price'] ?? $product->price,
                 'supplier_id' => $validated['supplier_id'] ?? $product->supplier_id,
-                'reorder_level' => $validated['reorder_level'] ?? $product->reorder_level,
             ]);
 
             // Update Branch Stock
@@ -473,6 +475,7 @@ class ProductController extends Controller
                         'physical_location' => $validated['physical_location'] ?? null,
                         'description' => $validated['description'] ?? null,
                         'variations' => $validated['variations'] ?? null,
+                        'reorder_level' => $validated['reorder_level'] ?? 0,
                     ]
                 );
             }

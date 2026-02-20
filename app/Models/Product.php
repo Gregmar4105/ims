@@ -25,7 +25,6 @@ class Product extends Model
         'created_by',
         'price',
         'supplier_id',
-        'reorder_level',
     ];
 
     protected $casts = [
@@ -35,7 +34,7 @@ class Product extends Model
     public function branches()
     {
         return $this->belongsToMany(Branch::class, 'branch_products')
-                    ->withPivot('quantity', 'physical_location')
+                    ->withPivot('quantity', 'physical_location', 'reorder_level')
                     ->withTimestamps();
     }
 

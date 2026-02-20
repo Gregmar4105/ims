@@ -16,6 +16,7 @@ class BranchProduct extends Model
         'physical_location',
         'description',
         'variations',
+        'reorder_level',
     ];
 
     protected $casts = [
