@@ -195,70 +195,80 @@ export default function Index({ reorders }: Props) {
             </div>
 
             {/* Print Only View */}
-            <div className="hidden print:block p-8 bg-white text-black font-sans">
-                <div className="flex justify-between items-end border-b-2 border-gray-800 pb-4 mb-6">
+            <div className="hidden print:block p-0 bg-white text-black font-sans">
+                <style>
+                    {`
+                        @media print {
+                            @page { size: auto; margin: 5mm; }
+                            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            header, nav, .sidebar { display: none !important; }
+                            #app-content { padding: 0 !important; margin: 0 !important; }
+                        }
+                    `}
+                </style>
+                <div className="flex justify-between items-end border-b-2 border-gray-800 pb-2 mb-4">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Reorders Report</h1>
-                        <p className="text-gray-600 mt-1 text-base font-medium">
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Reorders Report</h1>
+                        <p className="text-gray-600 mt-1 text-sm font-medium">
                             {branchName ? `Location: ${branchName}` : 'All Locations (Global View)'}
                         </p>
                     </div>
                     <div className="text-right">
-                        <p className="text-sm font-semibold text-gray-900">Generated On</p>
-                        <p className="text-sm text-gray-600">{new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</p>
-                        <p className="text-sm font-semibold text-gray-900 mt-2">Total Items: {filteredReorders.length}</p>
+                        <p className="text-xs font-semibold text-gray-900">Generated On</p>
+                        <p className="text-xs text-gray-600">{new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</p>
+                        <p className="text-xs font-semibold text-gray-900 mt-1">Total Items: {filteredReorders.length}</p>
                     </div>
                 </div>
 
-                <table className="w-full text-sm text-left">
+                <table className="w-full text-sm text-left border-collapse">
                     <thead>
                         <tr className="border-b-2 border-gray-800 text-gray-900 uppercase tracking-wider text-xs">
-                            <th className="py-3 pr-4">Product / SKU</th>
-                            <th className="py-3 px-4">Category & Brand</th>
-                            {isSystemAdmin && <th className="py-3 px-4">Location</th>}
-                            <th className="py-3 px-4 text-right">Current Stock</th>
-                            <th className="py-3 px-4 text-right">Reorder Level</th>
-                            <th className="py-3 pl-4">Supplier Info</th>
+                            <th className="py-2 pr-2">Product / SKU</th>
+                            <th className="py-2 px-2">Category & Brand</th>
+                            {isSystemAdmin && <th className="py-2 px-2">Location</th>}
+                            <th className="py-2 px-2 text-right">Current Stock</th>
+                            <th className="py-2 px-2 text-right">Reorder Level</th>
+                            <th className="py-2 pl-2">Supplier Info</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                         {filteredReorders.map((product, index) => (
                             <tr key={`print-${product.id}-${index}`} className="break-inside-avoid">
-                                <td className="py-3 pr-4 align-top">
+                                <td className="py-2 pr-2 align-top">
                                     <div className="font-semibold text-gray-900">{product.name}</div>
-                                    <div className="text-xs text-gray-500 mt-0.5">{product.sku || product.code || 'N/A'}</div>
+                                    <div className="text-xs text-gray-500 mt-px">{product.sku || product.code || 'N/A'}</div>
                                 </td>
-                                <td className="py-3 px-4 align-top">
+                                <td className="py-2 px-2 align-top">
                                     <div className="font-medium text-gray-900">{product.category?.name || 'Uncategorized'}</div>
-                                    <div className="text-xs text-gray-500 mt-0.5">{product.brand?.name || ''}</div>
+                                    <div className="text-xs text-gray-500 mt-px">{product.brand?.name || ''}</div>
                                 </td>
                                 {isSystemAdmin && (
-                                    <td className="py-3 px-4 align-top font-medium text-gray-700">
+                                    <td className="py-2 px-2 align-top font-medium text-gray-700">
                                         {product.branch ? product.branch.name : 'Global Stock'}
                                     </td>
                                 )}
-                                <td className="py-3 px-4 text-right align-top font-bold text-red-600">
+                                <td className="py-2 px-2 text-right align-top font-bold text-red-600">
                                     {product.quantity}
                                 </td>
-                                <td className="py-3 px-4 text-right align-top font-medium text-gray-900">
+                                <td className="py-2 px-2 text-right align-top font-medium text-gray-900">
                                     {product.reorder_level}
                                 </td>
-                                <td className="py-3 pl-4 align-top">
+                                <td className="py-2 pl-2 align-top">
                                     {product.supplier ? (
                                         <div className="text-xs text-gray-600">
-                                            <div className="font-semibold text-gray-900 text-sm">{product.supplier.name}</div>
-                                            {product.supplier.contact_person && <div className="mt-0.5"><span className="text-gray-500">Contact:</span> {product.supplier.contact_person}</div>}
-                                            {product.supplier.phone && <div><span className="text-gray-500">Tel:</span> {product.supplier.phone}</div>}
+                                            <div className="font-semibold text-gray-900">{product.supplier.name}</div>
+                                            {product.supplier.contact_person && <div className="mt-px"><span className="text-gray-400">Contact:</span> {product.supplier.contact_person}</div>}
+                                            {product.supplier.phone && <div><span className="text-gray-400">Tel:</span> {product.supplier.phone}</div>}
                                         </div>
                                     ) : (
-                                        <span className="text-sm text-gray-400 italic">No Supplier Info</span>
+                                        <span className="text-xs text-gray-400 italic">No Supplier Info</span>
                                     )}
                                 </td>
                             </tr>
                         ))}
                         {filteredReorders.length === 0 && (
                             <tr>
-                                <td colSpan={isSystemAdmin ? 6 : 5} className="py-8 text-center text-gray-500 italic">
+                                <td colSpan={isSystemAdmin ? 6 : 5} className="py-6 text-center text-gray-500 italic">
                                     No items found to print.
                                 </td>
                             </tr>
