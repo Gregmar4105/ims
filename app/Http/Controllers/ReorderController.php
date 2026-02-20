@@ -22,13 +22,12 @@ class ReorderController extends Controller
             // For System Admin, get products globally where global quantity or any branch quantity is <= reorder_level
             // To simplify based on how quantity is handled (global vs branch), we'll fetch products that have a reorder_level > 0
             
-            // Get global products that need reorder
+            // Get global products that need reorder (no branches = 0 stock)
             $globalReorders = Product::whereNotNull('reorder_level')
                 ->where('reorder_level', '>', 0)
-                ->where(function($query) {
-                    $query->doesntHave('branches') // Products with no branch relation, using global quantity (if applicable)
-                          ->whereRaw('quantity <= reorder_level');
-                })->with(['brand', 'category', 'supplier'])->get();
+                ->doesntHave('branches')
+                ->with(['brand', 'category', 'supplier'])
+                ->get();
 
             // Get branch-specific products that need reorder
             $branchReorders = Product::whereNotNull('reorder_level')
