@@ -35,9 +35,7 @@ class ReorderController extends Controller
                 ->whereHas('branches', function ($query) {
                     $query->whereRaw('branch_products.quantity <= products.reorder_level');
                 })
-                ->with(['brand', 'category', 'supplier', 'branches' => function($query) {
-                    $query->whereRaw('branch_products.quantity <= products.reorder_level');
-                }])->get();
+                ->with(['brand', 'category', 'supplier', 'branches'])->get();
 
             // Format for frontend
             foreach ($globalReorders as $product) {
@@ -58,22 +56,24 @@ class ReorderController extends Controller
 
             foreach ($branchReorders as $product) {
                 foreach ($product->branches as $branch) {
-                    $reorders->push([
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'code' => $product->code,
-                        'sku' => $product->sku,
-                        'image_path' => $product->image_path,
-                        'quantity' => $branch->pivot->quantity,
-                        'reorder_level' => $product->reorder_level,
-                        'brand' => $product->brand,
-                        'category' => $product->category,
-                        'supplier' => $product->supplier,
-                        'branch' => [
-                            'id' => $branch->id,
-                            'name' => $branch->branch_name
-                        ]
-                    ]);
+                    if ($branch->pivot->quantity <= $product->reorder_level) {
+                        $reorders->push([
+                            'id' => $product->id,
+                            'name' => $product->name,
+                            'code' => $product->code,
+                            'sku' => $product->sku,
+                            'image_path' => $product->image_path,
+                            'quantity' => $branch->pivot->quantity,
+                            'reorder_level' => $product->reorder_level,
+                            'brand' => $product->brand,
+                            'category' => $product->category,
+                            'supplier' => $product->supplier,
+                            'branch' => [
+                                'id' => $branch->id,
+                                'name' => $branch->branch_name
+                            ]
+                        ]);
+                    }
                 }
             }
 
