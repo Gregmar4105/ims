@@ -4,25 +4,22 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 use App\Models\Product;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Supplier;
 use App\Models\BranchProduct;
+use App\Models\AiImportLog;
 use Carbon\Carbon;
 
 class ImportTransferController extends Controller
 {
     public function index()
     {
-        // System-wide tracking keys
-        $minuteKey = 'import_transfer_system_min';
-        $dailyKey = 'import_transfer_system_day';
-        
-        $importMinuteUsage = RateLimiter::attempts($minuteKey);
-        $importDailyUsage = RateLimiter::attempts($dailyKey);
+        // System-wide DB tracking
+        $importMinuteUsage = AiImportLog::where('created_at', '>=', now()->subMinute())->count();
+        $importDailyUsage = AiImportLog::whereDate('created_at', today())->count();
 
         return Inertia::render('Transfers/Import/Index', [
             'brands' => Brand::orderBy('name')->get(),
@@ -39,19 +36,18 @@ class ImportTransferController extends Controller
             'image' => 'required|image|max:10240', // Max 10MB
         ]);
 
-        // Rate Limiting Logic (System-wide)
-        $minuteKey = 'import_transfer_system_min';
-        $dailyKey = 'import_transfer_system_day';
+        // Rate Limiting Logic (System-wide via DB)
+        $importMinuteUsage = AiImportLog::where('created_at', '>=', now()->subMinute())->count();
+        $importDailyUsage = AiImportLog::whereDate('created_at', today())->count();
 
         // Check daily limit (20)
-        if (RateLimiter::tooManyAttempts($dailyKey, 20)) {
+        if ($importDailyUsage >= 20) {
             return back()->with('error', 'System daily limit of 20 AI imports reached. Please try again tomorrow.');
         }
 
         // Check minute limit (5)
-        if (RateLimiter::tooManyAttempts($minuteKey, 5)) {
-            $seconds = RateLimiter::availableIn($minuteKey);
-            return back()->with('error', "Too many requests. Please wait $seconds seconds before trying again.");
+        if ($importMinuteUsage >= 5) {
+            return back()->with('error', "Too many requests. Please wait 60 seconds before trying again.");
         }
 
         $image = $request->file('image');
@@ -103,15 +99,14 @@ class ImportTransferController extends Controller
                     }
                 }
 
-                // Record hits on successful response
-                RateLimiter::hit($minuteKey, 60);
-                
-                // Hit daily limit until midnight
-                $secondsUntilMidnight = now()->diffInSeconds(Carbon::tomorrow());
-                RateLimiter::hit($dailyKey, $secondsUntilMidnight);
-                
-                $importDailyUsage = RateLimiter::attempts($dailyKey);
-                $importMinuteUsage = RateLimiter::attempts($minuteKey);
+                // Log the successful import
+                AiImportLog::create([
+                    'user_id' => auth()->id()
+                ]);
+
+                // Recalculate usage for view
+                $importDailyUsage = AiImportLog::whereDate('created_at', today())->count();
+                $importMinuteUsage = AiImportLog::where('created_at', '>=', now()->subMinute())->count();
 
                 return Inertia::render('Transfers/Import/Index', [
                     'analysis_result' => ['inventory_items' => $items],
