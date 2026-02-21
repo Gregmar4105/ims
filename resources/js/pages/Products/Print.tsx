@@ -1,5 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
 
 interface Product {
     id: number;
@@ -36,8 +38,15 @@ export default function Print({ products, branchName, isSystemAdmin }: Props) {
     }, []);
 
     return (
-        <div className="bg-white min-h-screen font-sans text-black p-4">
+        <div className="bg-white min-h-screen font-sans text-black p-4 relative">
             <Head title={`Print Product List - ${branchName}`} />
+
+            {/* Floating Print Button for Mobile Fallback */}
+            <div className="fixed bottom-6 right-6 z-50 print:hidden">
+                <Button onClick={() => window.print()} className="rounded-full shadow-lg gap-2" size="lg">
+                    <Printer className="w-5 h-5" /> Print Inventory
+                </Button>
+            </div>
 
             {/* Print Header */}
             <div className="flex justify-between items-end border-b-2 border-black pb-4 mb-6">
@@ -105,8 +114,8 @@ export default function Print({ products, branchName, isSystemAdmin }: Props) {
                                 </td>
                                 <td className="py-3 pl-2 text-right">
                                     <span className={`font-bold py-0.5 px-2 rounded-full ${product.quantity <= 0 ? 'bg-red-100 text-red-800' :
-                                            product.quantity <= 5 ? 'bg-amber-100 text-amber-800' :
-                                                'bg-emerald-100 text-emerald-800'
+                                        product.quantity <= 5 ? 'bg-amber-100 text-amber-800' :
+                                            'bg-emerald-100 text-emerald-800'
                                         }`}>
                                         {product.quantity}
                                     </span>

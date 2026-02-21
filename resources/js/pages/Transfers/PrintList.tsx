@@ -1,7 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Printer, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 interface Transfer {
     id: number;
@@ -37,8 +38,15 @@ export default function PrintList({ transfers, filters }: { transfers: Transfer[
     };
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-white relative">
             <Head title="Print Transfer List" />
+
+            {/* Floating Print Button for Mobile Fallback */}
+            <div className="fixed bottom-6 right-6 z-50 print:hidden">
+                <Button onClick={() => window.print()} className="rounded-full shadow-lg gap-2" size="lg">
+                    <Printer className="w-5 h-5" /> Print Report
+                </Button>
+            </div>
 
             <div className="p-8 max-w-5xl mx-auto print:p-0 print:max-w-none">
                 {/* Header Section */}

@@ -165,82 +165,69 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     function handlePrint() {
         if (!viewCodeProduct) return;
 
-        const printWindow = window.open('', '', 'width=600,height=600');
-        if (printWindow) {
-            // We'll generate the QR/Barcode SVGs/Canvas URIs dynamically if needed, 
-            // but for this layout, we might need to rely on the library rendering them into the print window 
-            // or cloning nodes. Simplest is to re-render them or grab distinct values.
+        const qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
 
-            // Since we can't easily transfer the React component state to the new window exactly as is 
-            // without re-rendering, we will build a raw HTML string with the data.
-            // Note: For Barcode/QR, we might normally need to generate base64, but let's try 
-            // simple text/css layout first or assume we can invoke a script.
-            // actually, easiest way to print React components is to have a hidden print ref, 
-            // but here we are writing raw HTML.
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'absolute';
+        iframe.style.width = '0px';
+        iframe.style.height = '0px';
+        iframe.style.border = 'none';
+        document.body.appendChild(iframe);
 
-            // For QR/Barcode in raw HTML without React in the new window, we can use an img tag 
-            // if we convert the current view's SVGs to data URLs, OR we use a library that runs in the popup.
-            // A quick dirty way: Grab the SVG outerHTML from the current DOM if it exists.
-
-            // USE THE HIDDEN HIGH-RES SOURCE
-            const qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
-            // Barcode libraries often output SVG or Canvas. React-barcode usually SVG.
-            // Let's assume we can grab it. If not, we might fallback to text for now or improve later.
-            // The user's previous code rendered them in a dialog. We can grab them from there.
-            const barcodeSvg = document.querySelectorAll('#hidden-print-codes svg')[1]?.outerHTML || '<!-- Barcode Error -->';
-
-
-            printWindow.document.write(`
+        const doc = iframe.contentWindow?.document || iframe.contentDocument;
+        if (doc) {
+            doc.open();
+            doc.write(`
                 <html>
                     <head>
                         <title>Print Label</title>
                         <style>
                             @page {
-                                size: 28mm 20mm;
+                                size: 38mm 25mm;
                                 margin: 0;
                             }
                             body {
                                 margin: 0;
-                                padding: 0;
+                                padding: 0mm 1mm;
                                 font-family: 'Arial', sans-serif;
-                                width: 28mm;
-                                height: 20mm;
+                                width: 38mm;
+                                height: 25mm;
                                 overflow: hidden;
                                 display: flex;
+                                flex-direction: column;
                                 justify-content: center;
-                                align-items: center;
                                 background: white;
+                                color: black;
                             }
                             .label-container {
-                                width: 27mm; /* Safety margin */
-                                height: 19mm;
-                                border: 1px solid black; /* Optional: remove if pre-printed labels */
+                                width: 100%;
+                                height: 100%;
                                 display: flex;
                                 flex-direction: column;
                                 box-sizing: border-box;
-                                padding: 0.5mm;
-                                position: relative;
                             }
                             
                             /* Main Upper Section */
                             .upper-section {
                                 display: flex;
-                                height: 13mm;
-                                border-bottom: 0.5px solid black;
+                                height: 16mm;
+                                width: 100%;
+                                align-items: center;
+                                padding-top: 1mm;
                             }
                             
                             /* QR Left */
                             .qr-section {
-                                width: 12mm; /* Increased from 10mm */
-                                border-right: 0.5px solid black;
+                                width: 15mm;
+                                height: 15mm;
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
-                                padding: 0.2mm; /* Reduced padding */
+                                flex-shrink: 0;
                             }
                             .qr-section svg {
                                 width: 100% !important;
-                                height: auto !important;
+                                height: 100% !important;
                             }
 
                             /* Right Info Stack */
@@ -248,52 +235,18 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 flex: 1;
                                 display: flex;
                                 flex-direction: column;
-                                overflow: hidden; /* Ensure no spill */
-                            }
-                            
-                            /* Barcode Row */
-                            .barcode-row {
-                                flex: 1;
-                                border-bottom: 0.5px solid black;
-                                padding: 0.2mm;
-                                display: flex;
-                                flex-direction: column;
                                 justify-content: center;
+                                padding-left: 2mm;
                                 overflow: hidden;
                             }
-                            .barcode-row svg {
-                                width: 100% !important;
-                                height: 100% !important;
-                                max-height: 10mm;
-                            }
-                            .field-label {
-                                font-size: 3px;
-                                text-transform: uppercase;
-                                margin-bottom: 0px;
-                                line-height: 1;
-                            }
-                            .field-value {
-                                font-size: 5px;
-                                font-weight: bold;
+                            
+                            .info-line {
+                                font-size: 8px; /* Target text size */
                                 white-space: nowrap;
                                 overflow: hidden;
-                                line-height: 1.1;
-                            }
-                            
-                            /* Codes Split Row */
-                            .codes-row {
-                                flex: 1;
-                                display: flex;
-                            }
-                            .code-box {
-                                flex: 1;
-                                padding: 0.5mm;
-                                display: flex;
-                                flex-direction: column;
-                                justify-content: center;
-                            }
-                            .code-box:first-child {
-                                border-right: 0.5px solid black;
+                                text-overflow: ellipsis;
+                                line-height: 1.2;
+                                font-family: 'Arial', sans-serif;
                             }
 
                             /* Bottom Section */
@@ -301,43 +254,28 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 flex: 1;
                                 display: flex;
                                 flex-direction: column;
+                                justify-content: flex-start;
+                                align-items: center;
+                                text-align: center;
+                                overflow: hidden;
+                                padding-top: 1mm;
                             }
                             
-                            /* Supplier | SKU Row */
-                            .meta-row {
-                                display: flex;
-                                height: 3mm; /* Fixed height for this row */
-                                border-bottom: 0.5px solid black;
-                                align-items: center;
-                            }
-                            .supplier-box {
-                                flex: 1;
-                                border-right: 0.5px solid black;
-                                padding: 0 1mm;
-                                font-size: 3.5px;
-                                font-weight: bold;
-                                overflow: hidden;
+                            .product-name {
+                                font-size: 8px;
                                 white-space: nowrap;
-                                line-height: 3mm;
-                            }
-                            .sku-box {
-                                flex: 1;
-                                padding: 0 1mm;
-                                font-size: 3.5px;
-                                display: flex;
-                                align-items: center;
                                 overflow: hidden;
-                                white-space: nowrap;
+                                text-overflow: ellipsis;
+                                width: 100%;
+                                line-height: 1.2;
+                                font-family: 'Arial', sans-serif;
                             }
 
-                            /* Price Row */
-                            .price-row {
-                                flex: 1;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                font-weight: 800;
-                                font-size: 7px;
+                            .price {
+                                font-size: 10px;
+                                white-space: nowrap;
+                                line-height: 1.2;
+                                font-family: 'Arial', sans-serif;
                             }
 
                         </style>
@@ -349,48 +287,37 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     ${qrSvg}
                                 </div>
                                 <div class="info-right">
-                                    <div class="barcode-row">
-                                        <div class="field-label">Barcode</div>
-                                        <div class="field-value">${viewCodeProduct.barcode || '-'}</div>
-                                    </div>
-                                    <div class="codes-row">
-                                        <div class="code-box">
-                                            <div class="field-label">Code</div>
-                                            <div class="field-value">${viewCodeProduct.code || '-'}</div>
-                                        </div>
-                                        <div class="code-box">
-                                            <div class="field-label">2Code</div>
-                                            <div class="field-value">${viewCodeProduct.code_2 || '-'}</div>
-                                        </div>
-                                    </div>
+                                    <div class="info-line">${viewCodeProduct.barcode || viewCodeProduct.code || '-'}</div>
+                                    <div class="info-line">${viewCodeProduct.supplier?.name || viewCodeProduct.brand?.name || '-'}</div>
+                                    <div class="info-line">${viewCodeProduct.category?.name || '-'}</div>
                                 </div>
                             </div>
                             
                             <div class="bottom-section">
-                                <div class="meta-row">
-                                    <div class="supplier-box">${viewCodeProduct.supplier?.name || 'NO SUPPLIER'}</div>
-                                    <div class="sku-box">
-                                        <span style="font-size: 2.5px; margin-right: 1px; color:#555;">SKU</span> 
-                                        <b>${viewCodeProduct.sku || '-'}</b>
-                                    </div>
-                                </div>
-                                <div class="price-row">
-                                    ₱{viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                                <div class="product-name">${viewCodeProduct.sku || viewCodeProduct.name || '-'}</div>
+                                <div class="price">
+                                    ${viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
                                 </div>
                             </div>
                         </div>
-                        <script>
-                            window.onload = function() {
-                                window.print();
-                                window.onafterprint = function() {
-                                    window.close();
-                                }
-                            }
-                        </script>
                     </body>
                 </html>
-            `);
-            printWindow.document.close();
+                `);
+            doc.close();
+
+            setTimeout(() => {
+                try {
+                    iframe.contentWindow?.focus();
+                    iframe.contentWindow?.print();
+                } catch (e) {
+                    console.error('Print failed', e);
+                }
+                setTimeout(() => {
+                    if (document.body.contains(iframe)) {
+                        document.body.removeChild(iframe);
+                    }
+                }, 5000);
+            }, 500);
         }
     }
 

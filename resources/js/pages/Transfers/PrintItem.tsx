@@ -1,6 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
 
 interface Transfer {
     id: number;
@@ -37,8 +39,15 @@ export default function PrintItem({ transfer }: { transfer: Transfer }) {
     const totalReceived = transfer.items.reduce((sum, item) => sum + item.received_quantity, 0);
 
     return (
-        <div className="min-h-screen bg-white text-gray-900 print:text-black">
+        <div className="min-h-screen bg-white text-gray-900 print:text-black relative">
             <Head title={`Print Transfer #${transfer.id}`} />
+
+            {/* Floating Print Button for Mobile Fallback */}
+            <div className="fixed bottom-6 right-6 z-50 print:hidden">
+                <Button onClick={() => window.print()} className="rounded-full shadow-lg gap-2" size="lg">
+                    <Printer className="w-5 h-5" /> Print Manifest
+                </Button>
+            </div>
 
             <div className="max-w-3xl mx-auto p-8 print:p-0 font-sans">
                 {/* Header */}
