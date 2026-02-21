@@ -177,6 +177,20 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         let qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
         qrSvg = qrSvg.replace(/width="\d+"/, '').replace(/height="\d+"/, '');
 
+        // Helper to determine dynamic font size based on text length
+        const getDynamicSize = (text: string, base: number, threshold: number, min: number) => {
+            if (!text) return `${base}pt`;
+            if (text.length > threshold) {
+                // Linear reduction or just jump to min
+                return `${Math.max(min, base - (text.length - threshold) * 0.2)}pt`;
+            }
+            return `${base}pt`;
+        };
+
+        const skuSize = getDynamicSize(viewCodeProduct.sku || viewCodeProduct.name || '', 8.5, 12, 6);
+        const codeSize = getDynamicSize((viewCodeProduct.code || '') + (viewCodeProduct.code_2 || ''), 7.5, 14, 5.5);
+        const supplierSize = getDynamicSize(viewCodeProduct.supplier?.name || '', 7.5, 14, 5.5);
+
         // CSS-based main window print hack
         // Mobile webviews block window.print() if called in an iframe.
         // So we append the label to the main body, add a print-only visible class, and print the main window.
@@ -260,9 +274,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                 
                 .info-line {
                     font-size: 7pt;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
+                    white-space: normal;
+                    word-break: break-all;
                     line-height: 1.1;
                     width: 100%;
                 }
@@ -280,9 +293,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                 .product-sku {
                     font-size: 8pt;
                     font-weight: bold;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
+                    white-space: normal;
+                    word-break: break-all;
                     width: 100%;
                     line-height: 1;
                 }
@@ -300,16 +312,16 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         ${qrSvg}
                     </div>
                     <div class="info-stack">
-                        <div class="info-line">${viewCodeProduct.barcode || '-'}</div>
-                        <div class="info-line">
+                        <div class="info-line" style="font-size: ${codeSize}">${viewCodeProduct.barcode || '-'}</div>
+                        <div class="info-line" style="font-size: ${codeSize}">
                             ${viewCodeProduct.code || ''} ${viewCodeProduct.code_2 || ''}
                         </div>
-                        <div class="info-line">${viewCodeProduct.supplier?.name || '-'}</div>
+                        <div class="info-line" style="font-size: ${supplierSize}">${viewCodeProduct.supplier?.name || '-'}</div>
                     </div>
                 </div>
                 
                 <div class="bottom-section">
-                    <div class="product-sku">${viewCodeProduct.sku || viewCodeProduct.name || '-'}</div>
+                    <div class="product-sku" style="font-size: ${skuSize}">${viewCodeProduct.sku || viewCodeProduct.name || '-'}</div>
                     <div class="price">
                         ${viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
                     </div>
@@ -722,40 +734,58 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     </div>
 
                     {/* Hidden Label Render for html-to-image Native Share fallback */}
-                    {viewCodeProduct && (
-                        <div style={{ position: 'absolute', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none' }}>
-                            <div id="native-print-label" style={{
-                                width: '28mm',
-                                height: '20mm',
-                                background: 'white',
-                                color: 'black',
-                                fontFamily: 'Arial, sans-serif',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                boxSizing: 'border-box',
-                                padding: '0.5mm 1mm'
-                            }}>
-                                <div style={{ display: 'flex', width: '100%', height: '13mm', alignItems: 'center' }}>
-                                    <div style={{ width: '12mm', height: '12mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                        <QRCode value={viewCodeProduct.qr_code || ''} size={150} style={{ width: '100%', height: '100%' }} />
-                                    </div>
-                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '1mm', overflow: 'hidden' }}>
-                                        <div style={{ fontSize: '7pt', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.1 }}>{viewCodeProduct.barcode || '-'}</div>
-                                        <div style={{ fontSize: '7pt', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.1 }}>
-                                            {viewCodeProduct.code || ''} {viewCodeProduct.code_2 || ''}
+                    {(() => {
+                        const getDynamicSize = (text: string, base: number, threshold: number, min: number) => {
+                            if (!text) return `${base}pt`;
+                            if (text.length > threshold) {
+                                return `${Math.max(min, base - (text.length - threshold) * 0.2)}pt`;
+                            }
+                            return `${base}pt`;
+                        };
+
+                        const skuStr = viewCodeProduct.sku || viewCodeProduct.name || '';
+                        const codesStr = (viewCodeProduct.code || '') + (viewCodeProduct.code_2 || '');
+                        const supplierStr = viewCodeProduct.supplier?.name || '';
+
+                        const skuSize = getDynamicSize(skuStr, 8.5, 12, 6);
+                        const codeSize = getDynamicSize(codesStr, 7.5, 14, 5.5);
+                        const supplierSize = getDynamicSize(supplierStr, 7.5, 14, 5.5);
+
+                        return viewCodeProduct && (
+                            <div style={{ position: 'absolute', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none' }}>
+                                <div id="native-print-label" style={{
+                                    width: '28mm',
+                                    height: '20mm',
+                                    background: 'white',
+                                    color: 'black',
+                                    fontFamily: 'Arial, sans-serif',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    boxSizing: 'border-box',
+                                    padding: '0.5mm 1mm'
+                                }}>
+                                    <div style={{ display: 'flex', width: '100%', height: '13mm', alignItems: 'center' }}>
+                                        <div style={{ width: '12mm', height: '12mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                            <QRCode value={viewCodeProduct.qr_code || ''} size={150} style={{ width: '100%', height: '100%' }} />
                                         </div>
-                                        <div style={{ fontSize: '7pt', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.1 }}>{viewCodeProduct.supplier?.name || '-'}</div>
+                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '1mm', overflow: 'hidden' }}>
+                                            <div style={{ fontSize: codeSize, whiteSpace: 'normal', wordBreak: 'break-all', lineHeight: 1.1 }}>{viewCodeProduct.barcode || '-'}</div>
+                                            <div style={{ fontSize: codeSize, whiteSpace: 'normal', wordBreak: 'break-all', lineHeight: 1.1 }}>
+                                                {viewCodeProduct.code || ''} {viewCodeProduct.code_2 || ''}
+                                            </div>
+                                            <div style={{ fontSize: supplierSize, whiteSpace: 'normal', wordBreak: 'break-all', lineHeight: 1.1 }}>{viewCodeProduct.supplier?.name || '-'}</div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginTop: 'auto' }}>
-                                    <div style={{ fontSize: '8pt', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', lineHeight: 1 }}>{viewCodeProduct.sku || viewCodeProduct.name || '-'}</div>
-                                    <div style={{ fontSize: '10pt', fontWeight: 'normal', lineHeight: 1, marginTop: '0.5mm' }}>
-                                        {viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
+                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginTop: 'auto' }}>
+                                        <div style={{ fontSize: skuSize, fontWeight: 'bold', whiteSpace: 'normal', wordBreak: 'break-all', width: '100%', lineHeight: 1 }}>{skuStr}</div>
+                                        <div style={{ fontSize: '10pt', fontWeight: 'normal', lineHeight: 1, marginTop: '0.5mm' }}>
+                                            {viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
 
                     <DialogFooter className="sm:justify-between">
