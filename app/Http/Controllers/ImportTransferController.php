@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
+use App\Models\Product;
 
 class ImportTransferController extends Controller
 {
@@ -35,6 +36,21 @@ class ImportTransferController extends Controller
                     ?? $raw['output']['inventory_items']
                     ?? $raw['inventory_items']
                     ?? [];
+
+                $branchId = auth()->user()->branch_id;
+                
+                if (is_array($items)) {
+                    foreach ($items as &$item) {
+                        $item['exists_in_branch'] = false;
+                        if (isset($item['item_name']) && $branchId) {
+                            $exists = Product::where('name', 'like', '%' . trim($item['item_name']) . '%')
+                                ->whereHas('branches', function ($query) use ($branchId) {
+                                    $query->where('branches.id', $branchId);
+                                })->exists();
+                            $item['exists_in_branch'] = $exists;
+                        }
+                    }
+                }
 
                 return Inertia::render('Transfers/Import/Index', [
                     'analysis_result' => ['inventory_items' => $items],

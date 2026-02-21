@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save } from 'lucide-react';
+import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save, CheckCircle, PlusCircle, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface InventoryItem {
     item_name: string;
     quantity: number;
+    exists_in_branch?: boolean;
 }
 
 interface AnalysisResult {
@@ -160,7 +161,17 @@ export default function ImportTransferIndex() {
 
                     {/* Results Section */}
                     <div className="space-y-6">
-                        {items.length > 0 ? (
+                        {processing ? (
+                            <Card className="border-blue-200 bg-white shadow-md">
+                                <CardContent className="h-full min-h-[300px] flex flex-col items-center justify-center p-8 text-blue-600">
+                                    <Loader2 className="h-12 w-12 mb-4 animate-spin opacity-60" />
+                                    <h3 className="text-xl font-medium text-blue-900 mb-1">Analyzing Document</h3>
+                                    <p className="text-sm text-blue-700/80 text-center max-w-sm">
+                                        Please wait while the AI extracts inventory items from your image... Supported models may take a few seconds.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ) : items.length > 0 ? (
                             <Card className="border-green-200 bg-white shadow-md">
                                 <CardHeader className="bg-green-50/50 pb-4">
                                     <div className="flex justify-between items-center">
@@ -180,6 +191,7 @@ export default function ImportTransferIndex() {
                                         <TableHeader className="bg-muted/30 sticky top-0 z-10 backdrop-blur">
                                             <TableRow>
                                                 <TableHead>Item Name</TableHead>
+                                                <TableHead className="w-[120px]">Status</TableHead>
                                                 <TableHead className="w-[100px]">Qty</TableHead>
                                                 <TableHead className="w-[50px]"></TableHead>
                                             </TableRow>
@@ -193,6 +205,23 @@ export default function ImportTransferIndex() {
                                                             onChange={(e) => updateItem(idx, 'item_name', e.target.value)}
                                                             className="h-8 border-transparent hover:border-input focus:border-primary bg-transparent"
                                                         />
+                                                    </TableCell>
+                                                    <TableCell className="p-2">
+                                                        {item.exists_in_branch !== undefined ? (
+                                                            item.exists_in_branch ? (
+                                                                <span className="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-green-100 text-green-800 border border-green-200 whitespace-nowrap">
+                                                                    <CheckCircle className="w-3.5 h-3.5" /> Exists
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200 whitespace-nowrap">
+                                                                    <PlusCircle className="w-3.5 h-3.5" /> New Item
+                                                                </span>
+                                                            )
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200 whitespace-nowrap">
+                                                                <HelpCircle className="w-3.5 h-3.5" /> Unknown
+                                                            </span>
+                                                        )}
                                                     </TableCell>
                                                     <TableCell className="p-2">
                                                         <Input
