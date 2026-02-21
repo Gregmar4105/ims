@@ -26,6 +26,7 @@ import {
 import { Label } from "@/components/ui/label";
 import QRCode from "react-qr-code";
 import Barcode from "react-barcode";
+import { toBlob } from 'html-to-image';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -162,11 +163,30 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
 
     const [viewCodeProduct, setViewCodeProduct] = useState<Product | null>(null);
 
-    function handlePrint() {
+    async function handlePrint() {
         if (!viewCodeProduct) return;
 
-        const qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
+        // Try Native Share with html-to-image first
+        const labelNode = document.getElementById('native-print-label');
+        if (labelNode) {
+            try {
+                const blob = await toBlob(labelNode, { pixelRatio: 3 });
+                if (blob) {
+                    const file = new File([blob], 'label.png', { type: blob.type });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'QR Label ' + viewCodeProduct.name,
+                        });
+                        return; // Successfully triggered native share/print popup
+                    }
+                }
+            } catch (error) {
+                console.error('Error generating image for native share fallback to window.print', error);
+            }
+        }
 
+        const qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
         const iframe = document.createElement('iframe');
         iframe.style.position = 'absolute';
         iframe.style.width = '0px';
@@ -706,6 +726,40 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             <Barcode value={viewCodeProduct.barcode} width={4} height={150} fontSize={14} />
                         )}
                     </div>
+
+                    {/* Hidden Label Render for html-to-image Native Share fallback */}
+                    {viewCodeProduct && (
+                        <div style={{ position: 'absolute', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none' }}>
+                            <div id="native-print-label" style={{
+                                width: '38mm',
+                                height: '25mm',
+                                background: 'white',
+                                color: 'black',
+                                fontFamily: 'Arial, sans-serif',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                boxSizing: 'border-box',
+                                padding: '0mm 1mm'
+                            }}>
+                                <div style={{ display: 'flex', height: '16mm', width: '100%', alignItems: 'center', paddingTop: '1mm' }}>
+                                    <div style={{ width: '15mm', height: '15mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <QRCode value={viewCodeProduct.qr_code || ''} size={150} style={{ width: '100%', height: '100%' }} />
+                                    </div>
+                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '2mm', overflow: 'hidden' }}>
+                                        <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{viewCodeProduct.barcode || viewCodeProduct.code || '-'}</div>
+                                        <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{viewCodeProduct.supplier?.name || viewCodeProduct.brand?.name || '-'}</div>
+                                        <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{viewCodeProduct.category?.name || '-'}</div>
+                                    </div>
+                                </div>
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', textAlign: 'center', overflow: 'hidden', paddingTop: '1mm' }}>
+                                    <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', lineHeight: 1.2 }}>{viewCodeProduct.sku || viewCodeProduct.name || '-'}</div>
+                                    <div style={{ fontSize: '10px', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
+                                        ₱{viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     <DialogFooter className="sm:justify-between">
                         <Button type="button" variant="outline" onClick={handlePrint}>
                             <Printer className="mr-2 h-4 w-4" /> Print
