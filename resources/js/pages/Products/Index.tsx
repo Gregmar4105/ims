@@ -178,20 +178,22 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         qrSvg = qrSvg.replace(/width="\d+"/, '').replace(/height="\d+"/, '');
 
         // Helper to determine dynamic font size based on text length
-        const getDynamicSize = (text: string, base: number, threshold: number, min: number, factor: number = 0.35) => {
+        const getDynamicSize = (text: string, base: number, threshold: number, min: number, factor: number = 0.5) => {
             if (!text) return `${base}pt`;
-            if (text.length > threshold) {
-                // More aggressive reduction to force 1-line fit
-                return `${Math.max(min, base - (text.length - threshold) * factor)}pt`;
+            const count = String(text).length;
+            if (count > threshold) {
+                // Ultra-aggressive reduction to force 1-line fit
+                return `${Math.max(min, base - (count - threshold) * factor)}pt`;
             }
             return `${base}pt`;
         };
 
-        // Aggressive thresholds for 28x20mm landscape
-        const skuSize = getDynamicSize(viewCodeProduct.sku || viewCodeProduct.name || '', 9, 14, 5, 0.4);
-        const codeSize = getDynamicSize((viewCodeProduct.code || '') + (viewCodeProduct.code_2 || ''), 7.5, 12, 4.5, 0.45);
-        const supplierSize = getDynamicSize(viewCodeProduct.supplier?.name || '', 7.5, 12, 4.5, 0.45);
-        const barcodeSize = getDynamicSize(viewCodeProduct.barcode || '', 7.5, 12, 4.5, 0.45);
+        // Ultra-aggressive thresholds for 28x20mm landscape
+        // Given ~16mm space for info-stack
+        const skuSize = getDynamicSize(viewCodeProduct.sku || viewCodeProduct.name || '', 9, 12, 4, 0.5);
+        const codeSize = getDynamicSize((viewCodeProduct.code || '') + (viewCodeProduct.code_2 || ''), 7.5, 10, 3.5, 0.6);
+        const supplierSize = getDynamicSize(viewCodeProduct.supplier?.name || '', 7, 10, 3.5, 0.6);
+        const barcodeSize = getDynamicSize(viewCodeProduct.barcode || '', 7, 10, 3.5, 0.6);
 
         // CSS-based main window print hack
         // Mobile webviews block window.print() if called in an iframe.
@@ -253,8 +255,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                 }
 
                 .qr-section {
-                    width: 12mm;
-                    height: 12mm;
+                    width: 10mm;
+                    height: 10mm;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -739,10 +741,11 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     {(() => {
                         if (!viewCodeProduct) return null;
 
-                        const getDynamicSize = (text: string, base: number, threshold: number, min: number, factor: number = 0.35) => {
+                        const getDynamicSize = (text: string, base: number, threshold: number, min: number, factor: number = 0.5) => {
                             if (!text) return `${base}pt`;
-                            if (text.length > threshold) {
-                                return `${Math.max(min, base - (text.length - threshold) * factor)}pt`;
+                            const count = String(text).length;
+                            if (count > threshold) {
+                                return `${Math.max(min, base - (count - threshold) * factor)}pt`;
                             }
                             return `${base}pt`;
                         };
@@ -752,10 +755,10 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         const supplierStr = viewCodeProduct.supplier?.name || '';
                         const barcodeStr = viewCodeProduct.barcode || '';
 
-                        const skuSize = getDynamicSize(skuStr, 9, 14, 5, 0.4);
-                        const codeSize = getDynamicSize(codesStr, 7.5, 12, 4.5, 0.45);
-                        const supplierSize = getDynamicSize(supplierStr, 7.5, 12, 4.5, 0.45);
-                        const barcodeSize = getDynamicSize(barcodeStr, 7.5, 12, 4.5, 0.45);
+                        const skuSize = getDynamicSize(skuStr, 9, 12, 4, 0.5);
+                        const codeSize = getDynamicSize(codesStr, 7.5, 10, 3.5, 0.6);
+                        const supplierSize = getDynamicSize(supplierStr, 7, 10, 3.5, 0.6);
+                        const barcodeSize = getDynamicSize(barcodeStr, 7, 10, 3.5, 0.6);
 
                         return (
                             <div style={{ position: 'absolute', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none' }}>
@@ -771,7 +774,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     padding: '0.5mm 1mm'
                                 }}>
                                     <div style={{ display: 'flex', width: '100%', height: '13mm', alignItems: 'center' }}>
-                                        <div style={{ width: '12mm', height: '12mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <div style={{ width: '10mm', height: '10mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                             <QRCode value={viewCodeProduct.qr_code || ''} size={150} style={{ width: '100%', height: '100%' }} />
                                         </div>
                                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '1mm', overflow: 'hidden' }}>
