@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save, CheckCircle, PlusCircle, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import axios from 'axios';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -20,12 +21,16 @@ interface InventoryItem {
     item_name: string;
     quantity: number;
     exists_in_branch?: boolean;
+    product_id?: number;
     brand_id?: string;
     category_id?: string;
     supplier_id?: string;
-    price?: string;
+    price?: string | number;
     code?: string;
+    code_2?: string;
     sku?: string;
+    physical_location?: string;
+    current_stock?: number;
     description?: string;
     variations?: Variation[];
 }
@@ -98,9 +103,26 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
         setItems(newItems);
     };
 
-    const updateStock = (index: number) => {
+    const updateStock = async (index: number) => {
         const item = items[index];
-        toast.success(`Updated stock for ${item.item_name} by ${item.quantity} units (Simulation)`);
+        if (!item.product_id) return;
+
+        try {
+            const response = await axios.post('/import-transfer/update-stock', {
+                product_id: item.product_id,
+                quantity_added: item.quantity
+            });
+
+            if (response.data.success) {
+                toast.success(response.data.message);
+                const newItems = [...items];
+                newItems[index].current_stock = response.data.new_stock;
+                newItems[index].quantity = 0;
+                setItems(newItems);
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to update stock");
+        }
     };
 
     const removeItem = (index: number) => {
@@ -127,7 +149,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                     </p>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-6">
                     {/* Upload Section */}
                     <Card className="h-fit">
                         <CardHeader>
@@ -247,8 +269,8 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                                 </div>
 
                                                 {/* Header fields always shown */}
-                                                <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-4 items-end mb-4">
-                                                    <div className="space-y-1.5">
+                                                <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end mb-4">
+                                                    <div className="sm:col-span-4 space-y-1.5">
                                                         <Label className="text-xs text-muted-foreground">Product Name</Label>
                                                         <Input
                                                             value={item.item_name}
@@ -256,66 +278,90 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                                             className="font-medium"
                                                         />
                                                     </div>
-                                                    <div className="space-y-1.5">
+
+                                                    {item.exists_in_branch ? (
+                                                        <div className="sm:col-span-2 space-y-1.5">
+                                                            <Label className="text-xs text-muted-foreground">Current Stock</Label>
+                                                            <div className="flex h-9 w-full items-center justify-center rounded-md border border-input bg-muted/30 px-3 py-1 text-sm font-medium">
+                                                                {item.current_stock ?? 0}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="sm:col-span-2 hidden sm:block"></div>
+                                                    )}
+
+                                                    <div className="sm:col-span-6 space-y-1.5">
                                                         <Label className="text-xs text-muted-foreground">Quantity Sent</Label>
-                                                        <Input
-                                                            type="number"
-                                                            value={item.quantity}
-                                                            onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value) || 0)}
-                                                            className="text-right font-medium"
-                                                        />
+                                                        <div className="flex gap-2">
+                                                            <Input
+                                                                type="number"
+                                                                value={item.quantity}
+                                                                onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value) || 0)}
+                                                                className="text-right font-medium"
+                                                            />
+                                                            {item.exists_in_branch && (
+                                                                <Button
+                                                                    variant="secondary"
+                                                                    onClick={() => updateStock(idx)}
+                                                                    disabled={!item.quantity || item.quantity <= 0}
+                                                                    className="shrink-0"
+                                                                >
+                                                                    Update Stock
+                                                                </Button>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                {!item.exists_in_branch ? (
-                                                    <div className="pt-4 border-t mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                                        <div className="space-y-1.5">
-                                                            <Label className="text-xs text-muted-foreground">Category</Label>
-                                                            <Select value={item.category_id || ''} onValueChange={(val) => updateItem(idx, 'category_id', val)}>
-                                                                <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
-                                                                <SelectContent>
-                                                                    {categories.map((c) => (<SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-                                                        <div className="space-y-1.5">
-                                                            <Label className="text-xs text-muted-foreground">Brand</Label>
-                                                            <Select value={item.brand_id || ''} onValueChange={(val) => updateItem(idx, 'brand_id', val)}>
-                                                                <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
-                                                                <SelectContent>
-                                                                    {brands.map((b) => (<SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-                                                        <div className="space-y-1.5">
-                                                            <Label className="text-xs text-muted-foreground">Supplier (Optional)</Label>
-                                                            <Select value={item.supplier_id || ''} onValueChange={(val) => updateItem(idx, 'supplier_id', val)}>
-                                                                <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
-                                                                <SelectContent>
-                                                                    {suppliers.map((s) => (<SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-                                                        <div className="space-y-1.5">
-                                                            <Label className="text-xs text-muted-foreground">Price (₱)</Label>
-                                                            <Input type="number" className="h-9" value={item.price || ''} onChange={(e) => updateItem(idx, 'price', e.target.value)} placeholder="0.00" />
-                                                        </div>
-                                                        <div className="space-y-1.5">
-                                                            <Label className="text-xs text-muted-foreground">Code</Label>
-                                                            <Input className="h-9" value={item.code || ''} onChange={(e) => updateItem(idx, 'code', e.target.value)} placeholder="Product code" />
-                                                        </div>
-                                                        <div className="space-y-1.5">
-                                                            <Label className="text-xs text-muted-foreground">SKU</Label>
-                                                            <Input className="h-9" value={item.sku || ''} onChange={(e) => updateItem(idx, 'sku', e.target.value)} placeholder="SKU" />
-                                                        </div>
+                                                <div className="pt-4 border-t mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground">Category</Label>
+                                                        <Select value={item.category_id || ''} onValueChange={(val) => updateItem(idx, 'category_id', val)}>
+                                                            <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
+                                                            <SelectContent>
+                                                                {categories.map((c) => (<SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>))}
+                                                            </SelectContent>
+                                                        </Select>
                                                     </div>
-                                                ) : (
-                                                    <div className="pt-3 flex justify-end">
-                                                        <Button size="sm" variant="secondary" onClick={() => updateStock(idx)}>
-                                                            Update Stock Only
-                                                        </Button>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground">Brand</Label>
+                                                        <Select value={item.brand_id || ''} onValueChange={(val) => updateItem(idx, 'brand_id', val)}>
+                                                            <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
+                                                            <SelectContent>
+                                                                {brands.map((b) => (<SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>))}
+                                                            </SelectContent>
+                                                        </Select>
                                                     </div>
-                                                )}
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground">Supplier (Optional)</Label>
+                                                        <Select value={item.supplier_id || ''} onValueChange={(val) => updateItem(idx, 'supplier_id', val)}>
+                                                            <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
+                                                            <SelectContent>
+                                                                {suppliers.map((s) => (<SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground">Price (₱)</Label>
+                                                        <Input type="number" className="h-9" value={item.price || ''} onChange={(e) => updateItem(idx, 'price', e.target.value)} placeholder="0.00" />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground">Code</Label>
+                                                        <Input className="h-9" value={item.code || ''} onChange={(e) => updateItem(idx, 'code', e.target.value)} placeholder="Code" />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground">2Code</Label>
+                                                        <Input className="h-9" value={item.code_2 || ''} onChange={(e) => updateItem(idx, 'code_2', e.target.value)} placeholder="2Code" />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground">SKU</Label>
+                                                        <Input className="h-9" value={item.sku || ''} onChange={(e) => updateItem(idx, 'sku', e.target.value)} placeholder="SKU" />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground">Physical Loc.</Label>
+                                                        <Input className="h-9" value={item.physical_location || ''} onChange={(e) => updateItem(idx, 'physical_location', e.target.value)} placeholder="Location" />
+                                                    </div>
+                                                </div>
                                             </CardContent>
                                         </Card>
                                     ))}

@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Supplier;
+use App\Models\BranchProduct;
 
 class ImportTransferController extends Controller
 {
@@ -50,11 +51,28 @@ class ImportTransferController extends Controller
                     foreach ($items as &$item) {
                         $item['exists_in_branch'] = false;
                         if (isset($item['item_name']) && $branchId) {
-                            $exists = Product::where('name', 'like', '%' . trim($item['item_name']) . '%')
-                                ->whereHas('branches', function ($query) use ($branchId) {
-                                    $query->where('branches.id', $branchId);
-                                })->exists();
-                            $item['exists_in_branch'] = $exists;
+                            $product = Product::with(['branches' => function ($query) use ($branchId) {
+                                $query->where('branches.id', $branchId);
+                            }])->where('name', 'like', '%' . trim($item['item_name']) . '%')->first();
+
+                            if ($product && $product->branches->isNotEmpty()) {
+                                $item['exists_in_branch'] = true;
+                                $item['product_id'] = $product->id;
+                                $item['brand_id'] = (string) $product->brand_id;
+                                $item['category_id'] = (string) $product->category_id;
+                                $item['supplier_id'] = (string) $product->supplier_id;
+                                $item['price'] = $product->price;
+                                $item['code'] = $product->code;
+                                $item['code_2'] = $product->code_2;
+                                $item['sku'] = $product->sku;
+                                
+                                $branchProduct = $product->branches->first()->pivot;
+                                $item['current_stock'] = $branchProduct->quantity;
+                                $item['physical_location'] = $branchProduct->physical_location;
+                            } else {
+                                $item['exists_in_branch'] = false;
+                                $item['current_stock'] = 0;
+                            }
                         }
                     }
                 }
@@ -73,5 +91,32 @@ class ImportTransferController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Error communicating with AI service: ' . $e->getMessage());
         }
+    }
+
+    public function updateStock(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'quantity_added' => 'required|integer|min:1',
+        ]);
+
+        $branchId = auth()->user()->branch_id;
+
+        $branchProduct = BranchProduct::where('product_id', $request->product_id)
+            ->where('branch_id', $branchId)
+            ->first();
+
+        if ($branchProduct) {
+            $branchProduct->quantity += $request->quantity_added;
+            $branchProduct->save();
+
+            return response()->json([
+                'success' => true,
+                'new_stock' => $branchProduct->quantity,
+                'message' => 'Stock updated successfully.'
+            ]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Product not found in this branch.'], 404);
     }
 }
