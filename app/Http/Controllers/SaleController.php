@@ -9,19 +9,38 @@ use App\Models\SaleReturn;
 use App\Models\Product;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class SaleController extends Controller
 {
     /**
      * Display sales list - all for sysadmin, branch-only for others
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         
         $query = Sale::with(['items.product', 'branch', 'readiedBy', 'approvedBy'])
-            ->whereIn('status', ['completed', 'cancelled'])
             ->latest();
+            
+        // Status Filter
+        $statusFilter = $request->query('status_filter', 'all');
+        if ($statusFilter !== 'all') {
+            $query->where('status', $statusFilter);
+        } else {
+            $query->whereIn('status', ['completed', 'cancelled']);
+        }
+            
+        // Date Filters
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+        
+        if ($dateFrom) {
+            $query->where('created_at', '>=', Carbon::parse($dateFrom)->startOfDay());
+        }
+        if ($dateTo) {
+            $query->where('created_at', '<=', Carbon::parse($dateTo)->endOfDay());
+        }
         
         // System Admin sees all, others see their branch only
         if (!$user->hasRole('System Administrator') && $user->branch_id) {
@@ -29,29 +48,47 @@ class SaleController extends Controller
         }
         
         // Search
-        if (request('search')) {
-            $search = request('search');
+        if ($request->query('search')) {
+            $search = $request->query('search');
             $query->where(function($q) use ($search) {
                 $q->where('id', 'like', "%{$search}%")
                   ->orWhereHas('branch', fn($q) => $q->where('branch_name', 'like', "%{$search}%"));
             });
         }
 
-        // Clone query for stats (respecting current user branch filters but ignoring pagination/search for "Total" context if desired,
-        // or we can show "Totals matching search". 
-        // Usually top summary is "All Time" or "This Month". Let's do "All Time" respecting access control.
-        
-        $statsQuery = Sale::whereIn('status', ['completed', 'cancelled']);
+        // Stats queries (respecting current user branch filters but NOT search/date filters to show global totals)
+        $statsQuery = Sale::where('status', 'completed');
         if (!$user->hasRole('System Administrator') && $user->branch_id) {
             $statsQuery->where('branch_id', $user->branch_id);
         }
+        
+        $todayStart = now()->startOfDay();
+        $weekStart = now()->startOfWeek();
+        $monthStart = now()->startOfMonth();
+
+        // Calculate revenues efficiently
+        $completedSales = $statsQuery->with('items')->get();
+        
+        $totalRevenue = 0;
+        $todayRevenue = 0;
+        $weeklyRevenue = 0;
+        $monthlyRevenue = 0;
+        
+        foreach ($completedSales as $sale) {
+            $saleRevenue = $sale->items->sum(fn($item) => $item->quantity * $item->price);
+            $totalRevenue += $saleRevenue;
+            
+            if ($sale->created_at >= $todayStart) $todayRevenue += $saleRevenue;
+            if ($sale->created_at >= $weekStart) $weeklyRevenue += $saleRevenue;
+            if ($sale->created_at >= $monthStart) $monthlyRevenue += $saleRevenue;
+        }
 
         $stats = [
-            'total_sales' => $statsQuery->count(),
-            'total_revenue' => (clone $statsQuery)->where('status', 'completed')->with('items')->get()->sum(function($sale) {
-                 return $sale->items->sum(fn($item) => $item->quantity * $item->price);
-            }),
-            'completed' => (clone $statsQuery)->where('status', 'completed')->count(),
+            'total_sales' => $completedSales->count(), // All time completed
+            'total_revenue' => $totalRevenue,
+            'today_revenue' => $todayRevenue,
+            'weekly_revenue' => $weeklyRevenue,
+            'monthly_revenue' => $monthlyRevenue,
         ];
         
         $sales = $query->paginate(10)->withQueryString();
@@ -59,7 +96,74 @@ class SaleController extends Controller
         return Inertia::render('Sales/Index', [
             'sales' => $sales,
             'stats' => $stats,
-            'filters' => request()->only(['search']),
+            'filters' => $request->only(['search', 'date_from', 'date_to', 'status_filter']),
+        ]);
+    }
+
+    /**
+     * Print the filtered list of sales
+     */
+    public function printList(Request $request)
+    {
+        $user = auth()->user();
+        
+        $query = Sale::with(['items.product', 'branch', 'readiedBy', 'approvedBy'])
+            ->latest();
+            
+        // Reuse identical filters from index
+        $statusFilter = $request->query('status_filter', 'all');
+        if ($statusFilter !== 'all') {
+            $query->where('status', $statusFilter);
+        } else {
+            $query->whereIn('status', ['completed', 'cancelled']);
+        }
+            
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+        
+        if ($dateFrom) {
+            $query->where('created_at', '>=', Carbon::parse($dateFrom)->startOfDay());
+        }
+        if ($dateTo) {
+            $query->where('created_at', '<=', Carbon::parse($dateTo)->endOfDay());
+        }
+        
+        if (!$user->hasRole('System Administrator') && $user->branch_id) {
+            $query->where('branch_id', $user->branch_id);
+        }
+        
+        if ($request->query('search')) {
+            $search = $request->query('search');
+            $query->where(function($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                  ->orWhereHas('branch', fn($q) => $q->where('branch_name', 'like', "%{$search}%"));
+            });
+        }
+        
+        // Get all unpaginated for printing
+        $sales = $query->get();
+        
+        return Inertia::render('Sales/PrintList', [
+            'sales' => $sales,
+            'filters' => $request->only(['search', 'date_from', 'date_to', 'status_filter']),
+        ]);
+    }
+
+    /**
+     * Print an individual sale as a non-official invoice
+     */
+    public function printItem(Sale $sale)
+    {
+        $user = auth()->user();
+        
+        if (!$user->hasRole('System Administrator') && $user->branch_id !== $sale->branch_id) {
+            abort(403, 'Unauthorized to view this sale');
+        }
+        
+        $sale->load(['items.product', 'branch', 'readiedBy', 'approvedBy']);
+        
+        return Inertia::render('Sales/PrintItem', [
+            'sale' => $sale,
         ]);
     }
 

@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, CheckCircle, XCircle, Clock, User, ArrowRight, Barcode, QrCode, Store, Search, DollarSign, Briefcase } from 'lucide-react';
+import { Package, CheckCircle, XCircle, Clock, User, ArrowRight, Barcode, QrCode, Store, Search, DollarSign, Briefcase, Printer } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import Pagination from '@/components/Pagination';
 
 interface SaleItem {
@@ -49,7 +51,9 @@ interface PaginatedData<T> {
 interface Stats {
     total_sales: number;
     total_revenue: number;
-    completed: number;
+    today_revenue: number;
+    weekly_revenue: number;
+    monthly_revenue: number;
 }
 
 const breadcrumbs = [
@@ -59,17 +63,47 @@ const breadcrumbs = [
     },
 ];
 
-export default function Index({ sales, stats, filters }: { sales: PaginatedData<Sale>, stats: Stats, filters: { search?: string } }) {
+export default function Index({ sales, stats, filters }: { sales: PaginatedData<Sale>, stats: Stats, filters: { search?: string, date_from?: string, date_to?: string, status_filter?: string } }) {
     const [search, setSearch] = useState(filters.search || '');
+    const [dateFrom, setDateFrom] = useState(filters.date_from || '');
+    const [dateTo, setDateTo] = useState(filters.date_to || '');
+    const [statusFilter, setStatusFilter] = useState(filters.status_filter || 'all');
 
     useEffect(() => {
         const timer = setTimeout(() => {
+            // Only search is debounced
             if (search !== (filters.search || '')) {
-                router.get('/sales-list', { search }, { preserveState: true, replace: true, preserveScroll: true });
+                performSearch();
             }
         }, 300);
         return () => clearTimeout(timer);
     }, [search]);
+
+    const performSearch = () => {
+        router.get('/sales-list', {
+            search,
+            date_from: dateFrom,
+            date_to: dateTo,
+            status_filter: statusFilter
+        }, { preserveState: true, replace: true, preserveScroll: true });
+    };
+
+    // Filter change handler
+    useEffect(() => {
+        if (dateFrom !== (filters.date_from || '') || dateTo !== (filters.date_to || '') || statusFilter !== (filters.status_filter || 'all')) {
+            performSearch();
+        }
+    }, [dateFrom, dateTo, statusFilter]);
+
+    const openPrint = () => {
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        if (dateFrom) params.append('date_from', dateFrom);
+        if (dateTo) params.append('date_to', dateTo);
+        if (statusFilter && statusFilter !== 'all') params.append('status_filter', statusFilter);
+
+        window.open(`/sales-list/print?${params.toString()}`, '_blank');
+    };
 
     const formatDate = (dateString: string) => {
         return new Intl.DateTimeFormat('en-US', {
@@ -113,53 +147,106 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                         <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Sales History</h1>
                         <p className="text-muted-foreground mt-1">View all completed and cancelled sales.</p>
                     </div>
+                    <Button onClick={openPrint} className="flex gap-2">
+                        <Printer className="w-4 h-4" /> Print List
+                    </Button>
                 </div>
 
                 {/* Summary Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-                            <Store className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
+                            <DollarSign className="h-4 w-4 text-emerald-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.total_sales}</div>
-                            <p className="text-xs text-muted-foreground">All time records</p>
+                            <div className="text-2xl font-bold">${stats.today_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                            <DollarSign className="h-4 w-4 text-green-500" />
+                            <CardTitle className="text-sm font-medium">Weekly Revenue</CardTitle>
+                            <DollarSign className="h-4 w-4 text-emerald-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">${stats.weekly_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+                            <DollarSign className="h-4 w-4 text-green-600" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">${stats.monthly_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">All-Time Revenue</CardTitle>
+                            <Briefcase className="h-4 w-4 text-blue-500" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">${stats.total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                            <p className="text-xs text-muted-foreground">From completed sales</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Completed Count</CardTitle>
-                            <CheckCircle className="h-4 w-4 text-blue-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.completed}</div>
-                            <p className="text-xs text-muted-foreground">Successful transactions</p>
+                            <p className="text-xs text-muted-foreground mt-1">{stats.total_sales} total successful trades</p>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Search Bar */}
-                <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
+                {/* Search Bar & Filters */}
+                <div className="flex flex-col md:flex-row items-end md:items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
+                    <div className="relative flex-1 w-full min-w-[300px]">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             type="search"
                             placeholder="Search by ID, Branch..."
-                            className="pl-8 max-w-md"
+                            className="pl-8"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
+                    </div>
+
+                    <div className="flex gap-2 w-full md:w-auto overflow-x-auto">
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="w-[140px]">
+                                <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-md border">
+                            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">From:</span>
+                            <input
+                                type="date"
+                                className="bg-transparent border-none text-sm outline-none w-[110px]"
+                                value={dateFrom}
+                                onChange={(e) => setDateFrom(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-md border">
+                            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">To:</span>
+                            <input
+                                type="date"
+                                className="bg-transparent border-none text-sm outline-none w-[110px]"
+                                value={dateTo}
+                                onChange={(e) => setDateTo(e.target.value)}
+                            />
+                        </div>
+
+                        {(dateFrom || dateTo || statusFilter !== 'all') && (
+                            <Button variant="ghost" size="icon" onClick={() => {
+                                setDateFrom('');
+                                setDateTo('');
+                                setStatusFilter('all');
+                            }}>
+                                <XCircle className="w-4 h-4 text-muted-foreground" />
+                            </Button>
+                        )}
                     </div>
                 </div>
 
@@ -201,6 +288,16 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                                                     </span>
                                                 )}
                                             </div>
+                                        </div>
+                                        <div className="flex items-center mt-4 sm:mt-0">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="flex items-center gap-2"
+                                                onClick={() => window.open(`/sales/${sale.id}/print`, '_blank')}
+                                            >
+                                                <Printer className="w-3.5 h-3.5" /> Print Receipt
+                                            </Button>
                                         </div>
                                     </div>
                                 </CardHeader>
