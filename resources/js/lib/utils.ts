@@ -45,30 +45,30 @@ export async function handleNativePrintFallback(elementId: string, filename: str
         pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
 
         // Try Median JS Bridge if it's injected
-        if (typeof window !== 'undefined' && (window as any).median?.share?.sharePage) {
-            try {
-                // Get the PDF as a data URI string (base64)
-                const pdfBase64 = pdf.output('datauristring');
-                (window as any).median.share.sharePage({ url: pdfBase64 });
-                return true;
-            } catch (err: any) {
-                alert("Median sharePage error: " + (err?.message || JSON.stringify(err)));
+        if (typeof window !== 'undefined') {
+            const pdfBlob = pdf.output('blob');
+            const blobUrl = URL.createObjectURL(pdfBlob);
+
+            if ((window as any).median?.share?.downloadFile) {
+                try {
+                    (window as any).median.share.downloadFile({ url: blobUrl });
+                    return true;
+                } catch (err: any) {
+                    alert("Median sharePage error: " + (err?.message || JSON.stringify(err)));
+                }
             }
         }
 
         // Standard Web Share API Fallback for mobile Safari/Chrome
-        if (navigator.canShare) {
-            // Get the PDF as a Blob to use with File API
-            const pdfBlob = pdf.output('blob');
-            const file = new File([pdfBlob], filename + '.pdf', { type: 'application/pdf' });
+        const pdfBlob = pdf.output('blob');
+        const file = new File([pdfBlob], filename + '.pdf', { type: 'application/pdf' });
 
-            if (navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Print Document',
-                });
-                return true;
-            }
+        if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: 'Print Document',
+            });
+            return true;
         }
 
     } catch (e: any) {
