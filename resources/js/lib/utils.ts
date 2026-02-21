@@ -1,7 +1,8 @@
 import { InertiaLinkProps } from '@inertiajs/react';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { toBlob } from 'html-to-image';
+import { toCanvas } from 'html-to-image';
+import { jsPDF } from 'jspdf';
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -22,36 +23,45 @@ export async function handleNativePrintFallback(elementId: string, filename: str
     const el = document.getElementById(elementId);
     if (!el) return false;
 
-    // Temporarily apply print styles if needed? Actually html-to-image usually respects the current style.
-
     try {
-        const blob = await toBlob(el, { pixelRatio: 2, backgroundColor: '#ffffff' });
-        if (!blob) return false;
+        // We use toCanvas instead of toBlob to get the dimensions easily and draw it into jsPDF
+        // We set a high scale for clear printing
+        const canvas = await toCanvas(el, { pixelRatio: 2, backgroundColor: '#ffffff' });
 
-        // Force Android/Median to treat this as a document/PDF rather than a basic image 
-        // to encourage the "Print" option in the intent chooser.
-        const file = new File([blob], filename + '.pdf', { type: 'application/pdf' });
+        // Calculate proportions
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
 
-        // 1. Try Median JS Bridge if it's injected
+        // Create PDF. Use physical size or a standard page size depending on aspect ratio.
+        // Let's use pt for precise pixel mapping, orientation based on the element.
+        const orientation = imgWidth > imgHeight ? 'landscape' : 'portrait';
+        const pdf = new jsPDF(orientation, 'pt', [imgWidth, imgHeight]);
+
+        // Add the canvas image to the PDF
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+
+        // Try Median JS Bridge if it's injected
         if (typeof window !== 'undefined' && (window as any).median?.share?.sharePage) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onloadend = () => {
-                const base64data = reader.result as string;
-                // Replace the MIME type in the base64 string to match the forced PDF type
-                const pdfBase64 = base64data.replace(/^data:image\/(png|jpeg);/, 'data:application/pdf;');
-                (window as any).median.share.sharePage({ url: pdfBase64 });
-            };
-            return true; // Assume success if Median intercept function exists
+            // Get the PDF as a data URI string (base64)
+            const pdfBase64 = pdf.output('datauristring');
+            (window as any).median.share.sharePage({ url: pdfBase64 });
+            return true;
         }
 
-        // 2. Try Standard Web Share API (often blocked in Median but works for native Safari/Chrome mobile)
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                files: [file],
-                title: 'Print Document',
-            });
-            return true;
+        // Standard Web Share API Fallback for mobile Safari/Chrome
+        if (navigator.canShare) {
+            // Get the PDF as a Blob to use with File API
+            const pdfBlob = pdf.output('blob');
+            const file = new File([pdfBlob], filename + '.pdf', { type: 'application/pdf' });
+
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Print Document',
+                });
+                return true;
+            }
         }
 
     } catch (e) {
