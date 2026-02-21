@@ -173,7 +173,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
             return; // Exit if mobile handled it natively
         }
 
-        const qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
+        // Process SVG to remove hardcoded dimensions so it scales correctly in the label
+        let qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
+        qrSvg = qrSvg.replace(/width="\d+"/, '').replace(/height="\d+"/, '');
 
         // CSS-based main window print hack
         // Mobile webviews block window.print() if called in an iframe.
@@ -192,11 +194,13 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     }
                     .print-only-label {
                         display: block !important;
-                        position: absolute;
+                        position: fixed;
                         top: 0;
                         left: 0;
                         width: 100%;
+                        height: 100%;
                         background: white !important;
+                        z-index: 99999;
                     }
                     @page {
                         size: 38mm 25mm;
@@ -206,6 +210,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         margin: 0 !important;
                         padding: 0 !important;
                         background: white !important;
+                        width: 38mm !important;
+                        height: 25mm !important;
                     }
                 }
                 
