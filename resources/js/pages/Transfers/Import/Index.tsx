@@ -214,7 +214,7 @@ export default function ImportTransferIndex() {
                                                                 </span>
                                                             ) : (
                                                                 <span className="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200 whitespace-nowrap">
-                                                                    <PlusCircle className="w-3.5 h-3.5" /> New Item
+                                                                    New Item
                                                                 </span>
                                                             )
                                                         ) : (
