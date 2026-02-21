@@ -17,8 +17,11 @@ class ImportTransferController extends Controller
 {
     public function index()
     {
-        // System-wide daily tracking key
+        // System-wide tracking keys
+        $minuteKey = 'import_transfer_system_min';
         $dailyKey = 'import_transfer_system_day';
+        
+        $importMinuteUsage = RateLimiter::attempts($minuteKey);
         $importDailyUsage = RateLimiter::attempts($dailyKey);
 
         return Inertia::render('Transfers/Import/Index', [
@@ -26,6 +29,7 @@ class ImportTransferController extends Controller
             'categories' => Category::orderBy('name')->get(),
             'suppliers' => Supplier::orderBy('name')->get(),
             'importDailyUsage' => $importDailyUsage,
+            'importMinuteUsage' => $importMinuteUsage,
         ]);
     }
 
@@ -107,6 +111,7 @@ class ImportTransferController extends Controller
                 RateLimiter::hit($dailyKey, $secondsUntilMidnight);
                 
                 $importDailyUsage = RateLimiter::attempts($dailyKey);
+                $importMinuteUsage = RateLimiter::attempts($minuteKey);
 
                 return Inertia::render('Transfers/Import/Index', [
                     'analysis_result' => ['inventory_items' => $items],
@@ -115,6 +120,7 @@ class ImportTransferController extends Controller
                     'categories' => Category::orderBy('name')->get(),
                     'suppliers' => Supplier::orderBy('name')->get(),
                     'importDailyUsage' => $importDailyUsage,
+                    'importMinuteUsage' => $importMinuteUsage,
                 ]);
             } else {
                 return back()->with('error', 'Failed to process image. Status: ' . $response->status());

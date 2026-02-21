@@ -55,9 +55,10 @@ interface IndexProps {
     categories: { id: number; name: string }[];
     suppliers: { id: number; name: string }[];
     importDailyUsage?: number;
+    importMinuteUsage?: number;
 }
 
-export default function ImportTransferIndex({ brands = [], categories = [], suppliers = [], importDailyUsage = 0 }: IndexProps) {
+export default function ImportTransferIndex({ brands = [], categories = [], suppliers = [], importDailyUsage = 0, importMinuteUsage = 0 }: IndexProps) {
     const { data, setData, post, processing, errors } = useForm({
         image: null as File | null,
     });
@@ -189,9 +190,14 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                 </CardTitle>
                                 <CardDescription className="flex items-center justify-between mt-1">
                                     <span>Supported formats: JPG, PNG</span>
-                                    <span className={`text-xs font-semibold ${importDailyUsage >= 20 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                                        {importDailyUsage} / 20 Daily Limit
-                                    </span>
+                                    <div className="flex items-center gap-3">
+                                        <span className={`text-xs font-semibold ${importMinuteUsage >= 5 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                                            {importMinuteUsage} / 5 Per Minute
+                                        </span>
+                                        <span className={`text-xs font-semibold ${importDailyUsage >= 20 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                                            {importDailyUsage} / 20 Daily Limit
+                                        </span>
+                                    </div>
                                 </CardDescription>
                             </div>
                         </CardHeader>
@@ -242,8 +248,8 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                 <Button
                                     type="submit"
                                     className="w-full"
-                                    disabled={processing || !data.image || importDailyUsage >= 20}
-                                    variant={importDailyUsage >= 20 ? "secondary" : "default"}
+                                    disabled={processing || !data.image || importDailyUsage >= 20 || importMinuteUsage >= 5}
+                                    variant={(importDailyUsage >= 20 || importMinuteUsage >= 5) ? "secondary" : "default"}
                                 >
                                     {processing ? (
                                         <>
@@ -252,6 +258,8 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                         </>
                                     ) : importDailyUsage >= 20 ? (
                                         "Daily Limit Reached"
+                                    ) : importMinuteUsage >= 5 ? (
+                                        "Minute Limit Reached (Wait 60s)"
                                     ) : (
                                         "Upload & Analyze"
                                     )}
