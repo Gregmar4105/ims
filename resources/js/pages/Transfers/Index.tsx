@@ -199,7 +199,7 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Today's Quantity</CardTitle>
+                            <CardTitle className="text-sm font-medium">Today's Transfers</CardTitle>
                             <Package className="h-4 w-4 text-emerald-500" />
                         </CardHeader>
                         <CardContent>
@@ -209,7 +209,7 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                     {showWeekly && (
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Weekly Quantity</CardTitle>
+                                <CardTitle className="text-sm font-medium">Weekly Transfers</CardTitle>
                                 <Package className="h-4 w-4 text-emerald-500" />
                             </CardHeader>
                             <CardContent>
@@ -220,7 +220,7 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                     {showMonthly && (
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Monthly Quantity</CardTitle>
+                                <CardTitle className="text-sm font-medium">Monthly Transfers</CardTitle>
                                 <Package className="h-4 w-4 text-green-600" />
                             </CardHeader>
                             <CardContent>
@@ -231,7 +231,7 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                     {showAllTime && (
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">All-Time Quantity</CardTitle>
+                                <CardTitle className="text-sm font-medium">All-Time Transfers</CardTitle>
                                 <Truck className="h-4 w-4 text-blue-500" />
                             </CardHeader>
                             <CardContent>
