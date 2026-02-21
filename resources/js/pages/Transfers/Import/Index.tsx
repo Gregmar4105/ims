@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save, CheckCircle, PlusCircle, HelpCircle } from 'lucide-react';
+import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save, CheckCircle, PlusCircle, HelpCircle, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { Label } from "@/components/ui/label";
@@ -54,9 +54,10 @@ interface IndexProps {
     brands: { id: number; name: string }[];
     categories: { id: number; name: string }[];
     suppliers: { id: number; name: string }[];
+    importDailyUsage?: number;
 }
 
-export default function ImportTransferIndex({ brands = [], categories = [], suppliers = [] }: IndexProps) {
+export default function ImportTransferIndex({ brands = [], categories = [], suppliers = [], importDailyUsage = 0 }: IndexProps) {
     const { data, setData, post, processing, errors } = useForm({
         image: null as File | null,
     });
@@ -177,9 +178,22 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Upload Section */}
                     <Card className="lg:col-span-4 sticky top-6">
-                        <CardHeader>
-                            <CardTitle>Upload Image</CardTitle>
-                            <CardDescription>Supported formats: JPG, PNG</CardDescription>
+                        <CardHeader className="flex flex-col gap-2">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    Upload Image
+                                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-none font-medium whitespace-nowrap text-[10px] px-1.5 py-0 h-4">
+                                        <Sparkles className="w-2.5 h-2.5 mr-1" />
+                                        Larable AI default Subscription
+                                    </Badge>
+                                </CardTitle>
+                                <CardDescription className="flex items-center justify-between mt-1">
+                                    <span>Supported formats: JPG, PNG</span>
+                                    <span className={`text-xs font-semibold ${importDailyUsage >= 20 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                                        {importDailyUsage} / 20 Daily Limit
+                                    </span>
+                                </CardDescription>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={submit} className="space-y-4">
@@ -225,12 +239,19 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                     </div>
                                 )}
 
-                                <Button type="submit" className="w-full" disabled={processing || !data.image}>
+                                <Button
+                                    type="submit"
+                                    className="w-full"
+                                    disabled={processing || !data.image || importDailyUsage >= 20}
+                                    variant={importDailyUsage >= 20 ? "secondary" : "default"}
+                                >
                                     {processing ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                             Analyzing...
                                         </>
+                                    ) : importDailyUsage >= 20 ? (
+                                        "Daily Limit Reached"
                                     ) : (
                                         "Upload & Analyze"
                                     )}
