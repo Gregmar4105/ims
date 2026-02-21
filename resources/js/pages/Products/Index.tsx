@@ -735,6 +735,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
 
                     {/* Hidden Label Render for html-to-image Native Share fallback */}
                     {(() => {
+                        if (!viewCodeProduct) return null;
+
                         const getDynamicSize = (text: string, base: number, threshold: number, min: number) => {
                             if (!text) return `${base}pt`;
                             if (text.length > threshold) {
@@ -751,7 +753,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         const codeSize = getDynamicSize(codesStr, 7.5, 14, 5.5);
                         const supplierSize = getDynamicSize(supplierStr, 7.5, 14, 5.5);
 
-                        return viewCodeProduct && (
+                        return (
                             <div style={{ position: 'absolute', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none' }}>
                                 <div id="native-print-label" style={{
                                     width: '28mm',
