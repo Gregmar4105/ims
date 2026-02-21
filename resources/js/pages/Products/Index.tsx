@@ -203,111 +203,100 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         z-index: 99999;
                     }
                     @page {
-                        size: 38mm 25mm;
+                        size: 20mm 28mm;
                         margin: 0;
                     }
                     html, body {
                         margin: 0 !important;
                         padding: 0 !important;
                         background: white !important;
-                        width: 38mm !important;
-                        height: 25mm !important;
+                        width: 20mm !important;
+                        height: 28mm !important;
                     }
                 }
                 
                 .label-container {
-                    width: 38mm;
-                    height: 25mm;
+                    width: 20mm;
+                    height: 28mm;
                     margin: 0;
-                    padding: 0mm 1mm;
+                    padding: 0.5mm 1mm;
                     font-family: 'Arial', sans-serif;
                     overflow: hidden;
                     display: flex;
                     flex-direction: column;
-                    justify-content: center;
+                    align-items: center;
                     background: white;
                     color: black;
                     box-sizing: border-box;
                 }
                 
-                /* Main Upper Section */
-                .upper-section {
-                    display: flex;
-                    height: 16mm;
-                    width: 100%;
-                    align-items: center;
-                    padding-top: 1mm;
-                }
-                
-                /* QR Left */
                 .qr-section {
-                    width: 15mm;
-                    height: 15mm;
+                    width: 14mm;
+                    height: 14mm;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     flex-shrink: 0;
+                    padding-top: 0.5mm;
                 }
                 .qr-section svg {
                     width: 100% !important;
                     height: 100% !important;
                 }
 
-                /* Right Info Stack */
-                .info-right {
-                    flex: 1;
+                .info-stack {
+                    width: 100%;
                     display: flex;
                     flex-direction: column;
-                    justify-content: center;
-                    padding-left: 2mm;
+                    align-items: center;
                     overflow: hidden;
+                    text-align: center;
+                    margin-top: 0.5mm;
                 }
                 
                 .info-line {
-                    font-size: 8px; /* Target text size */
+                    font-size: 6.5pt;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
-                    line-height: 1.2;
+                    line-height: 1.1;
+                    width: 100%;
                 }
 
-                /* Bottom Section */
                 .bottom-section {
-                    flex: 1;
+                    width: 100%;
                     display: flex;
                     flex-direction: column;
-                    justify-content: flex-start;
+                    justify-content: flex-end;
                     align-items: center;
                     text-align: center;
-                    overflow: hidden;
-                    padding-top: 1mm;
+                    margin-top: auto;
+                    padding-bottom: 0.5mm;
                 }
                 
                 .product-name {
-                    font-size: 8px;
+                    font-size: 6.5pt;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     width: 100%;
-                    line-height: 1.2;
                 }
 
                 .price {
-                    font-size: 10px;
+                    font-size: 8pt;
+                    font-weight: bold;
                     white-space: nowrap;
-                    line-height: 1.2;
                 }
             </style>
             <div class="label-container">
-                <div class="upper-section">
-                    <div class="qr-section">
-                        ${qrSvg}
-                    </div>
-                    <div class="info-right">
-                        <div class="info-line">${viewCodeProduct.barcode || viewCodeProduct.code || '-'}</div>
-                        <div class="info-line">${viewCodeProduct.supplier?.name || viewCodeProduct.brand?.name || '-'}</div>
-                        <div class="info-line">${viewCodeProduct.category?.name || '-'}</div>
-                    </div>
+                <div class="qr-section">
+                    ${qrSvg}
+                </div>
+                
+                <div class="info-stack">
+                    <div class="info-line">${viewCodeProduct.code || '-'} ${viewCodeProduct.code_2 ? '| ' + viewCodeProduct.code_2 : ''}</div>
+                    <div class="info-line">Cat: ${viewCodeProduct.category?.name || '-'}</div>
+                    <div class="info-line">Sup: ${viewCodeProduct.supplier?.name || '-'}</div>
                 </div>
                 
                 <div class="bottom-section">
@@ -727,30 +716,29 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     {viewCodeProduct && (
                         <div style={{ position: 'absolute', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none' }}>
                             <div id="native-print-label" style={{
-                                width: '38mm',
-                                height: '25mm',
+                                width: '20mm',
+                                height: '28mm',
                                 background: 'white',
                                 color: 'black',
                                 fontFamily: 'Arial, sans-serif',
                                 display: 'flex',
                                 flexDirection: 'column',
+                                alignItems: 'center',
                                 boxSizing: 'border-box',
-                                padding: '0mm 1mm'
+                                padding: '0.5mm 1mm'
                             }}>
-                                <div style={{ display: 'flex', height: '16mm', width: '100%', alignItems: 'center', paddingTop: '1mm' }}>
-                                    <div style={{ width: '15mm', height: '15mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                        <QRCode value={viewCodeProduct.qr_code || ''} size={150} style={{ width: '100%', height: '100%' }} />
-                                    </div>
-                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '2mm', overflow: 'hidden' }}>
-                                        <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{viewCodeProduct.barcode || viewCodeProduct.code || '-'}</div>
-                                        <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{viewCodeProduct.supplier?.name || viewCodeProduct.brand?.name || '-'}</div>
-                                        <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{viewCodeProduct.category?.name || '-'}</div>
-                                    </div>
+                                <div style={{ width: '14mm', height: '14mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, paddingTop: '0.5mm' }}>
+                                    <QRCode value={viewCodeProduct.qr_code || ''} size={150} style={{ width: '100%', height: '100%' }} />
                                 </div>
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', textAlign: 'center', overflow: 'hidden', paddingTop: '1mm' }}>
-                                    <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', lineHeight: 1.2 }}>{viewCodeProduct.sku || viewCodeProduct.name || '-'}</div>
-                                    <div style={{ fontSize: '10px', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
-                                        ₱{viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
+                                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'hidden', textAlign: 'center', marginTop: '0.5mm' }}>
+                                    <div style={{ fontSize: '6.5pt', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.1, width: '100%' }}>{viewCodeProduct.code || '-'} {viewCodeProduct.code_2 ? '| ' + viewCodeProduct.code_2 : ''}</div>
+                                    <div style={{ fontSize: '6.5pt', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.1, width: '100%' }}>Cat: {viewCodeProduct.category?.name || '-'}</div>
+                                    <div style={{ fontSize: '6.5pt', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.1, width: '100%' }}>Sup: {viewCodeProduct.supplier?.name || '-'}</div>
+                                </div>
+                                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', textAlign: 'center', marginTop: 'auto', paddingBottom: '0.5mm' }}>
+                                    <div style={{ fontSize: '6.5pt', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>{viewCodeProduct.sku || viewCodeProduct.name || '-'}</div>
+                                    <div style={{ fontSize: '8pt', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                                        {viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
                                     </div>
                                 </div>
                             </div>
