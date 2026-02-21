@@ -78,9 +78,9 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                                         <p className="text-xs text-gray-500 font-mono mt-0.5">{item.product.barcode || item.product.qr_code}</p>
                                     </TableCell>
                                     <TableCell className="text-right py-3">{item.quantity}</TableCell>
-                                    <TableCell className="text-right py-3">${item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</TableCell>
+                                    <TableCell className="text-right py-3">₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</TableCell>
                                     <TableCell className="text-right py-3 pr-0 font-medium font-mono">
-                                        ${(item.quantity * item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        ₱{(item.quantity * item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -97,7 +97,7 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                         </div>
                         <div className="flex justify-between text-xl font-bold pt-2 border-t border-gray-100">
                             <span>Total</span>
-                            <span>${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            <span>₱{totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
                     </div>
                 </div>

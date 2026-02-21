@@ -217,7 +217,7 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                             <DollarSign className="h-4 w-4 text-emerald-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">${stats.today_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <div className="text-2xl font-bold">₱{stats.today_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         </CardContent>
                     </Card>
                     {showWeekly && (
@@ -227,7 +227,7 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                                 <DollarSign className="h-4 w-4 text-emerald-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">${stats.weekly_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                <div className="text-2xl font-bold">₱{stats.weekly_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                             </CardContent>
                         </Card>
                     )}
@@ -238,7 +238,7 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                                 <DollarSign className="h-4 w-4 text-green-600" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">${stats.monthly_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                <div className="text-2xl font-bold">₱{stats.monthly_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                             </CardContent>
                         </Card>
                     )}
@@ -249,7 +249,7 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                                 <Briefcase className="h-4 w-4 text-blue-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">${stats.total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                <div className="text-2xl font-bold">₱{stats.total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                                 <p className="text-xs text-muted-foreground mt-1">{stats.total_sales} total successful trades</p>
                             </CardContent>
                         </Card>

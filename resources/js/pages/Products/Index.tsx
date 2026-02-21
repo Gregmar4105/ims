@@ -375,7 +375,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     </div>
                                 </div>
                                 <div class="price-row">
-                                    PHP ${viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                                    ₱{viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
                                 </div>
                             </div>
                         </div>
