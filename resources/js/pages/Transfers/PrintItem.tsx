@@ -17,7 +17,7 @@ interface Transfer {
         id: number;
         quantity: number;
         received_quantity: number;
-        product: { name: string; barcode: string; qr_code: string; price: number };
+        product: { name: string; barcode: string; qr_code: string };
     }>;
 }
 
@@ -33,8 +33,8 @@ export default function PrintItem({ transfer }: { transfer: Transfer }) {
         }).format(new Date(dateString));
     };
 
-    const totalRevenue = transfer.items.reduce((sum, item) => sum + (item.received_quantity * (item.product?.price || 0)), 0);
-    const totalItems = transfer.items.reduce((sum, item) => sum + item.received_quantity, 0);
+    const totalExpected = transfer.items.reduce((sum, item) => sum + item.quantity, 0);
+    const totalReceived = transfer.items.reduce((sum, item) => sum + item.received_quantity, 0);
 
     return (
         <div className="min-h-screen bg-white text-gray-900 print:text-black">
@@ -72,9 +72,8 @@ export default function PrintItem({ transfer }: { transfer: Transfer }) {
                         <TableHeader>
                             <TableRow className="border-b-2 border-gray-300 hover:bg-transparent">
                                 <TableHead className="font-bold text-black uppercase text-xs tracking-wider pt-2 pb-2 pl-0">Item Description</TableHead>
-                                <TableHead className="text-right font-bold text-black uppercase text-xs tracking-wider pt-2 pb-2">Rcvd Qty</TableHead>
-                                <TableHead className="text-right font-bold text-black uppercase text-xs tracking-wider pt-2 pb-2">Price</TableHead>
-                                <TableHead className="text-right font-bold text-black uppercase text-xs tracking-wider pt-2 pb-2 pr-0">Total Value</TableHead>
+                                <TableHead className="text-right font-bold text-black uppercase text-xs tracking-wider pt-2 pb-2">Exp Qty</TableHead>
+                                <TableHead className="text-right font-bold text-black uppercase text-xs tracking-wider pt-2 pb-2 pr-0">Rcvd Qty</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -84,10 +83,9 @@ export default function PrintItem({ transfer }: { transfer: Transfer }) {
                                         <p className="font-medium">{item.product?.name}</p>
                                         <p className="text-xs text-gray-500 font-mono mt-0.5">{item.product?.barcode || item.product?.qr_code}</p>
                                     </TableCell>
-                                    <TableCell className="text-right py-3">{item.received_quantity} <span className="text-gray-400 text-xs">(of {item.quantity})</span></TableCell>
-                                    <TableCell className="text-right py-3">${(item.product?.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</TableCell>
+                                    <TableCell className="text-right py-3 text-gray-500">{item.quantity}</TableCell>
                                     <TableCell className="text-right py-3 pr-0 font-medium font-mono">
-                                        ${(item.received_quantity * (item.product?.price || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        {item.received_quantity}
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -99,12 +97,12 @@ export default function PrintItem({ transfer }: { transfer: Transfer }) {
                 <div className="flex justify-end border-t-2 border-gray-300 pt-4 mb-12">
                     <div className="w-64 space-y-2">
                         <div className="flex justify-between text-sm text-gray-600">
-                            <span>Total Items</span>
-                            <span>{totalItems}</span>
+                            <span>Expected Items</span>
+                            <span>{totalExpected}</span>
                         </div>
                         <div className="flex justify-between text-xl font-bold pt-2 border-t border-gray-100">
-                            <span>Total</span>
-                            <span>${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            <span>Received</span>
+                            <span>{totalReceived}</span>
                         </div>
                     </div>
                 </div>

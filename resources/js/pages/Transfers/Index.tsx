@@ -62,10 +62,10 @@ interface PaginatedData<T> {
 
 interface Stats {
     total_transfers: number;
-    total_revenue: number;
-    today_revenue: number;
-    weekly_revenue: number;
-    monthly_revenue: number;
+    total_quantity: number;
+    today_quantity: number;
+    weekly_quantity: number;
+    monthly_quantity: number;
 }
 
 const breadcrumbs = [
@@ -169,19 +169,19 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="start" className="w-56">
-                                    <DropdownMenuLabel>Value Visibility</DropdownMenuLabel>
+                                    <DropdownMenuLabel>Quantity Visibility</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuCheckboxItem checked={true} disabled>
-                                        Today's Value (Required)
+                                        Today's Quantity (Required)
                                     </DropdownMenuCheckboxItem>
                                     <DropdownMenuCheckboxItem checked={showWeekly} onCheckedChange={setShowWeekly}>
-                                        Weekly Value
+                                        Weekly Quantity
                                     </DropdownMenuCheckboxItem>
                                     <DropdownMenuCheckboxItem checked={showMonthly} onCheckedChange={setShowMonthly}>
-                                        Monthly Value
+                                        Monthly Quantity
                                     </DropdownMenuCheckboxItem>
                                     <DropdownMenuCheckboxItem checked={showAllTime} onCheckedChange={setShowAllTime}>
-                                        All-Time Value
+                                        All-Time Quantity
                                     </DropdownMenuCheckboxItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -199,43 +199,43 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Today's Value</CardTitle>
-                            <DollarSign className="h-4 w-4 text-emerald-500" />
+                            <CardTitle className="text-sm font-medium">Today's Quantity</CardTitle>
+                            <Package className="h-4 w-4 text-emerald-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">${stats.today_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <div className="text-2xl font-bold">{stats.today_quantity.toLocaleString()}</div>
                         </CardContent>
                     </Card>
                     {showWeekly && (
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Weekly Value</CardTitle>
-                                <DollarSign className="h-4 w-4 text-emerald-500" />
+                                <CardTitle className="text-sm font-medium">Weekly Quantity</CardTitle>
+                                <Package className="h-4 w-4 text-emerald-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">${stats.weekly_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                <div className="text-2xl font-bold">{stats.weekly_quantity.toLocaleString()}</div>
                             </CardContent>
                         </Card>
                     )}
                     {showMonthly && (
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Monthly Value</CardTitle>
-                                <DollarSign className="h-4 w-4 text-green-600" />
+                                <CardTitle className="text-sm font-medium">Monthly Quantity</CardTitle>
+                                <Package className="h-4 w-4 text-green-600" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">${stats.monthly_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                <div className="text-2xl font-bold">{stats.monthly_quantity.toLocaleString()}</div>
                             </CardContent>
                         </Card>
                     )}
                     {showAllTime && (
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">All-Time Value</CardTitle>
+                                <CardTitle className="text-sm font-medium">All-Time Quantity</CardTitle>
                                 <Truck className="h-4 w-4 text-blue-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">${stats.total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                <div className="text-2xl font-bold">{stats.total_quantity.toLocaleString()}</div>
                                 <p className="text-xs text-muted-foreground mt-1">{stats.total_transfers} completed transfers</p>
                             </CardContent>
                         </Card>
@@ -297,8 +297,8 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                                                 <Badge
                                                     variant="default"
                                                     className={`px-2.5 py-0.5 text-sm font-medium ${transfer.status === 'completed'
-                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800'
-                                                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800'
+                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800'
+                                                        : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800'
                                                         }`}
                                                 >
                                                     <span className="flex items-center gap-1.5">

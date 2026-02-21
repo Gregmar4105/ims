@@ -15,7 +15,7 @@ interface Transfer {
     items: Array<{
         id: number;
         received_quantity: number;
-        product: { name: string; barcode: string; qr_code: string; price: number };
+        product: { name: string; barcode: string; qr_code: string };
     }>;
 }
 
@@ -32,8 +32,8 @@ export default function PrintList({ transfers, filters }: { transfers: Transfer[
         }).format(new Date(dateString));
     };
 
-    const calculateTotal = (transfer: Transfer) => {
-        return transfer.items.reduce((total, item) => total + (item.received_quantity * (item.product?.price || 0)), 0);
+    const calculateTotalQuantity = (transfer: Transfer) => {
+        return transfer.items.reduce((total, item) => total + item.received_quantity, 0);
     };
 
     return (
@@ -73,8 +73,7 @@ export default function PrintList({ transfers, filters }: { transfers: Transfer[
                                 <TableHead className="font-bold text-gray-900">Destination</TableHead>
                                 <TableHead className="font-bold text-gray-900">Date</TableHead>
                                 <TableHead className="font-bold text-gray-900">Status</TableHead>
-                                <TableHead className="text-right font-bold text-gray-900">Rcvd Items</TableHead>
-                                <TableHead className="text-right font-bold text-gray-900">Value</TableHead>
+                                <TableHead className="text-right font-bold text-gray-900">Total Items Moved</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -96,11 +95,8 @@ export default function PrintList({ transfers, filters }: { transfers: Transfer[
                                             </span>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-right text-gray-700">
-                                        {transfer.items.reduce((sum, item) => sum + item.received_quantity, 0)} items
-                                    </TableCell>
                                     <TableCell className="text-right font-semibold text-gray-900">
-                                        ${calculateTotal(transfer).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        {calculateTotalQuantity(transfer).toLocaleString()}
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -118,9 +114,9 @@ export default function PrintList({ transfers, filters }: { transfers: Transfer[
                 {transfers.length > 0 && (
                     <div className="mt-8 pt-4 border-t border-gray-200 flex justify-end print:break-inside-avoid">
                         <div className="text-right">
-                            <p className="text-sm text-gray-500 uppercase tracking-widest font-semibold mb-1">Total Report Value</p>
+                            <p className="text-sm text-gray-500 uppercase tracking-widest font-semibold mb-1">Total Report Volume</p>
                             <p className="text-3xl font-bold text-gray-900">
-                                ${transfers.filter(t => t.status === 'completed').reduce((sum, transfer) => sum + calculateTotal(transfer), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                {transfers.filter(t => t.status === 'completed').reduce((sum, transfer) => sum + calculateTotalQuantity(transfer), 0).toLocaleString()}
                             </p>
                             <p className="text-xs text-gray-400 mt-1">Sum of completed transfers only</p>
                         </div>

@@ -342,28 +342,28 @@ class TransferController extends Controller
         $monthStart = now()->startOfMonth();
 
         // Calculate values efficiently
-        $completedTransfers = $statsQuery->with('items.product')->get();
+        $completedTransfers = $statsQuery->with('items')->get();
         
-        $totalRevenue = 0;
-        $todayRevenue = 0;
-        $weeklyRevenue = 0;
-        $monthlyRevenue = 0;
+        $totalQuantity = 0;
+        $todayQuantity = 0;
+        $weeklyQuantity = 0;
+        $monthlyQuantity = 0;
         
         foreach ($completedTransfers as $transfer) {
-            $transferRevenue = $transfer->items->sum(fn($item) => $item->received_quantity * ($item->product?->price ?? 0));
-            $totalRevenue += $transferRevenue;
+            $transferQuantity = $transfer->items->sum('received_quantity');
+            $totalQuantity += $transferQuantity;
             
-            if ($transfer->updated_at >= $todayStart) $todayRevenue += $transferRevenue;
-            if ($transfer->updated_at >= $weekStart) $weeklyRevenue += $transferRevenue;
-            if ($transfer->updated_at >= $monthStart) $monthlyRevenue += $transferRevenue;
+            if ($transfer->updated_at >= $todayStart) $todayQuantity += $transferQuantity;
+            if ($transfer->updated_at >= $weekStart) $weeklyQuantity += $transferQuantity;
+            if ($transfer->updated_at >= $monthStart) $monthlyQuantity += $transferQuantity;
         }
 
         $stats = [
             'total_transfers' => $completedTransfers->count(), // All time completed
-            'total_revenue' => $totalRevenue,
-            'today_revenue' => $todayRevenue,
-            'weekly_revenue' => $weeklyRevenue,
-            'monthly_revenue' => $monthlyRevenue,
+            'total_quantity' => $totalQuantity,
+            'today_quantity' => $todayQuantity,
+            'weekly_quantity' => $weeklyQuantity,
+            'monthly_quantity' => $monthlyQuantity,
         ];
 
         $transfers = $query->paginate(10)->withQueryString();
