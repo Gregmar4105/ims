@@ -6,12 +6,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 use App\Models\Product;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Supplier;
 
 class ImportTransferController extends Controller
 {
     public function index()
     {
-        return Inertia::render('Transfers/Import/Index');
+        return Inertia::render('Transfers/Import/Index', [
+            'brands' => Brand::orderBy('name')->get(),
+            'categories' => Category::orderBy('name')->get(),
+            'suppliers' => Supplier::orderBy('name')->get(),
+        ]);
     }
 
     public function store(Request $request)
@@ -54,7 +61,10 @@ class ImportTransferController extends Controller
 
                 return Inertia::render('Transfers/Import/Index', [
                     'analysis_result' => ['inventory_items' => $items],
-                    'success' => 'Analysis complete. Found ' . count($items) . ' items.'
+                    'success' => 'Analysis complete. Found ' . count($items) . ' items.',
+                    'brands' => Brand::orderBy('name')->get(),
+                    'categories' => Category::orderBy('name')->get(),
+                    'suppliers' => Supplier::orderBy('name')->get(),
                 ]);
             } else {
                 return back()->with('error', 'Failed to process image. Status: ' . $response->status());

@@ -7,18 +7,42 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save, CheckCircle, PlusCircle, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+
+interface Variation {
+    name: string;
+    options: string;
+}
 
 interface InventoryItem {
     item_name: string;
     quantity: number;
     exists_in_branch?: boolean;
+    brand_id?: string;
+    category_id?: string;
+    supplier_id?: string;
+    price?: string;
+    code?: string;
+    sku?: string;
+    description?: string;
+    variations?: Variation[];
 }
 
 interface AnalysisResult {
     inventory_items: InventoryItem[];
 }
 
-export default function ImportTransferIndex() {
+interface IndexProps {
+    analysis_result?: AnalysisResult;
+    flash?: any;
+    brands: { id: number; name: string }[];
+    categories: { id: number; name: string }[];
+    suppliers: { id: number; name: string }[];
+}
+
+export default function ImportTransferIndex({ brands = [], categories = [], suppliers = [] }: IndexProps) {
     const { data, setData, post, processing, errors } = useForm({
         image: null as File | null,
     });
@@ -68,10 +92,15 @@ export default function ImportTransferIndex() {
         });
     };
 
-    const updateItem = (index: number, field: keyof InventoryItem, value: string | number) => {
+    const updateItem = (index: number, field: keyof InventoryItem, value: any) => {
         const newItems = [...items];
         newItems[index] = { ...newItems[index], [field]: value };
         setItems(newItems);
+    };
+
+    const updateStock = (index: number) => {
+        const item = items[index];
+        toast.success(`Updated stock for ${item.item_name} by ${item.quantity} units (Simulation)`);
     };
 
     const removeItem = (index: number) => {
@@ -79,7 +108,11 @@ export default function ImportTransferIndex() {
     };
 
     const addItem = () => {
-        setItems([...items, { item_name: '', quantity: 1 }]);
+        setItems([...items, { item_name: '', quantity: 1, variations: [] }]);
+    };
+
+    const submitAll = () => {
+        toast.info(`Processing ${items.length} items (Implementation pending)`);
     };
 
     return (
@@ -186,70 +219,111 @@ export default function ImportTransferIndex() {
                                         Review extracted items ({items.length}). You can edit details before creating the transfer.
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent className="p-0 overflow-hidden max-h-[600px] overflow-y-auto">
-                                    <Table>
-                                        <TableHeader className="bg-muted/30 sticky top-0 z-10 backdrop-blur">
-                                            <TableRow>
-                                                <TableHead>Item Name</TableHead>
-                                                <TableHead className="w-[120px]">Status</TableHead>
-                                                <TableHead className="w-[100px]">Qty</TableHead>
-                                                <TableHead className="w-[50px]"></TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {items.map((item, idx) => (
-                                                <TableRow key={idx}>
-                                                    <TableCell className="p-2">
+                                <CardContent className="p-4 overflow-hidden max-h-[1000px] overflow-y-auto space-y-4 bg-muted/20">
+                                    {items.map((item, idx) => (
+                                        <Card key={idx} className={`relative overflow-hidden ${item.exists_in_branch ? 'border-primary/50' : 'border-amber-500/50'}`}>
+                                            <div className={`absolute top-0 left-0 w-1.5 h-full ${item.exists_in_branch ? 'bg-primary' : 'bg-amber-500'}`} />
+                                            <CardContent className="p-4 sm:p-5">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div className="flex items-center gap-2">
+                                                        {item.exists_in_branch ? (
+                                                            <Badge className="bg-primary hover:bg-primary text-primary-foreground font-medium">
+                                                                <CheckCircle className="w-3.5 h-3.5 mr-1" /> Existing Product
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge variant="outline" className="border-amber-500 text-amber-600 font-medium">
+                                                                New Product
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0 -mt-2 -mr-2"
+                                                        onClick={() => removeItem(idx)}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+
+                                                {/* Header fields always shown */}
+                                                <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-4 items-end mb-4">
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground">Product Name</Label>
                                                         <Input
                                                             value={item.item_name}
                                                             onChange={(e) => updateItem(idx, 'item_name', e.target.value)}
-                                                            className="h-8 border-transparent hover:border-input focus:border-primary bg-transparent"
+                                                            className="font-medium"
                                                         />
-                                                    </TableCell>
-                                                    <TableCell className="p-2">
-                                                        {item.exists_in_branch !== undefined ? (
-                                                            item.exists_in_branch ? (
-                                                                <span className="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-green-100 text-green-800 border border-green-200 whitespace-nowrap">
-                                                                    <CheckCircle className="w-3.5 h-3.5" /> Exists
-                                                                </span>
-                                                            ) : (
-                                                                <span className="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200 whitespace-nowrap">
-                                                                    New Item
-                                                                </span>
-                                                            )
-                                                        ) : (
-                                                            <span className="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200 whitespace-nowrap">
-                                                                <HelpCircle className="w-3.5 h-3.5" /> Unknown
-                                                            </span>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell className="p-2">
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground">Quantity Sent</Label>
                                                         <Input
                                                             type="number"
                                                             value={item.quantity}
                                                             onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value) || 0)}
-                                                            className="h-8 w-20 border-transparent hover:border-input focus:border-primary bg-transparent text-right"
+                                                            className="text-right font-medium"
                                                         />
-                                                    </TableCell>
-                                                    <TableCell className="p-2 text-right">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                                            onClick={() => removeItem(idx)}
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
+                                                    </div>
+                                                </div>
+
+                                                {!item.exists_in_branch ? (
+                                                    <div className="pt-4 border-t mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-xs text-muted-foreground">Category</Label>
+                                                            <Select value={item.category_id || ''} onValueChange={(val) => updateItem(idx, 'category_id', val)}>
+                                                                <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
+                                                                <SelectContent>
+                                                                    {categories.map((c) => (<SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-xs text-muted-foreground">Brand</Label>
+                                                            <Select value={item.brand_id || ''} onValueChange={(val) => updateItem(idx, 'brand_id', val)}>
+                                                                <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
+                                                                <SelectContent>
+                                                                    {brands.map((b) => (<SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-xs text-muted-foreground">Supplier (Optional)</Label>
+                                                            <Select value={item.supplier_id || ''} onValueChange={(val) => updateItem(idx, 'supplier_id', val)}>
+                                                                <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
+                                                                <SelectContent>
+                                                                    {suppliers.map((s) => (<SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-xs text-muted-foreground">Price (₱)</Label>
+                                                            <Input type="number" className="h-9" value={item.price || ''} onChange={(e) => updateItem(idx, 'price', e.target.value)} placeholder="0.00" />
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-xs text-muted-foreground">Code</Label>
+                                                            <Input className="h-9" value={item.code || ''} onChange={(e) => updateItem(idx, 'code', e.target.value)} placeholder="Product code" />
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-xs text-muted-foreground">SKU</Label>
+                                                            <Input className="h-9" value={item.sku || ''} onChange={(e) => updateItem(idx, 'sku', e.target.value)} placeholder="SKU" />
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="pt-3 flex justify-end">
+                                                        <Button size="sm" variant="secondary" onClick={() => updateStock(idx)}>
+                                                            Update Stock Only
                                                         </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    ))}
                                 </CardContent>
-                                <CardFooter className="bg-green-50/50 p-4 border-t">
-                                    <Button className="w-full bg-green-600 hover:bg-green-700 shadow-sm" onClick={() => toast.info(`Ready to create transfer with ${items.length} items (Implementation pending)`)}>
+                                <CardFooter className="bg-green-50/50 p-4 border-t sticky bottom-0 z-10">
+                                    <Button className="w-full bg-green-600 hover:bg-green-700 shadow-sm" onClick={submitAll}>
                                         <Save className="w-4 h-4 mr-2" />
-                                        Create Transfer
+                                        Update Product List
                                     </Button>
                                 </CardFooter>
                             </Card>
