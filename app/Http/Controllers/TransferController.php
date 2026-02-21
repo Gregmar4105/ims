@@ -10,6 +10,7 @@ use App\Models\Transfer;
 use App\Models\TransferItem;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class TransferController extends Controller
 {
@@ -288,8 +289,26 @@ class TransferController extends Controller
         $user = auth()->user();
         
         $query = Transfer::with(['items.product', 'sourceBranch', 'destinationBranch', 'receivedBy'])
-            ->whereIn('status', ['completed', 'rejected'])
             ->latest();
+
+        // Status Filter
+        $statusFilter = $request->query('status_filter', 'all');
+        if ($statusFilter !== 'all') {
+            $query->where('status', $statusFilter);
+        } else {
+            $query->whereIn('status', ['completed', 'rejected']);
+        }
+            
+        // Date Filters
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+        
+        if ($dateFrom) {
+            $query->where('updated_at', '>=', Carbon::parse($dateFrom)->startOfDay());
+        }
+        if ($dateTo) {
+            $query->where('updated_at', '<=', Carbon::parse($dateTo)->endOfDay());
+        }
 
         // Filter by branch for non-System Admins
         if (!$user->hasRole('System Administrator') && $user->branch_id) {
@@ -309,20 +328,42 @@ class TransferController extends Controller
             });
         }
 
-        // Stats
-        $statsQuery = Transfer::whereIn('status', ['completed', 'rejected']);
-        
+        // Stats queries (respecting current user branch filters but NOT search/date filters to show global totals)
+        $statsQuery = Transfer::where('status', 'completed');
         if (!$user->hasRole('System Administrator') && $user->branch_id) {
             $statsQuery->where(function($q) use ($user) {
                 $q->where('source_branch_id', $user->branch_id)
                   ->orWhere('destination_branch_id', $user->branch_id);
             });
         }
+        
+        $todayStart = now()->startOfDay();
+        $weekStart = now()->startOfWeek();
+        $monthStart = now()->startOfMonth();
+
+        // Calculate values efficiently
+        $completedTransfers = $statsQuery->with('items.product')->get();
+        
+        $totalRevenue = 0;
+        $todayRevenue = 0;
+        $weeklyRevenue = 0;
+        $monthlyRevenue = 0;
+        
+        foreach ($completedTransfers as $transfer) {
+            $transferRevenue = $transfer->items->sum(fn($item) => $item->received_quantity * ($item->product?->price ?? 0));
+            $totalRevenue += $transferRevenue;
+            
+            if ($transfer->updated_at >= $todayStart) $todayRevenue += $transferRevenue;
+            if ($transfer->updated_at >= $weekStart) $weeklyRevenue += $transferRevenue;
+            if ($transfer->updated_at >= $monthStart) $monthlyRevenue += $transferRevenue;
+        }
 
         $stats = [
-            'total' => (clone $statsQuery)->count(),
-            'completed' => (clone $statsQuery)->where('status', 'completed')->count(),
-            'rejected' => (clone $statsQuery)->where('status', 'rejected')->count(),
+            'total_transfers' => $completedTransfers->count(), // All time completed
+            'total_revenue' => $totalRevenue,
+            'today_revenue' => $todayRevenue,
+            'weekly_revenue' => $weeklyRevenue,
+            'monthly_revenue' => $monthlyRevenue,
         ];
 
         $transfers = $query->paginate(10)->withQueryString();
@@ -330,7 +371,80 @@ class TransferController extends Controller
         return Inertia::render('Transfers/Index', [
             'transfers' => $transfers,
             'stats' => $stats,
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search', 'date_from', 'date_to', 'status_filter']),
+        ]);
+    }
+
+    /**
+     * Print the filtered list of transfers
+     */
+    public function printList(Request $request)
+    {
+        $user = auth()->user();
+        
+        $query = Transfer::with(['items.product', 'sourceBranch', 'destinationBranch', 'receivedBy'])
+            ->latest();
+            
+        // Reuse identical filters from index
+        $statusFilter = $request->query('status_filter', 'all');
+        if ($statusFilter !== 'all') {
+            $query->where('status', $statusFilter);
+        } else {
+            $query->whereIn('status', ['completed', 'rejected']);
+        }
+            
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+        
+        if ($dateFrom) {
+            $query->where('updated_at', '>=', Carbon::parse($dateFrom)->startOfDay());
+        }
+        if ($dateTo) {
+            $query->where('updated_at', '<=', Carbon::parse($dateTo)->endOfDay());
+        }
+
+        // Filter by branch for non-System Admins
+        if (!$user->hasRole('System Administrator') && $user->branch_id) {
+            $query->where(function($q) use ($user) {
+                $q->where('source_branch_id', $user->branch_id)
+                  ->orWhere('destination_branch_id', $user->branch_id);
+            });
+        }
+
+        // Search
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                  ->orWhereHas('sourceBranch', fn($q) => $q->where('branch_name', 'like', "%{$search}%"))
+                  ->orWhereHas('destinationBranch', fn($q) => $q->where('branch_name', 'like', "%{$search}%"));
+            });
+        }
+        
+        // Get all unpaginated for printing
+        $transfers = $query->get();
+        
+        return Inertia::render('Transfers/PrintList', [
+            'transfers' => $transfers,
+            'filters' => $request->only(['search', 'date_from', 'date_to', 'status_filter']),
+        ]);
+    }
+
+    /**
+     * Print an individual transfer manifest
+     */
+    public function printItem(Transfer $transfer)
+    {
+        $user = auth()->user();
+        
+        if (!$user->hasRole('System Administrator') && $user->branch_id !== $transfer->source_branch_id && $user->branch_id !== $transfer->destination_branch_id) {
+            abort(403, 'Unauthorized to view this transfer');
+        }
+        
+        $transfer->load(['items.product', 'sourceBranch', 'destinationBranch', 'receivedBy', 'readiedBy', 'approvedBy']);
+        
+        return Inertia::render('Transfers/PrintItem', [
+            'transfer' => $transfer,
         ]);
     }
 }

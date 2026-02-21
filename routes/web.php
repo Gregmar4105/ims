@@ -78,6 +78,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('transfers/{transfer}/confirm', [\App\Http\Controllers\TransferController::class, 'confirmReceipt'])->name('transfers.confirm');
     Route::get('incoming', [\App\Http\Controllers\TransferController::class, 'incoming'])->name('transfers.incoming');
     Route::get('transfer-list', [\App\Http\Controllers\TransferController::class, 'index'])->name('transfers.index');
+    Route::get('transfer-list/print', [\App\Http\Controllers\TransferController::class, 'printList'])->name('transfers.printList');
+    Route::get('transfers/{transfer}/print', [\App\Http\Controllers\TransferController::class, 'printItem'])->name('transfers.printItem');
     Route::get('import-transfer', [\App\Http\Controllers\ImportTransferController::class, 'index'])->name('transfers.import');
     Route::post('import-transfer', [\App\Http\Controllers\ImportTransferController::class, 'store'])->name('transfers.import.store');
     Route::post('import-transfer/update-stock', [\App\Http\Controllers\ImportTransferController::class, 'updateStock'])->name('transfers.import.updateStock');
