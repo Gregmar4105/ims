@@ -2,7 +2,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
-import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight, Filter } from 'lucide-react';
+import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight, Filter, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import Pagination from '@/components/Pagination';
@@ -414,17 +414,38 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     </p>
                                 </div>
                             </div>
-                            {!isEmployee && (
-                                <Link href="/products/create">
-                                    <Button size="sm" className="bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black">
-                                        <Plus className="mr-2 h-4 w-4" /> Add Product
+                            <div className="flex items-center gap-2">
+                                <a
+                                    href={`/products/print${window.location.search}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <Button variant="outline" size="sm" className="hidden md:flex">
+                                        <FileText className="mr-2 h-4 w-4" /> Print List
                                     </Button>
-                                </Link>
-                            )}
+                                </a>
+
+                                {!isEmployee && (
+                                    <Link href="/products/create">
+                                        <Button size="sm" className="bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black">
+                                            <Plus className="mr-2 h-4 w-4" /> Add Product
+                                        </Button>
+                                    </Link>
+                                )}
+                            </div>
                         </div>
 
                         {/* Mobile Main Controls */}
                         <div className="flex items-center gap-2 md:hidden">
+                            <a
+                                href={`/products/print${window.location.search}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0">
+                                    <FileText className="h-4 w-4" />
+                                </Button>
+                            </a>
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
                                 <Input

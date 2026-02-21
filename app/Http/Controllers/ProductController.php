@@ -14,7 +14,7 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
-    public function index(Request $request)
+    protected function buildFilteredProductQuery(Request $request, $user, $isSystemAdmin, &$filterBranch, &$filterBrand, &$filterCategory, &$filterStock, &$filterCode, &$filterCode2, &$filterSku, &$search)
     {
         $search = $request->query('search');
         $filterBranch = $request->query('branch');
@@ -24,28 +24,21 @@ class ProductController extends Controller
         $filterCode = $request->query('code');
         $filterCode2 = $request->query('code_2');
         $filterSku = $request->query('sku');
-        
-        $user = auth()->user();
-        $isSystemAdmin = $user->hasRole('System Administrator');
-        
+
         $query = Product::with(['brand', 'category', 'creator', 'supplier']);
 
         if (!$isSystemAdmin) {
             if (!$user->branch_id) {
-                // User has no branch and is not Admin, show nothing.
                 $query->whereRaw('1 = 0');
             } else {
-                // Filter products available in the user's branch
                 $query->whereHas('branches', function ($q) use ($user) {
                     $q->where('branches.id', $user->branch_id);
                 });
-                // Eager load the branch pivot data
                 $query->with(['branches' => function ($q) use ($user) {
                     $q->where('branches.id', $user->branch_id);
                 }]);
             }
         } else {
-            // Admin sees all products, maybe eager load all branches?
             $query->with('branches');
         }
 
@@ -59,12 +52,6 @@ class ProductController extends Controller
                   ->orWhereHas('category', function ($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%");
                   });
-            });
-        }
-
-        if ($filterBranch && $filterBranch !== 'all') {
-            $query->whereHas('branches', function ($q) use ($filterBranch) {
-                $q->where('branch_name', $filterBranch);
             });
         }
 
@@ -98,7 +85,6 @@ class ProductController extends Controller
             $query->where('sku', $filterSku);
         }
 
-        // Stock filter needs to check the pivot table quantity
         if ($filterStock && $filterStock !== 'all') {
             if (!$isSystemAdmin && $user->branch_id) {
                 $query->whereHas('branches', function ($q) use ($user, $filterStock) {
@@ -112,7 +98,6 @@ class ProductController extends Controller
                     }
                 });
             } elseif ($isSystemAdmin && $filterBranch && $filterBranch !== 'all') {
-                // Admin filtering by specific branch
                  $query->whereHas('branches', function ($q) use ($filterBranch, $filterStock) {
                     $q->where('branch_name', $filterBranch);
                     if ($filterStock === 'in_stock') {
@@ -126,37 +111,49 @@ class ProductController extends Controller
             }
         }
 
-        $products = $query->latest()->paginate(12)->withQueryString();
+        return $query;
+    }
 
-        // Transform products to include branch-specific quantity for the view
-        $products->getCollection()->transform(function ($product) use ($isSystemAdmin, $user, $filterBranch) {
-            if (!$isSystemAdmin && $user->branch_id) {
-                $branchData = $product->branches->first();
+    protected function transformProductForView($product, $isSystemAdmin, $user, $filterBranch) {
+        if (!$isSystemAdmin && $user->branch_id) {
+            $branchData = $product->branches->first();
+            $product->quantity = $branchData ? $branchData->pivot->quantity : 0;
+            $product->physical_location = $branchData ? $branchData->pivot->physical_location : null;
+            if ($branchData) {
+                $product->description = $branchData->pivot->description ?? $product->description;
+                $product->variations = $branchData->pivot->variations ?? $product->variations;
+            }
+        } else {
+            if ($filterBranch && $filterBranch !== 'all') {
+                $branchData = $product->branches->firstWhere('branch_name', $filterBranch);
                 $product->quantity = $branchData ? $branchData->pivot->quantity : 0;
                 $product->physical_location = $branchData ? $branchData->pivot->physical_location : null;
-                // Use branch-specific description and variations if available
+                
                 if ($branchData) {
                     $product->description = $branchData->pivot->description ?? $product->description;
                     $product->variations = $branchData->pivot->variations ?? $product->variations;
                 }
             } else {
-                // Admin View
-                if ($filterBranch && $filterBranch !== 'all') {
-                    // Admin selected a specific branch
-                    $branchData = $product->branches->firstWhere('branch_name', $filterBranch);
-                    $product->quantity = $branchData ? $branchData->pivot->quantity : 0;
-                    $product->physical_location = $branchData ? $branchData->pivot->physical_location : null;
-                    
-                    if ($branchData) {
-                        $product->description = $branchData->pivot->description ?? $product->description;
-                        $product->variations = $branchData->pivot->variations ?? $product->variations;
-                    }
-                } else {
-                    // Admin viewing "All Branches" - Sum up quantities
-                    $product->quantity = $product->branches->sum('pivot.quantity');
-                }
+                $product->quantity = $product->branches->sum('pivot.quantity');
             }
-            return $product;
+        }
+        return $product;
+    }
+
+    public function index(Request $request)
+    {
+        $user = auth()->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+        
+        $filterBranch = $filterBrand = $filterCategory = $filterStock = $filterCode = $filterCode2 = $filterSku = $search = null;
+
+        $query = $this->buildFilteredProductQuery($request, $user, $isSystemAdmin, $filterBranch, $filterBrand, $filterCategory, $filterStock, $filterCode, $filterCode2, $filterSku, $search);
+
+        $products = $query->latest()->paginate(12)->withQueryString();
+
+        // Transform products to include branch-specific quantity for the view
+        $products->getCollection()->transform(function ($product) use ($isSystemAdmin, $user, $filterBranch) {
+            return $this->transformProductForView($product, $isSystemAdmin, $user, $filterBranch);
         });
 
         // Get options for filters
@@ -203,6 +200,38 @@ class ProductController extends Controller
             ],
             'isSystemAdmin' => $isSystemAdmin,
             'suppliers' => $suppliers,
+        ]);
+    }
+
+    public function print(Request $request)
+    {
+        $user = auth()->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+        
+        $filterBranch = $filterBrand = $filterCategory = $filterStock = $filterCode = $filterCode2 = $filterSku = $search = null;
+
+        $query = $this->buildFilteredProductQuery($request, $user, $isSystemAdmin, $filterBranch, $filterBrand, $filterCategory, $filterStock, $filterCode, $filterCode2, $filterSku, $search);
+
+        // Get all matching products
+        $products = $query->latest()->get();
+
+        // Transform products to include branch-specific quantity for the view
+        $products->transform(function ($product) use ($isSystemAdmin, $user, $filterBranch) {
+            return $this->transformProductForView($product, $isSystemAdmin, $user, $filterBranch);
+        });
+
+        // Use the branch name from auth user or filter, to show on the print sheet
+        $branchName = 'All Branches';
+        if (!$isSystemAdmin && $user->branch) {
+            $branchName = $user->branch->branch_name;
+        } elseif ($isSystemAdmin && $filterBranch && $filterBranch !== 'all') {
+            $branchName = $filterBranch;
+        }
+
+        return Inertia::render('Products/Print', [
+            'products' => $products,
+            'branchName' => $branchName,
+            'isSystemAdmin' => $isSystemAdmin,
         ]);
     }
 
