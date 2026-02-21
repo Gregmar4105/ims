@@ -164,15 +164,10 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const [viewCodeProduct, setViewCodeProduct] = useState<Product | null>(null);
 
     async function handlePrint() {
-        alert("1. handlePrint started");
         if (!viewCodeProduct) return;
-
-        alert("2. Calling handleNativePrintFallback");
 
         // Try Native Share with our unified utility first
         const nativeTriggerेड = await handleNativePrintFallback('native-print-label', `label_${viewCodeProduct.sku || viewCodeProduct.id}`);
-
-        alert("3. Fallback returned: " + nativeTriggerेड);
 
         if (nativeTriggerेड) {
             return; // Exit if mobile handled it natively

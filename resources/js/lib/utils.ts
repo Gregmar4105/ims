@@ -20,9 +20,15 @@ export function resolveUrl(url: NonNullable<InertiaLinkProps['href']>): string {
 }
 
 export async function handleNativePrintFallback(elementId: string, filename: string): Promise<boolean> {
+    // Optimization: If we are not in the Median app, return false immediately 
+    // to allow standard window.print() to handle desktop/mobile-web browsers.
+    const isMedian = typeof window !== 'undefined' && (window as any).median?.share?.downloadFile;
+    if (!isMedian) {
+        return false;
+    }
+
     const el = document.getElementById(elementId);
     if (!el) {
-        alert("Print fallback failed: Element not found - " + elementId);
         return false;
     }
 
@@ -54,25 +60,12 @@ export async function handleNativePrintFallback(elementId: string, filename: str
                     (window as any).median.share.downloadFile({ url: blobUrl });
                     return true;
                 } catch (err: any) {
-                    alert("Median sharePage error: " + (err?.message || JSON.stringify(err)));
+                    console.error("Median sharePage error:", err);
                 }
             }
         }
 
-        // Standard Web Share API Fallback for mobile Safari/Chrome
-        const pdfBlob = pdf.output('blob');
-        const file = new File([pdfBlob], filename + '.pdf', { type: 'application/pdf' });
-
-        if (navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                files: [file],
-                title: 'Print Document',
-            });
-            return true;
-        }
-
     } catch (e: any) {
-        alert("PDF Generation Error: " + (e?.message || JSON.stringify(e)));
         console.error('Failed native print/share fallback conversion', e);
     }
 
