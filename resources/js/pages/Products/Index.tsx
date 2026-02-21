@@ -178,18 +178,20 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         qrSvg = qrSvg.replace(/width="\d+"/, '').replace(/height="\d+"/, '');
 
         // Helper to determine dynamic font size based on text length
-        const getDynamicSize = (text: string, base: number, threshold: number, min: number) => {
+        const getDynamicSize = (text: string, base: number, threshold: number, min: number, factor: number = 0.35) => {
             if (!text) return `${base}pt`;
             if (text.length > threshold) {
-                // Linear reduction or just jump to min
-                return `${Math.max(min, base - (text.length - threshold) * 0.2)}pt`;
+                // More aggressive reduction to force 1-line fit
+                return `${Math.max(min, base - (text.length - threshold) * factor)}pt`;
             }
             return `${base}pt`;
         };
 
-        const skuSize = getDynamicSize(viewCodeProduct.sku || viewCodeProduct.name || '', 8.5, 12, 6);
-        const codeSize = getDynamicSize((viewCodeProduct.code || '') + (viewCodeProduct.code_2 || ''), 7.5, 14, 5.5);
-        const supplierSize = getDynamicSize(viewCodeProduct.supplier?.name || '', 7.5, 14, 5.5);
+        // Aggressive thresholds for 28x20mm landscape
+        const skuSize = getDynamicSize(viewCodeProduct.sku || viewCodeProduct.name || '', 9, 14, 5, 0.4);
+        const codeSize = getDynamicSize((viewCodeProduct.code || '') + (viewCodeProduct.code_2 || ''), 7.5, 12, 4.5, 0.45);
+        const supplierSize = getDynamicSize(viewCodeProduct.supplier?.name || '', 7.5, 12, 4.5, 0.45);
+        const barcodeSize = getDynamicSize(viewCodeProduct.barcode || '', 7.5, 12, 4.5, 0.45);
 
         // CSS-based main window print hack
         // Mobile webviews block window.print() if called in an iframe.
@@ -274,8 +276,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                 
                 .info-line {
                     font-size: 7pt;
-                    white-space: normal;
-                    word-break: break-all;
+                    white-space: nowrap;
+                    overflow: hidden;
                     line-height: 1.1;
                     width: 100%;
                 }
@@ -291,10 +293,10 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                 }
                 
                 .product-sku {
-                    font-size: 8pt;
+                    font-size: 9pt;
                     font-weight: bold;
-                    white-space: normal;
-                    word-break: break-all;
+                    white-space: nowrap;
+                    overflow: hidden;
                     width: 100%;
                     line-height: 1;
                 }
@@ -312,7 +314,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         ${qrSvg}
                     </div>
                     <div class="info-stack">
-                        <div class="info-line" style="font-size: ${codeSize}">${viewCodeProduct.barcode || '-'}</div>
+                        <div class="info-line" style="font-size: ${barcodeSize}">${viewCodeProduct.barcode || '-'}</div>
                         <div class="info-line" style="font-size: ${codeSize}">
                             ${viewCodeProduct.code || ''} ${viewCodeProduct.code_2 || ''}
                         </div>
@@ -737,10 +739,10 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     {(() => {
                         if (!viewCodeProduct) return null;
 
-                        const getDynamicSize = (text: string, base: number, threshold: number, min: number) => {
+                        const getDynamicSize = (text: string, base: number, threshold: number, min: number, factor: number = 0.35) => {
                             if (!text) return `${base}pt`;
                             if (text.length > threshold) {
-                                return `${Math.max(min, base - (text.length - threshold) * 0.2)}pt`;
+                                return `${Math.max(min, base - (text.length - threshold) * factor)}pt`;
                             }
                             return `${base}pt`;
                         };
@@ -748,10 +750,12 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         const skuStr = viewCodeProduct.sku || viewCodeProduct.name || '';
                         const codesStr = (viewCodeProduct.code || '') + (viewCodeProduct.code_2 || '');
                         const supplierStr = viewCodeProduct.supplier?.name || '';
+                        const barcodeStr = viewCodeProduct.barcode || '';
 
-                        const skuSize = getDynamicSize(skuStr, 8.5, 12, 6);
-                        const codeSize = getDynamicSize(codesStr, 7.5, 14, 5.5);
-                        const supplierSize = getDynamicSize(supplierStr, 7.5, 14, 5.5);
+                        const skuSize = getDynamicSize(skuStr, 9, 14, 5, 0.4);
+                        const codeSize = getDynamicSize(codesStr, 7.5, 12, 4.5, 0.45);
+                        const supplierSize = getDynamicSize(supplierStr, 7.5, 12, 4.5, 0.45);
+                        const barcodeSize = getDynamicSize(barcodeStr, 7.5, 12, 4.5, 0.45);
 
                         return (
                             <div style={{ position: 'absolute', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none' }}>
@@ -771,15 +775,15 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             <QRCode value={viewCodeProduct.qr_code || ''} size={150} style={{ width: '100%', height: '100%' }} />
                                         </div>
                                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '1mm', overflow: 'hidden' }}>
-                                            <div style={{ fontSize: codeSize, whiteSpace: 'normal', wordBreak: 'break-all', lineHeight: 1.1 }}>{viewCodeProduct.barcode || '-'}</div>
-                                            <div style={{ fontSize: codeSize, whiteSpace: 'normal', wordBreak: 'break-all', lineHeight: 1.1 }}>
+                                            <div style={{ fontSize: barcodeSize, whiteSpace: 'nowrap', overflow: 'hidden', lineHeight: 1.1 }}>{viewCodeProduct.barcode || '-'}</div>
+                                            <div style={{ fontSize: codeSize, whiteSpace: 'nowrap', overflow: 'hidden', lineHeight: 1.1 }}>
                                                 {viewCodeProduct.code || ''} {viewCodeProduct.code_2 || ''}
                                             </div>
-                                            <div style={{ fontSize: supplierSize, whiteSpace: 'normal', wordBreak: 'break-all', lineHeight: 1.1 }}>{viewCodeProduct.supplier?.name || '-'}</div>
+                                            <div style={{ fontSize: supplierSize, whiteSpace: 'nowrap', overflow: 'hidden', lineHeight: 1.1 }}>{viewCodeProduct.supplier?.name || '-'}</div>
                                         </div>
                                     </div>
                                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginTop: 'auto' }}>
-                                        <div style={{ fontSize: skuSize, fontWeight: 'bold', whiteSpace: 'normal', wordBreak: 'break-all', width: '100%', lineHeight: 1 }}>{skuStr}</div>
+                                        <div style={{ fontSize: skuSize, fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%', lineHeight: 1 }}>{skuStr}</div>
                                         <div style={{ fontSize: '10pt', fontWeight: 'normal', lineHeight: 1, marginTop: '0.5mm' }}>
                                             {viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
                                         </div>
