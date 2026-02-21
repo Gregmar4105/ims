@@ -95,14 +95,14 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
         }
     }, [dateFrom, dateTo, statusFilter]);
 
-    const openPrint = () => {
+    const buildPrintUrl = () => {
         const params = new URLSearchParams();
         if (search) params.append('search', search);
         if (dateFrom) params.append('date_from', dateFrom);
         if (dateTo) params.append('date_to', dateTo);
         if (statusFilter && statusFilter !== 'all') params.append('status_filter', statusFilter);
 
-        window.open(`/sales-list/print?${params.toString()}`, '_blank');
+        return `/sales-list/print?${params.toString()}`;
     };
 
     const formatDate = (dateString: string) => {
@@ -142,14 +142,16 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Sales List" />
             <div className="flex h-full flex-1 flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Sales History</h1>
                         <p className="text-muted-foreground mt-1">View all completed and cancelled sales.</p>
                     </div>
-                    <Button onClick={openPrint} className="flex gap-2">
-                        <Printer className="w-4 h-4" /> Print List
-                    </Button>
+                    <a href={buildPrintUrl()} target="_blank" rel="noopener noreferrer">
+                        <Button className="flex gap-2">
+                            <Printer className="w-4 h-4" /> Print List
+                        </Button>
+                    </a>
                 </div>
 
                 {/* Summary Stats */}
@@ -290,14 +292,15 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                                             </div>
                                         </div>
                                         <div className="flex items-center mt-4 sm:mt-0">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="flex items-center gap-2"
-                                                onClick={() => window.open(`/sales/${sale.id}/print`, '_blank')}
-                                            >
-                                                <Printer className="w-3.5 h-3.5" /> Print Receipt
-                                            </Button>
+                                            <a href={`/sales/${sale.id}/print`} target="_blank" rel="noopener noreferrer">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    <Printer className="w-3.5 h-3.5" /> Print
+                                                </Button>
+                                            </a>
                                         </div>
                                     </div>
                                 </CardHeader>
