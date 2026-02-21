@@ -1,12 +1,14 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { SharedData } from '@/types';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, CheckCircle, XCircle, Clock, User, ArrowRight, Barcode, QrCode, Store, Search, DollarSign, Briefcase, Printer } from 'lucide-react';
+import { Package, CheckCircle, XCircle, Clock, User, ArrowRight, Barcode, QrCode, Store, Search, DollarSign, Briefcase, Printer, Settings2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import Pagination from '@/components/Pagination';
 
@@ -64,10 +66,38 @@ const breadcrumbs = [
 ];
 
 export default function Index({ sales, stats, filters }: { sales: PaginatedData<Sale>, stats: Stats, filters: { search?: string, date_from?: string, date_to?: string, status_filter?: string } }) {
+    const { auth } = usePage<SharedData>().props;
+    const userId = auth.user.id;
+
     const [search, setSearch] = useState(filters.search || '');
     const [dateFrom, setDateFrom] = useState(filters.date_from || '');
     const [dateTo, setDateTo] = useState(filters.date_to || '');
     const [statusFilter, setStatusFilter] = useState(filters.status_filter || 'all');
+
+    // Revenue Visibility Toggles
+    const [showWeekly, setShowWeekly] = useState(() => {
+        const stored = localStorage.getItem(`sales_stats_visibility_${userId}`);
+        if (stored) { try { const p = JSON.parse(stored); if (p.showWeekly !== undefined) return p.showWeekly; } catch (e) { } }
+        return true;
+    });
+    const [showMonthly, setShowMonthly] = useState(() => {
+        const stored = localStorage.getItem(`sales_stats_visibility_${userId}`);
+        if (stored) { try { const p = JSON.parse(stored); if (p.showMonthly !== undefined) return p.showMonthly; } catch (e) { } }
+        return true;
+    });
+    const [showAllTime, setShowAllTime] = useState(() => {
+        const stored = localStorage.getItem(`sales_stats_visibility_${userId}`);
+        if (stored) { try { const p = JSON.parse(stored); if (p.showAllTime !== undefined) return p.showAllTime; } catch (e) { } }
+        return true;
+    });
+
+    useEffect(() => {
+        localStorage.setItem(`sales_stats_visibility_${userId}`, JSON.stringify({
+            showWeekly,
+            showMonthly,
+            showAllTime
+        }));
+    }, [showWeekly, showMonthly, showAllTime, userId]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -144,7 +174,32 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
             <div className="flex h-full flex-1 flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Sales History</h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Sales History</h1>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full border shadow-sm">
+                                        <Settings2 className="h-4 w-4 text-muted-foreground" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-56">
+                                    <DropdownMenuLabel>Revenue Visibility</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuCheckboxItem checked={true} disabled>
+                                        Today's Revenue (Required)
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem checked={showWeekly} onCheckedChange={setShowWeekly}>
+                                        Weekly Revenue
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem checked={showMonthly} onCheckedChange={setShowMonthly}>
+                                        Monthly Revenue
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem checked={showAllTime} onCheckedChange={setShowAllTime}>
+                                        All-Time Revenue
+                                    </DropdownMenuCheckboxItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                         <p className="text-muted-foreground mt-1">View all completed and cancelled sales.</p>
                     </div>
                     <a href={buildPrintUrl()} target="_blank" rel="noopener noreferrer">
@@ -165,34 +220,40 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                             <div className="text-2xl font-bold">${stats.today_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         </CardContent>
                     </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Weekly Revenue</CardTitle>
-                            <DollarSign className="h-4 w-4 text-emerald-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">${stats.weekly_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-                            <DollarSign className="h-4 w-4 text-green-600" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">${stats.monthly_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">All-Time Revenue</CardTitle>
-                            <Briefcase className="h-4 w-4 text-blue-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">${stats.total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                            <p className="text-xs text-muted-foreground mt-1">{stats.total_sales} total successful trades</p>
-                        </CardContent>
-                    </Card>
+                    {showWeekly && (
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Weekly Revenue</CardTitle>
+                                <DollarSign className="h-4 w-4 text-emerald-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">${stats.weekly_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            </CardContent>
+                        </Card>
+                    )}
+                    {showMonthly && (
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+                                <DollarSign className="h-4 w-4 text-green-600" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">${stats.monthly_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            </CardContent>
+                        </Card>
+                    )}
+                    {showAllTime && (
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">All-Time Revenue</CardTitle>
+                                <Briefcase className="h-4 w-4 text-blue-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">${stats.total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                <p className="text-xs text-muted-foreground mt-1">{stats.total_sales} total successful trades</p>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
 
                 {/* Search Bar & Filters */}
