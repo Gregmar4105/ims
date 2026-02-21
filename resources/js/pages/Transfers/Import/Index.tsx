@@ -38,6 +38,7 @@ interface InventoryItem {
     code_2?: string;
     sku?: string;
     physical_location?: string;
+    reorder_level?: number;
     current_stock?: number;
     description?: string;
     variations?: Variation[];
@@ -387,6 +388,10 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                                     <div className="space-y-1.5">
                                                         <Label className="text-xs text-muted-foreground">Physical Loc.</Label>
                                                         <Input className="h-9" value={item.physical_location || ''} onChange={(e) => updateItem(idx, 'physical_location', e.target.value)} placeholder="Location" />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground">Reorder Level</Label>
+                                                        <Input type="number" className="h-9" value={item.reorder_level ?? ''} onChange={(e) => updateItem(idx, 'reorder_level', parseInt(e.target.value) || 0)} placeholder="0" />
                                                     </div>
                                                 </div>
                                             </CardContent>

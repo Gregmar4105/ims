@@ -123,6 +123,7 @@ class ImportTransferController extends Controller
             'items.*.code_2' => 'nullable|string|max:255',
             'items.*.sku' => 'nullable|string|max:255',
             'items.*.physical_location' => 'nullable|string|max:255',
+            'items.*.reorder_level' => 'nullable|integer|min:0',
         ]);
 
         $branchId = auth()->user()->branch_id;
@@ -138,7 +139,7 @@ class ImportTransferController extends Controller
                 'code_2' => $item['code_2'] ?? null,
                 'sku' => $item['sku'] ?? null,
                 'created_by' => auth()->id(),
-                'image_path' => 'New Product from Import Page', // Requested placeholder text
+                'image_path' => 'new_product_import.png',
             ]);
 
             BranchProduct::create([
@@ -146,7 +147,7 @@ class ImportTransferController extends Controller
                 'product_id' => $product->id,
                 'quantity' => $item['quantity'],
                 'physical_location' => $item['physical_location'] ?? null,
-                'reorder_level' => 0, // Default via schema or here
+                'reorder_level' => $item['reorder_level'] ?? 0,
             ]);
         }
 
