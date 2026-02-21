@@ -2,7 +2,6 @@ import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
-import { handleNativePrintFallback } from '@/lib/utils';
 
 interface Product {
     id: number;
@@ -55,12 +54,12 @@ export default function Print({ products, branchName, isSystemAdmin }: Props) {
 
             {/* Floating Print Button for Mobile Fallback */}
             <div className="fixed bottom-6 right-6 z-50 print:hidden">
-                <Button onClick={handleManualPrint} className="rounded-full shadow-lg gap-2" size="lg">
+                <Button onClick={() => window.print()} className="rounded-full shadow-lg gap-2" size="lg">
                     <Printer className="w-5 h-5" /> Print Inventory
                 </Button>
             </div>
 
-            <div id="printable-product-list" className="bg-white">
+            <div className="bg-white">
                 {/* Print Header */}
                 <div className="flex justify-between items-end border-b-2 border-black pb-4 mb-6">
                     <div>

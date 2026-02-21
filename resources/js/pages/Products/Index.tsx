@@ -166,167 +166,162 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     async function handlePrint() {
         if (!viewCodeProduct) return;
 
-        // Try Native Share with our unified utility first
-        const nativeTriggerेड = await handleNativePrintFallback('native-print-label', `label_${viewCodeProduct.sku || viewCodeProduct.id}.png`);
-
-        if (nativeTriggerेड) {
-            return; // Exit if mobile handled it natively
-        }
-
-        // DESKTOP FALLBACK using IFRAME
         const qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'absolute';
-        iframe.style.width = '0px';
-        iframe.style.height = '0px';
-        iframe.style.border = 'none';
-        document.body.appendChild(iframe);
 
-        const doc = iframe.contentWindow?.document || iframe.contentDocument;
-        if (doc) {
-            doc.open();
-            doc.write(`
-                <html>
-                    <head>
-                        <title>Print Label</title>
-                        <style>
-                            @page {
-                                size: 38mm 25mm;
-                                margin: 0;
-                            }
-                            body {
-                                margin: 0;
-                                padding: 0mm 1mm;
-                                font-family: 'Arial', sans-serif;
-                                width: 38mm;
-                                height: 25mm;
-                                overflow: hidden;
-                                display: flex;
-                                flex-direction: column;
-                                justify-content: center;
-                                background: white;
-                                color: black;
-                            }
-                            .label-container {
-                                width: 100%;
-                                height: 100%;
-                                display: flex;
-                                flex-direction: column;
-                                box-sizing: border-box;
-                            }
-                            
-                            /* Main Upper Section */
-                            .upper-section {
-                                display: flex;
-                                height: 16mm;
-                                width: 100%;
-                                align-items: center;
-                                padding-top: 1mm;
-                            }
-                            
-                            /* QR Left */
-                            .qr-section {
-                                width: 15mm;
-                                height: 15mm;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                flex-shrink: 0;
-                            }
-                            .qr-section svg {
-                                width: 100% !important;
-                                height: 100% !important;
-                            }
+        // CSS-based main window print hack
+        // Mobile webviews block window.print() if called in an iframe.
+        // So we append the label to the main body, add a print-only visible class, and print the main window.
 
-                            /* Right Info Stack */
-                            .info-right {
-                                flex: 1;
-                                display: flex;
-                                flex-direction: column;
-                                justify-content: center;
-                                padding-left: 2mm;
-                                overflow: hidden;
-                            }
-                            
-                            .info-line {
-                                font-size: 8px; /* Target text size */
-                                white-space: nowrap;
-                                overflow: hidden;
-                                text-overflow: ellipsis;
-                                line-height: 1.2;
-                                font-family: 'Arial', sans-serif;
-                            }
+        const containerId = 'temp-qr-print-container-' + Date.now();
+        const container = document.createElement('div');
+        container.id = containerId;
+        container.className = 'print-only-label';
 
-                            /* Bottom Section */
-                            .bottom-section {
-                                flex: 1;
-                                display: flex;
-                                flex-direction: column;
-                                justify-content: flex-start;
-                                align-items: center;
-                                text-align: center;
-                                overflow: hidden;
-                                padding-top: 1mm;
-                            }
-                            
-                            .product-name {
-                                font-size: 8px;
-                                white-space: nowrap;
-                                overflow: hidden;
-                                text-overflow: ellipsis;
-                                width: 100%;
-                                line-height: 1.2;
-                                font-family: 'Arial', sans-serif;
-                            }
-
-                            .price {
-                                font-size: 10px;
-                                white-space: nowrap;
-                                line-height: 1.2;
-                                font-family: 'Arial', sans-serif;
-                            }
-
-                        </style>
-                    </head>
-                    <body>
-                        <div class="label-container">
-                            <div class="upper-section">
-                                <div class="qr-section">
-                                    ${qrSvg}
-                                </div>
-                                <div class="info-right">
-                                    <div class="info-line">${viewCodeProduct.barcode || viewCodeProduct.code || '-'}</div>
-                                    <div class="info-line">${viewCodeProduct.supplier?.name || viewCodeProduct.brand?.name || '-'}</div>
-                                    <div class="info-line">${viewCodeProduct.category?.name || '-'}</div>
-                                </div>
-                            </div>
-                            
-                            <div class="bottom-section">
-                                <div class="product-name">${viewCodeProduct.sku || viewCodeProduct.name || '-'}</div>
-                                <div class="price">
-                                    ${viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
-                                </div>
-                            </div>
-                        </div>
-                    </body>
-                </html>
-                `);
-            doc.close();
-
-            setTimeout(() => {
-                try {
-                    iframe.contentWindow?.focus();
-                    iframe.contentWindow?.print();
-                } catch (e) {
-                    console.error('Print failed', e);
-                }
-                setTimeout(() => {
-                    if (document.body.contains(iframe)) {
-                        document.body.removeChild(iframe);
+        container.innerHTML = `
+            <style>
+                @media print {
+                    #app {
+                        display: none !important;
                     }
-                }, 5000);
-            }, 500);
-        }
+                    .print-only-label {
+                        display: block !important;
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        background: white !important;
+                    }
+                    @page {
+                        size: 38mm 25mm;
+                        margin: 0;
+                    }
+                    html, body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: white !important;
+                    }
+                }
+                
+                .label-container {
+                    width: 38mm;
+                    height: 25mm;
+                    margin: 0;
+                    padding: 0mm 1mm;
+                    font-family: 'Arial', sans-serif;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    background: white;
+                    color: black;
+                    box-sizing: border-box;
+                }
+                
+                /* Main Upper Section */
+                .upper-section {
+                    display: flex;
+                    height: 16mm;
+                    width: 100%;
+                    align-items: center;
+                    padding-top: 1mm;
+                }
+                
+                /* QR Left */
+                .qr-section {
+                    width: 15mm;
+                    height: 15mm;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                }
+                .qr-section svg {
+                    width: 100% !important;
+                    height: 100% !important;
+                }
+
+                /* Right Info Stack */
+                .info-right {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    padding-left: 2mm;
+                    overflow: hidden;
+                }
+                
+                .info-line {
+                    font-size: 8px; /* Target text size */
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    line-height: 1.2;
+                }
+
+                /* Bottom Section */
+                .bottom-section {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: flex-start;
+                    align-items: center;
+                    text-align: center;
+                    overflow: hidden;
+                    padding-top: 1mm;
+                }
+                
+                .product-name {
+                    font-size: 8px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    width: 100%;
+                    line-height: 1.2;
+                }
+
+                .price {
+                    font-size: 10px;
+                    white-space: nowrap;
+                    line-height: 1.2;
+                }
+            </style>
+            <div class="label-container">
+                <div class="upper-section">
+                    <div class="qr-section">
+                        ${qrSvg}
+                    </div>
+                    <div class="info-right">
+                        <div class="info-line">${viewCodeProduct.barcode || viewCodeProduct.code || '-'}</div>
+                        <div class="info-line">${viewCodeProduct.supplier?.name || viewCodeProduct.brand?.name || '-'}</div>
+                        <div class="info-line">${viewCodeProduct.category?.name || '-'}</div>
+                    </div>
+                </div>
+                
+                <div class="bottom-section">
+                    <div class="product-name">${viewCodeProduct.sku || viewCodeProduct.name || '-'}</div>
+                    <div class="price">
+                        ${viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Hide container in normal view (it's only meant for printing)
+        container.style.display = 'none';
+
+        document.body.appendChild(container);
+
+        // Required delay to ensure DOM and generic styles load
+        setTimeout(() => {
+            window.print();
+
+            // Cleanup after print dialog opens/closes
+            setTimeout(() => {
+                if (document.body.contains(container)) {
+                    document.body.removeChild(container);
+                }
+            }, 3000);
+        }, 500);
     }
 
     return (
@@ -715,39 +710,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         )}
                     </div>
 
-                    {/* Hidden Label Render for html-to-image Native Share fallback */}
-                    {viewCodeProduct && (
-                        <div style={{ position: 'absolute', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none' }}>
-                            <div id="native-print-label" style={{
-                                width: '38mm',
-                                height: '25mm',
-                                background: 'white',
-                                color: 'black',
-                                fontFamily: 'Arial, sans-serif',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                boxSizing: 'border-box',
-                                padding: '0mm 1mm'
-                            }}>
-                                <div style={{ display: 'flex', height: '16mm', width: '100%', alignItems: 'center', paddingTop: '1mm' }}>
-                                    <div style={{ width: '15mm', height: '15mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                        <QRCode value={viewCodeProduct.qr_code || ''} size={150} style={{ width: '100%', height: '100%' }} />
-                                    </div>
-                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '2mm', overflow: 'hidden' }}>
-                                        <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{viewCodeProduct.barcode || viewCodeProduct.code || '-'}</div>
-                                        <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{viewCodeProduct.supplier?.name || viewCodeProduct.brand?.name || '-'}</div>
-                                        <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{viewCodeProduct.category?.name || '-'}</div>
-                                    </div>
-                                </div>
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', textAlign: 'center', overflow: 'hidden', paddingTop: '1mm' }}>
-                                    <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', lineHeight: 1.2 }}>{viewCodeProduct.sku || viewCodeProduct.name || '-'}</div>
-                                    <div style={{ fontSize: '10px', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
-                                        ₱{viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+
                     <DialogFooter className="sm:justify-between">
                         <Button type="button" variant="outline" onClick={handlePrint}>
                             <Printer className="mr-2 h-4 w-4" /> Print

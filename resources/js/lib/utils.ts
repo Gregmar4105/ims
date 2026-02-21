@@ -1,7 +1,6 @@
 import { InertiaLinkProps } from '@inertiajs/react';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { toBlob } from 'html-to-image';
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));

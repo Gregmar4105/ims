@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
-import { handleNativePrintFallback } from '@/lib/utils';
 
 interface Transfer {
     id: number;
@@ -26,21 +25,8 @@ interface Transfer {
 
 export default function PrintItem({ transfer }: { transfer: Transfer }) {
     useEffect(() => {
-        const attemptPrint = async () => {
-            const nativeTriggered = await handleNativePrintFallback('printable-manifest', `manifest_${transfer.id}.png`);
-            if (!nativeTriggered) {
-                window.print();
-            }
-        };
-        setTimeout(attemptPrint, 500);
-    }, [transfer.id]);
-
-    const handleManualPrint = async () => {
-        const nativeTriggered = await handleNativePrintFallback('printable-manifest', `manifest_${transfer.id}.png`);
-        if (!nativeTriggered) {
-            window.print();
-        }
-    };
+        window.print();
+    }, []);
 
     const formatDate = (dateString: string) => {
         return new Intl.DateTimeFormat('en-US', {
@@ -58,12 +44,12 @@ export default function PrintItem({ transfer }: { transfer: Transfer }) {
 
             {/* Floating Print Button for Mobile Fallback */}
             <div className="fixed bottom-6 right-6 z-50 print:hidden">
-                <Button onClick={handleManualPrint} className="rounded-full shadow-lg gap-2" size="lg">
+                <Button onClick={() => window.print()} className="rounded-full shadow-lg gap-2" size="lg">
                     <Printer className="w-5 h-5" /> Print Manifest
                 </Button>
             </div>
 
-            <div id="printable-manifest" className="max-w-3xl mx-auto p-8 print:p-0 font-sans bg-white">
+            <div className="max-w-3xl mx-auto p-8 print:p-0 font-sans bg-white">
                 {/* Header */}
                 <div className="text-center border-b-2 border-dashed border-gray-300 pb-6 mb-6">
                     <h1 className="text-3xl font-bold mb-2 tracking-tighter uppercase">{transfer.destination_branch?.branch_name}</h1>
