@@ -172,16 +172,16 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                                     <DropdownMenuLabel>Quantity Visibility</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuCheckboxItem checked={true} disabled>
-                                        Today's Quantity (Required)
+                                        Today's Transfers(Required)
                                     </DropdownMenuCheckboxItem>
                                     <DropdownMenuCheckboxItem checked={showWeekly} onCheckedChange={setShowWeekly}>
-                                        Weekly Quantity
+                                        Weekly Transfers
                                     </DropdownMenuCheckboxItem>
                                     <DropdownMenuCheckboxItem checked={showMonthly} onCheckedChange={setShowMonthly}>
-                                        Monthly Quantity
+                                        Monthly Transfers
                                     </DropdownMenuCheckboxItem>
                                     <DropdownMenuCheckboxItem checked={showAllTime} onCheckedChange={setShowAllTime}>
-                                        All-Time Quantity
+                                        All-Time Transfers
                                     </DropdownMenuCheckboxItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
