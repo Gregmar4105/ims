@@ -249,9 +249,14 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                     <p className="text-sm text-blue-700/80 text-center max-w-sm">
                                         Please wait while the AI extracts inventory items from your image...
                                     </p>
-                                    <p className="text-xs text-blue-700/60 font-medium mt-4">
-                                        Powered by Larable AI
-                                    </p>
+                                    <div className="mt-4 flex flex-col items-center">
+                                        <p className="text-xs text-blue-700/60 font-medium mb-1">
+                                            Powered by Larable AI
+                                        </p>
+                                        <p className="text-xs text-amber-600 font-medium text-center bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+                                            AI makes mistakes, always double-check results before proceeding.
+                                        </p>
+                                    </div>
                                 </CardContent>
                             </Card>
                         ) : items.length > 0 ? (
