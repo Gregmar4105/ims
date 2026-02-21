@@ -21,7 +21,10 @@ export function resolveUrl(url: NonNullable<InertiaLinkProps['href']>): string {
 
 export async function handleNativePrintFallback(elementId: string, filename: string): Promise<boolean> {
     const el = document.getElementById(elementId);
-    if (!el) return false;
+    if (!el) {
+        alert("Print fallback failed: Element not found - " + elementId);
+        return false;
+    }
 
     try {
         // We use toCanvas instead of toBlob to get the dimensions easily and draw it into jsPDF
@@ -43,10 +46,14 @@ export async function handleNativePrintFallback(elementId: string, filename: str
 
         // Try Median JS Bridge if it's injected
         if (typeof window !== 'undefined' && (window as any).median?.share?.sharePage) {
-            // Get the PDF as a data URI string (base64)
-            const pdfBase64 = pdf.output('datauristring');
-            (window as any).median.share.sharePage({ url: pdfBase64 });
-            return true;
+            try {
+                // Get the PDF as a data URI string (base64)
+                const pdfBase64 = pdf.output('datauristring');
+                (window as any).median.share.sharePage({ url: pdfBase64 });
+                return true;
+            } catch (err: any) {
+                alert("Median sharePage error: " + (err?.message || JSON.stringify(err)));
+            }
         }
 
         // Standard Web Share API Fallback for mobile Safari/Chrome
@@ -64,7 +71,8 @@ export async function handleNativePrintFallback(elementId: string, filename: str
             }
         }
 
-    } catch (e) {
+    } catch (e: any) {
+        alert("PDF Generation Error: " + (e?.message || JSON.stringify(e)));
         console.error('Failed native print/share fallback conversion', e);
     }
 
