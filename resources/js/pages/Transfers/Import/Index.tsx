@@ -1,5 +1,5 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -11,6 +11,14 @@ import axios from 'axios';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Variation {
     name: string;
@@ -58,6 +66,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
     // Local state
     const [items, setItems] = useState<InventoryItem[]>([]);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
     useEffect(() => {
         // Check both prop (from render) and flash (fallback)
@@ -133,15 +142,30 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
         setItems([...items, { item_name: '', quantity: 1, variations: [] }]);
     };
 
+    const confirmSubmitAll = () => {
+        setIsConfirmModalOpen(true);
+    };
+
     const submitAll = () => {
-        toast.info(`Processing ${items.length} items (Implementation pending)`);
+        setIsConfirmModalOpen(false);
+        router.post('/import-transfer/bulk-store', { items: items.filter(i => !i.exists_in_branch) } as any, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                toast.success('Successfully created new products.');
+                // Inertia will handle the redirect sent by the backend.
+            },
+            onError: () => {
+                toast.error("Failed to process the items. Please check if all required fields are filled.");
+            }
+        });
     };
 
     return (
         <AppLayout breadcrumbs={[{ title: 'Import Transfer', href: '/import-transfer' }]}>
             <Head title="Import Transfer" />
 
-            <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
+            <div className="w-full max-w-[1600px] mx-auto p-4 md:p-8 space-y-6">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Import Transfer from Image</h2>
                     <p className="text-muted-foreground">
@@ -149,9 +173,9 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                     </p>
                 </div>
 
-                <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Upload Section */}
-                    <Card className="h-fit">
+                    <Card className="lg:col-span-4 sticky top-6">
                         <CardHeader>
                             <CardTitle>Upload Image</CardTitle>
                             <CardDescription>Supported formats: JPG, PNG</CardDescription>
@@ -215,20 +239,23 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                     </Card>
 
                     {/* Results Section */}
-                    <div className="space-y-6">
+                    <div className="lg:col-span-8 flex flex-col h-full min-h-[500px]">
                         {processing ? (
-                            <Card className="border-blue-200 bg-white shadow-md">
+                            <Card className="border-blue-200 bg-white shadow-md flex-1">
                                 <CardContent className="h-full min-h-[300px] flex flex-col items-center justify-center p-8 text-blue-600">
                                     <Loader2 className="h-12 w-12 mb-4 animate-spin opacity-60" />
                                     <h3 className="text-xl font-medium text-blue-900 mb-1">Analyzing Document</h3>
                                     <p className="text-sm text-blue-700/80 text-center max-w-sm">
-                                        Please wait while the AI extracts inventory items from your image... Supported models may take a few seconds.
+                                        Please wait while the AI extracts inventory items from your image...
+                                    </p>
+                                    <p className="text-xs text-blue-700/60 font-medium mt-4">
+                                        Powered by Larable AI
                                     </p>
                                 </CardContent>
                             </Card>
                         ) : items.length > 0 ? (
-                            <Card className="border-green-200 bg-white shadow-md">
-                                <CardHeader className="bg-green-50/50 pb-4">
+                            <Card className="border-green-200 bg-white shadow-md flex-1 flex flex-col">
+                                <CardHeader className="bg-green-50/50 pb-4 shrink-0">
                                     <div className="flex justify-between items-center">
                                         <CardTitle className="text-green-800 flex items-center gap-2">
                                             Analysis Results
@@ -367,14 +394,14 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                     ))}
                                 </CardContent>
                                 <CardFooter className="bg-green-50/50 p-4 border-t sticky bottom-0 z-10">
-                                    <Button className="w-full bg-green-600 hover:bg-green-700 shadow-sm" onClick={submitAll}>
+                                    <Button className="w-full bg-green-600 hover:bg-green-700 shadow-sm" onClick={confirmSubmitAll} disabled={processing}>
                                         <Save className="w-4 h-4 mr-2" />
                                         Update Product List
                                     </Button>
                                 </CardFooter>
                             </Card>
                         ) : (
-                            <div className="h-full min-h-[300px] flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg bg-muted/5 text-muted-foreground">
+                            <div className="h-full w-full min-h-[500px] flex-1 flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg bg-muted/5 text-muted-foreground">
                                 <FileImage className="h-12 w-12 mb-3 opacity-10" />
                                 <p>Upload an image to see analysis results here.</p>
                             </div>
@@ -382,6 +409,27 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                     </div>
                 </div>
             </div>
+
+            {/* Confirmation Modal */}
+            <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Everything looks good?</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to add these new items to your product inventory?
+                            This action will create new product records and establish their initial stock levels for this branch.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-4">
+                        <Button variant="outline" onClick={() => setIsConfirmModalOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={submitAll} disabled={processing}>
+                            {processing ? "Saving..." : "Confirm & Save"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

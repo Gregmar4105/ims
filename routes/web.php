@@ -80,6 +80,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('import-transfer', [\App\Http\Controllers\ImportTransferController::class, 'index'])->name('transfers.import');
     Route::post('import-transfer', [\App\Http\Controllers\ImportTransferController::class, 'store'])->name('transfers.import.store');
     Route::post('import-transfer/update-stock', [\App\Http\Controllers\ImportTransferController::class, 'updateStock'])->name('transfers.import.updateStock');
+    Route::post('import-transfer/bulk-store', [\App\Http\Controllers\ImportTransferController::class, 'bulkStore'])->name('transfers.import.bulkStore');
 
     // Sales routes
     Route::get('sales-list', [\App\Http\Controllers\SaleController::class, 'index'])->name('sales.index');

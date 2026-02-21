@@ -106,17 +106,50 @@ class ImportTransferController extends Controller
             ->where('branch_id', $branchId)
             ->first();
 
-        if ($branchProduct) {
-            $branchProduct->quantity += $request->quantity_added;
-            $branchProduct->save();
+        return response()->json(['success' => false, 'message' => 'Product not found in this branch.'], 404);
+    }
 
-            return response()->json([
-                'success' => true,
-                'new_stock' => $branchProduct->quantity,
-                'message' => 'Stock updated successfully.'
+    public function bulkStore(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.item_name' => 'required|string|max:255',
+            'items.*.category_id' => 'required|exists:categories,id',
+            'items.*.brand_id' => 'required|exists:brands,id',
+            'items.*.supplier_id' => 'nullable|exists:suppliers,id',
+            'items.*.price' => 'required|numeric|min:0',
+            'items.*.quantity' => 'required|integer|min:0',
+            'items.*.code' => 'nullable|string|max:255',
+            'items.*.code_2' => 'nullable|string|max:255',
+            'items.*.sku' => 'nullable|string|max:255',
+            'items.*.physical_location' => 'nullable|string|max:255',
+        ]);
+
+        $branchId = auth()->user()->branch_id;
+
+        foreach ($request->items as $item) {
+            $product = Product::create([
+                'name' => $item['item_name'],
+                'category_id' => $item['category_id'],
+                'brand_id' => $item['brand_id'],
+                'supplier_id' => $item['supplier_id'] ?? null,
+                'price' => $item['price'],
+                'code' => $item['code'] ?? null,
+                'code_2' => $item['code_2'] ?? null,
+                'sku' => $item['sku'] ?? null,
+                'created_by' => auth()->id(),
+                'image_path' => 'New Product from Import Page', // Requested placeholder text
+            ]);
+
+            BranchProduct::create([
+                'branch_id' => $branchId,
+                'product_id' => $product->id,
+                'quantity' => $item['quantity'],
+                'physical_location' => $item['physical_location'] ?? null,
+                'reorder_level' => 0, // Default via schema or here
             ]);
         }
 
-        return response()->json(['success' => false, 'message' => 'Product not found in this branch.'], 404);
+        return redirect()->route('products.index')->with('success', 'Successfully imported and created new products.');
     }
 }
