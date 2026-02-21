@@ -5,6 +5,7 @@ import { SharedData } from '@/types';
 import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight, Filter, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
+import { handleNativePrintFallback } from '@/lib/utils';
 import Pagination from '@/components/Pagination';
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +27,6 @@ import {
 import { Label } from "@/components/ui/label";
 import QRCode from "react-qr-code";
 import Barcode from "react-barcode";
-import { handleNativePrintFallback } from '@/lib/utils';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -165,6 +165,13 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
 
     async function handlePrint() {
         if (!viewCodeProduct) return;
+
+        // Try Native Share with our unified utility first
+        const nativeTriggerेड = await handleNativePrintFallback('native-print-label', `label_${viewCodeProduct.sku || viewCodeProduct.id}`);
+
+        if (nativeTriggerेड) {
+            return; // Exit if mobile handled it natively
+        }
 
         const qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
 
@@ -709,6 +716,40 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             <Barcode value={viewCodeProduct.barcode} width={4} height={150} fontSize={14} />
                         )}
                     </div>
+
+                    {/* Hidden Label Render for html-to-image Native Share fallback */}
+                    {viewCodeProduct && (
+                        <div style={{ position: 'absolute', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none' }}>
+                            <div id="native-print-label" style={{
+                                width: '38mm',
+                                height: '25mm',
+                                background: 'white',
+                                color: 'black',
+                                fontFamily: 'Arial, sans-serif',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                boxSizing: 'border-box',
+                                padding: '0mm 1mm'
+                            }}>
+                                <div style={{ display: 'flex', height: '16mm', width: '100%', alignItems: 'center', paddingTop: '1mm' }}>
+                                    <div style={{ width: '15mm', height: '15mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <QRCode value={viewCodeProduct.qr_code || ''} size={150} style={{ width: '100%', height: '100%' }} />
+                                    </div>
+                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '2mm', overflow: 'hidden' }}>
+                                        <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{viewCodeProduct.barcode || viewCodeProduct.code || '-'}</div>
+                                        <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{viewCodeProduct.supplier?.name || viewCodeProduct.brand?.name || '-'}</div>
+                                        <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{viewCodeProduct.category?.name || '-'}</div>
+                                    </div>
+                                </div>
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', textAlign: 'center', overflow: 'hidden', paddingTop: '1mm' }}>
+                                    <div style={{ fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', lineHeight: 1.2 }}>{viewCodeProduct.sku || viewCodeProduct.name || '-'}</div>
+                                    <div style={{ fontSize: '10px', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
+                                        ₱{viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
 
                     <DialogFooter className="sm:justify-between">

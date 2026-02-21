@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
+import { handleNativePrintFallback } from '@/lib/utils';
 
 interface Product {
     id: number;
@@ -32,7 +33,7 @@ interface Props {
 export default function Print({ products, branchName, isSystemAdmin }: Props) {
     useEffect(() => {
         const attemptPrint = async () => {
-            const nativeTriggered = await handleNativePrintFallback('printable-product-list', `product_inventory_${branchName}.png`);
+            const nativeTriggered = await handleNativePrintFallback('printable-product-list', `product_inventory_${branchName}`);
             if (!nativeTriggered) {
                 window.print();
             }
@@ -42,7 +43,7 @@ export default function Print({ products, branchName, isSystemAdmin }: Props) {
     }, [branchName]);
 
     const handleManualPrint = async () => {
-        const nativeTriggerेड = await handleNativePrintFallback('printable-product-list', `product_inventory_${branchName}.png`);
+        const nativeTriggerेड = await handleNativePrintFallback('printable-product-list', `product_inventory_${branchName}`);
         if (!nativeTriggerेड) {
             window.print();
         }
@@ -54,7 +55,7 @@ export default function Print({ products, branchName, isSystemAdmin }: Props) {
 
             {/* Floating Print Button for Mobile Fallback */}
             <div className="fixed bottom-6 right-6 z-50 print:hidden">
-                <Button onClick={() => window.print()} className="rounded-full shadow-lg gap-2" size="lg">
+                <Button onClick={handleManualPrint} className="rounded-full shadow-lg gap-2" size="lg">
                     <Printer className="w-5 h-5" /> Print Inventory
                 </Button>
             </div>

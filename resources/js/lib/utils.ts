@@ -1,6 +1,7 @@
 import { InertiaLinkProps } from '@inertiajs/react';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { toBlob } from 'html-to-image';
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -27,15 +28,19 @@ export async function handleNativePrintFallback(elementId: string, filename: str
         const blob = await toBlob(el, { pixelRatio: 2, backgroundColor: '#ffffff' });
         if (!blob) return false;
 
-        const file = new File([blob], filename, { type: blob.type });
+        // Force Android/Median to treat this as a document/PDF rather than a basic image 
+        // to encourage the "Print" option in the intent chooser.
+        const file = new File([blob], filename + '.pdf', { type: 'application/pdf' });
 
         // 1. Try Median JS Bridge if it's injected
         if (typeof window !== 'undefined' && (window as any).median?.share?.sharePage) {
             const reader = new FileReader();
-            reader.readAsDataURL(blob);
+            reader.readAsDataURL(file);
             reader.onloadend = () => {
-                const base64data = reader.result;
-                (window as any).median.share.sharePage({ url: base64data });
+                const base64data = reader.result as string;
+                // Replace the MIME type in the base64 string to match the forced PDF type
+                const pdfBase64 = base64data.replace(/^data:image\/(png|jpeg);/, 'data:application/pdf;');
+                (window as any).median.share.sharePage({ url: pdfBase64 });
             };
             return true; // Assume success if Median intercept function exists
         }

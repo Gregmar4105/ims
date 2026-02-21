@@ -3,6 +3,8 @@ import { useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Printer, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { handleNativePrintFallback } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface Sale {
     id: number;
@@ -22,8 +24,21 @@ interface Sale {
 
 export default function PrintList({ sales, filters }: { sales: Sale[], filters: any }) {
     useEffect(() => {
-        window.print();
-    }, []);
+        const attemptPrint = async () => {
+            const nativeTriggered = await handleNativePrintFallback('printable-sales-list', `sales_report_${format(new Date(), 'yyyyMMdd')}`);
+            if (!nativeTriggered) {
+                window.print();
+            }
+        };
+        setTimeout(attemptPrint, 500);
+    }, [sales]);
+
+    const handleManualPrint = async () => {
+        const nativeTriggerेड = await handleNativePrintFallback('printable-sales-list', `sales_report_${format(new Date(), 'yyyyMMdd')}`);
+        if (!nativeTriggerेड) {
+            window.print();
+        }
+    };
 
     const formatDate = (dateString: string) => {
         return new Intl.DateTimeFormat('en-US', {
@@ -42,12 +57,12 @@ export default function PrintList({ sales, filters }: { sales: Sale[], filters: 
 
             {/* Floating Print Button for Mobile Fallback */}
             <div className="fixed bottom-6 right-6 z-50 print:hidden">
-                <Button onClick={() => window.print()} className="rounded-full shadow-lg gap-2" size="lg">
+                <Button onClick={handleManualPrint} className="rounded-full shadow-lg gap-2" size="lg">
                     <Printer className="w-5 h-5" /> Print Report
                 </Button>
             </div>
 
-            <div className="p-8 max-w-5xl mx-auto print:p-0 print:max-w-none bg-white">
+            <div id="printable-sales-list" className="p-8 max-w-5xl mx-auto print:p-0 print:max-w-none bg-white">
                 {/* Header Section */}
                 <div className="flex justify-between items-start mb-6 border-b pb-4">
                     <div>
