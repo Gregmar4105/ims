@@ -14,6 +14,7 @@ class Branch extends Model
         'location',
         'branch_status',
         'google_maps_embed_code',
+        'profile_photo_path',
     ];
 
     

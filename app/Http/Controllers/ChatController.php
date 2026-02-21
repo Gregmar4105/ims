@@ -52,7 +52,7 @@ class ChatController extends Controller
         
         $currentUserId = auth()->id();
         
-        $query = \App\Models\Message::with('sender')
+        $query = \App\Models\Message::with(['sender.branch'])
             ->where(function($query) use ($currentBranchId, $branch, $currentUserId) {
                 $query->where(function($q) use ($currentBranchId, $branch) {
                     // Incoming: From target branch to my branch (or me if no branch)
@@ -224,7 +224,7 @@ class ChatController extends Controller
             \Illuminate\Support\Facades\Log::error('OneSignal notification failed: ' . $e->getMessage());
         }
 
-        return response()->json($message->load('sender'));
+        return response()->json($message->load(['sender.branch']));
     }
 
 

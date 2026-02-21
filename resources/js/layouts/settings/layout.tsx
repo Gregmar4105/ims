@@ -7,31 +7,45 @@ import { edit } from '@/routes/profile';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
+import { type SharedData } from '@/types';
 
-const sidebarNavItems: NavItem[] = [
-    {
-        title: 'Profile',
-        href: edit(),
-        icon: null,
-    },
-    {
-        title: 'Password',
-        href: editPassword(),
-        icon: null,
-    },
-    {
-        title: 'Two-Factor Auth',
-        href: show(),
-        icon: null,
-    },
-    {
-        title: 'Appearance',
-        href: editAppearance(),
-        icon: null,
-    },
-];
+const getSidebarNavItems = (hasBranch: boolean): NavItem[] => {
+    const items: NavItem[] = [
+        {
+            title: 'Profile',
+            href: edit(),
+            icon: null,
+        },
+        {
+            title: 'Password',
+            href: editPassword(),
+            icon: null,
+        },
+        {
+            title: 'Two-Factor Auth',
+            href: show(),
+            icon: null,
+        },
+        {
+            title: 'Appearance',
+            href: editAppearance(),
+            icon: null,
+        },
+    ];
+
+    if (hasBranch) {
+        // Insert Branch Profile before Password
+        items.splice(1, 0, {
+            title: 'Branch Profile',
+            href: '/settings/branch-profile',
+            icon: null,
+        });
+    }
+
+    return items;
+};
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     // When server-side rendering, we only render the layout on the client...
@@ -40,6 +54,9 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     }
 
     const currentPath = window.location.pathname;
+    const { auth } = usePage<SharedData>().props;
+    const hasBranch = !!auth.user.branch_id;
+    const sidebarNavItems = getSidebarNavItems(hasBranch);
 
     return (
         <div className="px-4 py-6">

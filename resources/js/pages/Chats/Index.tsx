@@ -28,6 +28,7 @@ declare global {
 interface Branch {
     id: number;
     branch_name: string;
+    profile_photo_path?: string | null;
 }
 
 interface User {
@@ -35,6 +36,7 @@ interface User {
     name: string;
     branch_id: number;
     profile_photo_url?: string;
+    branch?: Branch;
 }
 
 interface Message {
@@ -423,6 +425,7 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                                         )}
                                     >
                                         <Avatar>
+                                            <AvatarImage src={branch.profile_photo_path ? `/storage/${branch.profile_photo_path}` : undefined} />
                                             <AvatarFallback>{branch.branch_name.substring(0, 2).toUpperCase()}</AvatarFallback>
                                         </Avatar>
                                         <div className="flex-1 overflow-hidden">
@@ -456,6 +459,7 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                                             <ArrowLeft className="w-5 h-5" />
                                         </Button>
                                         <Avatar>
+                                            <AvatarImage src={selectedBranch.profile_photo_path ? `/storage/${selectedBranch.profile_photo_path}` : undefined} />
                                             <AvatarFallback>{selectedBranch.branch_name.substring(0, 2).toUpperCase()}</AvatarFallback>
                                         </Avatar>
                                         <div>
@@ -655,7 +659,7 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                                                     >
                                                         {!isMe && (
                                                             <Avatar className="w-8 h-8 mt-1">
-                                                                <AvatarImage src={msg.sender?.profile_photo_url} />
+                                                                <AvatarImage src={msg.sender?.branch?.profile_photo_path ? `/storage/${msg.sender.branch.profile_photo_path}` : msg.sender?.profile_photo_url} />
                                                                 <AvatarFallback>{msg.sender?.name?.substring(0, 1) || '?'}</AvatarFallback>
                                                             </Avatar>
                                                         )}
