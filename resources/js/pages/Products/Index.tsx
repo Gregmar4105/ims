@@ -26,7 +26,7 @@ import {
 import { Label } from "@/components/ui/label";
 import QRCode from "react-qr-code";
 import Barcode from "react-barcode";
-import { toBlob } from 'html-to-image';
+import { handleNativePrintFallback } from '@/lib/utils';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -166,26 +166,14 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     async function handlePrint() {
         if (!viewCodeProduct) return;
 
-        // Try Native Share with html-to-image first
-        const labelNode = document.getElementById('native-print-label');
-        if (labelNode) {
-            try {
-                const blob = await toBlob(labelNode, { pixelRatio: 3 });
-                if (blob) {
-                    const file = new File([blob], 'label.png', { type: blob.type });
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: 'QR Label ' + viewCodeProduct.name,
-                        });
-                        return; // Successfully triggered native share/print popup
-                    }
-                }
-            } catch (error) {
-                console.error('Error generating image for native share fallback to window.print', error);
-            }
+        // Try Native Share with our unified utility first
+        const nativeTriggerेड = await handleNativePrintFallback('native-print-label', `label_${viewCodeProduct.sku || viewCodeProduct.id}.png`);
+
+        if (nativeTriggerेड) {
+            return; // Exit if mobile handled it natively
         }
 
+        // DESKTOP FALLBACK using IFRAME
         const qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
         const iframe = document.createElement('iframe');
         iframe.style.position = 'absolute';
