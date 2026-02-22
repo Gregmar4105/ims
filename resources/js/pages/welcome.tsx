@@ -41,7 +41,7 @@ export default function Welcome({
     bannerUrl = 'https://specialized.com.ph/cdn/shop/collections/plp-banner_Bikes_2000x.progressive.jpg?v=1587621713',
 }: {
     canRegister?: boolean;
-    products?: Product[];
+    products?: { data: Product[]; current_page: number; has_more: boolean } | Product[];
     categories?: Category[];
     bannerUrl?: string;
 }) {
@@ -55,6 +55,11 @@ export default function Welcome({
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         return date > thirtyDaysAgo;
     };
+
+    const isPaginated = !Array.isArray(products);
+    const productList = (isPaginated ? (products as any).data : products) as Product[];
+    const currentPage = isPaginated ? (products as any).current_page : 1;
+    const hasMore = isPaginated ? (products as any).has_more : false;
 
     return (
         <>
@@ -83,91 +88,128 @@ export default function Welcome({
                         </p>
                     </div>
 
-                    {products.length > 0 ? (
-                        <div className="grid auto-rows-min gap-10 md:grid-cols-4">
-                            {products.map((product) => (
-                                <div key={product.id} className="group relative flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-black/10 bg-white transition-all hover:shadow-lg dark:border-sidebar-border dark:bg-transparent">
-                                    {/* Image Section */}
-                                    <div className="relative aspect-square overflow-hidden bg-neutral-50 dark:bg-white/5">
-                                        <Link href={`/product/${product.id}`}>
-                                            {product.image_path ? (
-                                                <img
-                                                    className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
-                                                    src={`/storage/${product.image_path}`}
-                                                    alt={product.name}
-                                                />
-                                            ) : (
-                                                <div className="flex h-full w-full items-center justify-center">
-                                                    <PackageOpen className="h-20 w-20 text-gray-300" />
-                                                </div>
+                    {productList.length > 0 ? (
+                        <div className="flex flex-col gap-10">
+                            <div className="grid auto-rows-min gap-10 md:grid-cols-4">
+                                {productList.map((product) => (
+                                    <div key={product.id} className="group relative flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-black/10 bg-white transition-all hover:shadow-lg dark:border-sidebar-border dark:bg-transparent">
+                                        {/* Image Section */}
+                                        <div className="relative aspect-square overflow-hidden bg-neutral-50 dark:bg-white/5">
+                                            <Link href={`/product/${product.id}`}>
+                                                {product.image_path ? (
+                                                    <img
+                                                        className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
+                                                        src={`/storage/${product.image_path}`}
+                                                        alt={product.name}
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center">
+                                                        <PackageOpen className="h-20 w-20 text-gray-300" />
+                                                    </div>
+                                                )}
+                                            </Link>
+
+                                            {isNew(product.created_at) && (
+                                                <span className="absolute left-3 top-3 rounded-sm bg-black px-2 py-1 text-sm font-bold text-white dark:bg-white dark:text-black">
+                                                    New
+                                                </span>
                                             )}
-                                        </Link>
+                                        </div>
 
-                                        {isNew(product.created_at) && (
-                                            <span className="absolute left-3 top-3 rounded-sm bg-black px-2 py-1 text-sm font-bold text-white dark:bg-white dark:text-black">
-                                                New
-                                            </span>
-                                        )}
-                                    </div>
+                                        {/* Content Section */}
+                                        <div className="flex flex-1 flex-col justify-between gap-4 p-5">
 
-                                    {/* Content Section */}
-                                    <div className="flex flex-1 flex-col justify-between gap-4 p-5">
+                                            {/* Header & Description */}
+                                            {/* Header & Description */}
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-start gap-4">
+                                                    <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight flex-1" title={product.name}>
+                                                        {product.name}
+                                                    </h3>
+                                                    <p className="font-bold text-lg text-gray-900 dark:text-white whitespace-nowrap">
+                                                        ₱{Number(product.price).toLocaleString()}
+                                                    </p>
+                                                </div>
 
-                                        {/* Header & Description */}
-                                        {/* Header & Description */}
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between items-start gap-4">
-                                                <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight flex-1" title={product.name}>
-                                                    {product.name}
-                                                </h3>
-                                                <p className="font-bold text-lg text-gray-900 dark:text-white whitespace-nowrap">
-                                                    ₱{Number(product.price).toLocaleString()}
+                                                <p className="line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
+                                                    {product.description || 'No description available.'}
                                                 </p>
+
+                                                {/* Variations */}
+                                                {product.variations && Array.isArray(product.variations) && product.variations.length > 0 && (
+                                                    <div className="space-y-1">
+                                                        <span className="text-xs font-semibold text-gray-900 dark:text-white">Variations:</span>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {product.variations.map((v: any, idx: number) => (
+                                                                <span key={idx} className="text-xs text-gray-500 bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded">
+                                                                    {v.name}: {v.options}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            <p className="line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
-                                                {product.description || 'No description available.'}
-                                            </p>
+                                            {/* Footer: Brand & Details */}
+                                            <div className="flex items-center justify-between pt-2">
 
-                                            {/* Variations */}
-                                            {product.variations && Array.isArray(product.variations) && product.variations.length > 0 && (
-                                                <div className="space-y-1">
-                                                    <span className="text-xs font-semibold text-gray-900 dark:text-white">Variations:</span>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {product.variations.map((v: any, idx: number) => (
-                                                            <span key={idx} className="text-xs text-gray-500 bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded">
-                                                                {v.name}: {v.options}
-                                                            </span>
-                                                        ))}
+                                                {product.brand && (
+                                                    <div className="border border-gray-300 px-2 py-0.5 rounded text-xs text-black font-medium dark:text-white dark:border-gray-600">
+                                                        {product.brand.name}
                                                     </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                                )}
 
-                                        {/* Footer: Brand & Details */}
-                                        <div className="flex items-center justify-between pt-2">
-
-                                            {product.brand && (
-                                                <div className="border border-gray-300 px-2 py-0.5 rounded text-xs text-black font-medium dark:text-white dark:border-gray-600">
-                                                    {product.brand.name}
-                                                </div>
-                                            )}
-
-                                            <Link href={`/product/${product.id}`}>
-                                                <button className="group/btn flex items-center gap-2 text-sm font-medium text-gray-600 transition-colors hover:text-black dark:text-gray-400 dark:hover:text-white">
-                                                    View Details
-                                                    <svg
-                                                        className="h-4 w-4 -translate-x-1 transition-transform group-hover/btn:translate-x-0"
-                                                        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                                                    >
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                                    </svg>
-                                                </button>
-                                            </Link>
+                                                <Link href={`/product/${product.id}`}>
+                                                    <button className="group/btn flex items-center gap-2 text-sm font-medium text-gray-600 transition-colors hover:text-black dark:text-gray-400 dark:hover:text-white">
+                                                        View Details
+                                                        <svg
+                                                            className="h-4 w-4 -translate-x-1 transition-transform group-hover/btn:translate-x-0"
+                                                            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                                                        >
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                                        </svg>
+                                                    </button>
+                                                </Link>
+                                            </div>
                                         </div>
                                     </div>
+                                ))}
+                            </div>
+
+                            {/* Pagination Controls */}
+                            {isPaginated && (
+                                <div className="flex items-center justify-center gap-4 py-8">
+                                    {currentPage > 1 ? (
+                                        <Link
+                                            href={`/?page=${currentPage - 1}`}
+                                            className="px-4 py-2 text-sm font-medium border rounded-md transition-colors bg-white text-gray-700 hover:bg-gray-50 dark:bg-black dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-900 border-gray-300"
+                                        >
+                                            Previous
+                                        </Link>
+                                    ) : (
+                                        <button disabled className="px-4 py-2 text-sm font-medium border rounded-md transition-colors bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500 border-transparent">
+                                            Previous
+                                        </button>
+                                    )}
+
+                                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Page {currentPage}
+                                    </span>
+
+                                    {hasMore ? (
+                                        <Link
+                                            href={`/?page=${currentPage + 1}`}
+                                            className="px-4 py-2 text-sm font-medium border rounded-md transition-colors bg-white text-gray-700 hover:bg-gray-50 dark:bg-black dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-900 border-gray-300"
+                                        >
+                                            Next
+                                        </Link>
+                                    ) : (
+                                        <button disabled className="px-4 py-2 text-sm font-medium border rounded-md transition-colors bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500 border-transparent">
+                                            Next
+                                        </button>
+                                    )}
                                 </div>
-                            ))}
+                            )}
                         </div>
                     ) : (
                         <div className="text-center py-20">
