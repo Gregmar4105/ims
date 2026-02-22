@@ -154,9 +154,11 @@ export default function Show({ product }: Props) {
                                 </div>
                                 <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border">
                                     <span className="text-xs font-medium text-gray-500 uppercase block mb-1">Barcode</span>
-                                    <div className="flex items-center justify-center bg-white p-2 rounded mt-2">
+                                    <div className="flex items-center justify-center bg-white p-2 rounded mt-2 mx-auto max-w-[200px]">
                                         {product.barcode ? (
-                                            <Barcode value={product.barcode} height={40} fontSize={12} width={1.5} background="transparent" />
+                                            <div className="w-full flex justify-center">
+                                                <Barcode value={product.barcode} height={40} fontSize={12} width={1.5} background="transparent" />
+                                            </div>
                                         ) : (
                                             <span className="text-sm text-gray-400 font-mono">-</span>
                                         )}
@@ -164,9 +166,9 @@ export default function Show({ product }: Props) {
                                 </div>
                                 <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border">
                                     <span className="text-xs font-medium text-gray-500 uppercase block mb-1">QR Code</span>
-                                    <div className="flex items-center justify-center bg-white p-2 rounded mt-2">
+                                    <div className="flex items-center justify-center bg-white p-2 rounded mt-2 mx-auto max-w-[120px]">
                                         {product.qr_code ? (
-                                            <QRCode value={product.qr_code} size={64} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
+                                            <QRCode value={product.qr_code} size={96} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
                                         ) : (
                                             <span className="text-sm text-gray-400 font-mono">-</span>
                                         )}
