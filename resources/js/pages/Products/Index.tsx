@@ -193,7 +193,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         const skuSize = getDynamicSize(viewCodeProduct.sku || viewCodeProduct.name || '', 9, 12, 4, 0.5);
         const codeSize = getDynamicSize((viewCodeProduct.code || '') + (viewCodeProduct.code_2 || ''), 7.5, 10, 3.5, 0.6);
         const supplierSize = getDynamicSize(viewCodeProduct.supplier?.name || '', 7, 10, 3.5, 0.6);
-        const barcodeSize = getDynamicSize(viewCodeProduct.barcode || '', 7, 10, 3.5, 0.6);
+
+        // Barcode is strictly 13 characters maximum, we can assign a solid fixed readable size.
+        const barcodeSize = '8.5pt';
 
         // CSS-based main window print hack
         // Mobile webviews block window.print() if called in an iframe.
@@ -758,7 +760,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         const skuSize = getDynamicSize(skuStr, 9, 12, 4, 0.5);
                         const codeSize = getDynamicSize(codesStr, 7.5, 10, 3.5, 0.6);
                         const supplierSize = getDynamicSize(supplierStr, 7, 10, 3.5, 0.6);
-                        const barcodeSize = getDynamicSize(barcodeStr, 7, 10, 3.5, 0.6);
+                        const barcodeSize = '8.5pt';
 
                         return (
                             <div style={{ position: 'absolute', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none' }}>

@@ -57,6 +57,8 @@ interface Product {
     description: string | null;
     variations: Variation[] | null;
     image_path: string | null;
+    barcode: string | null;
+    qr_code: string | null;
     price: number | null;
     supplier_id: number | null;
     code: string | null;
@@ -86,6 +88,8 @@ export default function Edit({ product, brands, categories, suppliers }: Props) 
         code: product.code || '',
         code_2: product.code_2 || '',
         sku: product.sku || '',
+        barcode: product.barcode || '',
+        qr_code: product.qr_code || '',
         reorder_level: product.reorder_level !== null ? String(product.reorder_level) : '',
         variations: product.variations || [] as Variation[],
         image: null as File | null,

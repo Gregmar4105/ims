@@ -450,6 +450,9 @@ class ProductController extends Controller
             'code' => 'nullable|string|max:255',
             'code_2' => 'nullable|string|max:255',
             'sku' => 'nullable|string|max:255',
+            'barcode' => 'nullable|string|digits:13|unique:products,barcode,' . $product->id,
+            'qr_code' => 'nullable|string|digits:13|unique:products,qr_code,' . $product->id,
+
             'brand_id' => 'required|exists:brands,id',
             'category_id' => 'required|exists:categories,id',
             'quantity' => 'required|integer|min:0',
@@ -483,6 +486,9 @@ class ProductController extends Controller
                 'code' => $validated['code'] ?? null,
                 'code_2' => $validated['code_2'] ?? null,
                 'sku' => $validated['sku'] ?? null,
+                'barcode' => $validated['barcode'] ?? null,
+                'qr_code' => $validated['qr_code'] ?? null,
+
                 'brand_id' => $validated['brand_id'],
                 'category_id' => $validated['category_id'],
                 'description' => $validated['description'] ?? null,

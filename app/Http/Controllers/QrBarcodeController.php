@@ -47,8 +47,8 @@ class QrBarcodeController extends Controller
         $request->validate([
             'product_id' => 'required_without:generate_all|exists:products,id',
             'generate_all' => 'boolean',
-            'barcode' => 'nullable|string|max:255|unique:products,barcode,' . $productId,
-            'qr_code' => 'nullable|string|unique:products,qr_code,' . $productId,
+            'barcode' => 'nullable|string|digits:13|unique:products,barcode,' . $productId,
+            'qr_code' => 'nullable|string|digits:13|unique:products,qr_code,' . $productId,
         ]);
 
         $user = auth()->user();
@@ -100,30 +100,36 @@ class QrBarcodeController extends Controller
 
     private function generateCodesForProduct(Product $product, $customBarcode = null, $customQrCode = null)
     {
-        // Generate Barcode: 12 digit number (EAN-13 style without check digit logic for simplicity, or just random)
-        // Format: P-{BranchId}-{ProductId}-{Random4}
-        // Since product doesn't have a single branch_id, we use the current user's branch_id if available,
-        // or a default '000' for System Admin generated items that contextually don't belong to a specific branch edit.
-        
-        $userBranchId = auth()->user()->branch_id ?? 0;
+        // For custom input, if only one is provided, we can assign it to both or leave them separate if user provided both
+        if ($customBarcode || $customQrCode) {
+            $product->barcode = $customBarcode ?? $customQrCode;
+            $product->qr_code = $customQrCode ?? $customBarcode;
+        } else {
+            // Generate a unique 13-digit number
+            $isUnique = false;
+            $uniqueCode = '';
+            
+            while (!$isUnique) {
+                // Generate a random 13 digit string, e.g., using mt_rand
+                // mt_rand max is technically smaller on 32-bit systems, but strings are safer
+                $uniqueCode = '';
+                for ($i = 0; $i < 13; $i++) {
+                    // First digit should not be 0 ideally for integer casting issues later, but string is fine
+                    $uniqueCode .= mt_rand(0, 9);
+                }
 
-        if ($customBarcode) {
-            $product->barcode = $customBarcode;
-        } elseif (!$product->barcode) {
-             // Use user's branch ID for the barcode generation to track origin of the barcode assignment
-            $product->barcode = 'P-' . str_pad($userBranchId, 3, '0', STR_PAD_LEFT) . '-' . str_pad($product->id, 5, '0', STR_PAD_LEFT) . '-' . strtoupper(Str::random(4));
-        }
+                // Check uniqueness in both fields
+                $exists = Product::where('barcode', $uniqueCode)
+                            ->orWhere('qr_code', $uniqueCode)
+                            ->exists();
+                
+                if (!$exists) {
+                    $isUnique = true;
+                }
+            }
 
-        // Generate QR Code Content: JSON with ID and Name, or a URL
-        if ($customQrCode) {
-            $product->qr_code = $customQrCode;
-        } elseif (!$product->qr_code) {
-            $product->qr_code = json_encode([
-                'id' => $product->id,
-                'name' => $product->name,
-                'sku' => $product->barcode,
-                'url' => route('products.show', $product->id), // Assuming show route exists or will exist
-            ]);
+            $product->barcode = $uniqueCode;
+            $product->qr_code = $uniqueCode; // Same identical string for both
         }
 
         $product->save();
