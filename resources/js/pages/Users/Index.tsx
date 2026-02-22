@@ -42,14 +42,15 @@ export default function Index({ users, branches, roles }: any) {
 
         const q = search.toLowerCase();
 
-        return userList.filter(({ name, email, email_verified_at, created_at, branch, roles, profile_photo_url }: any) =>
+        return userList.filter(({ name, email, email_verified_at, created_at, branch, roles, profile_photo_url, onesignal_player_id }: any) =>
             (name || "").toLowerCase().includes(q) ||
             (email || "").toLowerCase().includes(q) ||
             (email_verified_at || "").includes(q) ||
             (created_at || "").includes(q) ||
-            // Added search support for Branch and Role names if they exist
+            // Added search support for Branch, Role, and OneSignal ID names if they exist
             (branch?.branch_name || "").toLowerCase().includes(q) ||
-            (roles?.[0]?.name || "").toLowerCase().includes(q)
+            (roles?.[0]?.name || "").toLowerCase().includes(q) ||
+            (onesignal_player_id || "").toLowerCase().includes(q)
         );
     }, [search, userList]);
 
@@ -202,6 +203,7 @@ export default function Index({ users, branches, roles }: any) {
                                 <TableHead>Account Status</TableHead>
                                 <TableHead>Branch</TableHead>
                                 <TableHead>Role</TableHead>
+                                <TableHead>OneSignal ID</TableHead>
                                 <TableHead>Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -216,7 +218,7 @@ export default function Index({ users, branches, roles }: any) {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredUsers.map(({ id, name, email, email_verified_at, user_status, created_at, branch, roles, profile_photo_url }: any) => (
+                                filteredUsers.map(({ id, name, email, email_verified_at, user_status, created_at, branch, roles, profile_photo_url, onesignal_player_id }: any) => (
                                     <TableRow key={id}>
                                         <TableCell className="font-medium">{id}</TableCell>
                                         <TableCell className="py-4">
@@ -271,6 +273,15 @@ export default function Index({ users, branches, roles }: any) {
                                                 </div>
                                             ) : (
                                                 <span className="text-muted-foreground italic text-sm">No Role</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {onesignal_player_id ? (
+                                                <code className="text-[10px] bg-muted px-1 py-0.5 rounded break-all max-w-[150px] inline-block">
+                                                    {onesignal_player_id}
+                                                </code>
+                                            ) : (
+                                                <span className="text-muted-foreground italic text-xs">Not Registered</span>
                                             )}
                                         </TableCell>
                                         {/* --- REAL DATA REPLACEMENT END --- */}

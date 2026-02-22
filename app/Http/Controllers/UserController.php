@@ -25,6 +25,7 @@ class UserController extends Controller
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('email_verified_at', 'like', "%{$search}%")
+                    ->orWhere('onesignal_player_id', 'like', "%{$search}%")
                     ->orWhere('created_at', 'like', "%{$search}%")
                     ->orWhereHas('branch', function ($q) use ($search) {
                         $q->where('branch_name', 'like', "%{$search}%");
