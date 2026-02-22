@@ -40,7 +40,6 @@ class ChatController extends Controller
                 ->get();
         }
 
-        $initialBranch = null;
         if (request()->has('branch_id')) {
             $initialBranch = \App\Models\Branch::find(request()->branch_id);
         }
