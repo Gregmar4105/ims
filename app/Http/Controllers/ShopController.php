@@ -13,7 +13,7 @@ class ShopController extends Controller
     {
         $query = Product::whereHas('branches', function ($query) {
                 // Same filter as welcome page to keep consistent with "Storefront" logic
-                $query->whereIn('branch_name', ['Main Branch', 'LM2 Bicycle Trading']);
+                $query->where('branch_name', 'LM2 Bicycle Trading');
             });
 
         if ($request->filled('search')) {
@@ -58,7 +58,7 @@ class ShopController extends Controller
         }
 
         $products = Product::whereHas('branches', function ($q) {
-                $q->whereIn('branch_name', ['Main Branch', 'LM2 Bicycle Trading']);
+                $q->where('branch_name', 'LM2 Bicycle Trading');
             })
             ->where(function($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
@@ -84,7 +84,7 @@ class ShopController extends Controller
         $query = Product::where('category_id', $category->id)
             ->whereHas('branches', function ($query) {
                 // Same filter as welcome page to keep consistent with "Storefront" logic
-                $query->whereIn('branch_name', ['Main Branch', 'LM2 Bicycle Trading']);
+                $query->where('branch_name', 'LM2 Bicycle Trading');
             });
 
         if ($request->has('brand')) {
