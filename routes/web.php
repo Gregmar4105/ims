@@ -65,8 +65,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('products/print', [\App\Http\Controllers\ProductController::class, 'print'])->name('products.print');
         Route::resource('products', \App\Http\Controllers\ProductController::class);
         Route::resource('product-suppliers', \App\Http\Controllers\SupplierController::class)->parameters(['product-suppliers' => 'supplier']);
-        
-        // Employee Internal Branch Chat Routes
+    });
+
+    // Employee Internal Branch Chat Routes (Requires POST access)
+    Route::middleware(['role:Employee'])->group(function () {
         Route::get('branch-chats', [\App\Http\Controllers\BranchChatController::class, 'index'])->name('branch-chats.index');
         Route::get('branch-chats/messages', [\App\Http\Controllers\BranchChatController::class, 'show'])->name('branch-chats.show');
         Route::post('branch-chats/messages', [\App\Http\Controllers\BranchChatController::class, 'store'])->name('branch-chats.store');
