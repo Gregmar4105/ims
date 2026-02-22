@@ -10,35 +10,9 @@ class ChatController extends Controller
     {
         $user = auth()->user();
         
-        $isEmployee = $user->hasRole('Employee') && !$user->hasRole('System Administrator') && !$user->hasRole('Branch Administrator');
-        $initialBranch = null;
-
-        if ($isEmployee) {
-            // Employee should strictly chat with the Main Branch (or "System Admin" branch), which is usually Branch 1
-            // or the branch of the System Admin. Let's assume they only chat with Headquarters (Branch 1).
-            // We give them EXACTLY ONE option: Branch 1, so they load messages between their branch and Branch 1.
-            $hqBranchId = 1; // Assuming 1 is HQ. If needed, we can make it dynamic based on Super Admin.
-            
-            // Just in case the employee is IN Branch 1, they won't chat with themselves
-            // In a real scenario, an employee in Branch 1 might not use this, but if they do, 
-            // maybe they shouldn't see anything, or we find a valid target. 
-            // For now, if they are not in Branch 1, show Branch 1
-            if ($user->branch_id && $user->branch_id != $hqBranchId) {
-                $branches = \App\Models\Branch::where('id', $hqBranchId)->get();
-                $initialBranch = $branches->first();
-            } else {
-                $branches = collect([]);
-            }
-        } else {
-            // Include own branch for admins so they can see their own branch conversation if needed, 
-            // or we keep the original logic for Branch Admins
-            if ($user->hasRole('System Administrator')) {
-                $branches = \App\Models\Branch::all();
-            } else {
-                // Branch admin sees all branches (can chat with anyone including HQ)
-                $branches = \App\Models\Branch::where('id', '!=', $user->branch_id)->get();
-            }
-        }
+        // Include all branches so admins can see and click their own branch to access the internal chat.
+        // Employees do not use this controller; they use BranchChatController.
+        $branches = \App\Models\Branch::all();
 
         $activeTransfers = [];
         if ($user->branch_id) {

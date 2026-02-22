@@ -60,10 +60,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('branches', \App\Http\Controllers\BranchController::class);
         Route::resource('brands', \App\Http\Controllers\BrandController::class);
         Route::resource('categories', \App\Http\Controllers\CategoryController::class);
-        Route::resource('qr-barcodes', \App\Http\Controllers\QrBarcodeController::class)->only(['index', 'store']);
+        Route::get('qr-barcodes', [\App\Http\Controllers\QrBarcodeController::class, 'index'])->name('qr-barcodes.index');
+        Route::post('qr-barcodes', [\App\Http\Controllers\QrBarcodeController::class, 'store'])->name('qr-barcodes.store');
         Route::get('products/print', [\App\Http\Controllers\ProductController::class, 'print'])->name('products.print');
         Route::resource('products', \App\Http\Controllers\ProductController::class);
         Route::resource('product-suppliers', \App\Http\Controllers\SupplierController::class)->parameters(['product-suppliers' => 'supplier']);
+        
+        // Employee Internal Branch Chat Routes
+        Route::get('branch-chats', [\App\Http\Controllers\BranchChatController::class, 'index'])->name('branch-chats.index');
+        Route::get('branch-chats/messages', [\App\Http\Controllers\BranchChatController::class, 'show'])->name('branch-chats.show');
+        Route::post('branch-chats/messages', [\App\Http\Controllers\BranchChatController::class, 'store'])->name('branch-chats.store');
+        Route::get('branch-chats/media', [\App\Http\Controllers\BranchChatController::class, 'media'])->name('branch-chats.media');
     });
 
     Route::get('qr-and-barcode-scanner' , [QrAndBarcodeController::class, 'index']);

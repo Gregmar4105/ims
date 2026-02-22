@@ -346,7 +346,7 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton tooltip="Branch Chat">
                             <MessagesSquare />
-                            <a href="/chats">
+                            <a href="/branch-chats">
                                 <span>Branch Chat</span>
                             </a>
                         </SidebarMenuButton>
