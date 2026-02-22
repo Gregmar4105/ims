@@ -44,9 +44,18 @@ class NotificationController extends Controller
         }
 
         // 1. Chats (Read & Unread)
-        $chats = Message::with('sender.branch')
+        $chatsQuery = Message::with('sender.branch')
             ->where('receiver_branch_id', $branchId)
-            ->latest()
+            ->where('sender_id', '!=', $user->id); // Never show messages sent by the current user
+
+        if ($isEmployee) {
+            // Employees should only see internal branch notifications
+            $chatsQuery->whereHas('sender', function($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        }
+
+        $chats = $chatsQuery->latest()
             ->take(100)
             ->get()
             ->map(function ($chat) {
