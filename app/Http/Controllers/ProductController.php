@@ -14,16 +14,13 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
-    protected function buildFilteredProductQuery(Request $request, $user, $isSystemAdmin, &$filterBranch, &$filterBrand, &$filterCategory, &$filterStock, &$filterCode, &$filterCode2, &$filterSku, &$search)
+    protected function buildFilteredProductQuery(Request $request, $user, $isSystemAdmin, &$filterBranch, &$filterBrand, &$filterCategory, &$filterStock, &$search)
     {
         $search = $request->query('search');
         $filterBranch = $request->query('branch');
         $filterBrand = $request->query('brand');
         $filterCategory = $request->query('category');
         $filterStock = $request->query('stock');
-        $filterCode = $request->query('code');
-        $filterCode2 = $request->query('code_2');
-        $filterSku = $request->query('sku');
 
         $query = Product::with(['brand', 'category', 'creator', 'supplier']);
 
@@ -71,18 +68,6 @@ class ProductController extends Controller
             $query->whereHas('category', function ($q) use ($filterCategory) {
                 $q->where('name', $filterCategory);
             });
-        }
-
-        if ($filterCode && $filterCode !== 'all') {
-            $query->where('code', $filterCode);
-        }
-
-        if ($filterCode2 && $filterCode2 !== 'all') {
-            $query->where('code_2', $filterCode2);
-        }
-
-        if ($filterSku && $filterSku !== 'all') {
-            $query->where('sku', $filterSku);
         }
 
         if ($filterStock && $filterStock !== 'all') {
@@ -145,9 +130,9 @@ class ProductController extends Controller
         $user = auth()->user();
         $isSystemAdmin = $user->hasRole('System Administrator');
         
-        $filterBranch = $filterBrand = $filterCategory = $filterStock = $filterCode = $filterCode2 = $filterSku = $search = null;
+        $filterBranch = $filterBrand = $filterCategory = $filterStock = $search = null;
 
-        $query = $this->buildFilteredProductQuery($request, $user, $isSystemAdmin, $filterBranch, $filterBrand, $filterCategory, $filterStock, $filterCode, $filterCode2, $filterSku, $search);
+        $query = $this->buildFilteredProductQuery($request, $user, $isSystemAdmin, $filterBranch, $filterBrand, $filterCategory, $filterStock, $search);
 
         $products = $query->latest()->paginate(12)->withQueryString();
 
@@ -171,11 +156,6 @@ class ProductController extends Controller
         $brands = $brandsQuery->pluck('name')->unique()->values();
         $categories = $categoriesQuery->pluck('name')->unique()->values();
 
-
-        $codes = Product::whereNotNull('code')->pluck('code')->unique()->values();
-        $code2s = Product::whereNotNull('code_2')->pluck('code_2')->unique()->values();
-        $skus = Product::whereNotNull('sku')->pluck('sku')->unique()->values();
-
         $suppliers = \App\Models\Supplier::all(['id', 'name']);
 
         return Inertia::render('Products/Index', [
@@ -186,17 +166,11 @@ class ProductController extends Controller
                 'brand' => $filterBrand,
                 'category' => $filterCategory,
                 'stock' => $filterStock,
-                'code' => $filterCode,
-                'code_2' => $filterCode2,
-                'sku' => $filterSku,
             ],
             'options' => [
                 'branches' => $branches,
                 'brands' => $brands,
                 'categories' => $categories,
-                'codes' => $codes,
-                'code2s' => $code2s,
-                'skus' => $skus,
             ],
             'isSystemAdmin' => $isSystemAdmin,
             'suppliers' => $suppliers,
@@ -208,9 +182,9 @@ class ProductController extends Controller
         $user = auth()->user();
         $isSystemAdmin = $user->hasRole('System Administrator');
         
-        $filterBranch = $filterBrand = $filterCategory = $filterStock = $filterCode = $filterCode2 = $filterSku = $search = null;
+        $filterBranch = $filterBrand = $filterCategory = $filterStock = $search = null;
 
-        $query = $this->buildFilteredProductQuery($request, $user, $isSystemAdmin, $filterBranch, $filterBrand, $filterCategory, $filterStock, $filterCode, $filterCode2, $filterSku, $search);
+        $query = $this->buildFilteredProductQuery($request, $user, $isSystemAdmin, $filterBranch, $filterBrand, $filterCategory, $filterStock, $search);
 
         // Get all matching products
         $products = $query->latest()->get();
