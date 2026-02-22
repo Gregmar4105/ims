@@ -74,9 +74,21 @@ export default function Show({ product }: { product: Product }) {
                         <div className="flex flex-col gap-6">
                             <div>
                                 {product.brand && (
-                                    <div className="mb-2">
+                                    <div className="flex items-center gap-2 mb-2">
                                         <Badge variant="outline" className="text-gray-500">
                                             {product.brand.name}
+                                        </Badge>
+                                        {product.branches && (
+                                            <Badge variant={isAvailable ? "default" : "destructive"} className={isAvailable ? "bg-green-600 hover:bg-green-700 text-white" : ""}>
+                                                {isAvailable ? 'Available' : 'Unavailable'}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                )}
+                                {!product.brand && product.branches && (
+                                    <div className="mb-2">
+                                        <Badge variant={isAvailable ? "default" : "destructive"} className={isAvailable ? "bg-green-600 hover:bg-green-700 text-white" : ""}>
+                                            {isAvailable ? 'Available' : 'Unavailable'}
                                         </Badge>
                                     </div>
                                 )}
@@ -94,11 +106,6 @@ export default function Show({ product }: { product: Product }) {
                                 <p className="text-3xl font-bold text-gray-900 dark:text-white">
                                     ₱{product.price ? Number(product.price).toLocaleString() : '0.00'}
                                 </p>
-                                {product.branches && (
-                                    <Badge variant={isAvailable ? "default" : "destructive"} className={isAvailable ? "bg-green-600 hover:bg-green-700 text-white" : ""}>
-                                        {isAvailable ? 'Available' : 'Unavailable'}
-                                    </Badge>
-                                )}
                             </div>
 
                             <Separator />
