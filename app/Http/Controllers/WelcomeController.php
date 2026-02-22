@@ -75,7 +75,7 @@ class WelcomeController extends Controller
     public function show(Product $product)
     {
         $product->load(['category', 'brand', 'branches' => function($q) {
-             $q->whereIn('branch_name', ['Main Branch', 'LM2 Bicycle Trading']);
+             $q->where('branch_name', 'LM2 Bicycle Trading');
         }]);
 
         return Inertia::render('Shop/Show', [

@@ -21,6 +21,13 @@ interface Product {
         name: string;
         slug: string;
     };
+    branches?: {
+        id: number;
+        branch_name: string;
+        pivot: {
+            quantity: number;
+        }
+    }[];
 }
 
 export default function Show({ product }: { product: Product }) {
@@ -30,6 +37,9 @@ export default function Show({ product }: { product: Product }) {
         { title: 'Shop', href: '/' },
         { title: product.name, href: `/product/${product.id}` },
     ];
+
+    const lm2Branch = product.branches?.find(b => b.branch_name === 'LM2 Bicycle Trading');
+    const isAvailable = lm2Branch && lm2Branch.pivot.quantity > 0;
 
     return (
         <>
@@ -84,6 +94,11 @@ export default function Show({ product }: { product: Product }) {
                                 <p className="text-3xl font-bold text-gray-900 dark:text-white">
                                     ₱{product.price ? Number(product.price).toLocaleString() : '0.00'}
                                 </p>
+                                {product.branches && (
+                                    <Badge variant={isAvailable ? "default" : "destructive"} className={isAvailable ? "bg-green-600 hover:bg-green-700 text-white" : ""}>
+                                        {isAvailable ? 'Available' : 'Unavailable'}
+                                    </Badge>
+                                )}
                             </div>
 
                             <Separator />
