@@ -280,6 +280,31 @@ export default function Edit({ product, brands, categories, suppliers }: Props) 
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
+                                <Label htmlFor="barcode">Barcode (13 Digits)</Label>
+                                <Input
+                                    id="barcode"
+                                    value={data.barcode}
+                                    onChange={e => setData('barcode', e.target.value)}
+                                    placeholder="13-digit barcode"
+                                    maxLength={13}
+                                />
+                                {errors.barcode && <p className="text-sm text-red-500">{errors.barcode}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="qr_code">QR Code (13 Digits)</Label>
+                                <Input
+                                    id="qr_code"
+                                    value={data.qr_code}
+                                    onChange={e => setData('qr_code', e.target.value)}
+                                    placeholder="13-digit QR number"
+                                    maxLength={13}
+                                />
+                                {errors.qr_code && <p className="text-sm text-red-500">{errors.qr_code}</p>}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
                                 <Label htmlFor="price">Price (₱)</Label>
                                 <Input
                                     id="price"
