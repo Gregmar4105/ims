@@ -28,7 +28,8 @@ interface Product {
     code: string | null;
     code_2: string | null;
     sku: string | null;
-    branch?: { branch_name: string };
+    reorder_level: number;
+    branches?: { branch_name: string }[];
     brand?: { name: string };
     category?: { name: string };
     supplier?: { name: string };
@@ -40,7 +41,8 @@ interface Props {
 
 export default function Show({ product }: Props) {
     const { auth } = usePage<SharedData>().props;
-    const isEmployee = auth.roles.includes('Employee') && !auth.roles.includes('System Administrator') && !auth.roles.includes('Branch Administrator');
+    const isSystemAdmin = auth.roles.includes('System Administrator');
+    const isEmployee = auth.roles.includes('Employee') && !isSystemAdmin && !auth.roles.includes('Branch Administrator');
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Products',
@@ -148,6 +150,20 @@ export default function Show({ product }: Props) {
                                         {product.code_2 || '-'}
                                     </div>
                                 </div>
+                                <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+                                    <span className="text-xs font-medium text-gray-500 uppercase block mb-1">Barcode</span>
+                                    <div className="font-mono text-sm font-bold flex items-center gap-2">
+                                        <ScanBarcode className="h-4 w-4 text-gray-400" />
+                                        {product.barcode || '-'}
+                                    </div>
+                                </div>
+                                <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+                                    <span className="text-xs font-medium text-gray-500 uppercase block mb-1">QR Code</span>
+                                    <div className="font-mono text-sm font-bold flex items-center gap-2">
+                                        <ScanBarcode className="h-4 w-4 text-gray-400" />
+                                        {product.qr_code || '-'}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -175,12 +191,32 @@ export default function Show({ product }: Props) {
                                     </div>
                                 )}
                                 <div className="flex flex-col">
-                                    <dt className="text-gray-500">Branch</dt>
+                                    <dt className="text-gray-500">Reorder Level</dt>
                                     <dd className="font-medium flex items-center gap-1.5 mt-1">
                                         <Layers className="h-4 w-4 text-gray-400" />
-                                        {product.branch?.branch_name || 'Global / All Branches'}
+                                        {product.reorder_level}
                                     </dd>
                                 </div>
+
+                                {isSystemAdmin && (
+                                    <div className="flex flex-col">
+                                        <dt className="text-gray-500">Branch(es)</dt>
+                                        <dd className="col-span-1 pt-1 space-y-1">
+                                            {product.branches && product.branches.length > 0 ? (
+                                                product.branches.map((branch, i) => (
+                                                    <Badge key={i} variant="outline" className="mr-1">
+                                                        <Layers className="h-3 w-3 mr-1" />
+                                                        {branch.branch_name}
+                                                    </Badge>
+                                                ))
+                                            ) : (
+                                                <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
+                                                    <Layers className="h-4 w-4 text-gray-400" /> Global / All Branches
+                                                </span>
+                                            )}
+                                        </dd>
+                                    </div>
+                                )}
                             </dl>
                         </div>
 

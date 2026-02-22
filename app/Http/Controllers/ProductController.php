@@ -254,10 +254,14 @@ class ProductController extends Controller
             if ($branchData) {
                 $product->description = $branchData->pivot->description ?? $product->description;
                 $product->variations = $branchData->pivot->variations ?? $product->variations;
+                $product->reorder_level = $branchData->pivot->reorder_level ?? 0;
+            } else {
+                $product->reorder_level = 0;
             }
         } else {
              // Admin sees aggregate or raw
              $product->quantity = $product->branches->sum('pivot.quantity');
+             $product->reorder_level = $product->branches->sum('pivot.reorder_level');
         }
 
         return Inertia::render('Products/Show', [
