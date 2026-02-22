@@ -397,7 +397,8 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                     {/* Sidebar */}
                     <div className={cn(
                         "w-full md:w-80 border-r flex-col bg-muted/10",
-                        selectedBranch ? "hidden md:flex" : "flex"
+                        selectedBranch ? "hidden md:flex" : "flex",
+                        branches.length === 1 ? "hidden md:hidden" : ""
                     )}>
                         <div className="p-4 border-b">
                             <h2 className="text-xl font-bold mb-4">Chats</h2>
@@ -453,7 +454,7 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="md:hidden -ml-2"
+                                            className={cn("md:hidden -ml-2", branches.length === 1 && "hidden")}
                                             onClick={() => setSelectedBranch(null)}
                                         >
                                             <ArrowLeft className="w-5 h-5" />

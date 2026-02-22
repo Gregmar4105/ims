@@ -10,11 +10,18 @@ class ChatController extends Controller
     {
         $user = auth()->user();
         
-        // List all branches except current user's branch (if they have one)
-        // If system admin (no branch), show all branches
-        if ($user->branch_id) {
-            $branches = \App\Models\Branch::where('id', '!=', $user->branch_id)->get();
+        $isEmployee = $user->hasRole('Employee') && !$user->hasRole('System Administrator') && !$user->hasRole('Branch Administrator');
+        $initialBranch = null;
+
+        if ($isEmployee) {
+            if ($user->branch_id) {
+                $branches = \App\Models\Branch::where('id', $user->branch_id)->get();
+                $initialBranch = $branches->first();
+            } else {
+                $branches = collect([]);
+            }
         } else {
+            // Include own branch for admins so they can see their own branch conversation
             $branches = \App\Models\Branch::all();
         }
 

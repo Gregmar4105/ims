@@ -344,6 +344,16 @@ export function AppSidebar() {
 
                 {can('employee') &&
                     <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Branch Chat">
+                            <MessagesSquare />
+                            <a href="/chats">
+                                <span>Branch Chat</span>
+                            </a>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>}
+
+                {can('employee') &&
+                    <SidebarMenuItem>
                         <SidebarMenuButton tooltip="Scanner">
                             <ScanQrCode />
                             <a href="/qr-and-barcode-scanner">
