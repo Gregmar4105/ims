@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Layers, Package, Tag, ScanBarcode, Truck, Edit, Info, ArrowLeft } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
+import Barcode from 'react-barcode';
+import QRCode from 'react-qr-code';
 
 interface Variation {
     name: string;
@@ -152,16 +154,22 @@ export default function Show({ product }: Props) {
                                 </div>
                                 <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border">
                                     <span className="text-xs font-medium text-gray-500 uppercase block mb-1">Barcode</span>
-                                    <div className="font-mono text-sm font-bold flex items-center gap-2">
-                                        <ScanBarcode className="h-4 w-4 text-gray-400" />
-                                        {product.barcode || '-'}
+                                    <div className="flex items-center justify-center bg-white p-2 rounded mt-2">
+                                        {product.barcode ? (
+                                            <Barcode value={product.barcode} height={40} fontSize={12} width={1.5} background="transparent" />
+                                        ) : (
+                                            <span className="text-sm text-gray-400 font-mono">-</span>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border">
                                     <span className="text-xs font-medium text-gray-500 uppercase block mb-1">QR Code</span>
-                                    <div className="font-mono text-sm font-bold flex items-center gap-2">
-                                        <ScanBarcode className="h-4 w-4 text-gray-400" />
-                                        {product.qr_code || '-'}
+                                    <div className="flex items-center justify-center bg-white p-2 rounded mt-2">
+                                        {product.qr_code ? (
+                                            <QRCode value={product.qr_code} size={64} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
+                                        ) : (
+                                            <span className="text-sm text-gray-400 font-mono">-</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
