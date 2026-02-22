@@ -89,9 +89,13 @@ class BranchChatController extends Controller
     public function store(\Illuminate\Http\Request $request, \App\Services\OneSignalService $oneSignal)
     {
         $request->validate([
-            'content' => 'required_without:attachment|string|nullable',
+            'content' => 'nullable|string',
             'attachment' => 'nullable|image|max:2048', // Max 2MB
         ]);
+
+        if (empty($request->content) && !$request->hasFile('attachment')) {
+            return response()->json(['message' => 'Message content or attachment is required.'], 422);
+        }
 
         $senderBranchId = auth()->user()->branch_id;
         
