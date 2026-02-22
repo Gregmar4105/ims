@@ -30,14 +30,34 @@ class BranchChatController extends Controller
                 $q->where('branch_id', $currentBranchId);
             });
 
-        // Mark unread messages as read from this internal chat
-        \App\Models\Message::where('receiver_branch_id', $currentBranchId)
-            ->whereHas('sender', function($q) use ($currentBranchId) {
-                $q->where('branch_id', $currentBranchId);
-            })
-            ->where('sender_id', '!=', auth()->id())
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
+        // Mark unread messages as read FOR THIS USER
+    $userId = auth()->id();
+    $unreadMessageIds = \App\Models\Message::where('receiver_branch_id', $currentBranchId)
+        ->whereHas('sender', function($q) use ($currentBranchId) {
+            $q->where('branch_id', $currentBranchId);
+        })
+        ->where('sender_id', '!=', $userId)
+        ->whereNotIn('id', function($query) use ($userId) {
+            $query->select('viewable_id')
+                  ->from('user_notification_views')
+                  ->where('viewable_type', 'chat')
+                  ->where('user_id', $userId);
+        })
+        ->pluck('id');
+
+    $inserts = [];
+    foreach($unreadMessageIds as $msgId) {
+        $inserts[] = [
+            'user_id' => $userId,
+            'viewable_type' => 'chat',
+            'viewable_id' => $msgId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+    }
+    if (!empty($inserts)) {
+        \App\Models\UserNotificationView::insertOrIgnore($inserts);
+    }
 
         // Search functionality
         if ($request->has('query') && !empty($request->input('query'))) {

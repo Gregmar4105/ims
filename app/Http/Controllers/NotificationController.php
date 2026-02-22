@@ -30,6 +30,10 @@ class NotificationController extends Controller
         $isEmployee = $user->hasRole('Employee');
 
         // Get IDs of viewed notifications for this user
+        $viewedChats = UserNotificationView::where('user_id', $user->id)
+            ->where('viewable_type', 'chat')
+            ->pluck('viewable_id');
+            
         $viewedSales = collect();
         $viewedTransfers = collect();
 
@@ -58,8 +62,8 @@ class NotificationController extends Controller
         $chats = $chatsQuery->latest()
             ->take(100)
             ->get()
-            ->map(function ($chat) {
-                $chat->is_read = !is_null($chat->read_at);
+            ->map(function ($chat) use ($viewedChats) {
+                $chat->is_read = $viewedChats->contains($chat->id);
                 return $chat;
             });
 
@@ -144,10 +148,11 @@ class NotificationController extends Controller
         // Plan: Frontend will send raw ID.
 
         if ($request->type === 'chat') {
-            $message = Message::find($id);
-            if ($message && $message->receiver_branch_id == $user->branch_id) {
-                $message->update(['read_at' => now()]);
-            }
+            UserNotificationView::firstOrCreate([
+                'user_id' => $user->id,
+                'viewable_type' => 'chat',
+                'viewable_id' => $id,
+            ]);
         } elseif ($request->type === 'sale') {
             UserNotificationView::firstOrCreate([
                 'user_id' => $user->id,
@@ -178,11 +183,30 @@ class NotificationController extends Controller
 
         DB::transaction(function () use ($user, $branchId) {
             // 1. Mark all chats as read
-            $affectedChats = Message::where('receiver_branch_id', $branchId)
-                ->whereNull('read_at')
-                ->update(['read_at' => now()]);
+            $unreadChatIds = Message::where('receiver_branch_id', $branchId)
+                 ->whereNotIn('id', function($query) use ($user) {
+                     $query->select('viewable_id')
+                           ->from('user_notification_views')
+                           ->where('viewable_type', 'chat')
+                           ->where('user_id', $user->id);
+                 })
+                 ->pluck('id');
+                 
+            $inserts = [];
+            foreach($unreadChatIds as $msgId) {
+                $inserts[] = [
+                    'user_id' => $user->id,
+                    'viewable_type' => 'chat',
+                    'viewable_id' => $msgId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+            if (!empty($inserts)) {
+                UserNotificationView::insertOrIgnore($inserts);
+            }
             
-            Log::info("Marked {$affectedChats} chats as read");
+            Log::info("Marked " . count($inserts) . " chats as read");
 
             // 2. Mark all Sales as read (viewed)
             $pendingSales = Sale::where('branch_id', $branchId)
