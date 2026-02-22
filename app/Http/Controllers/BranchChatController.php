@@ -133,15 +133,21 @@ class BranchChatController extends Controller
 
             $receiverPlayerIds = $query->pluck('onesignal_player_id')->toArray();
             
+            \Illuminate\Support\Facades\Log::info("BranchChat OneSignal Target: Branch {$senderBranchId}, Found " . count($receiverPlayerIds) . " recipients.");
+            \Illuminate\Support\Facades\Log::info("Excluded Sender ID: {$currentUser->id} (Player ID: {$currentUser->onesignal_player_id})");
+
             $senderBranchName = \App\Models\Branch::find($senderBranchId)->branch_name ?? 'Branch Chat';
 
             if (!empty($receiverPlayerIds)) {
-                $oneSignal->sendNotification(
+                $response = $oneSignal->sendNotification(
                     $currentUser->name . ' (Internal): ' . $request->content,
                     $receiverPlayerIds,
                     $senderBranchName,
                     ['branch_id' => $senderBranchId, 'internal' => true]
                 );
+                \Illuminate\Support\Facades\Log::info("BranchChat OneSignal Response: " . json_encode($response));
+            } else {
+                \Illuminate\Support\Facades\Log::warning("BranchChat OneSignal: No recipients found for branch {$senderBranchId}");
             }
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('OneSignal notification failed: ' . $e->getMessage());

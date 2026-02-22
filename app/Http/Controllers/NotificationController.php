@@ -17,7 +17,7 @@ class NotificationController extends Controller
         $user = auth()->user();
         $branchId = $user->branch_id;
 
-        if (!$branchId || $user->hasRole('Employee')) {
+        if (!$branchId) {
             return response()->json([
                 'total' => 0,
                 'counts' => ['chats' => 0, 'sales' => 0, 'transfers' => 0],
@@ -27,14 +27,21 @@ class NotificationController extends Controller
             ]);
         }
 
-        // Get IDs of viewed notifications for this user
-        $viewedSales = UserNotificationView::where('user_id', $user->id)
-            ->where('viewable_type', 'sale')
-            ->pluck('viewable_id');
+        $isEmployee = $user->hasRole('Employee');
 
-        $viewedTransfers = UserNotificationView::where('user_id', $user->id)
-            ->where('viewable_type', 'transfer')
-            ->pluck('viewable_id');
+        // Get IDs of viewed notifications for this user
+        $viewedSales = collect();
+        $viewedTransfers = collect();
+
+        if (!$isEmployee) {
+            $viewedSales = UserNotificationView::where('user_id', $user->id)
+                ->where('viewable_type', 'sale')
+                ->pluck('viewable_id');
+
+            $viewedTransfers = UserNotificationView::where('user_id', $user->id)
+                ->where('viewable_type', 'transfer')
+                ->pluck('viewable_id');
+        }
 
         // 1. Chats (Read & Unread)
         $chats = Message::with('sender.branch')
@@ -47,40 +54,49 @@ class NotificationController extends Controller
                 return $chat;
             });
 
-        // 2. Sales (Read & Unread)
-        $sales = Sale::where('branch_id', $branchId)
-            ->where('status', 'readied')
-            ->latest()
-            ->take(100)
-            ->get()
-            ->map(function ($sale) use ($viewedSales) {
-                $sale->is_read = $viewedSales->contains($sale->id);
-                return $sale;
-            });
+        // 2. Sales (Read & Unread) - Admins only
+        $sales = collect();
+        if (!$isEmployee) {
+            $sales = Sale::where('branch_id', $branchId)
+                ->where('status', 'readied')
+                ->latest()
+                ->take(100)
+                ->get()
+                ->map(function ($sale) use ($viewedSales) {
+                    $sale->is_read = $viewedSales->contains($sale->id);
+                    return $sale;
+                });
+        }
 
-        // 3. Incoming Transfers
-        $incomingTransfers = Transfer::with('sourceBranch')
-            ->where('destination_branch_id', $branchId)
-            ->where('status', 'outgoing')
-            ->latest()
-            ->take(100)
-            ->get()
-            ->map(function ($transfer) use ($viewedTransfers) {
-                $transfer->is_read = $viewedTransfers->contains($transfer->id);
-                return $transfer;
-            });
+        // 3. Incoming Transfers - Admins only
+        $incomingTransfers = collect();
+        if (!$isEmployee) {
+            $incomingTransfers = Transfer::with('sourceBranch')
+                ->where('destination_branch_id', $branchId)
+                ->where('status', 'outgoing')
+                ->latest()
+                ->take(100)
+                ->get()
+                ->map(function ($transfer) use ($viewedTransfers) {
+                    $transfer->is_read = $viewedTransfers->contains($transfer->id);
+                    return $transfer;
+                });
+        }
 
-        // 4. Pending Outgoing Transfers
-        $readiedTransfers = Transfer::with('destinationBranch')
-            ->where('source_branch_id', $branchId)
-            ->where('status', 'readied')
-            ->latest()
-            ->take(50)
-            ->get()
-            ->map(function ($transfer) use ($viewedTransfers) {
-                $transfer->is_read = $viewedTransfers->contains($transfer->id);
-                return $transfer;
-            });
+        // 4. Pending Outgoing Transfers - Admins only
+        $readiedTransfers = collect();
+        if (!$isEmployee) {
+            $readiedTransfers = Transfer::with('destinationBranch')
+                ->where('source_branch_id', $branchId)
+                ->where('status', 'readied')
+                ->latest()
+                ->take(50)
+                ->get()
+                ->map(function ($transfer) use ($viewedTransfers) {
+                    $transfer->is_read = $viewedTransfers->contains($transfer->id);
+                    return $transfer;
+                });
+        }
 
         // Calculate counts based on UNREAD
         $unreadChatsCount = $chats->where('is_read', false)->count();
