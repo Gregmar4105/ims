@@ -24,4 +24,35 @@ class MobileDashboardController extends Controller
         $safePage = preg_replace('/[^a-zA-Z0-9_-]/', '', $page);
         return Inertia::render('mobile/' . $safePage . '/index');
     }
+
+    public function chatShow(Request $request, $id)
+    {
+        return Inertia::render('mobile/chats/show', [
+            'branchId' => $id
+        ]);
+    }
+
+    public function saleCreate()
+    {
+        return Inertia::render('mobile/sales/create');
+    }
+
+    public function saleShow(Request $request, $id)
+    {
+        return Inertia::render('mobile/sales/show', [
+            'saleId' => $id
+        ]);
+    }
+
+    public function transferCreate()
+    {
+        return Inertia::render('mobile/transfers/create');
+    }
+
+    public function transferShow(Request $request, $id)
+    {
+        return Inertia::render('mobile/transfers/show', [
+            'transferId' => $id
+        ]);
+    }
 }

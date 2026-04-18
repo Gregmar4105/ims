@@ -68,8 +68,8 @@ export default function MobileProducts() {
                             products.map((item) => (
                                 <div key={item.id} className="flex items-center gap-4 p-3 hover:bg-muted/50 rounded-xl transition-colors active:bg-muted">
                                     <div className="relative shrink-0">
-                                        {item.image_url ? (
-                                            <img src={item.image_url} alt={item.name} className="w-12 h-12 rounded-full object-cover border border-border" />
+                                        {item.image_path || item.image_url ? (
+                                            <img src={(item.image_url || item.image_path).startsWith('http') ? (item.image_url || item.image_path) : `${serverUrl}/${item.image_url || item.image_path}`} alt={item.name} className="w-12 h-12 rounded-full object-cover border border-border" />
                                         ) : (
                                             <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
                                                 <Package className="w-5 h-5" />

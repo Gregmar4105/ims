@@ -65,7 +65,7 @@ class TransferController extends Controller
         $user     = $request->user();
         $transfer = Transfer::findOrFail($id);
 
-        if ($transfer->status !== 'in_transit') {
+        if ($transfer->status !== 'in_transit' && $transfer->status !== 'outgoing') {
             return response()->json([
                 'message' => "Transfer cannot be confirmed — current status is '{$transfer->status}'.",
             ], 422);
@@ -85,6 +85,58 @@ class TransferController extends Controller
             'message'  => 'Transfer confirmed successfully.',
             'transfer' => $this->formatTransfer($transfer->fresh()),
         ]);
+    }
+
+    /**
+     * Create a new transfer from the mobile app.
+     */
+    public function store(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'destination_branch_id' => ['required', 'integer', 'exists:branches,id'],
+            'items'                 => ['required', 'array', 'min:1'],
+            'items.*.product_id'    => ['required', 'integer', 'exists:products,id'],
+            'items.*.quantity'      => ['required', 'integer', 'min:1'],
+            'notes'                 => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $sourceBranchId = $user->branch_id;
+
+        if (! $sourceBranchId) {
+            return response()->json(['message' => 'User has no branch assigned.'], 422);
+        }
+
+        if ($sourceBranchId == $request->destination_branch_id) {
+            return response()->json(['message' => 'Source and destination branches cannot be the same.'], 422);
+        }
+
+        $transfer = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $user, $sourceBranchId) {
+            $transfer = Transfer::create([
+                'source_branch_id'      => $sourceBranchId,
+                'destination_branch_id' => $request->destination_branch_id,
+                'status'                => 'readied',
+                'readied_by'            => $user->id,
+                'notes'                 => $request->notes,
+            ]);
+
+            foreach ($request->items as $item) {
+                \App\Models\TransferItem::create([
+                    'transfer_id' => $transfer->id,
+                    'product_id'  => $item['product_id'],
+                    'quantity'    => $item['quantity'],
+                    'status'      => 'pending',
+                ]);
+            }
+
+            return $transfer->load(['items.product:id,name', 'fromBranch:id,branch_name', 'toBranch:id,branch_name']);
+        });
+
+        return response()->json([
+            'message'  => 'Transfer created successfully.',
+            'transfer' => $this->formatTransfer($transfer, detailed: true),
+        ], 201);
     }
 
     private function formatTransfer(Transfer $transfer, bool $detailed = false): array

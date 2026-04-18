@@ -35,7 +35,9 @@ export default function MobileDashboard() {
             const res = await remoteApi.get<DashboardData>(`${serverUrl}/api/mobile/dashboard`);
             setData(res.data);
         } catch (err: any) {
-            setError(err?.response?.data?.message ?? 'Failed to load dashboard.');
+            console.error('API Error:', err?.response?.data);
+            const msg = err?.response?.data?.message || err?.message || 'Failed to load dashboard.';
+            setError(`${msg} (HTTP ${err?.response?.status || 'Unknown'})`);
         } finally {
             setLoading(false);
         }

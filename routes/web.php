@@ -32,6 +32,18 @@ Route::get('/dashboard', [\App\Http\Controllers\Mobile\MobileDashboardController
 Route::get('/mobile/{page}', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'view'])
     ->where('page', '[a-zA-Z0-9_-]+')
     ->name('mobile.view');
+Route::get('/mobile/chats/{id}', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'chatShow'])
+    ->name('mobile.chats.show');
+Route::get('/mobile/sales/create', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'saleCreate'])
+    ->name('mobile.sales.create');
+Route::get('/mobile/sales/{id}', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'saleShow'])
+    ->name('mobile.sales.show');
+
+Route::get('/mobile/transfers/create', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'transferCreate'])
+    ->name('mobile.transfers.create');
+Route::get('/mobile/transfers/{id}', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'transferShow'])
+    ->name('mobile.transfers.show');
+
 
 // ── Web App — Authenticated routes ─────────────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {
