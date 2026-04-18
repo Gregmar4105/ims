@@ -5,7 +5,7 @@ import { Send, CheckCircle2, XCircle, Loader2, BellRing, RefreshCw } from 'lucid
 import { router } from '@inertiajs/react';
 
 export default function PushTest() {
-    const { remoteApi, authUser, serverUrl, refreshUser } = useMobileApi();
+    const { remoteApi, authUser, serverUrl, refreshUser, isHydrated, token } = useMobileApi();
     const [title, setTitle] = useState('Hello from LM2');
     const [body, setBody] = useState('This is a test push notification.');
     const [loading, setLoading] = useState(false);
@@ -14,8 +14,10 @@ export default function PushTest() {
     const [message, setMessage] = useState('');
 
     useEffect(() => {
-        handleRefresh();
-    }, []);
+        if (isHydrated && token) {
+            handleRefresh();
+        }
+    }, [isHydrated, token]);
 
     const handleRefresh = async () => {
         setRefreshing(true);

@@ -30,7 +30,17 @@ export default function MobileDashboard() {
     const isEmployee = roles.includes('Employee');
 
     useEffect(() => {
-        if (serverUrl) fetchDashboard();
+        if (serverUrl) {
+            fetchDashboard();
+            
+            // Fallback: trigger enrollment if it hasn't happened
+            const enrolled = localStorage.getItem('push_enrolled_triggered');
+            if (!enrolled) {
+                axios.get('/mobile/push-enroll').then(() => {
+                    localStorage.setItem('push_enrolled_triggered', 'true');
+                }).catch(() => {});
+            }
+        }
     }, [serverUrl]);
 
     const fetchDashboard = async () => {

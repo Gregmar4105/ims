@@ -52,6 +52,18 @@ Route::get('/mobile/push-enroll', function () {
     return back();
 })->name('mobile.push-enroll');
 
+Route::get('/api/local/sync-config', function (\Illuminate\Http\Request $request) {
+    if (!config('nativephp-internal.running')) return response()->json(['error' => 'Not running on NativePHP'], 403);
+    
+    $url = $request->query('url');
+    $token = $request->query('token');
+    
+    if ($url) \Illuminate\Support\Facades\DB::table('mobile_settings')->updateOrInsert(['key' => 'server_url'], ['value' => $url, 'updated_at' => now()]);
+    if ($token) \Illuminate\Support\Facades\DB::table('mobile_settings')->updateOrInsert(['key' => 'api_token'], ['value' => $token, 'updated_at' => now()]);
+    
+    return response()->json(['success' => true]);
+})->name('local.sync-config');
+
 // ── Web App — Authenticated routes ─────────────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('system-dashboard', [\App\Http\Controllers\SystemDashboardController::class, 'index'])

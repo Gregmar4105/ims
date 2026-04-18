@@ -14,7 +14,14 @@ class NativeAppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if (config('nativephp-internal.running')) {
-            \Native\Mobile\Facades\PushNotifications::enroll();
+            // Wait for the native bridge to be potentially ready
+            $this->app->booted(function () {
+                try {
+                    \Native\Mobile\Facades\PushNotifications::enroll();
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error("[NativePHP] Push enrollment failed: " . $e->getMessage());
+                }
+            });
         }
     }
 

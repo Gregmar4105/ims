@@ -60,6 +60,15 @@ export function useMobileApi() {
         };
     }, [token, isHydrated]);
 
+    // Sync localStorage to local PHP SQLite (for NativePHP events/listeners)
+    useEffect(() => {
+        if (!isHydrated || !token) return;
+        
+        // Use standard axios (not remoteApi) to call LOCAL host
+        axios.get(`/api/local/sync-config?token=${encodeURIComponent(token)}&url=${encodeURIComponent(serverUrl)}`)
+            .catch(err => console.error('Local sync failed:', err));
+    }, [token, serverUrl, isHydrated]);
+
     const [isOnline, setIsOnline] = useState(window.navigator.onLine);
 
     useEffect(() => {

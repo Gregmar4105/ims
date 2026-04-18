@@ -7,9 +7,15 @@ import { Search, Menu, User, LogOut, Settings as SettingsIcon, LayoutDashboard, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 // Removed local logo import as we use public/icon.png now
 
-export function FloatingHeader({ title, onSearch }: { title?: string; onSearch?: (q: string) => void }) {
-    const { authUser, logout, serverUrl, resolveImageUrl } = useMobileApi();
+export function FloatingHeader({ title: propTitle, onSearch }: { title?: string; onSearch?: (q: string) => void }) {
+    const { authUser, logout, resolveImageUrl, isHydrated, token, refreshUser } = useMobileApi();
     const [searchQuery, setSearchQuery] = useState('');
+
+    useEffect(() => {
+        if (isHydrated && token) {
+            refreshUser();
+        }
+    }, [isHydrated, token]);
 
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,9 +59,9 @@ export function FloatingHeader({ title, onSearch }: { title?: string; onSearch?:
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <button className="h-9 w-9 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary mx-1 shrink-0 bg-primary/10 flex items-center justify-center border-2 border-background shadow-sm">
-                            {authUser?.profile_photo_path || authUser?.profile_photo_url ? (
+                            {authUser?.avatar_url || authUser?.profile_photo_url || authUser?.profile_photo_path ? (
                                 <img 
-                                    src={resolveImageUrl(authUser.profile_photo_path || authUser.profile_photo_url)} 
+                                    src={resolveImageUrl(authUser.avatar_url || authUser.profile_photo_url || authUser.profile_photo_path)} 
                                     alt={authUser.name} 
                                     className="h-full w-full object-cover" 
                                 />
@@ -66,9 +72,9 @@ export function FloatingHeader({ title, onSearch }: { title?: string; onSearch?:
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56 rounded-[1.5rem] p-2 mt-2">
                         <div className="flex flex-col items-center justify-center p-4 border-b border-border/50">
-                            {authUser?.profile_photo_path || authUser?.profile_photo_url ? (
+                            {authUser?.avatar_url || authUser?.profile_photo_url || authUser?.profile_photo_path ? (
                                 <img 
-                                    src={resolveImageUrl(authUser.profile_photo_path || authUser.profile_photo_url)} 
+                                    src={resolveImageUrl(authUser.avatar_url || authUser.profile_photo_url || authUser.profile_photo_path)} 
                                     alt={authUser.name} 
                                     className="h-16 w-16 rounded-full mb-2 object-cover border-2 border-primary/20" 
                                 />
