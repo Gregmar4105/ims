@@ -237,10 +237,11 @@ export function NotificationBell() {
 
 
 
+    const { auth } = usePage<SharedData>().props;
+    const userBranchId = auth.user.branch_id;
+
     // Unified and Sorted Feed
     const allNotifications = useMemo(() => {
-        const { auth } = usePage<SharedData>().props;
-        const userBranchId = auth.user.branch_id;
 
         // Process Chats
         const chats = (data.chats || []).map((item: any) => {

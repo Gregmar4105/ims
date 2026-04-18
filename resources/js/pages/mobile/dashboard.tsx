@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import MobileLayout from '@/layouts/mobile-layout';
 import { useMobileApi } from '@/hooks/use-mobile-api';
 import { Plus } from 'lucide-react';

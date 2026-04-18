@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { router, Link } from '@inertiajs/react';
 import { useMobileApi } from '@/hooks/use-mobile-api';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
