@@ -69,11 +69,6 @@ export default function MobileApiSettings(props: Props) {
         };
         setCfg(merged);
         setHydrated(true);
-
-        // Auto-redirect if token is already present
-        if (merged.auth_token) {
-            router.visit('/dashboard');
-        }
     }, []);
 
     const serverUrl   = cfg.server_url   ?? props.serverUrl;

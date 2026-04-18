@@ -3,7 +3,7 @@ import { router, Link } from '@inertiajs/react';
 import { useMobileApi } from '@/hooks/use-mobile-api';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Search, Menu, User, LogOut, Settings as SettingsIcon } from 'lucide-react';
+import { Search, Menu, User, LogOut, Settings as SettingsIcon, LayoutDashboard, Settings2, Store, Users, QrCode } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 // Removed local logo import as we use public/icon.png now
 
@@ -25,7 +25,7 @@ export function FloatingHeader({ title, onSearch }: { title?: string; onSearch?:
                             <Menu className="h-5 w-5" />
                         </Button>
                     </SheetTrigger>
-                    <SheetContent side="left" className="w-[85vw] sm:w-[350px] p-0 border-none">
+                    <SheetContent side="left" className="w-[85vw] sm:w-[350px] p-0 border-none" hideClose>
                         <DrawerMenu authUser={authUser} logout={logout} />
                     </SheetContent>
                 </Sheet>
@@ -98,9 +98,11 @@ export function FloatingHeader({ title, onSearch }: { title?: string; onSearch?:
 function DrawerMenu({ authUser, logout }: { authUser: any; logout: () => void }) {
     const roles: string[] = authUser?.roles || [];
     const isSystemAdmin = roles.includes('System Administrator');
+    const isBranchAdmin = roles.includes('Branch Administrator');
+    const isEmployee = roles.includes('Employee');
 
     return (
-        <div className="flex flex-col h-full bg-background overflow-y-auto">
+        <div className="flex flex-col h-full bg-background overflow-y-auto pb-safe">
             <div className="px-6 pt-12 pb-6 border-b border-border/40" style={{ paddingTop: 'max(4rem, env(safe-area-inset-top, 4rem))' }}>
                 <div className="flex items-center gap-3">
                     <img src="/icon.png" alt="Logo" className="w-10 h-10 object-contain" />
@@ -113,6 +115,22 @@ function DrawerMenu({ authUser, logout }: { authUser: any; logout: () => void })
             <div className="py-2 flex-1">
                 <MenuSection title="General" />
                 <MenuItem icon="Inbox" label="Dashboard" href="/dashboard" active={window.location.pathname === '/dashboard'} />
+                
+                {isSystemAdmin && (
+                    <>
+                        <MenuItem icon="LayoutDashboard" label="System Dashboard" href="/dashboard/system" active={window.location.pathname === '/dashboard/system'} />
+                        <MenuItem icon="Settings2" label="Personalization" href="/settings/appearance" active={window.location.pathname === '/settings/appearance'} />
+                    </>
+                )}
+
+                {(isSystemAdmin || isBranchAdmin) && (
+                    <MenuItem icon="Store" label="Branch Dashboard" href="/dashboard/branch" active={window.location.pathname === '/dashboard/branch'} />
+                )}
+
+                {isEmployee && (
+                    <MenuItem icon="Users" label="Employee Dashboard" href="/dashboard/employee" active={window.location.pathname === '/dashboard/employee'} />
+                )}
+
                 <MenuItem icon="Bell" label="Notifications" href="/mobile/notifications" active={window.location.pathname === '/mobile/notifications'} />
                 <MenuItem icon="MessageCircle" label="Branch Chats" href="/mobile/chats" active={window.location.pathname.startsWith('/mobile/chats')} badge="Active" />
 
@@ -120,7 +138,6 @@ function DrawerMenu({ authUser, logout }: { authUser: any; logout: () => void })
                     <>
                         <MenuSection title="Administration" />
                         <MenuItem icon="Users" label="Users" href="/mobile/users" active={window.location.pathname === '/mobile/users'} />
-                        <MenuItem icon="Shield" label="Roles" href="/mobile/roles" active={window.location.pathname === '/mobile/roles'} />
                         <MenuItem icon="MapPin" label="Branches" href="/mobile/branches" active={window.location.pathname === '/mobile/branches'} />
                     </>
                 )}
@@ -134,7 +151,7 @@ function DrawerMenu({ authUser, logout }: { authUser: any; logout: () => void })
                 <MenuItem icon="ArrowRightLeft" label="Transfers" href="/mobile/transfers" active={window.location.pathname.startsWith('/mobile/transfers')} />
 
                 <MenuSection title="Settings" />
-                <MenuItem icon="Settings" label="API Settings" href="/settings/mobile-api" />
+                <MenuItem icon="Settings" label="Settings" href="/mobile/settings" active={window.location.pathname === '/mobile/settings'} />
                 <MenuItem icon="LogOut" label="Logout" onClick={logout} textClass="text-destructive" iconClass="text-destructive" />
             </div>
         </div>
@@ -169,6 +186,11 @@ function MenuItem({
             case 'MapPin': return <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>;
             case 'RotateCcw': return <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>;
             case 'LogOut': return <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>;
+            case 'LayoutDashboard': return <LayoutDashboard className={cls} />;
+            case 'Settings2': return <Settings2 className={cls} />;
+            case 'Store': return <Store className={cls} />;
+            case 'Users': return <Users className={cls} />;
+            case 'QrCode': return <QrCode className={cls} />;
             default: return <div className={cls} />;
         }
     };
