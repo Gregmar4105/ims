@@ -3,6 +3,7 @@ import MobileLayout from '@/layouts/mobile-layout';
 import { useMobileApi } from '@/hooks/use-mobile-api';
 import { Plus } from 'lucide-react';
 import { router } from '@inertiajs/react';
+import axios from 'axios';
 
 interface Summary {
     total_sales: number;
@@ -19,7 +20,7 @@ interface DashboardData {
 }
 
 export default function MobileDashboard() {
-    const { remoteApi, authUser, logout, serverUrl } = useMobileApi();
+    const { remoteApi, authUser, logout, serverUrl, isHydrated, token } = useMobileApi();
     const [data, setData] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -30,8 +31,10 @@ export default function MobileDashboard() {
     const isEmployee = roles.includes('Employee');
 
     useEffect(() => {
-        if (serverUrl) {
-            fetchDashboard();
+        if (isHydrated && serverUrl) {
+            if (token) {
+                fetchDashboard();
+            }
             
             // Fallback: trigger enrollment if it hasn't happened
             const enrolled = localStorage.getItem('push_enrolled_triggered');
@@ -41,7 +44,7 @@ export default function MobileDashboard() {
                 }).catch(() => {});
             }
         }
-    }, [serverUrl]);
+    }, [isHydrated, serverUrl, token]);
 
     const fetchDashboard = async () => {
         setLoading(true);
