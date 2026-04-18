@@ -45,6 +45,13 @@ Route::get('/mobile/transfers/{id}', [\App\Http\Controllers\Mobile\MobileDashboa
     ->name('mobile.transfers.show');
 
 
+Route::get('/mobile/push-enroll', function () {
+    if (config('nativephp-internal.running')) {
+        \Native\Mobile\Facades\PushNotifications::enroll();
+    }
+    return back();
+})->name('mobile.push-enroll');
+
 // ── Web App — Authenticated routes ─────────────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('system-dashboard', [\App\Http\Controllers\SystemDashboardController::class, 'index'])

@@ -22,7 +22,7 @@ interface Message {
 }
 
 export default function MobileChatShow({ branchId }: { branchId: string }) {
-    const { remoteApi, serverUrl, authUser } = useMobileApi();
+    const { remoteApi, serverUrl, authUser, resolveImageUrl } = useMobileApi();
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
@@ -95,11 +95,7 @@ export default function MobileChatShow({ branchId }: { branchId: string }) {
         }
     };
 
-    const resolveImageUrl = (path: string | undefined | null) => {
-        if (!path) return '';
-        if (path.startsWith('http')) return path;
-        return `${serverUrl}/storage/${path}`;
-    };
+
 
     return (
         <MobileLayout 

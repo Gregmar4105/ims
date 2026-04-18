@@ -75,9 +75,21 @@ class User extends Authenticatable
 
     public function getProfilePhotoUrlAttribute()
     {
-        return $this->profile_photo_path
-                    ? asset('storage/' . $this->profile_photo_path)
-                    : 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
+        if ($this->profile_photo_path) {
+            if (filter_var($this->profile_photo_path, FILTER_VALIDATE_URL)) {
+                return $this->profile_photo_path;
+            }
+            
+            // Ensure path doesn't have duplicate storage prefix or leading slash
+            $path = ltrim($this->profile_photo_path, '/');
+            if (str_starts_with($path, 'storage/')) {
+                $path = substr($path, 8);
+            }
+            
+            return asset('storage/' . $path);
+        }
+
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
     }
 
     public function routeNotificationForOneSignal(): ?string

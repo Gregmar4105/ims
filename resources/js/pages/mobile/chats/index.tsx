@@ -12,7 +12,7 @@ interface Branch {
 }
 
 export default function MobileChatsIndex() {
-    const { remoteApi, serverUrl, authUser } = useMobileApi();
+    const { remoteApi, serverUrl, authUser, resolveImageUrl } = useMobileApi();
     const [branches, setBranches] = useState<Branch[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -32,11 +32,7 @@ export default function MobileChatsIndex() {
         }
     };
 
-    const resolveImageUrl = (path: string | undefined | null) => {
-        if (!path) return '';
-        if (path.startsWith('http')) return path;
-        return `${serverUrl}/storage/${path}`;
-    };
+
 
     return (
         <MobileLayout title="Messages">

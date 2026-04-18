@@ -80,6 +80,27 @@ export function useMobileApi() {
         router.visit('/settings/mobile-api');
     };
 
+    const refreshUser = async () => {
+        try {
+            const res = await remoteApi.get(`${serverUrl}/api/mobile/user`);
+            const newCfg = { ...cfg, auth_user: res.data };
+            setCfg(newCfg);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newCfg));
+            return res.data;
+        } catch (err) {
+            console.error('Failed to refresh user info:', err);
+            return null;
+        }
+    };
+
+    const resolveImageUrl = (path: string | undefined | null) => {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        // Clean up path
+        const cleanPath = path.replace(/^\/+/, '').replace(/^storage\//, '');
+        return `${serverUrl}/storage/${cleanPath}`;
+    };
+
     return {
         remoteApi,
         serverUrl,
@@ -87,6 +108,8 @@ export function useMobileApi() {
         authUser,
         isHydrated,
         isOnline,
-        logout
+        logout,
+        refreshUser,
+        resolveImageUrl
     };
 }

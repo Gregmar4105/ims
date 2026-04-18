@@ -1,15 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MobileLayout from '@/layouts/mobile-layout';
 import { useMobileApi } from '@/hooks/use-mobile-api';
-import { Send, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Send, CheckCircle2, XCircle, Loader2, BellRing, RefreshCw } from 'lucide-react';
+import { router } from '@inertiajs/react';
 
 export default function PushTest() {
-    const { remoteApi, authUser, serverUrl } = useMobileApi();
+    const { remoteApi, authUser, serverUrl, refreshUser } = useMobileApi();
     const [title, setTitle] = useState('Hello from LM2');
     const [body, setBody] = useState('This is a test push notification.');
     const [loading, setLoading] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        handleRefresh();
+    }, []);
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await refreshUser();
+        setRefreshing(false);
+    };
+
+    const handleEnroll = () => {
+        // Call local route to trigger native permission prompt
+        router.visit('/mobile/push-enroll', {
+            preserveScroll: true,
+            onSuccess: () => {
+                setMessage('Permission request triggered. Please check your screen.');
+                setStatus('idle');
+            }
+        });
+    };
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,21 +58,39 @@ export default function PushTest() {
 
     return (
         <MobileLayout title="Push Test">
-            <div className="space-y-6">
+            <div className="space-y-6 pb-10">
                 
                 {/* Status Card */}
-                <div className="rounded-xl border border-border bg-card p-5">
+                <div className="rounded-xl border border-border bg-card p-5 relative overflow-hidden">
+                    <button 
+                        onClick={handleRefresh}
+                        className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted transition-colors"
+                        disabled={refreshing}
+                    >
+                        <RefreshCw className={`w-4 h-4 text-muted-foreground ${refreshing ? 'animate-spin' : ''}`} />
+                    </button>
+
                     <div className="flex items-start gap-4">
                         <div className={`mt-1 p-2 rounded-full ${authUser?.onesignal_player_id ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
-                            {authUser?.onesignal_player_id ? <CheckCircle2 className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
+                            {authUser?.onesignal_player_id ? <CheckCircle2 className="w-6 h-6" /> : <BellRing className="w-6 h-6" />}
                         </div>
-                        <div>
-                            <h3 className="font-semibold text-lg">Push Registration Status</h3>
-                            <p className="text-sm text-muted-foreground mt-1">
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-lg">Push Registration</h3>
+                            <p className="text-sm text-muted-foreground mt-1 pr-8">
                                 {authUser?.onesignal_player_id 
                                     ? 'Your device is registered to receive push notifications.' 
-                                    : 'No push token found. Please ensure notifications are allowed for this app.'}
+                                    : 'No push token found on server. You may need to grant permission or wait for the sync to complete.'}
                             </p>
+                            
+                            {!authUser?.onesignal_player_id && (
+                                <button 
+                                    onClick={handleEnroll}
+                                    className="mt-4 flex items-center gap-2 rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-medium hover:bg-primary/20 transition-all"
+                                >
+                                    <BellRing className="w-4 h-4" />
+                                    Request Permission
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -88,7 +129,7 @@ export default function PushTest() {
                         </div>
 
                         {status !== 'idle' && (
-                            <div className={`p-3 rounded-lg text-sm flex items-center gap-2 ${
+                            <div className={`p-3 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2 ${
                                 status === 'success' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'
                             }`}>
                                 {status === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
@@ -99,7 +140,7 @@ export default function PushTest() {
                         <button
                             type="submit"
                             disabled={loading || !authUser?.onesignal_player_id}
-                            className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground px-4 py-3 font-semibold hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
+                            className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground px-4 py-3 font-semibold hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale disabled:active:scale-100"
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                             {loading ? 'Sending...' : 'Send Notification'}
@@ -111,3 +152,4 @@ export default function PushTest() {
         </MobileLayout>
     );
 }
+
