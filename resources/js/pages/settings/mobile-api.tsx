@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 
 import { Button } from '@/components/ui/button';
@@ -125,6 +125,9 @@ export default function MobileApiSettings(props: Props) {
 
             setEmail('');
             setPassword('');
+
+            // Redirect into the app
+            router.visit('/dashboard');
         } catch (err: any) {
             const msg = err?.response?.data?.message
                 ?? err?.response?.data?.errors?.email?.[0]

@@ -25,6 +25,12 @@ Route::get('/locations', [\App\Http\Controllers\BranchController::class, 'locati
 Route::get('/suppliers', [\App\Http\Controllers\SupplierPortalController::class, 'index'])->name('suppliers.portal');
 Route::post('/suppliers/send', [\App\Http\Controllers\SupplierPortalController::class, 'store'])->name('suppliers.send');
 
+// ── Mobile App Routes — NO local auth required ────────────────────────────────
+// These pages authenticate against the remote API via localStorage token.
+Route::get('/dashboard', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'index'])
+    ->name('dashboard');
+
+// ── Web App — Authenticated routes ─────────────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('system-dashboard', [\App\Http\Controllers\SystemDashboardController::class, 'index'])
         ->name('system.dashboard')->middleware('role:System Administrator');
