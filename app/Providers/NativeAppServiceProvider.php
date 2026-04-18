@@ -2,26 +2,33 @@
 
 namespace App\Providers;
 
-use Native\Desktop\Facades\Window;
-use Native\Desktop\Contracts\ProvidesPhpIni;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Config;
 
-class NativeAppServiceProvider implements ProvidesPhpIni
+class NativeAppServiceProvider extends ServiceProvider
 {
     /**
-     * Executed once the native application has been booted.
-     * Use this method to open windows, register global shortcuts, etc.
+     * Executed once the native mobile application has been booted.
+     * Configure app-specific settings for the Android/iOS environment.
      */
     public function boot(): void
     {
-        Window::open();
+        // Force SQLite for the mobile app's local database
+        Config::set('database.default', 'sqlite');
+        Config::set('database.connections.sqlite.database', database_path('database.sqlite'));
+
+        // Disable broadcasting/reverb on mobile (no WebSocket server on-device)
+        Config::set('broadcasting.default', 'null');
+
+        // Disable queue workers (sync mode is fine for mobile)
+        Config::set('queue.default', 'sync');
     }
 
     /**
-     * Return an array of php.ini directives to be set.
+     * Register any application services.
      */
-    public function phpIni(): array
+    public function register(): void
     {
-        return [
-        ];
+        //
     }
 }

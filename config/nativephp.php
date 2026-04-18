@@ -1,177 +1,357 @@
 <?php
 
 return [
-    /**
-     * The version of your app.
-     * It is used to determine if the app needs to be updated.
-     * Increment this value every time you release a new version of your app.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | App Version Name
+    |--------------------------------------------------------------------------
+    |
+    | This is the human-readable version of your app (e.g. "1.0.0"). It is
+    | used as the versionName in Android builds and may be displayed in
+    | the app or console to determine the current app release version.
+    |
+    */
+
     'version' => env('NATIVEPHP_APP_VERSION', '1.0.0'),
 
-    /**
-     * The ID of your application. This should be a unique identifier
-     * usually in the form of a reverse domain name.
-     * For example: com.nativephp.app
-     */
-    'app_id' => env('NATIVEPHP_APP_ID', 'com.nativephp.app'),
+    /*
+    |--------------------------------------------------------------------------
+    | App Version Code
+    |--------------------------------------------------------------------------
+    |
+    | This is the internal numeric version code used for Play Store builds.
+    | It must increase with every release. This is used as versionCode in
+    | Android builds and is required for publishing updates to the store.
+    |
+    */
 
-    /**
-     * If your application allows deep linking, you can specify the scheme
-     * to use here. This is the scheme that will be used to open your
-     * application from within other applications.
-     * For example: "nativephp"
-     *
-     * This would allow you to open your application using a URL like:
-     * nativephp://some/path
-     */
+    'version_code' => env('NATIVEPHP_APP_VERSION_CODE', 1),
+
+    /*
+    |--------------------------------------------------------------------------
+    | App ID
+    |--------------------------------------------------------------------------
+    |
+    | This is the unique ID of your application used by Android to identify
+    | the app package. It is typically written in reverse domain format,
+    | such as "com.nativephp.app".
+    |
+    */
+
+    'app_id' => env('NATIVEPHP_APP_ID'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Deeplink Scheme
+    |--------------------------------------------------------------------------
+    |
+    | The deep link scheme to use for opening your app from URLs. For
+    | example, using the scheme "nativephp" allows links like:
+    | nativephp://some/path to open the app directly.
+    |
+    */
+
     'deeplink_scheme' => env('NATIVEPHP_DEEPLINK_SCHEME'),
 
-    /**
-     * The author of your application.
-     */
-    'author' => env('NATIVEPHP_APP_AUTHOR'),
+    /*
+    |--------------------------------------------------------------------------
+    | Deeplink Host
+    |--------------------------------------------------------------------------
+    |
+    | The domain name to associate with verified HTTPS links and NFC tags.
+    | This allows URLs like https://your-host.com/path to open your app
+    | when tapped from an NFC tag or clicked from the browser.
+    |
+    */
 
-    /**
-     * The copyright notice for your application.
-     */
-    'copyright' => env('NATIVEPHP_APP_COPYRIGHT'),
+    'deeplink_host' => env('NATIVEPHP_DEEPLINK_HOST'),
 
-    /**
-     * The description of your application.
-     */
-    'description' => env('NATIVEPHP_APP_DESCRIPTION', 'An awesome app built with NativePHP'),
+    /*
+    |--------------------------------------------------------------------------
+    | Start URL
+    |--------------------------------------------------------------------------
+    |
+    | The initial URL/path to load when the app starts. This should be a
+    | path relative to the app root (e.g., "/dashboard", "/onboarding").
+    | If not set, the app will load the root path ("/").
+    |
+    */
 
-    /**
-     * The Website of your application.
-     */
-    'website' => env('NATIVEPHP_APP_WEBSITE', 'https://nativephp.com'),
+    'start_url' => env('NATIVEPHP_START_URL', '/'),
 
-    /**
-     * The default service provider for your application. This provider
-     * takes care of bootstrapping your application and configuring
-     * any global hotkeys, menus, windows, etc.
-     */
-    'provider' => \App\Providers\NativeAppServiceProvider::class,
+    /*
+    |--------------------------------------------------------------------------
+    | Development Team (iOS)
+    |--------------------------------------------------------------------------
+    |
+    | The Apple Developer Team ID to use for code signing iOS apps. This is
+    | automatically detected from your installed certificates, but you can
+    | override it here if needed. Find your Team ID in your Apple Developer
+    | account under Membership details.
+    |
+    */
+    'development_team' => env('NATIVEPHP_DEVELOPMENT_TEAM'),
 
-    /**
-     * A list of environment keys that should be removed from the
-     * .env file when the application is bundled for production.
-     * You may use wildcards to match multiple keys.
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Environment Keys to Clean Up
+    |--------------------------------------------------------------------------
+    |
+    | These are keys that will be removed from the .env file during app
+    | bundling to prevent secrets or development credentials from being
+    | leaked. Wildcards are supported (e.g. AWS_* or *_SECRET).
+    |
+    */
+
     'cleanup_env_keys' => [
         'AWS_*',
-        'AZURE_*',
         'GITHUB_*',
         'DO_SPACES_*',
         '*_SECRET',
-        'BIFROST_*',
-        'NATIVEPHP_UPDATER_PATH',
-        'NATIVEPHP_APPLE_ID',
-        'NATIVEPHP_APPLE_ID_PASS',
-        'NATIVEPHP_APPLE_TEAM_ID',
-        'NATIVEPHP_AZURE_PUBLISHER_NAME',
-        'NATIVEPHP_AZURE_ENDPOINT',
-        'NATIVEPHP_AZURE_CERTIFICATE_PROFILE_NAME',
-        'NATIVEPHP_AZURE_CODE_SIGNING_ACCOUNT_NAME',
+        'DB_PASSWORD',
+        'DB_USERNAME',
     ],
 
-    /**
-     * A list of files and folders that should be removed from the
-     * final app before it is bundled for production.
-     * You may use glob / wildcard patterns here.
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Files to Exclude Before Bundling
+    |--------------------------------------------------------------------------
+    |
+    | These files and folders will be removed before the final bundle is
+    | built for production. You may use glob/wildcard patterns here to
+    | skip unnecessary assets like logs, sessions, or temp data.
+    |
+    */
+
     'cleanup_exclude_files' => [
-        'build',
-        'temp',
-        'content',
-        'node_modules',
-        '*/tests',
+        'storage/framework/sessions',
+        'storage/framework/cache',
+        'storage/framework/testing',
+        'storage/logs/laravel.log'
     ],
 
-    /**
-     * The NativePHP updater configuration.
-     */
-    'updater' => [
-        /**
-         * Whether or not the updater is enabled. Please note that the
-         * updater will only work when your application is bundled
-         * for production.
-         */
-        'enabled' => env('NATIVEPHP_UPDATER_ENABLED', true),
+    /*
+    |--------------------------------------------------------------------------
+    | Runtime Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Controls the persistent PHP runtime behavior. In 'persistent' mode,
+    | Laravel boots once and the kernel is reused across requests (~5-30ms
+    | per dispatch instead of ~200-300ms). Falls back to 'classic' mode
+    | (full init/shutdown per request) if persistent boot fails.
+    |
+    */
 
-        /**
-         * The updater provider to use.
-         * Supported: "github", "s3", "spaces"
-         * Note: The "s3" provider is compatible with S3-compatible services like Cloudflare R2.
-         */
-        'default' => env('NATIVEPHP_UPDATER_PROVIDER', 'spaces'),
+    'runtime' => [
+        'mode' => 'persistent', // 'classic' or 'persistent'
+        'reset_instances' => true,
+        'gc_between_dispatches' => false,
+    ],
 
-        'providers' => [
-            'github' => [
-                'driver' => 'github',
-                'repo' => env('GITHUB_REPO'),
-                'owner' => env('GITHUB_OWNER'),
-                'token' => env('GITHUB_TOKEN'),
-                'vPrefixedTagName' => env('GITHUB_V_PREFIXED_TAG_NAME', true),
-                'private' => env('GITHUB_PRIVATE', false),
-                'autoupdate_token' => env('GITHUB_AUTOUPDATE_TOKEN'), // Read-only token used by the updater for private repos
-                'channel' => env('GITHUB_CHANNEL', 'latest'),
-                'releaseType' => env('GITHUB_RELEASE_TYPE', 'draft'),
-            ],
+    'android' => [
+        'gradle_jdk_path' => env('NATIVEPHP_GRADLE_PATH'),
+        'android_sdk_path' => env('NATIVEPHP_ANDROID_SDK_LOCATION'),
+        'emulator_path' => env('ANDROID_EMULATOR'),
+        '7zip-location' => env('NATIVEPHP_7ZIP_LOCATION', 'C:\\Program Files\\7-Zip\\7z.exe'),
 
-            's3' => [
-                'driver' => 's3',
-                'key' => env('AWS_ACCESS_KEY_ID'),
-                'secret' => env('AWS_SECRET_ACCESS_KEY'),
-                'region' => env('AWS_DEFAULT_REGION'),
-                'bucket' => env('AWS_BUCKET'),
-                'endpoint' => env('AWS_ENDPOINT'),
-                'path' => env('NATIVEPHP_UPDATER_PATH', null),
-                /**
-                 * Optional public URL for serving updates (e.g., CDN or custom domain).
-                 * When set, updates will be downloaded from this URL instead of the S3 endpoint.
-                 * Useful for S3 with CloudFront or Cloudflare R2 with public access
-                 * Example: 'https://updates.yourdomain.com'
-                 */
-                'public_url' => env('AWS_PUBLIC_URL'),
-            ],
+        /*
+        |--------------------------------------------------------------------------
+        | Android SDK Versions
+        |--------------------------------------------------------------------------
+        |
+        | Configure the Android SDK versions for your app build. These control
+        | which Android versions your app can run on and which APIs are available.
+        |
+        | compile_sdk: The SDK version used to compile your app (latest features)
+        | min_sdk:     The minimum Android version your app supports
+        | target_sdk:  The SDK version your app is designed and tested for
+        |
+        */
+        'compile_sdk' => env('NATIVEPHP_ANDROID_COMPILE_SDK', 36),
+        'min_sdk' => env('NATIVEPHP_ANDROID_MIN_SDK', 33),
+        'target_sdk' => env('NATIVEPHP_ANDROID_TARGET_SDK', 36),
 
-            'spaces' => [
-                'driver' => 'spaces',
-                'key' => env('DO_SPACES_KEY_ID'),
-                'secret' => env('DO_SPACES_SECRET_ACCESS_KEY'),
-                'name' => env('DO_SPACES_NAME'),
-                'region' => env('DO_SPACES_REGION'),
-                'path' => env('NATIVEPHP_UPDATER_PATH', null),
-            ],
+        /*
+        |--------------------------------------------------------------------------
+        | Status Bar Style
+        |--------------------------------------------------------------------------
+        |
+        | Set the color of the status bar and navigation bar icons.
+        | Options: 'auto'  - Auto-detect from system theme (recommended)
+        |          'light' - Light/white icons
+        |          'dark'  - Dark icons
+        |
+        */
+        'status_bar_style' => 'auto',
+
+        /*
+        |--------------------------------------------------------------------------
+        | Android Build Configuration
+        |--------------------------------------------------------------------------
+        |
+        | These options control how your Android app is built and optimized.
+        | The defaults maintain current behavior while allowing customization
+        | for production builds, debugging, and app store optimization.
+        |
+        */
+        'build' => [
+            // R8/ProGuard Configuration - currently disabled
+            'minify_enabled' => env('NATIVEPHP_ANDROID_MINIFY_ENABLED', false),
+            'shrink_resources' => env('NATIVEPHP_ANDROID_SHRINK_RESOURCES', false),
+            'obfuscate' => env('NATIVEPHP_ANDROID_OBFUSCATE', false),
+
+            // Debug Symbol Configuration - currently enabled
+            'debug_symbols' => env('NATIVEPHP_ANDROID_DEBUG_SYMBOLS', 'FULL'),
+            'generate_mapping_files' => env('NATIVEPHP_ANDROID_MAPPING_FILES', false),
+            'mapping_file_path' => env('NATIVEPHP_ANDROID_MAPPING_PATH', 'build/outputs/mapping/release/'),
+
+            // ProGuard Rules - currently disabled
+            'keep_line_numbers' => env('NATIVEPHP_ANDROID_KEEP_LINE_NUMBERS', false),
+            'keep_source_file' => env('NATIVEPHP_ANDROID_KEEP_SOURCE_FILE', false),
+            'custom_proguard_rules' => env('NATIVEPHP_ANDROID_CUSTOM_PROGUARD_RULES', []),
+
+            // Build Performance - using Gradle defaults
+            'parallel_builds' => env('NATIVEPHP_ANDROID_PARALLEL_BUILDS', true),
+            'incremental_builds' => env('NATIVEPHP_ANDROID_INCREMENTAL_BUILDS', true),
         ],
     ],
 
-    /**
-     * The queue workers that get auto-started on your application start.
-     */
-    'queue_workers' => [
-        'default' => [
-            'queues' => ['default'],
-            'memory_limit' => 128,
-            'timeout' => 60,
-            'sleep' => 3,
+    /*
+    |--------------------------------------------------------------------------
+    | Development Server Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the NativePHP development server that allows hot
+    | reloading of mobile applications during development.
+    |
+    */
+
+    'server' => [
+        // HTTP server port for serving the app
+        'http_port' => env('NATIVEPHP_HTTP_PORT', 3000),
+
+        // WebSocket server port for hot reload communication
+        'ws_port' => env('NATIVEPHP_WS_PORT', 8081),
+
+        // Service name advertised on the network
+        'service_name' => env('NATIVEPHP_SERVICE_NAME', 'NativePHP Server'),
+
+        // Service type for mDNS advertisement
+        'service_type' => '_http._tcp',
+
+        // Public directory to serve (relative to Laravel root)
+        'public_path' => env('NATIVEPHP_PUBLIC_PATH', 'public'),
+
+        // Build output directory (where the ZIP will be created)
+        'build_path' => env('NATIVEPHP_BUILD_PATH', 'storage/app/native-build'),
+
+        // Automatically open browser with QR code when server starts
+        'open_browser' => env('NATIVEPHP_OPEN_BROWSER', true),
+
+        // Watch these directories for changes
+        'watch_paths' => [
+            'app',
+            'resources',
+            'routes',
+            'public/build',
+        ],
+
+        // File extensions to watch for changes
+        'watch_extensions' => ['php', 'blade.php', 'js', 'css', 'ts', 'vue', 'json'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Hot Reload Configuration
+    |--------------------------------------------------------------------------
+    */
+    'hot_reload' => [
+        'watch_paths' => [
+            'app',
+            'resources',
+            'routes',
+            'config',
+            'public',
+        ],
+
+        'exclude_patterns' => [
+            '\.git',
+            'storage',
+            'tests',
+            'nativephp',
+            'credentials',
+            'node_modules',
+            '\.swp',
+            '\.tmp',
+            '~',
+            '\.log',
         ],
     ],
 
-    /**
-     * Define your own scripts to run before and after the build process.
-     */
-    'prebuild' => [
-        // 'npm run build',
+    /*
+    |--------------------------------------------------------------------------
+    | App Store Connect API Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for uploading apps to App Store Connect using the API.
+    | These values are used for automated uploads during the package process.
+    | Store sensitive data in environment variables for security.
+    |
+    */
+    'app_store_connect' => [
+        'api_key' => env('APP_STORE_API_KEY'),
+        'api_key_id' => env('APP_STORE_API_KEY_ID'),
+        'api_issuer_id' => env('APP_STORE_API_ISSUER_ID'),
+        'app_name' => env('APP_STORE_APP_NAME'),
     ],
 
-    'postbuild' => [
-        // 'rm -rf public/build',
-    ],
+    /*
+    |--------------------------------------------------------------------------
+    | iPad Support
+    |--------------------------------------------------------------------------
+    |
+    | Enable or disable iPad support for your iOS app. When enabled, your app
+    | will support iPad devices and all iPad orientations (portrait, upside down,
+    | landscape left, and landscape right) as required by Apple's App Store
+    | guidelines. When disabled, your app will be iPhone-only.
+    |
+    | Note: Once an app is deployed to the App Store with iPad
+    | support you cannot revoke this action.
+    |
+    */
+    'ipad' => false,
 
-    /**
-     * Custom PHP binary path.
-     */
-    'binary_path' => env('NATIVEPHP_PHP_BINARY_PATH', null),
+    /*
+    |--------------------------------------------------------------------------
+    | Device Orientation Support
+    |--------------------------------------------------------------------------
+    |
+    | Configure which orientations your app supports on different devices.
+    | This will be applied during the build process to set appropriate
+    | constraints in Info.plist (iOS) and AndroidManifest.xml (Android).
+    |
+    | For iPhone and Android, you can configure specific orientations.
+    | For iPad, when enabled above, all orientations are automatically supported
+    | as required by Apple's App Store guidelines.
+    |
+    | If all orientations are false for iPhone, the build will fail with a
+    | helpful error message. If all orientations are false for Android, the
+    | build will fail with a helpful error message.
+    |
+    */
+    'orientation' => [
+        'iphone' => [
+            'portrait' => true,
+            'upside_down' => false,
+            'landscape_left' => false,
+            'landscape_right' => false,
+        ],
+        'android' => [
+            'portrait' => true,
+            'upside_down' => false,
+            'landscape_left' => false,
+            'landscape_right' => false,
+        ],
+    ],
 ];

@@ -42,49 +42,36 @@ class HandleInertiaRequests extends Middleware
         
         $reorderCount = 0;
         if ($user = $request->user()) {
-            if ($user->hasRole('System Administrator')) {
-                // System admin sees the sum of all branches that need reordering
-                $reorderCount = \Illuminate\Support\Facades\DB::table('branch_products')
-                    ->whereNotNull('reorder_level')
-                    ->where('reorder_level', '>', 0)
-                    ->whereRaw('quantity <= reorder_level')
-                    ->count();
-            } elseif ($user->branch_id) {
-                // Branch admin sees only their branch's items
-                $reorderCount = \Illuminate\Support\Facades\DB::table('branch_products')
-                    ->where('branch_id', $user->branch_id)
-                    ->whereNotNull('reorder_level')
-                    ->where('reorder_level', '>', 0)
-                    ->whereRaw('quantity <= reorder_level')
-                    ->count();
+            try {
+                if ($user->hasRole('System Administrator')) {
+                    $reorderCount = \Illuminate\Support\Facades\DB::table('branch_products')
+                        ->whereNotNull('reorder_level')
+                        ->where('reorder_level', '>', 0)
+                        ->whereRaw('quantity <= reorder_level')
+                        ->count();
+                } elseif ($user->branch_id) {
+                    $reorderCount = \Illuminate\Support\Facades\DB::table('branch_products')
+                        ->where('branch_id', $user->branch_id)
+                        ->whereNotNull('reorder_level')
+                        ->where('reorder_level', '>', 0)
+                        ->whereRaw('quantity <= reorder_level')
+                        ->count();
+                }
+            } catch (\Throwable) {
+                $reorderCount = 0;
             }
         }
 
-        return [
-            ...parent::share($request),
-            'reorderCount' => $reorderCount,
-            'name' => config('app.name'),
-            'quote' => ['message' => trim($message), 'author' => trim($author)],
-            'auth' => [
-                'user' => $request->user()?->load('branch'),
-                // 👇 ADDED THIS: This sends the permissions to your React frontend
-                'permissions' => $request->user() 
-                    ? $request->user()->getAllPermissions()->pluck('name') 
-                    : [],
-                // Optional: You can send roles too if you need them later
-                'roles' => $request->user() 
-                    ? $request->user()->getRoleNames() 
-                    : [],
-            ],
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-            'categories' => \App\Models\Category::where('status', 'Active')
+        $categories = [];
+        try {
+            $categories = \App\Models\Category::where('status', 'Active')
                 ->withCount('products')
                 ->orderByDesc('products_count')
-                ->take(20) // Take more initially to allow for filtering
+                ->take(20)
                 ->get()
-                ->unique('name') // Keep only one category per name (first one found, which is highest count due to order)
-                ->take(5) // Limit to top 5 unique categories
-                ->values() // Reset keys
+                ->unique('name')
+                ->take(5)
+                ->values()
                 ->map(function ($category) {
                     $category->setRelation('brands', \App\Models\Brand::whereHas('products', function ($q) use ($category) {
                         $q->where('category_id', $category->id)
@@ -93,12 +80,37 @@ class HandleInertiaRequests extends Middleware
                           });
                     })->take(5)->get(['id', 'name', 'slug']));
                     return $category;
-                }),
+                });
+        } catch (\Throwable) {
+            $categories = [];
+        }
 
-            'notification_sound' => function () {
-                $path = SiteSetting::get('notification_sound');
+        $notificationSound = function () {
+            try {
+                $path = \App\Models\SiteSetting::get('notification_sound');
                 return $path ? Storage::url($path) : '/audio/nokia_3310.mp3';
-            },
+            } catch (\Throwable) {
+                return '/audio/nokia_3310.mp3';
+            }
+        };
+
+        return [
+            ...parent::share($request),
+            'reorderCount' => $reorderCount,
+            'name' => config('app.name'),
+            'quote' => ['message' => trim($message), 'author' => trim($author)],
+            'auth' => [
+                'user' => $request->user()?->load('branch'),
+                'permissions' => $request->user() 
+                    ? $request->user()->getAllPermissions()->pluck('name') 
+                    : [],
+                'roles' => $request->user() 
+                    ? $request->user()->getRoleNames() 
+                    : [],
+            ],
+            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'categories' => $categories,
+            'notification_sound' => $notificationSound,
         ];
     }
 }
