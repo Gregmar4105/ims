@@ -63,7 +63,7 @@ class DashboardController extends Controller
                 'low_stock_items'   => $lowStockCount,
             ],
             'branch' => $branchId
-                ? Branch::find($branchId, ['id', 'branch_name', 'address'])
+                ? Branch::find($branchId, ['id', 'branch_name', 'location'])
                 : null,
             'synced_at' => now()->toISOString(),
         ]);

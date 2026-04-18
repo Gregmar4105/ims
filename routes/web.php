@@ -29,6 +29,9 @@ Route::post('/suppliers/send', [\App\Http\Controllers\SupplierPortalController::
 // These pages authenticate against the remote API via localStorage token.
 Route::get('/dashboard', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'index'])
     ->name('dashboard');
+Route::get('/mobile/{page}', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'view'])
+    ->where('page', '[a-zA-Z0-9_-]+')
+    ->name('mobile.view');
 
 // ── Web App — Authenticated routes ─────────────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {

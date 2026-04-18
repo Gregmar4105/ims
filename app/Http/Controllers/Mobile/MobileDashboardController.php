@@ -17,4 +17,11 @@ class MobileDashboardController extends Controller
     {
         return Inertia::render('mobile/dashboard');
     }
+
+    public function view(Request $request, $page)
+    {
+        // Sanitize the requested page name just in case.
+        $safePage = preg_replace('/[^a-zA-Z0-9_-]/', '', $page);
+        return Inertia::render('mobile/' . $safePage . '/index');
+    }
 }
