@@ -23,10 +23,10 @@ class ChatController extends Controller
         $isAdmin = $user->hasRole('System Administrator');
 
         if ($isAdmin) {
-            $branches = Branch::select('id', 'branch_name', 'location')->get();
+            $branches = Branch::select('id', 'branch_name', 'location', 'profile_photo_path')->get();
         } else {
             $branches = Branch::where('id', $user->branch_id)
-                ->select('id', 'branch_name', 'location')
+                ->select('id', 'branch_name', 'location', 'profile_photo_path')
                 ->get();
         }
 
@@ -34,8 +34,10 @@ class ChatController extends Controller
             'branches' => $branches,
             'user' => [
                 'id' => $user->id,
+                'name' => $user->name,
                 'branch_id' => $user->branch_id,
-                'is_admin' => $isAdmin
+                'is_admin' => $isAdmin,
+                'avatar' => $user->profile_photo_path
             ]
         ]);
     }
@@ -49,7 +51,7 @@ class ChatController extends Controller
         $currentBranchId = $user->branch_id;
         $currentUserId = $user->id;
 
-        $query = Message::with(['sender:id,name,branch_id', 'sender.branch:id,branch_name'])
+        $query = Message::with(['sender:id,name,branch_id,profile_photo_path', 'sender.branch:id,branch_name,profile_photo_path'])
             ->where(function($q) use ($currentBranchId, $branch, $currentUserId) {
                 // Inter-branch logic
                 $q->where(function($inner) use ($currentBranchId, $branch) {

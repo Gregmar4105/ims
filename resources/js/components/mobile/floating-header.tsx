@@ -5,9 +5,10 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Search, Menu, User, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import logo from './assets/logo.svg';
 
 export function FloatingHeader({ title, onSearch }: { title?: string; onSearch?: (q: string) => void }) {
-    const { authUser, logout } = useMobileApi();
+    const { authUser, logout, serverUrl } = useMobileApi();
     const [searchQuery, setSearchQuery] = useState('');
 
     const handleSearchSubmit = (e: React.FormEvent) => {
@@ -24,48 +25,56 @@ export function FloatingHeader({ title, onSearch }: { title?: string; onSearch?:
                             <Menu className="h-5 w-5" />
                         </Button>
                     </SheetTrigger>
-                    <SheetContent side="left" className="w-[80vw] sm:w-80 p-0">
+                    <SheetContent side="left" className="w-[85vw] sm:w-[350px] p-0 border-none">
                         <DrawerMenu authUser={authUser} logout={logout} />
                     </SheetContent>
                 </Sheet>
 
                 {onSearch ? (
-                    <form onSubmit={handleSearchSubmit} className="flex-1 mx-2">
+                    <form onSubmit={handleSearchSubmit} className="flex-1 mx-2 text-foreground">
                         <input
                             type="text"
-                            placeholder="Search in mail"
+                            placeholder="Search"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-transparent border-none text-sm focus:outline-none focus:ring-0 placeholder-muted-foreground"
+                            className="w-full bg-transparent border-none text-sm focus:outline-none focus:ring-0 placeholder:text-muted-foreground/60"
                         />
                     </form>
                 ) : (
-                    <div className="flex-1 mx-2 truncate text-sm font-medium text-muted-foreground">
-                        {title || 'Search in mail'}
+                    <div className="flex-1 mx-2 truncate text-sm font-medium text-muted-foreground/60">
+                        {title || 'Search'}
                     </div>
                 )}
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <button className="h-8 w-8 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary mx-1 shrink-0 bg-primary/10 flex items-center justify-center">
-                            {authUser?.avatar_url ? (
-                                <img src={authUser.avatar_url} alt={authUser.name} className="h-full w-full object-cover" />
+                        <button className="h-9 w-9 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary mx-1 shrink-0 bg-primary/10 flex items-center justify-center border-2 border-background shadow-sm">
+                            {authUser?.profile_photo_path ? (
+                                <img 
+                                    src={authUser.profile_photo_path.startsWith('http') ? authUser.profile_photo_path : `${serverUrl}/storage/${authUser.profile_photo_path}`} 
+                                    alt={authUser.name} 
+                                    className="h-full w-full object-cover" 
+                                />
                             ) : (
-                                <User className="h-4 w-4 text-primary" />
+                                <User className="h-5 w-5 text-primary" />
                             )}
                         </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                        <div className="flex flex-col items-center justify-center p-4 border-b">
-                            {authUser?.avatar_url ? (
-                                <img src={authUser.avatar_url} alt={authUser.name} className="h-16 w-16 rounded-full mb-2 object-cover" />
+                    <DropdownMenuContent align="end" className="w-56 rounded-[1.5rem] p-2 mt-2">
+                        <div className="flex flex-col items-center justify-center p-4 border-b border-border/50">
+                            {authUser?.profile_photo_path ? (
+                                <img 
+                                    src={authUser.profile_photo_path.startsWith('http') ? authUser.profile_photo_path : `${serverUrl}/storage/${authUser.profile_photo_path}`} 
+                                    alt={authUser.name} 
+                                    className="h-16 w-16 rounded-full mb-2 object-cover border-2 border-primary/20" 
+                                />
                             ) : (
                                 <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                                     <User className="h-8 w-8 text-primary" />
                                 </div>
                             )}
-                            <p className="font-medium text-sm text-center">{authUser?.name}</p>
-                            <p className="text-xs text-muted-foreground text-center truncate w-full">{authUser?.email}</p>
+                            <p className="font-bold text-sm text-center">{authUser?.name}</p>
+                            <p className="text-[10px] text-muted-foreground text-center truncate w-full">{authUser?.email}</p>
                         </div>
                         <DropdownMenuItem onClick={() => router.visit('/settings/mobile-api')}>
                             <SettingsIcon className="mr-2 h-4 w-4" />
@@ -85,12 +94,17 @@ export function FloatingHeader({ title, onSearch }: { title?: string; onSearch?:
 function DrawerMenu({ authUser, logout }: { authUser: any; logout: () => void }) {
     const roles: string[] = authUser?.roles || [];
     const isSystemAdmin = roles.includes('System Administrator');
-    const isEmployee = roles.includes('Employee');
 
     return (
         <div className="flex flex-col h-full bg-background overflow-y-auto">
-            <div className="px-6 pt-12 pb-4 border-b border-border" style={{ paddingTop: 'max(3rem, env(safe-area-inset-top, 3rem))' }}>
-                <span className="text-xl font-semibold text-primary">IMS Mobile</span>
+            <div className="px-6 pt-12 pb-6 border-b border-border/40" style={{ paddingTop: 'max(4rem, env(safe-area-inset-top, 4rem))' }}>
+                <div className="flex items-center gap-3">
+                    <img src={logo} alt="Logo" className="w-10 h-10 drop-shadow-sm" />
+                    <div>
+                        <p className="text-lg font-black tracking-tight text-primary leading-none uppercase italic">LM2 Bicycle</p>
+                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em] mt-0.5">Trading System</p>
+                    </div>
+                </div>
             </div>
             
             <div className="py-2 flex-1">

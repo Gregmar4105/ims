@@ -2,15 +2,16 @@ import { Head } from '@inertiajs/react';
 import { FloatingHeader } from '@/components/mobile/floating-header';
 import { FloatActionButton } from '@/components/mobile/fab';
 import { useMobileApi } from '@/hooks/use-mobile-api';
+import { NetworkStatus } from '@/components/mobile/network-status';
 import React from 'react';
 
-export default function MobileLayout({ 
-    children, 
-    title, 
+export default function MobileLayout({
+    children,
+    title,
     onSearch,
     fab
-}: { 
-    children: React.ReactNode; 
+}: {
+    children: React.ReactNode;
     title?: string;
     onSearch?: (q: string) => void;
     fab?: { icon: React.ReactNode; label?: string; onClick?: () => void; href?: string; }
@@ -21,24 +22,27 @@ export default function MobileLayout({
 
     return (
         <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
-            <Head title={title ? `${title} — IMS Mobile` : "IMS Mobile"} />
+            <Head title={title ? `${title} — LM2 Bicycle Trading` : "LM2 Bicycle Trading"} />
             
+            <NetworkStatus />
+
             {/* The Floating Search Bar & Drawer */}
             <FloatingHeader title={title} onSearch={onSearch} />
 
             {/* Scrollable Content Area */}
-            {/* 64px top padding gives room for the floating header */}
-            <main className="h-screen overflow-y-auto pb-24 pt-20 px-4">
-                {children}
+            <main className="pb-24 pt-24">
+                <div className="px-4">
+                    {children}
+                </div>
             </main>
 
             {/* Floating Action Button */}
             {fab && (
-                <FloatActionButton 
-                    icon={fab.icon} 
-                    label={fab.label} 
-                    onClick={fab.onClick} 
-                    href={fab.href} 
+                <FloatActionButton
+                    icon={fab.icon}
+                    label={fab.label}
+                    onClick={fab.onClick}
+                    href={fab.href}
                 />
             )}
         </div>

@@ -8,6 +8,7 @@ interface Branch {
     id: number;
     branch_name: string;
     location: string;
+    profile_photo_path?: string;
 }
 
 export default function MobileChatsIndex() {
@@ -31,17 +32,23 @@ export default function MobileChatsIndex() {
         }
     };
 
+    const resolveImageUrl = (path: string | undefined | null) => {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        return `${serverUrl}/storage/${path}`;
+    };
+
     return (
         <MobileLayout title="Messages">
             <div className="pb-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 px-2">
-                    Direct Messages
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-5 px-4 italic">
+                    Internal Communication
                 </p>
 
                 {loading ? (
                     <div className="space-y-4 px-2">
                         {[...Array(5)].map((_, i) => (
-                            <div key={i} className="flex gap-4 animate-pulse">
+                            <div key={i} className="flex gap-4 animate-pulse p-3">
                                 <div className="w-12 h-12 bg-muted rounded-full shrink-0" />
                                 <div className="flex-1 space-y-2 py-1">
                                     <div className="h-4 bg-muted rounded w-1/3" />
@@ -51,38 +58,42 @@ export default function MobileChatsIndex() {
                         ))}
                     </div>
                 ) : (
-                    <div className="divide-y divide-border/50">
+                    <div className="divide-y divide-border/30">
                         {branches.length === 0 ? (
-                            <div className="py-10 text-center text-muted-foreground">
-                                <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-20" />
-                                <p>No threads found.</p>
+                            <div className="py-20 text-center text-muted-foreground">
+                                <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-10" />
+                                <p className="text-sm font-medium">No active connections found.</p>
                             </div>
                         ) : (
-                            branches.map((branch) => (
-                                <button
-                                    key={branch.id}
-                                    onClick={() => router.visit(`/mobile/chats/${branch.id}`)}
-                                    className="w-full flex items-center gap-4 p-3 hover:bg-muted/50 transition-colors active:bg-muted"
-                                >
-                                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 border border-primary/20">
-                                        <User className="w-6 h-6" />
-                                    </div>
-                                    <div className="flex-1 min-w-0 text-left">
-                                        <div className="flex justify-between items-center">
-                                            <p className="font-semibold text-[15px] truncate">
-                                                {branch.branch_name}
-                                                {authUser?.branch_id === branch.id && (
-                                                    <span className="ml-2 text-[10px] bg-muted px-1.5 py-0.5 rounded uppercase">Self</span>
-                                                )}
-                                            </p>
-                                            <ChevronRight className="w-4 h-4 text-muted-foreground opacity-30" />
+                            branches.map((branch) => {
+                                const avatarUrl = resolveImageUrl(branch.profile_photo_path);
+                                return (
+                                    <button
+                                        key={branch.id}
+                                        onClick={() => router.visit(`/mobile/chats/${branch.id}`)}
+                                        className="w-full flex items-center gap-4 p-4 hover:bg-muted/30 transition-all active:scale-[0.98] group"
+                                    >
+                                        <div className="w-14 h-14 rounded-[1.25rem] bg-card flex items-center justify-center text-primary shrink-0 border border-border shadow-sm overflow-hidden group-hover:border-primary/30 transition-colors">
+                                            {avatarUrl ? (
+                                                <img src={avatarUrl} className="w-full h-full object-cover" alt={branch.branch_name} />
+                                            ) : (
+                                                <MessageSquare className="w-6 h-6 opacity-40 text-muted-foreground" />
+                                            )}
                                         </div>
-                                        <p className="text-[13px] text-muted-foreground truncate">
-                                            {branch.location || 'Click to start conversation'}
-                                        </p>
-                                    </div>
-                                </button>
-                            ))
+                                        <div className="flex-1 min-w-0 text-left">
+                                            <div className="flex justify-between items-center mb-0.5">
+                                                <p className="font-black text-[15px] tracking-tight truncate uppercase leading-none">
+                                                    {branch.branch_name}
+                                                </p>
+                                                <ChevronRight className="w-4 h-4 text-muted-foreground opacity-20 group-hover:opacity-40 transition-opacity" />
+                                            </div>
+                                            <p className="text-xs text-muted-foreground/60 truncate italic">
+                                                {authUser?.branch_id === branch.id ? 'Self - Internal Channel' : (branch.location || 'Remote Site')}
+                                            </p>
+                                        </div>
+                                    </button>
+                                );
+                            })
                         )}
                     </div>
                 )}

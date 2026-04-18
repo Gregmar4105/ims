@@ -60,15 +60,33 @@ export function useMobileApi() {
         };
     }, [token, isHydrated]);
 
+    const [isOnline, setIsOnline] = useState(window.navigator.onLine);
+
+    useEffect(() => {
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
+    const logout = () => {
+        localStorage.removeItem(STORAGE_KEY);
+        router.visit('/settings/mobile-api');
+    };
+
     return {
         remoteApi,
         serverUrl,
         token,
         authUser,
         isHydrated,
-        logout: () => {
-            localStorage.removeItem(STORAGE_KEY);
-            router.visit('/settings/mobile-api');
-        }
+        isOnline,
+        logout
     };
 }
