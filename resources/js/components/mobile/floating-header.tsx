@@ -93,6 +93,7 @@ function DrawerMenu({ authUser, logout }: { authUser: any; logout: () => void })
                 <span className="text-xl font-semibold text-primary">IMS Mobile</span>
             </div>
             
+            <div className="py-2 flex-1">
                 <MenuSection title="General" />
                 <MenuItem icon="Inbox" label="Dashboard" href="/dashboard" active={window.location.pathname === '/dashboard'} />
                 <MenuItem icon="Bell" label="Notifications" href="/mobile/notifications" active={window.location.pathname === '/mobile/notifications'} />
@@ -152,10 +153,6 @@ function MenuItem({
             case 'RotateCcw': return <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>;
             case 'LogOut': return <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>;
             default: return <div className={cls} />;
-        }
-    };
-            case 'LogOut': return <LogOut className={`h-5 w-5 ${iconClass || 'text-muted-foreground'}`} />;
-            default: return <div className={`h-5 w-5 ${iconClass || 'text-muted-foreground'}`} />;
         }
     };
 
