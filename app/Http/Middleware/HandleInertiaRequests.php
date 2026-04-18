@@ -39,7 +39,29 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
-        
+
+        // ── NativePHP Android: skip ALL custom DB queries ─────────────────
+        // The Android app is a REST API client. Local SQLite only has the
+        // baseline framework tables — no products/sales/branches/categories.
+        // All data is fetched from https://lm2bicycletrading.larable.dev
+        if (config('nativephp-internal.running')) {
+            return [
+                ...parent::share($request),
+                'reorderCount'      => 0,
+                'name'              => config('app.name'),
+                'quote'             => ['message' => trim($message), 'author' => trim($author)],
+                'auth'              => [
+                    'user'        => null,
+                    'permissions' => [],
+                    'roles'       => [],
+                ],
+                'sidebarOpen'       => true,
+                'categories'        => [],
+                'notification_sound'=> '/audio/nokia_3310.mp3',
+            ];
+        }
+
+        // ── Web app: normal DB-backed shared data ─────────────────────────
         $reorderCount = 0;
         if ($user = $request->user()) {
             try {
@@ -96,21 +118,21 @@ class HandleInertiaRequests extends Middleware
 
         return [
             ...parent::share($request),
-            'reorderCount' => $reorderCount,
-            'name' => config('app.name'),
-            'quote' => ['message' => trim($message), 'author' => trim($author)],
-            'auth' => [
-                'user' => $request->user()?->load('branch'),
-                'permissions' => $request->user() 
-                    ? $request->user()->getAllPermissions()->pluck('name') 
+            'reorderCount'      => $reorderCount,
+            'name'              => config('app.name'),
+            'quote'             => ['message' => trim($message), 'author' => trim($author)],
+            'auth'              => [
+                'user'        => $request->user()?->load('branch'),
+                'permissions' => $request->user()
+                    ? $request->user()->getAllPermissions()->pluck('name')
                     : [],
-                'roles' => $request->user() 
-                    ? $request->user()->getRoleNames() 
+                'roles'       => $request->user()
+                    ? $request->user()->getRoleNames()
                     : [],
             ],
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-            'categories' => $categories,
-            'notification_sound' => $notificationSound,
+            'sidebarOpen'       => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'categories'        => $categories,
+            'notification_sound'=> $notificationSound,
         ];
     }
 }

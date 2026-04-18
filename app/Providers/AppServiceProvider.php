@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -43,37 +42,18 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if (config('nativephp-internal.running')) {
-            // ── Run migrations after ALL providers have fully booted ────────
-            // app()->booted() is the safest time to call Artisan commands.
+            // Run ONLY the mobile baseline migrations (not the full app schema).
+            // All app data (products, sales, branches) come from the remote API.
             $this->app->booted(function () {
                 try {
-                    // Only migrate if the schema is not already up to date.
-                    // Schema::hasTable('users') is a quick check — if it
-                    // doesn't exist we definitely need to migrate.
-                    if (! Schema::hasTable('users') || $this->hasPendingMigrations()) {
-                        Artisan::call('migrate', ['--force' => true]);
-                    }
+                    Artisan::call('migrate', [
+                        '--force' => true,
+                        '--path'  => 'database/migrations/mobile',
+                    ]);
                 } catch (\Throwable $e) {
                     logger()->error('[NativePHP] Migration failed: ' . $e->getMessage());
                 }
             });
-        }
-    }
-
-    /**
-     * Check if there are any migrations that haven't been run yet.
-     */
-    private function hasPendingMigrations(): bool
-    {
-        try {
-            $ran     = \Illuminate\Support\Facades\DB::table('migrations')->pluck('migration')->toArray();
-            $files   = glob(database_path('migrations/*.php'));
-            $pending = array_filter($files, function ($file) use ($ran) {
-                return ! in_array(pathinfo($file, PATHINFO_FILENAME), $ran, true);
-            });
-            return count($pending) > 0;
-        } catch (\Throwable) {
-            return true; // Assume pending if we can't check
         }
     }
 }
