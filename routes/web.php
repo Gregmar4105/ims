@@ -12,7 +12,7 @@ use Laravel\Fortify\Features;
 // On the web server: show the normal public welcome/shop page.
 Route::get('/', function (\Illuminate\Http\Request $request) {
     if (config('nativephp-internal.running')) {
-        return redirect()->route('mobile-api.edit');
+        return Inertia::render('mobile/dashboard');
     }
     return app(\App\Http\Controllers\WelcomeController::class)->index($request);
 })->name('home');

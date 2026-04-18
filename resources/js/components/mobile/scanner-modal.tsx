@@ -165,13 +165,10 @@ export function ScannerModal({ isOpen, onClose }: ScannerModalProps) {
             <DialogContent className="max-w-md w-full h-[90vh] flex flex-col p-0 gap-0 overflow-hidden rounded-t-[2.5rem] border-none">
                 <DialogHeader className="p-6 pb-2 shrink-0">
                     <div className="flex items-center justify-between">
-                        <DialogTitle className="flex items-center gap-2">
-                            <QrCode className="w-5 h-5 text-primary" />
+                        <DialogTitle className="flex items-center gap-2 text-xl">
+                            <QrCode className="w-6 h-6 text-primary" />
                             <span>Quick Scanner</span>
                         </DialogTitle>
-                        <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
-                            <X className="w-5 h-5" />
-                        </Button>
                     </div>
                 </DialogHeader>
 

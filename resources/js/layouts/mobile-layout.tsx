@@ -32,13 +32,15 @@ export default function MobileLayout({
                 [data-radix-scroll-area-viewport] { scroll-behavior: smooth; }
             `}} />
 
-            <NetworkStatus />
-
             {/* The Floating Search Bar & Drawer */}
             <FloatingHeader title={title} onSearch={onSearch} />
 
+            <div className="pt-[max(5rem,calc(env(safe-area-inset-top)+3.5rem))]">
+                <NetworkStatus />
+            </div>
+
             {/* Scrollable Content Area */}
-            <main className="pb-24 pt-24 min-h-screen">
+            <main className="pb-24 pt-4 min-h-screen">
                 <div className="px-4">
                     {children}
                 </div>

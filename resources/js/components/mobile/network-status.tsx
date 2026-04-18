@@ -7,8 +7,8 @@ export function NetworkStatus() {
     if (isOnline) return null;
 
     return (
-        <div className="fixed top-0 left-0 w-full z-[100] animate-in slide-in-from-top duration-500 ease-out">
-            <div className="bg-destructive text-destructive-foreground px-4 py-3 flex items-center justify-between shadow-lg border-b border-white/10">
+        <div className="w-full z-[30] animate-in slide-in-from-top duration-500 ease-out px-4 py-2">
+            <div className="bg-destructive text-destructive-foreground px-4 py-3 flex items-center justify-between shadow-lg border border-white/10 rounded-2xl">
                 <div className="flex items-center gap-3">
                     <div className="bg-white/20 p-1.5 rounded-full">
                         <WifiOff className="w-4 h-4" />

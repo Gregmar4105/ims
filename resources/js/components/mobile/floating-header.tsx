@@ -53,9 +53,9 @@ export function FloatingHeader({ title, onSearch }: { title?: string; onSearch?:
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <button className="h-9 w-9 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary mx-1 shrink-0 bg-primary/10 flex items-center justify-center border-2 border-background shadow-sm">
-                            {authUser?.profile_photo_path ? (
+                            {authUser?.avatar_url || authUser?.profile_photo_path ? (
                                 <img 
-                                    src={authUser.profile_photo_path.startsWith('http') ? authUser.profile_photo_path : `${serverUrl}/storage/${authUser.profile_photo_path}`} 
+                                    src={authUser.avatar_url || (authUser.profile_photo_path?.startsWith('http') ? authUser.profile_photo_path : `${serverUrl}/storage/${authUser.profile_photo_path}`)} 
                                     alt={authUser.name} 
                                     className="h-full w-full object-cover" 
                                 />
@@ -66,9 +66,9 @@ export function FloatingHeader({ title, onSearch }: { title?: string; onSearch?:
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56 rounded-[1.5rem] p-2 mt-2">
                         <div className="flex flex-col items-center justify-center p-4 border-b border-border/50">
-                            {authUser?.profile_photo_path ? (
+                            {authUser?.avatar_url || authUser?.profile_photo_path ? (
                                 <img 
-                                    src={authUser.profile_photo_path.startsWith('http') ? authUser.profile_photo_path : `${serverUrl}/storage/${authUser.profile_photo_path}`} 
+                                    src={authUser.avatar_url || (authUser.profile_photo_path?.startsWith('http') ? authUser.profile_photo_path : `${serverUrl}/storage/${authUser.profile_photo_path}`)} 
                                     alt={authUser.name} 
                                     className="h-16 w-16 rounded-full mb-2 object-cover border-2 border-primary/20" 
                                 />
@@ -120,16 +120,17 @@ function DrawerMenu({ authUser, logout }: { authUser: any; logout: () => void })
                 {isSystemAdmin && (
                     <>
                         <MenuSection title="System" />
-                        <MenuItem icon="LayoutDashboard" label="System Dashboard" href="/dashboard/system" active={window.location.pathname === '/dashboard/system'} />
+                        <MenuItem icon="LayoutDashboard" label="System Dashboard" href="/dashboard" active={window.location.pathname === '/dashboard'} />
                         <MenuItem icon="Settings2" label="Personalization" href="/settings/appearance" active={window.location.pathname === '/settings/appearance'} />
                         <MenuItem icon="Users" label="User Management" href="/mobile/users" active={window.location.pathname === '/mobile/users'} />
+                        <MenuItem icon="MapPin" label="Branches" href="/mobile/branches" active={window.location.pathname === '/mobile/branches'} />
                     </>
                 )}
 
                 {(isSystemAdmin || isBranchAdmin) && (
                     <>
                         <MenuSection title="Branch" />
-                        <MenuItem icon="Store" label="Branch Dashboard" href="/dashboard/branch" active={window.location.pathname === '/dashboard/branch'} />
+                        <MenuItem icon="Store" label="Branch Dashboard" href="/dashboard" active={window.location.pathname === '/dashboard'} />
                         <MenuItem icon="MessageCircle" label="Branch Chats" href="/mobile/chats" active={window.location.pathname.startsWith('/mobile/chats')} badge="Active" />
                         <MenuItem icon="ShoppingCart" label="Sales" href="/mobile/sales" active={window.location.pathname.startsWith('/mobile/sales')} />
                         <MenuItem icon="ArrowRightLeft" label="Transfers" href="/mobile/transfers" active={window.location.pathname.startsWith('/mobile/transfers')} />
@@ -139,7 +140,7 @@ function DrawerMenu({ authUser, logout }: { authUser: any; logout: () => void })
                 {isEmployee && !isSystemAdmin && !isBranchAdmin && (
                     <>
                         <MenuSection title="Workspace" />
-                        <MenuItem icon="Users" label="Employee Dashboard" href="/dashboard/employee" active={window.location.pathname === '/dashboard/employee'} />
+                        <MenuItem icon="Users" label="Employee Dashboard" href="/dashboard" active={window.location.pathname === '/dashboard'} />
                         <MenuItem icon="MessageCircle" label="Chats" href="/mobile/chats" active={window.location.pathname.startsWith('/mobile/chats')} />
                     </>
                 )}
@@ -148,12 +149,7 @@ function DrawerMenu({ authUser, logout }: { authUser: any; logout: () => void })
                 <MenuItem icon="Package" label="Products" href="/mobile/products" active={window.location.pathname === '/mobile/products'} />
                 <MenuItem icon="RotateCcw" label="Reorders" href="/mobile/reorders" active={window.location.pathname === '/mobile/reorders'} badge="Alert" badgeColor="bg-red-500 text-white" />
 
-                {(isSystemAdmin) && (
-                    <>
-                        <MenuSection title="Administration" />
-                        <MenuItem icon="MapPin" label="Branches" href="/mobile/branches" active={window.location.pathname === '/mobile/branches'} />
-                    </>
-                )}
+
 
                 <MenuSection title="Account" />
                 <MenuItem icon="Settings" label="Settings" href="/mobile/settings" active={window.location.pathname === '/mobile/settings'} />

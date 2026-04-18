@@ -27,14 +27,8 @@ export function BootProvider({ children }: { children: React.ReactNode }) {
         if (isMobileRoute) {
             if (!hasToken && currentPath !== '/settings/mobile-api') {
                 router.visit('/settings/mobile-api', { replace: true });
-            } else if (hasToken && (currentPath === '/' || currentPath === '/dashboard')) {
-                if (roles.includes('System Administrator')) {
-                    router.visit('/dashboard/system', { replace: true });
-                } else if (roles.includes('Branch Administrator')) {
-                    router.visit('/dashboard/branch', { replace: true });
-                } else if (roles.includes('Employee')) {
-                    router.visit('/dashboard/employee', { replace: true });
-                }
+            } else if (hasToken && currentPath === '/') {
+                router.visit('/dashboard', { replace: true });
             }
         }
 
