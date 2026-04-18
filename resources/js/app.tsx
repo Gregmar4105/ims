@@ -7,6 +7,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
 import axios from 'axios';
+import { BootProvider } from './components/mobile/boot-provider';
 
 // Axios Config
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
@@ -33,7 +34,9 @@ createInertiaApp({
 
         root.render(
             <StrictMode>
-                <App {...props} />
+                <BootProvider>
+                    <App {...props} />
+                </BootProvider>
             </StrictMode>,
         );
     },
