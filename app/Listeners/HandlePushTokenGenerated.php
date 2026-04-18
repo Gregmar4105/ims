@@ -19,7 +19,7 @@ class HandlePushTokenGenerated
         $apiToken  = DB::table('mobile_settings')->where('key', 'api_token')->value('value');
 
         if (!$serverUrl || !$apiToken) {
-            Log::warning('[PushNotification] Cannot sync token — user not yet authenticated.');
+            Log::warning("[PushNotification] Cannot sync token — missing config. URL: " . ($serverUrl ?? 'NULL') . ", Token: " . ($apiToken ? 'PRESENT' : 'NULL'));
             return;
         }
 

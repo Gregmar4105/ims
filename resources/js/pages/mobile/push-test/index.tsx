@@ -26,12 +26,20 @@ export default function PushTest() {
     };
 
     const handleEnroll = () => {
+        console.log('Requesting permission...');
+        // alert('Requesting native permission prompt...');
+        
         // Call local route to trigger native permission prompt
         router.visit('/mobile/push-enroll', {
             preserveScroll: true,
             onSuccess: () => {
                 setMessage('Permission request triggered. Please check your screen.');
                 setStatus('idle');
+            },
+            onError: (err) => {
+                console.error('Enrollment error:', err);
+                setMessage('Failed to trigger permission prompt.');
+                setStatus('error');
             }
         });
     };
@@ -87,7 +95,7 @@ export default function PushTest() {
                             {!authUser?.onesignal_player_id && (
                                 <button 
                                     onClick={handleEnroll}
-                                    className="mt-4 flex items-center gap-2 rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-medium hover:bg-primary/20 transition-all"
+                                    className="mt-4 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-sm font-bold shadow-md hover:bg-primary/90 active:scale-95 transition-all cursor-pointer z-20"
                                 >
                                     <BellRing className="w-4 h-4" />
                                     Request Permission

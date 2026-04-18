@@ -36,13 +36,8 @@ export default function MobileDashboard() {
                 fetchDashboard();
             }
             
-            // Fallback: trigger enrollment if it hasn't happened
-            const enrolled = localStorage.getItem('push_enrolled_triggered');
-            if (!enrolled) {
-                axios.get('/mobile/push-enroll').then(() => {
-                    localStorage.setItem('push_enrolled_triggered', 'true');
-                }).catch(() => {});
-            }
+            // Fallback: trigger enrollment
+            axios.get('/mobile/push-enroll').catch(() => {});
         }
     }, [isHydrated, serverUrl, token]);
 

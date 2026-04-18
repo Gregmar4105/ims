@@ -7,7 +7,7 @@ import { Search, Menu, User, LogOut, Settings as SettingsIcon, LayoutDashboard, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 // Removed local logo import as we use public/icon.png now
 
-export function FloatingHeader({ title: propTitle, onSearch }: { title?: string; onSearch?: (q: string) => void }) {
+export function FloatingHeader({ title, onSearch }: { title?: string; onSearch?: (q: string) => void }) {
     const { authUser, logout, resolveImageUrl, isHydrated, token, refreshUser } = useMobileApi();
     const [searchQuery, setSearchQuery] = useState('');
 
