@@ -12,7 +12,6 @@ export const useBoot = () => useContext(BootContext);
 
 export function BootProvider({ children }: { children: React.ReactNode }) {
     const [isBooted, setIsBooted] = useState(false);
-    const [showSplash, setShowSplash] = useState(true);
 
     useEffect(() => {
         // 1. Check for token immediately
@@ -23,22 +22,22 @@ export function BootProvider({ children }: { children: React.ReactNode }) {
 
         // 2. Handle immediate redirection if needed
         // We only redirect if we're on a mobile/dashboard route and don't have a token
-        if (!hasToken && currentPath !== '/settings/mobile-api') {
+        const isMobileRoute = currentPath.startsWith('/mobile') || currentPath === '/dashboard';
+        
+        if (isMobileRoute && !hasToken && currentPath !== '/settings/mobile-api') {
             router.visit('/settings/mobile-api', { replace: true });
         }
 
-        // 3. Keep splash visible for a minimum duration for premium feel
+        // Delay slightly for hydration safety
         const timer = setTimeout(() => {
-            setShowSplash(false);
             setIsBooted(true);
-        }, 2200);
+        }, 100);
 
         return () => clearTimeout(timer);
     }, []);
 
     return (
         <BootContext.Provider value={{ isBooted }}>
-            {showSplash && <SplashScreen />}
             {children}
         </BootContext.Provider>
     );

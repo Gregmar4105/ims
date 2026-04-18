@@ -41,7 +41,7 @@ export default function MobileChatsIndex() {
     return (
         <MobileLayout title="Messages">
             <div className="pb-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-5 px-4 italic">
+                <p className="text-[10px] font-bold uppercase text-muted-foreground/60 mb-5 px-4">
                     Internal Communication
                 </p>
 
@@ -82,12 +82,12 @@ export default function MobileChatsIndex() {
                                         </div>
                                         <div className="flex-1 min-w-0 text-left">
                                             <div className="flex justify-between items-center mb-0.5">
-                                                <p className="font-black text-[15px] tracking-tight truncate uppercase leading-none">
+                                                <p className="font-bold text-[15px] truncate uppercase leading-none">
                                                     {branch.branch_name}
                                                 </p>
                                                 <ChevronRight className="w-4 h-4 text-muted-foreground opacity-20 group-hover:opacity-40 transition-opacity" />
                                             </div>
-                                            <p className="text-xs text-muted-foreground/60 truncate italic">
+                                            <p className="text-xs text-muted-foreground/60 truncate">
                                                 {authUser?.branch_id === branch.id ? 'Self - Internal Channel' : (branch.location || 'Remote Site')}
                                             </p>
                                         </div>

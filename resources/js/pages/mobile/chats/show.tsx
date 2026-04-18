@@ -120,31 +120,33 @@ export default function MobileChatShow({ branchId }: { branchId: string }) {
                                 
                                 return (
                                     <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                                        {/* Avatar */}
-                                        <div className="shrink-0 mb-1">
-                                            {avatarUrl ? (
-                                                <img 
-                                                    src={avatarUrl} 
-                                                    className="w-8 h-8 rounded-full object-cover border border-border shadow-sm" 
-                                                    alt="avatar" 
-                                                />
-                                            ) : (
-                                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/10">
-                                                    <span className="text-[10px] font-bold text-primary">
-                                                        {msg.sender.name.charAt(0)}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
+                                        {/* Avatar - Only show for others */}
+                                        {!isMe && (
+                                            <div className="shrink-0 mb-1">
+                                                {avatarUrl ? (
+                                                    <img 
+                                                        src={avatarUrl} 
+                                                        className="w-8 h-8 rounded-full object-cover border border-border shadow-sm" 
+                                                        alt="avatar" 
+                                                    />
+                                                ) : (
+                                                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/10">
+                                                        <span className="text-[10px] font-bold text-primary">
+                                                            {msg.sender.name.charAt(0)}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
 
                                         {/* Bubble */}
-                                        <div className={`max-w-[75%] rounded-2xl px-4 py-2 shadow-sm ${
+                                        <div className={`max-w-[85%] rounded-[1.5rem] px-4 py-2.5 shadow-sm ${
                                             isMe 
                                                 ? 'bg-primary text-primary-foreground rounded-br-none' 
                                                 : 'bg-card text-foreground rounded-bl-none border border-border'
                                         }`}>
                                             {!isMe && (
-                                                <p className="text-[10px] font-black uppercase opacity-50 mb-1 tracking-tight">
+                                                <p className="text-[10px] font-bold uppercase opacity-50 mb-1">
                                                     {msg.sender.name}
                                                 </p>
                                             )}
@@ -174,7 +176,7 @@ export default function MobileChatShow({ branchId }: { branchId: string }) {
                 </div>
 
                 {/* ── Message Input (Fixed at bottom within layout main) ───── */}
-                <div className="fixed bottom-0 left-0 w-full p-4 bg-background/80 backdrop-blur-md border-t border-border z-50">
+                <div className="fixed bottom-0 left-0 w-full p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-background/80 backdrop-blur-md border-t border-border z-50">
                     <form onSubmit={handleSendMessage} className="flex items-center gap-2 max-w-lg mx-auto bg-card rounded-3xl border border-border px-4 py-1.5 shadow-lg">
                         <button type="button" className="text-muted-foreground hover:text-primary transition-colors p-1">
                             <ImageIcon className="w-5 h-5" />

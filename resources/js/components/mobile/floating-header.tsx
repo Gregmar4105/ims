@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Search, Menu, User, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import logo from './assets/logo.svg';
+// Removed local logo import as we use public/icon.png now
 
 export function FloatingHeader({ title, onSearch }: { title?: string; onSearch?: (q: string) => void }) {
     const { authUser, logout, serverUrl } = useMobileApi();
@@ -36,12 +36,16 @@ export function FloatingHeader({ title, onSearch }: { title?: string; onSearch?:
                             type="text"
                             placeholder="Search"
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-transparent border-none text-sm focus:outline-none focus:ring-0 placeholder:text-muted-foreground/60"
+                            onChange={(e) => {
+                                const q = e.target.value;
+                                setSearchQuery(q);
+                                onSearch(q);
+                            }}
+                            className="w-full bg-transparent border-none text-sm font-normal focus:outline-none focus:ring-0 placeholder:text-muted-foreground/60"
                         />
                     </form>
                 ) : (
-                    <div className="flex-1 mx-2 truncate text-sm font-medium text-muted-foreground/60">
+                    <div className="flex-1 mx-2 truncate text-sm font-semibold text-muted-foreground/60">
                         {title || 'Search'}
                     </div>
                 )}
@@ -99,10 +103,9 @@ function DrawerMenu({ authUser, logout }: { authUser: any; logout: () => void })
         <div className="flex flex-col h-full bg-background overflow-y-auto">
             <div className="px-6 pt-12 pb-6 border-b border-border/40" style={{ paddingTop: 'max(4rem, env(safe-area-inset-top, 4rem))' }}>
                 <div className="flex items-center gap-3">
-                    <img src={logo} alt="Logo" className="w-10 h-10 drop-shadow-sm" />
+                    <img src="/icon.png" alt="Logo" className="w-10 h-10 object-contain" />
                     <div>
-                        <p className="text-lg font-black tracking-tight text-primary leading-none uppercase italic">LM2 Bicycle</p>
-                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em] mt-0.5">Trading System</p>
+                        <p className="text-lg font-bold text-primary leading-none">LM2 Bicycle Trading</p>
                     </div>
                 </div>
             </div>
@@ -141,7 +144,7 @@ function DrawerMenu({ authUser, logout }: { authUser: any; logout: () => void })
 function MenuSection({ title }: { title: string }) {
     return (
         <div className="px-6 py-2 mt-2">
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">{title}</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase">{title}</p>
         </div>
     );
 }

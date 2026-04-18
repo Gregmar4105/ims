@@ -21,9 +21,14 @@ export default function MobileLayout({
     if (!isHydrated) return null; // Avoid snap-in flashes
 
     return (
-        <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
+        <div className="min-h-screen bg-background text-foreground relative overflow-x-hidden">
             <Head title={title ? `${title} — LM2 Bicycle Trading` : "LM2 Bicycle Trading"} />
             
+            <style dangerouslySetInnerHTML={{ __html: `
+                body { padding-right: 0px !important; }
+                [data-radix-scroll-area-viewport] { scroll-behavior: smooth; }
+            `}} />
+
             <NetworkStatus />
 
             {/* The Floating Search Bar & Drawer */}
