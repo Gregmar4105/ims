@@ -7,7 +7,15 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
-Route::get('/', [\App\Http\Controllers\WelcomeController::class, 'index'])->name('home');
+// ── Home route ────────────────────────────────────────────────────────────────
+// On NativePHP Android: redirect to the mobile API settings page.
+// On the web server: show the normal public welcome/shop page.
+Route::get('/', function (\Illuminate\Http\Request $request) {
+    if (config('nativephp-internal.running')) {
+        return redirect()->route('mobile-api.edit');
+    }
+    return app(\App\Http\Controllers\WelcomeController::class)->index($request);
+})->name('home');
 Route::get('/shop', [\App\Http\Controllers\ShopController::class, 'index'])->name('shop.index'); // Search/Index route
 Route::get('/shop/suggestions', [\App\Http\Controllers\ShopController::class, 'suggestions'])->name('shop.suggestions'); // Live Search Suggestions
 Route::get('/shop/{slug}', [\App\Http\Controllers\ShopController::class, 'show'])->name('shop.category');
