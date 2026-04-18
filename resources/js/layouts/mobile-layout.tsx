@@ -48,7 +48,7 @@ export default function MobileLayout({
             <FloatActionButton
                 icon={<QrCode className="w-6 h-6" />}
                 onClick={() => setIsScannerOpen(true)}
-                customBottom={fab ? 'bottom-[calc(7.5rem+env(safe-area-inset-bottom))]' : 'bottom-[calc(1.5rem+env(safe-area-inset-bottom))]'}
+                customBottom={fab ? 'bottom-[calc(5.5rem+env(safe-area-inset-bottom))]' : 'bottom-[calc(1.5rem+env(safe-area-inset-bottom))]'}
                 variant="secondary"
             />
 

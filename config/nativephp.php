@@ -354,4 +354,17 @@ return [
             'landscape_right' => false,
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Permissions
+    |--------------------------------------------------------------------------
+    |
+    | Setting a permission to true allows NativePHP to request the necessary
+    | access from the operating system at runtime.
+    |
+    */
+    'permissions' => [
+        'camera' => 'We need camera access to scan product QR codes for inventory management.',
+    ],
 ];

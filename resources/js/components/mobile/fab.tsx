@@ -18,10 +18,10 @@ export function FloatActionButton({
 }) {
     const bottomClass = customBottom || `bottom-[calc(1.5rem+env(safe-area-inset-bottom))]`;
     const colorClass = variant === 'secondary' 
-        ? "bg-muted dark:bg-muted/30 border-border text-foreground" 
-        : "bg-primary text-primary-foreground border-primary/20 shadow-lg";
+        ? "bg-violet-100 dark:bg-violet-900/40 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300" 
+        : "bg-violet-600 dark:bg-violet-700 text-white border-violet-500/20 shadow-[0_8px_30px_rgb(124,58,237,0.3)] hover:shadow-[0_8px_30px_rgb(124,58,237,0.5)]";
 
-    const classNames = `fixed ${bottomClass} right-6 md:right-8 ${colorClass} border hover:shadow-xl active:scale-95 transition-all flex items-center justify-center p-4 rounded-3xl z-40`;
+    const classNames = `fixed ${bottomClass} right-6 md:right-8 ${colorClass} border active:scale-95 transition-all flex items-center justify-center p-4 rounded-3xl z-40`;
 
     const content = (
         <div className="flex items-center">

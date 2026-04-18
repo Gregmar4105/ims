@@ -115,30 +115,32 @@ function DrawerMenu({ authUser, logout }: { authUser: any; logout: () => void })
             <div className="py-2 flex-1">
                 <MenuSection title="General" />
                 <MenuItem icon="Inbox" label="Dashboard" href="/dashboard" active={window.location.pathname === '/dashboard'} />
+                <MenuItem icon="Bell" label="Notifications" href="/mobile/notifications" active={window.location.pathname === '/mobile/notifications'} />
                 
                 {isSystemAdmin && (
                     <>
+                        <MenuSection title="System" />
                         <MenuItem icon="LayoutDashboard" label="System Dashboard" href="/dashboard/system" active={window.location.pathname === '/dashboard/system'} />
                         <MenuItem icon="Settings2" label="Personalization" href="/settings/appearance" active={window.location.pathname === '/settings/appearance'} />
+                        <MenuItem icon="Users" label="User Management" href="/mobile/users" active={window.location.pathname === '/mobile/users'} />
                     </>
                 )}
 
                 {(isSystemAdmin || isBranchAdmin) && (
-                    <MenuItem icon="Store" label="Branch Dashboard" href="/dashboard/branch" active={window.location.pathname === '/dashboard/branch'} />
-                )}
-
-                {isEmployee && (
-                    <MenuItem icon="Users" label="Employee Dashboard" href="/dashboard/employee" active={window.location.pathname === '/dashboard/employee'} />
-                )}
-
-                <MenuItem icon="Bell" label="Notifications" href="/mobile/notifications" active={window.location.pathname === '/mobile/notifications'} />
-                <MenuItem icon="MessageCircle" label="Branch Chats" href="/mobile/chats" active={window.location.pathname.startsWith('/mobile/chats')} badge="Active" />
-
-                {isSystemAdmin && (
                     <>
-                        <MenuSection title="Administration" />
-                        <MenuItem icon="Users" label="Users" href="/mobile/users" active={window.location.pathname === '/mobile/users'} />
-                        <MenuItem icon="MapPin" label="Branches" href="/mobile/branches" active={window.location.pathname === '/mobile/branches'} />
+                        <MenuSection title="Branch" />
+                        <MenuItem icon="Store" label="Branch Dashboard" href="/dashboard/branch" active={window.location.pathname === '/dashboard/branch'} />
+                        <MenuItem icon="MessageCircle" label="Branch Chats" href="/mobile/chats" active={window.location.pathname.startsWith('/mobile/chats')} badge="Active" />
+                        <MenuItem icon="ShoppingCart" label="Sales" href="/mobile/sales" active={window.location.pathname.startsWith('/mobile/sales')} />
+                        <MenuItem icon="ArrowRightLeft" label="Transfers" href="/mobile/transfers" active={window.location.pathname.startsWith('/mobile/transfers')} />
+                    </>
+                )}
+
+                {isEmployee && !isSystemAdmin && !isBranchAdmin && (
+                    <>
+                        <MenuSection title="Workspace" />
+                        <MenuItem icon="Users" label="Employee Dashboard" href="/dashboard/employee" active={window.location.pathname === '/dashboard/employee'} />
+                        <MenuItem icon="MessageCircle" label="Chats" href="/mobile/chats" active={window.location.pathname.startsWith('/mobile/chats')} />
                     </>
                 )}
 
@@ -146,11 +148,14 @@ function DrawerMenu({ authUser, logout }: { authUser: any; logout: () => void })
                 <MenuItem icon="Package" label="Products" href="/mobile/products" active={window.location.pathname === '/mobile/products'} />
                 <MenuItem icon="RotateCcw" label="Reorders" href="/mobile/reorders" active={window.location.pathname === '/mobile/reorders'} badge="Alert" badgeColor="bg-red-500 text-white" />
 
-                <MenuSection title="Operations" />
-                <MenuItem icon="ShoppingCart" label="Sales" href="/mobile/sales" active={window.location.pathname.startsWith('/mobile/sales')} />
-                <MenuItem icon="ArrowRightLeft" label="Transfers" href="/mobile/transfers" active={window.location.pathname.startsWith('/mobile/transfers')} />
+                {(isSystemAdmin) && (
+                    <>
+                        <MenuSection title="Administration" />
+                        <MenuItem icon="MapPin" label="Branches" href="/mobile/branches" active={window.location.pathname === '/mobile/branches'} />
+                    </>
+                )}
 
-                <MenuSection title="Settings" />
+                <MenuSection title="Account" />
                 <MenuItem icon="Settings" label="Settings" href="/mobile/settings" active={window.location.pathname === '/mobile/settings'} />
                 <MenuItem icon="LogOut" label="Logout" onClick={logout} textClass="text-destructive" iconClass="text-destructive" />
             </div>
