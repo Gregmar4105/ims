@@ -19,6 +19,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        if (config('nativephp-internal.running')) {
+            $defaultConnection = env('DB_CONNECTION', 'mysql');
+            config([
+                'database.connections.nativephp' => config("database.connections.{$defaultConnection}")
+            ]);
+            \Illuminate\Support\Facades\DB::purge('nativephp');
+        }
     }
 }
