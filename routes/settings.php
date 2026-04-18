@@ -4,6 +4,7 @@ use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\BranchProfileController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
+use App\Http\Controllers\Settings\MobileApiSettingsController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -29,4 +30,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
         ->name('two-factor.show');
+
+    // Mobile App / REST API Settings (NativePHP)
+    Route::get('settings/mobile-api',          [MobileApiSettingsController::class, 'edit'])->name('mobile-api.edit');
+    Route::post('settings/mobile-api',         [MobileApiSettingsController::class, 'update'])->name('mobile-api.update');
+    Route::post('settings/mobile-api/token',   [MobileApiSettingsController::class, 'storeToken'])->name('mobile-api.token');
+    Route::post('settings/mobile-api/disconnect', [MobileApiSettingsController::class, 'disconnect'])->name('mobile-api.disconnect');
+    Route::get('settings/mobile-api/config',   [MobileApiSettingsController::class, 'getConfig'])->name('mobile-api.config');
 });

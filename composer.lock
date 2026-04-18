@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "af29dde56c46d7badf75fa774879b0fc",
+    "content-hash": "598e90dbf444018ee0927dc81b39a0c2",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -1828,6 +1828,69 @@
             "time": "2025-11-28T20:12:49+00:00"
         },
         {
+            "name": "laravel/sanctum",
+            "version": "v4.3.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/sanctum.git",
+                "reference": "e3b85d6e36ad00e5db2d1dcc27c81ffdf15cbf76"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laravel/sanctum/zipball/e3b85d6e36ad00e5db2d1dcc27c81ffdf15cbf76",
+                "reference": "e3b85d6e36ad00e5db2d1dcc27c81ffdf15cbf76",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "illuminate/console": "^11.0|^12.0|^13.0",
+                "illuminate/contracts": "^11.0|^12.0|^13.0",
+                "illuminate/database": "^11.0|^12.0|^13.0",
+                "illuminate/support": "^11.0|^12.0|^13.0",
+                "php": "^8.2",
+                "symfony/console": "^7.0|^8.0"
+            },
+            "require-dev": {
+                "mockery/mockery": "^1.6",
+                "orchestra/testbench": "^9.15|^10.8|^11.0",
+                "phpstan/phpstan": "^1.10"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Laravel\\Sanctum\\SanctumServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Laravel\\Sanctum\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Taylor Otwell",
+                    "email": "taylor@laravel.com"
+                }
+            ],
+            "description": "Laravel Sanctum provides a featherweight authentication system for SPAs and simple APIs.",
+            "keywords": [
+                "auth",
+                "laravel",
+                "sanctum"
+            ],
+            "support": {
+                "issues": "https://github.com/laravel/sanctum/issues",
+                "source": "https://github.com/laravel/sanctum"
+            },
+            "time": "2026-02-07T17:19:31+00:00"
+        },
+        {
             "name": "laravel/serializable-closure",
             "version": "v2.0.7",
             "source": {
@@ -2680,78 +2743,56 @@
             "time": "2025-03-24T10:02:05+00:00"
         },
         {
-            "name": "nativephp/desktop",
-            "version": "2.1.0",
+            "name": "nativephp/mobile",
+            "version": "3.2.2",
             "source": {
                 "type": "git",
-                "url": "https://github.com/NativePHP/desktop.git",
-                "reference": "1dafd3c8e06941519dedf7fe38adbfaa352394a2"
+                "url": "https://github.com/NativePHP/mobile-air.git",
+                "reference": "866a6dd9896cfdee3f33bfb3a95d568711a6ff02"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/NativePHP/desktop/zipball/1dafd3c8e06941519dedf7fe38adbfaa352394a2",
-                "reference": "1dafd3c8e06941519dedf7fe38adbfaa352394a2",
+                "url": "https://api.github.com/repos/NativePHP/mobile-air/zipball/866a6dd9896cfdee3f33bfb3a95d568711a6ff02",
+                "reference": "866a6dd9896cfdee3f33bfb3a95d568711a6ff02",
                 "shasum": ""
             },
             "require": {
-                "ext-zip": "*",
-                "illuminate/contracts": "^10.0|^11.0|^12.0",
+                "ext-dom": "*",
+                "ext-simplexml": "*",
+                "guzzlehttp/guzzle": "^7.9",
+                "illuminate/contracts": "^10.0|^11.0|^12.0|^13.0",
+                "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
                 "laravel/prompts": "^0.1.1|^0.2|^0.3",
-                "nativephp/php-bin": "^1.0",
                 "php": "^8.3",
-                "spatie/laravel-package-tools": "^1.16.4",
-                "symfony/filesystem": "^6.4|^7.2",
-                "symfony/finder": "^6.2|^7.0"
-            },
-            "conflict": {
-                "nativephp/electron": "*",
-                "nativephp/laravel": "*",
-                "nativephp/mobile": "*"
+                "react/datagram": "^1.10",
+                "spatie/laravel-package-tools": "^1.14.0",
+                "workerman/workerman": "^4.1"
             },
             "require-dev": {
-                "guzzlehttp/guzzle": "^7.0",
-                "larastan/larastan": "^2.0|^3.1",
+                "endroid/qr-code": "^5.0",
+                "larastan/larastan": "^2.0",
                 "laravel/pint": "^1.0",
-                "nunomaduro/collision": "^7.11|^8.1.1",
-                "orchestra/testbench": "^8.0|^9.0|^10.0",
-                "pestphp/pest": "^v2.30|^3.0",
-                "pestphp/pest-plugin-arch": "^2.0|^3.0",
-                "pestphp/pest-plugin-laravel": "^2.0|^3.1",
+                "nunomaduro/collision": "^7.9",
+                "orchestra/testbench": "^8.18",
+                "pestphp/pest": "^2.7|^3.0|^4.0",
+                "pestphp/pest-plugin-arch": "^2.0",
+                "pestphp/pest-plugin-laravel": "^2.0",
                 "phpstan/extension-installer": "^1.1",
-                "phpstan/phpstan-deprecation-rules": "^1.0|^2.0",
-                "phpstan/phpstan-phpunit": "^1.0|^2.0",
+                "phpstan/phpstan-deprecation-rules": "^1.0",
+                "phpstan/phpstan-phpunit": "^1.0",
                 "spatie/laravel-ray": "^1.26"
             },
             "type": "library",
             "extra": {
                 "laravel": {
-                    "aliases": {
-                        "Dock": "Native\\Desktop\\Facades\\Dock",
-                        "Menu": "Native\\Desktop\\Facades\\Menu",
-                        "Shell": "Native\\Desktop\\Facades\\Shell",
-                        "Screen": "Native\\Desktop\\Facades\\Screen",
-                        "System": "Native\\Desktop\\Facades\\System",
-                        "Window": "Native\\Desktop\\Facades\\Window",
-                        "MenuBar": "Native\\Desktop\\Facades\\MenuBar",
-                        "Process": "Native\\Desktop\\Facades\\Process",
-                        "Updater": "Native\\Electron\\Facades\\Updater",
-                        "Settings": "Native\\Desktop\\Facades\\Settings",
-                        "Clipboard": "Native\\Desktop\\Facades\\Clipboard",
-                        "ContextMenu": "Native\\Desktop\\Facades\\ContextMenu",
-                        "QueueWorker": "Native\\Desktop\\Facades\\QueueWorker",
-                        "ChildProcess": "Native\\Desktop\\Facades\\ChildProcess",
-                        "Notification": "Native\\Desktop\\Facades\\Notification",
-                        "PowerMonitor": "Native\\Desktop\\Facades\\PowerMonitor",
-                        "GlobalShortcut": "Native\\Desktop\\Facades\\GlobalShortcut"
-                    },
                     "providers": [
-                        "Native\\Desktop\\NativeServiceProvider"
+                        "Native\\Mobile\\NativeServiceProvider"
                     ]
                 }
             },
             "autoload": {
                 "psr-4": {
-                    "Native\\Desktop\\": "src"
+                    "Native\\Mobile\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -2760,94 +2801,29 @@
             ],
             "authors": [
                 {
-                    "name": "Marcel Pociot",
-                    "email": "marcel@beyondco.de",
-                    "role": "Developer"
+                    "name": "Simon Hamp",
+                    "email": "simon@nativephp.com",
+                    "role": "Co-founder"
                 },
                 {
-                    "name": "Simon Hamp",
-                    "email": "simon.hamp@me.com",
-                    "role": "Developer"
+                    "name": "Shane Rosenthal",
+                    "email": "shane@nativephp.com",
+                    "role": "Co-founder"
                 }
             ],
-            "description": "NativePHP for Desktop",
-            "homepage": "https://github.com/nativephp/laravel",
+            "description": "NativePHP for Mobile",
+            "homepage": "https://nativephp.com/mobile",
             "keywords": [
-                "desktop",
+                "android",
+                "ios",
                 "laravel",
-                "nativephp",
-                "nativephp-laravel"
+                "nativephp"
             ],
             "support": {
-                "issues": "https://github.com/NativePHP/desktop/issues",
-                "source": "https://github.com/NativePHP/desktop/tree/2.1.0"
+                "issues": "https://github.com/NativePHP/mobile-air/issues",
+                "source": "https://github.com/NativePHP/mobile-air/tree/3.2.2"
             },
-            "funding": [
-                {
-                    "url": "https://github.com/sponsors/simonhamp",
-                    "type": "github"
-                },
-                {
-                    "url": "https://opencollective.com/nativephp",
-                    "type": "opencollective"
-                }
-            ],
-            "time": "2026-01-07T14:13:04+00:00"
-        },
-        {
-            "name": "nativephp/php-bin",
-            "version": "1.1.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/NativePHP/php-bin.git",
-                "reference": "6b5e11cd56f5214f37d4c175afb752b210545f59"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/NativePHP/php-bin/zipball/6b5e11cd56f5214f37d4c175afb752b210545f59",
-                "reference": "6b5e11cd56f5214f37d4c175afb752b210545f59",
-                "shasum": ""
-            },
-            "type": "library",
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Apache-2.0",
-                "GPL-3.0-or-later",
-                "MIT",
-                "PHP-3.01"
-            ],
-            "authors": [
-                {
-                    "name": "Marcel Pociot",
-                    "email": "marcel@beyondco.de",
-                    "role": "Developer"
-                },
-                {
-                    "name": "Simon Hamp",
-                    "email": "simon.hamp@me.com",
-                    "role": "Developer"
-                }
-            ],
-            "description": "PHP binaries used by the NativePHP framework",
-            "homepage": "https://nativephp.com",
-            "keywords": [
-                "nativephp",
-                "php"
-            ],
-            "support": {
-                "source": "https://github.com/NativePHP/php-bin/tree/1.1.1"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/sponsors/simonhamp",
-                    "type": "github"
-                },
-                {
-                    "url": "https://opencollective.com/nativephp",
-                    "type": "opencollective"
-                }
-            ],
-            "time": "2025-09-02T19:18:24+00:00"
+            "time": "2026-04-04T20:00:18+00:00"
         },
         {
             "name": "nesbot/carbon",
@@ -4474,6 +4450,87 @@
             "time": "2022-11-30T15:59:55+00:00"
         },
         {
+            "name": "react/datagram",
+            "version": "v1.10.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/reactphp/datagram.git",
+                "reference": "9236e1f5a67a6029be17d551e9858c487836c301"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/reactphp/datagram/zipball/9236e1f5a67a6029be17d551e9858c487836c301",
+                "reference": "9236e1f5a67a6029be17d551e9858c487836c301",
+                "shasum": ""
+            },
+            "require": {
+                "evenement/evenement": "^3.0 || ^2.0 || ^1.0",
+                "php": ">=5.3",
+                "react/dns": "^1.13",
+                "react/event-loop": "^1.2",
+                "react/promise": "^3.2 || ^2.1 || ^1.2"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.6 || ^5.7 || ^4.8.36",
+                "react/async": "^4.3 || ^3 || ^2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "React\\Datagram\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Christian Lück",
+                    "email": "christian@clue.engineering",
+                    "homepage": "https://clue.engineering/"
+                },
+                {
+                    "name": "Cees-Jan Kiewiet",
+                    "email": "reactphp@ceesjankiewiet.nl",
+                    "homepage": "https://wyrihaximus.net/"
+                },
+                {
+                    "name": "Jan Sorgalla",
+                    "email": "jsorgalla@gmail.com",
+                    "homepage": "https://sorgalla.com/"
+                },
+                {
+                    "name": "Chris Boden",
+                    "email": "cboden@gmail.com",
+                    "homepage": "https://cboden.dev/"
+                }
+            ],
+            "description": "Event-driven UDP datagram socket client and server for ReactPHP",
+            "homepage": "https://github.com/reactphp/datagram",
+            "keywords": [
+                "Socket",
+                "async",
+                "client",
+                "datagram",
+                "dgram",
+                "reactphp",
+                "server",
+                "udp"
+            ],
+            "support": {
+                "issues": "https://github.com/reactphp/datagram/issues",
+                "source": "https://github.com/reactphp/datagram/tree/v1.10.0"
+            },
+            "funding": [
+                {
+                    "url": "https://opencollective.com/reactphp",
+                    "type": "open_collective"
+                }
+            ],
+            "time": "2024-09-06T11:22:35+00:00"
+        },
+        {
             "name": "react/dns",
             "version": "v1.14.0",
             "source": {
@@ -5629,76 +5686,6 @@
                 }
             ],
             "time": "2024-09-25T14:21:43+00:00"
-        },
-        {
-            "name": "symfony/filesystem",
-            "version": "v7.4.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/symfony/filesystem.git",
-                "reference": "d551b38811096d0be9c4691d406991b47c0c630a"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/symfony/filesystem/zipball/d551b38811096d0be9c4691d406991b47c0c630a",
-                "reference": "d551b38811096d0be9c4691d406991b47c0c630a",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=8.2",
-                "symfony/polyfill-ctype": "~1.8",
-                "symfony/polyfill-mbstring": "~1.8"
-            },
-            "require-dev": {
-                "symfony/process": "^6.4|^7.0|^8.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Symfony\\Component\\Filesystem\\": ""
-                },
-                "exclude-from-classmap": [
-                    "/Tests/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Fabien Potencier",
-                    "email": "fabien@symfony.com"
-                },
-                {
-                    "name": "Symfony Community",
-                    "homepage": "https://symfony.com/contributors"
-                }
-            ],
-            "description": "Provides basic utilities for the filesystem",
-            "homepage": "https://symfony.com",
-            "support": {
-                "source": "https://github.com/symfony/filesystem/tree/v7.4.0"
-            },
-            "funding": [
-                {
-                    "url": "https://symfony.com/sponsor",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://github.com/fabpot",
-                    "type": "github"
-                },
-                {
-                    "url": "https://github.com/nicolas-grekas",
-                    "type": "github"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
-                    "type": "tidelift"
-                }
-            ],
-            "time": "2025-11-27T13:27:24+00:00"
         },
         {
             "name": "symfony/finder",
@@ -7858,6 +7845,69 @@
                 }
             ],
             "time": "2024-11-21T01:49:47+00:00"
+        },
+        {
+            "name": "workerman/workerman",
+            "version": "v4.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/walkor/workerman.git",
+                "reference": "cafb5a43d93d7d30a16b32a57948581cca993562"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/walkor/workerman/zipball/cafb5a43d93d7d30a16b32a57948581cca993562",
+                "reference": "cafb5a43d93d7d30a16b32a57948581cca993562",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0"
+            },
+            "suggest": {
+                "ext-event": "For better performance. "
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Workerman\\": "./"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "walkor",
+                    "email": "walkor@workerman.net",
+                    "homepage": "http://www.workerman.net",
+                    "role": "Developer"
+                }
+            ],
+            "description": "An asynchronous event driven PHP framework for easily building fast, scalable network applications.",
+            "homepage": "http://www.workerman.net",
+            "keywords": [
+                "asynchronous",
+                "event-loop"
+            ],
+            "support": {
+                "email": "walkor@workerman.net",
+                "forum": "http://wenda.workerman.net/",
+                "issues": "https://github.com/walkor/workerman/issues",
+                "source": "https://github.com/walkor/workerman",
+                "wiki": "http://doc.workerman.net/"
+            },
+            "funding": [
+                {
+                    "url": "https://opencollective.com/workerman",
+                    "type": "open_collective"
+                },
+                {
+                    "url": "https://www.patreon.com/walkor",
+                    "type": "patreon"
+                }
+            ],
+            "time": "2024-11-24T11:45:37+00:00"
         }
     ],
     "packages-dev": [
