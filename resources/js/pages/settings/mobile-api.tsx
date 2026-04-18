@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Head, router, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { Head } from '@inertiajs/react';
 import axios from 'axios';
 
 import { Button } from '@/components/ui/button';
@@ -7,38 +7,97 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 /**
- * Two separate axios instances:
+ * ── NativePHP Android body-parsing workaround ─────────────────────────────
  *
- * remoteApi  → calls to https://lm2bicycletrading.larable.dev
- *              NO withCredentials — uses Bearer token, not cookies.
- *              withCredentials:true + wildcard CORS = browser blocks it.
+ * NativePHP's Android PHP built-in server doesn't reliably parse
+ * `application/json` POST bodies from the Android WebView. Any `axios.post()`
+ * to http://127.0.0.1 arrives with an empty body, so validation always fails
+ * with "field is required" even when fields are filled.
  *
- * localApi   → calls back to http://127.0.0.1 (the NativePHP local server)
- *              withCredentials:true — needs session cookie for Inertia CSRF.
+ * Solution: store ALL config in localStorage (client-side).
+ * No local PHP POST calls are made. The PHP controller only serves the initial
+ * Inertia render. Token, user, and server URL live in localStorage.
+ *
+ * remoteApi  - calls the PRODUCTION server (Bearer token, no credentials)
+ * localStorage - source of truth for mobile config on the device
  */
-const remoteApi = axios.create({ withCredentials: false });
-const localApi  = axios.create({ withCredentials: true });
 
-interface Props {
-    serverUrl: string;
-    isConnected: boolean;
-    lastSyncedAt: string | null;
-    authUser: { name: string; email: string; roles: string[] } | null;
+const STORAGE_KEY = 'lm2_mobile_api_config';
+
+function loadConfig(): Record<string, any> {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
+    } catch {
+        return {};
+    }
 }
 
-export default function MobileApiSettings({ serverUrl, isConnected, lastSyncedAt, authUser }: Props) {
-    // ── Server URL form ───────────────────────────────────────────────────────
-    const urlForm = useForm({ server_url: serverUrl });
+function persistConfig(updates: Record<string, any>): void {
+    const merged = { ...loadConfig(), ...updates };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+}
+
+/** Dedicated axios instance for cross-origin calls to the production server.
+ *  withCredentials MUST be false — Bearer token auth, wildcard CORS. */
+const remoteApi = axios.create({ withCredentials: false });
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface Props {
+    /** Server-side defaults (Inertia props) — used only as initial fallback */
+    serverUrl:    string;
+    isConnected:  boolean;
+    lastSyncedAt: string | null;
+    authUser:     { name: string; email: string; roles: string[] } | null;
+}
+
+export default function MobileApiSettings(props: Props) {
+
+    // ── State: read from localStorage, fall back to Inertia server props ──────
+    const [cfg, setCfg] = useState<Record<string, any>>({});
+    const [hydrated, setHydrated] = useState(false);
+
+    useEffect(() => {
+        const stored = loadConfig();
+        // Merge server defaults (first boot) with stored values (subsequent boots)
+        const merged = {
+            server_url:    props.serverUrl,
+            is_connected:  props.isConnected,
+            last_synced_at: props.lastSyncedAt,
+            auth_user:     props.authUser,
+            ...stored,   // localStorage values win
+        };
+        setCfg(merged);
+        setHydrated(true);
+    }, []);
+
+    const serverUrl   = cfg.server_url   ?? props.serverUrl;
+    const isConnected = cfg.is_connected ?? props.isConnected;
+    const authUser    = cfg.auth_user    ?? props.authUser;
+    const lastSyncedAt = cfg.last_synced_at ?? props.lastSyncedAt;
+
+    // ── Server URL ────────────────────────────────────────────────────────────
+    const [editUrl, setEditUrl]     = useState(props.serverUrl);
+    const [urlSaving, setUrlSaving] = useState(false);
+    const [urlSaved, setUrlSaved]   = useState(false);
+
+    useEffect(() => { if (hydrated) setEditUrl(serverUrl); }, [hydrated]);
 
     const saveUrl = (e: React.FormEvent) => {
         e.preventDefault();
-        urlForm.post('/settings/mobile-api', { preserveScroll: true });
+        setUrlSaving(true);
+        const url = editUrl.replace(/\/$/, '');
+        // Persist directly to localStorage — no local PHP POST needed
+        persistConfig({ server_url: url, is_connected: false, auth_user: null, auth_token: null });
+        setCfg(c => ({ ...c, server_url: url, is_connected: false, auth_user: null, auth_token: null }));
+        setTimeout(() => { setUrlSaving(false); setUrlSaved(true); }, 300);
+        setTimeout(() => setUrlSaved(false), 2500);
     };
 
-    // ── Login form ────────────────────────────────────────────────────────────
-    const [email, setEmail]           = useState('');
-    const [password, setPassword]     = useState('');
-    const [loginError, setLoginError] = useState('');
+    // ── Login ─────────────────────────────────────────────────────────────────
+    const [email, setEmail]               = useState('');
+    const [password, setPassword]         = useState('');
+    const [loginError, setLoginError]     = useState('');
     const [loginLoading, setLoginLoading] = useState(false);
     const [testLoading, setTestLoading]   = useState(false);
     const [testResult, setTestResult]     = useState<string | null>(null);
@@ -48,40 +107,48 @@ export default function MobileApiSettings({ serverUrl, isConnected, lastSyncedAt
         setLoginError('');
         setLoginLoading(true);
         try {
-            const base = urlForm.data.server_url.replace(/\/$/, '');
+            const base = serverUrl.replace(/\/$/, '');
 
-            // remoteApi: no withCredentials — Bearer token auth, cross-origin
-            const res  = await remoteApi.post(`${base}/api/mobile/login`, { email, password });
+            // Single cross-origin call — no local POST at all
+            const res = await remoteApi.post(`${base}/api/mobile/login`, { email, password });
 
-            // localApi: same-origin POST back to the NativePHP server to store token
-            await localApi.post('/settings/mobile-api/token', {
-                token: res.data.token,
-                user:  res.data.user,
-            });
-            router.reload({ only: ['isConnected', 'authUser', 'lastSyncedAt'] });
+            const update = {
+                auth_token:    res.data.token,
+                auth_user:     res.data.user,
+                is_connected:  true,
+                last_synced_at: new Date().toISOString(),
+            };
+
+            // Save directly to localStorage (avoids NativePHP body-parsing bug)
+            persistConfig(update);
+            setCfg(c => ({ ...c, ...update }));
+
+            setEmail('');
+            setPassword('');
         } catch (err: any) {
-            setLoginError(err?.response?.data?.message ?? 'Login failed. Check the URL and credentials.');
+            const msg = err?.response?.data?.message
+                ?? err?.response?.data?.errors?.email?.[0]
+                ?? 'Login failed. Check the URL and credentials.';
+            setLoginError(msg);
         } finally {
             setLoginLoading(false);
         }
     };
 
     const handleDisconnect = () => {
-        router.post('/settings/mobile-api/disconnect', {}, { preserveScroll: true });
+        const update = { is_connected: false, auth_token: null, auth_user: null };
+        persistConfig(update);
+        setCfg(c => ({ ...c, ...update }));
+        setTestResult(null);
     };
 
     const handleTest = async () => {
         setTestLoading(true);
         setTestResult(null);
         try {
-            const base   = urlForm.data.server_url.replace(/\/$/, '');
-
-            // localApi: same-origin call to get the stored token
-            const config = await localApi.get('/settings/mobile-api/config');
-            const token  = config.data.auth_token;
+            const base  = serverUrl.replace(/\/$/, '');
+            const token = loadConfig().auth_token;
             if (!token) { setTestResult('❌ No token stored. Please log in first.'); return; }
-
-            // remoteApi: cross-origin dashboard fetch with Bearer token
             const res = await remoteApi.get(`${base}/api/mobile/dashboard`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -94,12 +161,13 @@ export default function MobileApiSettings({ serverUrl, isConnected, lastSyncedAt
         }
     };
 
+    if (!hydrated) return null; // avoid flash
+
     return (
-        // ── Standalone full-page layout (no AppLayout / no auth.user needed) ──
         <div className="min-h-screen bg-background text-foreground">
             <Head title="Mobile API Settings" />
 
-            {/* Header bar */}
+            {/* ── Header ──────────────────────────────────────────────────── */}
             <div className="border-b border-border bg-card px-6 py-4 flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
                     <svg className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,8 +179,6 @@ export default function MobileApiSettings({ serverUrl, isConnected, lastSyncedAt
                     <p className="font-semibold text-sm">LM2 IMS Mobile</p>
                     <p className="text-xs text-muted-foreground">API Configuration</p>
                 </div>
-
-                {/* Connection status pill */}
                 <div className={`ml-auto flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium
                     ${isConnected ? 'bg-green-500/10 text-green-600' : 'bg-muted text-muted-foreground'}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${isConnected ? 'bg-green-500' : 'bg-muted-foreground'}`} />
@@ -122,15 +188,12 @@ export default function MobileApiSettings({ serverUrl, isConnected, lastSyncedAt
 
             <div className="mx-auto max-w-lg space-y-6 px-6 py-8">
 
-                {/* ── Server URL ─────────────────────────────────────────── */}
+                {/* ── Server URL ────────────────────────────────────────────── */}
                 <section className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-5">
                     <div>
                         <p className="font-semibold text-sm">Remote Server URL</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                            The web server this app syncs data with
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">The web server this app syncs data with</p>
                     </div>
-
                     <form onSubmit={saveUrl} className="space-y-3">
                         <div className="space-y-1.5">
                             <Label htmlFor="server_url">Server URL</Label>
@@ -138,42 +201,36 @@ export default function MobileApiSettings({ serverUrl, isConnected, lastSyncedAt
                                 id="server_url"
                                 type="url"
                                 placeholder="https://lm2bicycletrading.larable.dev"
-                                value={urlForm.data.server_url}
-                                onChange={e => urlForm.setData('server_url', e.target.value)}
+                                value={editUrl}
+                                onChange={e => setEditUrl(e.target.value)}
                                 className="font-mono text-sm"
+                                required
                             />
-                            {urlForm.errors.server_url && (
-                                <p className="text-xs text-destructive">{urlForm.errors.server_url}</p>
-                            )}
                         </div>
-                        <Button type="submit" disabled={urlForm.processing} size="sm">
-                            {urlForm.processing ? 'Saving…' : 'Save URL'}
+                        <Button type="submit" disabled={urlSaving} size="sm" variant={urlSaved ? 'outline' : 'default'}>
+                            {urlSaving ? 'Saving…' : urlSaved ? '✓ Saved' : 'Save URL'}
                         </Button>
                     </form>
                 </section>
 
-                {/* ── Auth: Login or Connected User ──────────────────────── */}
+                {/* ── Auth ───────────────────────────────────────────────────── */}
                 <section className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-5">
                     {isConnected && authUser ? (
                         <>
                             <div>
                                 <p className="font-semibold text-sm">Logged In</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                    Authenticated against the remote server
-                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">Authenticated against the remote server</p>
                             </div>
                             <div className="rounded-lg bg-muted/50 px-4 py-3 space-y-1 text-sm">
                                 <p><span className="text-muted-foreground">Name:</span> <span className="font-medium">{authUser.name}</span></p>
                                 <p><span className="text-muted-foreground">Email:</span> {authUser.email}</p>
-                                <p><span className="text-muted-foreground">Roles:</span> {authUser.roles?.join(', ') || '—'}</p>
+                                <p><span className="text-muted-foreground">Roles:</span> {(authUser as any).roles?.join(', ') || '—'}</p>
                                 {lastSyncedAt && (
-                                    <p><span className="text-muted-foreground">Token saved:</span> {new Date(lastSyncedAt).toLocaleString()}</p>
+                                    <p><span className="text-muted-foreground">Logged in:</span> {new Date(lastSyncedAt).toLocaleString()}</p>
                                 )}
                             </div>
                             <div className="flex gap-2">
-                                <Button variant="outline" size="sm" onClick={handleDisconnect}>
-                                    Disconnect
-                                </Button>
+                                <Button variant="outline" size="sm" onClick={handleDisconnect}>Disconnect</Button>
                                 <Button variant="outline" size="sm" onClick={handleTest} disabled={testLoading}>
                                     {testLoading ? 'Testing…' : 'Test Connection'}
                                 </Button>
@@ -191,7 +248,7 @@ export default function MobileApiSettings({ serverUrl, isConnected, lastSyncedAt
                             <div>
                                 <p className="font-semibold text-sm">Connect to Server</p>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                    Log in with your account on <span className="font-mono">{urlForm.data.server_url || 'the server'}</span>
+                                    Log in with your account on <span className="font-mono break-all">{serverUrl}</span>
                                 </p>
                             </div>
                             <form onSubmit={handleLogin} className="space-y-3">
@@ -230,27 +287,27 @@ export default function MobileApiSettings({ serverUrl, isConnected, lastSyncedAt
                     )}
                 </section>
 
-                {/* ── API Endpoint Reference ─────────────────────────────── */}
+                {/* ── API Endpoint Reference ───────────────────────────────── */}
                 <section className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-3">
                     <p className="font-semibold text-sm">Available API Endpoints</p>
                     <div className="space-y-2 text-xs font-mono text-muted-foreground">
                         {([
-                            ['POST', '/api/mobile/login',              'Authenticate & get token'],
-                            ['GET',  '/api/mobile/user',               'Current user info'],
-                            ['GET',  '/api/mobile/dashboard',          'Summary stats'],
-                            ['GET',  '/api/mobile/products',           'List products'],
-                            ['GET',  '/api/mobile/products/search/:q', 'Search products'],
-                            ['GET',  '/api/mobile/sales',              'List sales'],
-                            ['POST', '/api/mobile/sales',              'Create sale'],
-                            ['GET',  '/api/mobile/transfers',          'List transfers'],
-                            ['POST', '/api/mobile/transfers/:id/confirm', 'Confirm transfer'],
-                            ['GET',  '/api/mobile/sync/pull',          'Pull all data'],
-                            ['POST', '/api/mobile/sync/push',          'Push events'],
+                            ['POST', '/api/mobile/login',                 'Authenticate & get token'],
+                            ['GET',  '/api/mobile/user',                  'Current user info'],
+                            ['GET',  '/api/mobile/dashboard',             'Summary stats'],
+                            ['GET',  '/api/mobile/products',              'List products'],
+                            ['GET',  '/api/mobile/products/search/{q}',   'Search products'],
+                            ['GET',  '/api/mobile/sales',                 'List sales'],
+                            ['POST', '/api/mobile/sales',                 'Create sale'],
+                            ['GET',  '/api/mobile/transfers',             'List transfers'],
+                            ['POST', '/api/mobile/transfers/{id}/confirm', 'Confirm transfer'],
+                            ['GET',  '/api/mobile/sync/pull',             'Pull all data'],
+                            ['POST', '/api/mobile/sync/push',             'Push events'],
                         ] as [string, string, string][]).map(([method, path, desc]) => (
                             <div key={`${method}-${path}`} className="flex items-start gap-3">
                                 <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                                    method === 'GET'  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
-                                    'bg-green-500/10 text-green-600 dark:text-green-400'
+                                    method === 'GET' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                                    : 'bg-green-500/10 text-green-600 dark:text-green-400'
                                 }`}>{method}</span>
                                 <span className="text-foreground">{path}</span>
                                 <span className="ml-auto text-right hidden sm:block">{desc}</span>
