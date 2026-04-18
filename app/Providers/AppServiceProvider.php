@@ -41,6 +41,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Illuminate\Support\Facades\Event::listen(
+            \Native\Mobile\Events\PushNotification\TokenGenerated::class,
+            \App\Listeners\HandlePushTokenGenerated::class
+        );
+
         if (config('nativephp-internal.running')) {
             // Run ONLY the mobile baseline migrations (not the full app schema).
             // All app data (products, sales, branches) come from the remote API.

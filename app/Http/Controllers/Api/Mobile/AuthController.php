@@ -75,4 +75,18 @@ class AuthController extends Controller
 
         return response()->json(['message' => 'Logged out successfully.']);
     }
+
+    /**
+     * Save the user's OneSignal push notification token.
+     */
+    public function savePushToken(Request $request)
+    {
+        $request->validate(['push_token' => 'required|string']);
+
+        $request->user()->update([
+            'onesignal_player_id' => $request->push_token,
+        ]);
+
+        return response()->json(['message' => 'Push token saved.']);
+    }
 }

@@ -79,4 +79,9 @@ class User extends Authenticatable
                     ? asset('storage/' . $this->profile_photo_path)
                     : 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
     }
+
+    public function routeNotificationForOneSignal(): ?string
+    {
+        return $this->onesignal_player_id;
+    }
 }

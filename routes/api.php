@@ -39,6 +39,8 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
 
         // Auth / User
         Route::get('user', [AuthController::class, 'user'])->name('user');
+        Route::post('push-token', [AuthController::class, 'savePushToken'])->name('push-token.store');
+        Route::post('push-test', [\App\Http\Controllers\Api\Mobile\PushTestController::class, 'send'])->name('push-test.send');
 
         // Dashboard summary
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');

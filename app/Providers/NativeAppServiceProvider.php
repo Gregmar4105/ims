@@ -13,8 +13,9 @@ class NativeAppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Add any mobile-specific boot logic here in the future
-        // e.g. Native\Mobile\Facades\PushNotifications::enroll();
+        if (config('nativephp-internal.running')) {
+            \Native\Mobile\Facades\PushNotifications::enroll();
+        }
     }
 
     public function register(): void
