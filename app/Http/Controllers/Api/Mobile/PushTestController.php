@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\Mobile;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Messaging\CloudMessage;
-use Kreait\Firebase\Messaging\Notification;
 use Kreait\Firebase\Contract\Messaging;
 use Illuminate\Support\Facades\Log;
 
@@ -36,15 +35,19 @@ class PushTestController extends Controller
         }
 
         try {
-            // FCM v1 messages can include a 'notification' block AND a 'data' block.
-            // Our Android FCMService.kt is currently set up to handle 'data' payloads.
-            $message = CloudMessage::withTarget('token', $token)
-                ->withNotification(Notification::create($request->title, $request->body))
-                ->withData([
+            // Using fromArray to ensure compatibility with all library versions
+            $message = CloudMessage::fromArray([
+                'token' => $token,
+                'notification' => [
+                    'title' => $request->title,
+                    'body'  => $request->body,
+                ],
+                'data' => [
                     'title' => $request->title,
                     'body'  => $request->body,
                     'type'  => 'test_push',
-                ]);
+                ],
+            ]);
 
             $this->messaging->send($message);
 
