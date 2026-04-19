@@ -45,10 +45,15 @@ Route::get('/mobile/transfers/{id}', [\App\Http\Controllers\Mobile\MobileDashboa
     ->name('mobile.transfers.show');
 
 
-Route::get('/mobile/push-enroll', function () {
+Route::get('/mobile/push-enroll', function (\Illuminate\Http\Request $request) {
     if (config('nativephp-internal.running')) {
         \Native\Mobile\Facades\PushNotifications::enroll();
     }
+    
+    if ($request->ajax() || $request->wantsJson()) {
+        return response()->json(['success' => true, 'message' => 'Push enrollment triggered']);
+    }
+    
     return back();
 })->name('mobile.push-enroll');
 

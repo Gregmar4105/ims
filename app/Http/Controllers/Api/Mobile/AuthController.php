@@ -63,6 +63,7 @@ class AuthController extends Controller
             'roles'      => $user->getRoleNames(),
             'permissions'=> $user->getAllPermissions()->pluck('name'),
             'avatar_url' => $user->profile_photo_url,
+            'onesignal_player_id' => $user->onesignal_player_id,
         ]);
     }
 

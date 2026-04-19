@@ -59,6 +59,18 @@ export function ScannerModal({ isOpen, onClose }: ScannerModalProps) {
 
     const startScanner = async () => {
         try {
+            // Pre-request camera permission via getUserMedia before html5-qrcode starts.
+            // This ensures the native Android permission dialog fires first.
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                // Stop all tracks immediately — we only needed this to trigger the permission prompt
+                stream.getTracks().forEach(track => track.stop());
+            } catch (permErr) {
+                console.error("Camera permission denied or unavailable:", permErr);
+                toast.error("Camera permission denied. Please enable it in your device settings.");
+                return;
+            }
+
             const html5QrCode = new Html5Qrcode("reader");
             scannerRef.current = html5QrCode;
             

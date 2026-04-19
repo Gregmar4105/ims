@@ -3,7 +3,6 @@ import MobileLayout from '@/layouts/mobile-layout';
 import { useMobileApi } from '@/hooks/use-mobile-api';
 import { Plus } from 'lucide-react';
 import { router } from '@inertiajs/react';
-import axios from 'axios';
 
 interface Summary {
     total_sales: number;
@@ -37,7 +36,7 @@ export default function MobileDashboard() {
             }
             
             // Fallback: trigger enrollment
-            axios.get('/mobile/push-enroll').catch(() => {});
+            fetch('/mobile/push-enroll', { headers: { 'X-Requested-With': 'XMLHttpRequest' } }).catch(() => {});
         }
     }, [isHydrated, serverUrl, token]);
 
