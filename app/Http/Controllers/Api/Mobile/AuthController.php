@@ -84,6 +84,12 @@ class AuthController extends Controller
     {
         $request->validate(['push_token' => 'required|string']);
 
+        Log::info("[PushToken] Received from device: " . $request->push_token);
+
+        if (str_starts_with($request->push_token, 'ERROR:') || str_starts_with($request->push_token, 'EXCEPTION:')) {
+            return response()->json(['message' => 'Error logged on server.'], 400);
+        }
+
         $request->user()->update([
             'onesignal_player_id' => $request->push_token,
         ]);
