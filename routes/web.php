@@ -11,9 +11,6 @@ use Laravel\Fortify\Features;
 // On NativePHP Android: redirect to the mobile API settings page.
 // On the web server: show the normal public welcome/shop page.
 Route::get('/', function (\Illuminate\Http\Request $request) {
-    if (config('nativephp-internal.running')) {
-        return Inertia::render('mobile/dashboard');
-    }
     return app(\App\Http\Controllers\WelcomeController::class)->index($request);
 })->name('home');
 Route::get('/shop', [\App\Http\Controllers\ShopController::class, 'index'])->name('shop.index'); // Search/Index route
@@ -25,37 +22,7 @@ Route::get('/locations', [\App\Http\Controllers\BranchController::class, 'locati
 Route::get('/suppliers', [\App\Http\Controllers\SupplierPortalController::class, 'index'])->name('suppliers.portal');
 Route::post('/suppliers/send', [\App\Http\Controllers\SupplierPortalController::class, 'store'])->name('suppliers.send');
 
-// ── Mobile App Routes — NO local auth required ────────────────────────────────
-// These pages authenticate against the remote API via localStorage token.
-Route::get('/dashboard', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'index'])
-    ->name('dashboard');
-Route::get('/mobile/{page}', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'view'])
-    ->where('page', '[a-zA-Z0-9_-]+')
-    ->name('mobile.view');
-Route::get('/mobile/chats/{id}', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'chatShow'])
-    ->name('mobile.chats.show');
-Route::get('/mobile/sales/create', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'saleCreate'])
-    ->name('mobile.sales.create');
-Route::get('/mobile/sales/{id}', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'saleShow'])
-    ->name('mobile.sales.show');
 
-Route::get('/mobile/transfers/create', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'transferCreate'])
-    ->name('mobile.transfers.create');
-Route::get('/mobile/transfers/{id}', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'transferShow'])
-    ->name('mobile.transfers.show');
-
-
-Route::get('/mobile/push-enroll', function (\Illuminate\Http\Request $request) {
-    if (config('nativephp-internal.running')) {
-        \Native\Mobile\Facades\PushNotifications::enroll();
-    }
-    
-    if ($request->ajax() || $request->wantsJson()) {
-        return response()->json(['success' => true, 'message' => 'Push enrollment triggered']);
-    }
-    
-    return back();
-})->name('mobile.push-enroll');
 
 Route::get('/api/local/sync-config', function (\Illuminate\Http\Request $request) {
     if (!config('nativephp-internal.running')) return response()->json(['error' => 'Not running on NativePHP'], 403);

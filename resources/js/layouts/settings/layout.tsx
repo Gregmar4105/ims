@@ -33,11 +33,7 @@ const getSidebarNavItems = (hasBranch: boolean): NavItem[] => {
             href: editAppearance(),
             icon: null,
         },
-        {
-            title: 'Mobile API',
-            href: '/settings/mobile-api',
-            icon: null,
-        },
+
     ];
 
     if (hasBranch) {

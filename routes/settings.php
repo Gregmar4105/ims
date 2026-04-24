@@ -12,7 +12,9 @@ use Inertia\Inertia;
 // These routes are the entry point for the NativePHP Android app.
 // Auth happens against the remote API (lm2bicycletrading.larable.dev),
 // not against the local SQLite database.
-Route::get('settings/mobile-api',             [MobileApiSettingsController::class, 'edit'])->name('mobile-api.edit');
+Route::get('settings/mobile-api', function () {
+    return redirect('/settings/profile');
+});
 Route::post('settings/mobile-api',            [MobileApiSettingsController::class, 'update'])->name('mobile-api.update');
 Route::post('settings/mobile-api/token',      [MobileApiSettingsController::class, 'storeToken'])->name('mobile-api.token');
 Route::post('settings/mobile-api/disconnect', [MobileApiSettingsController::class, 'disconnect'])->name('mobile-api.disconnect');
