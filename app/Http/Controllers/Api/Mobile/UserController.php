@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Mobile;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\User;
 
 class UserController extends Controller
 {
@@ -14,7 +15,7 @@ class UserController extends Controller
     {
         $search = $request->query('search');
 
-        $users = \App\Models\User::with(['branch', 'roles'])
+        $users = User::with(['branch', 'roles'])
             ->when($search, function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
@@ -33,5 +34,13 @@ class UserController extends Controller
                 'total' => $users->total(),
             ]
         ]);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(User $user)
+    {
+        return response()->json($user->load(['branch', 'roles']));
     }
 }

@@ -68,6 +68,16 @@ class AuthController extends Controller
     }
 
     /**
+     * Return the currently authenticated user's roles.
+     */
+    public function role(Request $request)
+    {
+        return response()->json([
+            'roles' => $request->user()->getRoleNames(),
+        ]);
+    }
+
+    /**
      * Revoke the current mobile token (logout).
      */
     public function logout(Request $request)
