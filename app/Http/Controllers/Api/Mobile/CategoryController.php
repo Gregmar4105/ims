@@ -3,16 +3,38 @@
 namespace App\Http\Controllers\Api\Mobile;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $user = $request->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+
+        $query = Category::query();
+
+        if (!$isSystemAdmin) {
+            if ($user->branch_id) {
+                $query->where('branch_id', $user->branch_id);
+            } else {
+                return response()->json(['data' => []]);
+            }
+        }
+
+        $categories = $query->when($request->query('search'), function ($q, $search) {
+                $q->where('name', 'like', "%{$search}%");
+            })
+            ->latest()
+            ->get();
+
+        return response()->json(['data' => $categories]);
     }
 
     /**
@@ -20,30 +42,62 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'status' => 'required|in:Active,Inactive',
+        ]);
+
+        $user = $request->user();
+        $branchId = $user->branch_id;
+
+        if (!$branchId && !$user->hasRole('System Administrator')) {
+            return response()->json(['message' => 'You must be assigned to a branch to create categories.'], 403);
+        }
+
+        $category = Category::create([
+            'name' => $request->name,
+            'slug' => Str::slug($request->name),
+            'status' => $request->status,
+            'branch_id' => $branchId,
+            'created_by' => $user->id,
+        ]);
+
+        return response()->json(['message' => 'Category created successfully.', 'data' => $category], 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(int $id)
     {
-        //
+        $category = Category::findOrFail($id);
+        return response()->json(['data' => $category]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, int $id)
     {
-        //
+        $category = Category::findOrFail($id);
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255', Rule::unique('categories')->ignore($category->id)],
+            'status' => ['required', 'in:Active,Inactive'],
+        ]);
+
+        $validated['slug'] = Str::slug($validated['name']);
+        $category->update($validated);
+
+        return response()->json(['message' => 'Category updated successfully.', 'data' => $category]);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(int $id)
     {
-        //
+        $category = Category::findOrFail($id);
+        $category->delete();
+        return response()->json(['message' => 'Category deleted successfully.']);
     }
 }

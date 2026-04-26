@@ -55,5 +55,6 @@ export interface User {
         location?: string;
         branch_status?: string;
     } | null;
+    roles?: string[];
     [key: string]: unknown; // This allows for additional properties...
 }

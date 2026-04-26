@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Mobile;
 use App\Http\Controllers\Controller;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Models\SaleReturn;
 use App\Models\BranchProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -97,6 +98,183 @@ class SaleController extends Controller
             'message' => 'Sale created successfully.',
             'sale'    => $this->formatSale($sale, detailed: true),
         ], 201);
+    }
+
+    /**
+     * Approve a sale - deduct inventory.
+     */
+    public function approve(Request $request, int $id)
+    {
+        $sale = Sale::findOrFail($id);
+        $user = $request->user();
+
+        // Only branch admins or sysadmins can approve
+        if (!$user->hasRole('Branch Administrator') && !$user->hasRole('System Administrator')) {
+            return response()->json(['message' => 'Only administrators can approve sales.'], 403);
+        }
+
+        if ($sale->status !== 'readied' && $sale->status !== 'pending') {
+            return response()->json(['message' => 'Sale is not in a status that can be approved.'], 422);
+        }
+
+        DB::transaction(function () use ($sale, $user) {
+            foreach ($sale->items as $item) {
+                DB::table('branch_products')
+                    ->where('branch_id', $sale->branch_id)
+                    ->where('product_id', $item->product_id)
+                    ->decrement('quantity', $item->quantity);
+            }
+
+            $sale->update([
+                'status' => 'completed',
+                'approved_by' => $user->id,
+            ]);
+        });
+
+        return response()->json([
+            'message' => 'Sale approved successfully.',
+            'sale' => $this->formatSale($sale->fresh(['items.product', 'branch', 'readiedBy', 'approvedBy']), detailed: true)
+        ]);
+    }
+
+    /**
+     * Cancel a sale.
+     */
+    public function cancel(Request $request, int $id)
+    {
+        $sale = Sale::findOrFail($id);
+        
+        if ($sale->status !== 'readied' && $sale->status !== 'pending') {
+            return response()->json(['message' => 'Only pending or readied sales can be cancelled.'], 422);
+        }
+
+        $sale->update(['status' => 'cancelled']);
+
+        return response()->json([
+            'message' => 'Sale cancelled successfully.',
+            'sale' => $this->formatSale($sale->fresh())
+        ]);
+    }
+
+    /**
+     * Look up product by barcode/QR code for the user's branch.
+     */
+    public function lookup(Request $request)
+    {
+        $request->validate(['code' => 'required|string']);
+        
+        $user = $request->user();
+        $code = $request->code;
+
+        $product = DB::table('products')
+            ->join('branch_products', 'products.id', '=', 'branch_products.product_id')
+            ->where('branch_products.branch_id', $user->branch_id)
+            ->where(function ($query) use ($code) {
+                $query->where('products.barcode', $code)
+                      ->orWhere('products.qr_code', $code);
+            })
+            ->select(
+                'products.id',
+                'products.name',
+                'products.barcode',
+                'products.qr_code',
+                'products.price',
+                'branch_products.quantity as available_quantity'
+            )
+            ->first();
+
+        if (!$product) {
+            return response()->json(['message' => 'Product not found in your branch inventory.'], 404);
+        }
+
+        return response()->json(['data' => $product]);
+    }
+
+    /**
+     * List returns for the user's branch.
+     */
+    public function returns(Request $request)
+    {
+        $user = $request->user();
+        $isAdmin = $user->hasRole('System Administrator');
+        $branchId = $user->branch_id;
+
+        $returns = SaleReturn::with(['sale.branch', 'product:id,name', 'returnedBy:id,name'])
+            ->when(!$isAdmin && $branchId, function ($q) use ($branchId) {
+                $q->whereHas('sale', fn($sq) => $sq->where('branch_id', $branchId));
+            })
+            ->latest()
+            ->paginate($request->integer('per_page', 15));
+
+        return response()->json([
+            'data' => $returns->map(fn($r) => [
+                'id' => $r->id,
+                'sale_id' => $r->sale_id,
+                'product_name' => $r->product?->name,
+                'quantity' => $r->quantity,
+                'returned_by' => $r->returnedBy?->name,
+                'reason' => $r->reason,
+                'created_at' => $r->created_at?->toDateTimeString(),
+            ]),
+            'pagination' => [
+                'current_page' => $returns->currentPage(),
+                'last_page' => $returns->lastPage(),
+                'total' => $returns->total(),
+            ]
+        ]);
+    }
+
+    /**
+     * Store a new sale return.
+     */
+    public function storeReturn(Request $request)
+    {
+        $request->validate([
+            'sale_id' => 'required|exists:sales,id',
+            'product_id' => 'required|exists:products,id',
+            'quantity' => 'required|integer|min:1',
+            'reason' => 'nullable|string',
+        ]);
+
+        $user = $request->user();
+        $sale = Sale::findOrFail($request->sale_id);
+
+        if (!$user->hasRole('System Administrator') && $user->branch_id !== $sale->branch_id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $saleItem = SaleItem::where('sale_id', $sale->id)
+            ->where('product_id', $request->product_id)
+            ->first();
+
+        if (!$saleItem) {
+            return response()->json(['message' => 'Product not found in this sale.'], 422);
+        }
+
+        $alreadyReturned = SaleReturn::where('sale_id', $sale->id)
+            ->where('product_id', $request->product_id)
+            ->sum('quantity');
+
+        if ($request->quantity > ($saleItem->quantity - $alreadyReturned)) {
+            return response()->json(['message' => 'Return quantity exceeds available amount.'], 422);
+        }
+
+        DB::transaction(function () use ($request, $sale, $user) {
+            SaleReturn::create([
+                'sale_id' => $sale->id,
+                'product_id' => $request->product_id,
+                'quantity' => $request->quantity,
+                'returned_by' => $user->id,
+                'reason' => $request->reason,
+            ]);
+
+            DB::table('branch_products')
+                ->where('branch_id', $sale->branch_id)
+                ->where('product_id', $request->product_id)
+                ->increment('quantity', $request->quantity);
+        });
+
+        return response()->json(['message' => 'Return processed successfully.']);
     }
 
     private function formatSale(Sale $sale, bool $detailed = false): array

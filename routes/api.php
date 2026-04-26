@@ -68,22 +68,29 @@ Route::prefix('mobile')->name('mobile.')->group(function () {
 
         // ── Products ─────────────────────────────────────────────────────────────
         Route::middleware('restrict.employee')->group(function () {
-            Route::get('products',       [ProductController::class, 'index'])->name('products.index');
-            Route::get('products/{product}',  [ProductController::class, 'show'])->name('products.show');
+            Route::get('products/options', [ProductController::class, 'options'])->name('products.options');
+            Route::apiResource('products', ProductController::class);
         });
         Route::get('products/search/{query}', [ProductController::class, 'search'])->name('products.search');
 
         // ── Sales ────────────────────────────────────────────────────────────────
         Route::get('sales',          [SaleController::class, 'index'])->name('sales.index');
+        Route::get('sales/returns',  [SaleController::class, 'returns'])->name('sales.returns');
+        Route::post('sales/returns', [SaleController::class, 'storeReturn'])->name('sales.storeReturn');
         Route::get('sales/{sale}',     [SaleController::class, 'show'])->name('sales.show');
         Route::post('sales',         [SaleController::class, 'store'])->name('sales.store');
+        Route::post('sales/lookup',  [SaleController::class, 'lookup'])->name('sales.lookup');
         Route::post('sales/{sale}/approve', [SaleController::class, 'approve'])->name('sales.approve');
         Route::post('sales/{sale}/cancel', [SaleController::class, 'cancel'])->name('sales.cancel');
 
         // ── Transfers ────────────────────────────────────────────────────────────
         Route::get('transfers',      [TransferController::class, 'index'])->name('transfers.index');
+        Route::get('transfers/outgoing', [TransferController::class, 'outgoing'])->name('transfers.outgoing');
+        Route::get('transfers/incoming', [TransferController::class, 'incoming'])->name('transfers.incoming');
         Route::get('transfers/{transfer}', [TransferController::class, 'show'])->name('transfers.show');
         Route::post('transfers/{transfer}/confirm', [TransferController::class, 'confirm'])->name('transfers.confirm');
+        Route::post('transfers/{transfer}/initiate', [TransferController::class, 'initiate'])->name('transfers.initiate');
+        Route::post('transfers/{transfer}/reject', [TransferController::class, 'reject'])->name('transfers.reject');
         Route::post('transfers', [TransferController::class, 'store'])->name('transfers.store');
         
         // ── Chats & Notifications ────────────────────────────────────────────────

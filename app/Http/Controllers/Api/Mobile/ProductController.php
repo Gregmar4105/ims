@@ -4,7 +4,13 @@ namespace App\Http\Controllers\Api\Mobile;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
@@ -17,7 +23,7 @@ class ProductController extends Controller
         $isAdmin  = $user->hasRole('System Administrator');
         $branchId = $user->branch_id;
 
-        $products = Product::with(['brand:id,name', 'category:id,name'])
+        $products = Product::with(['brand:id,name', 'category:id,name', 'branches'])
             ->when(! $isAdmin && $branchId, function ($q) use ($branchId) {
                 $q->whereHas('branches', fn ($b) => $b->where('branches.id', $branchId));
             })
@@ -61,7 +67,7 @@ class ProductController extends Controller
         $isAdmin  = $user->hasRole('System Administrator');
         $branchId = $user->branch_id;
 
-        $results = Product::with(['brand:id,name', 'category:id,name'])
+        $results = Product::with(['brand:id,name', 'category:id,name', 'branches'])
             ->when(! $isAdmin && $branchId, function ($q) use ($branchId) {
                 $q->whereHas('branches', fn ($b) => $b->where('branches.id', $branchId));
             })
@@ -78,8 +84,198 @@ class ProductController extends Controller
         return response()->json(['data' => $results, 'query' => $query]);
     }
 
+    /**
+     * Store a newly created product.
+     */
+    public function store(Request $request)
+    {
+        $user = $request->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:255',
+            'code_2' => 'nullable|string|max:255',
+            'sku' => 'nullable|string|max:255',
+            'brand_id' => 'required|exists:brands,id',
+            'category_id' => 'required|exists:categories,id',
+            'quantity' => 'required|integer|min:0',
+            'physical_location' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'variations' => 'nullable|array',
+            'image' => 'nullable|image|max:2048',
+            'price' => 'nullable|numeric|min:0',
+            'supplier_id' => 'nullable|exists:suppliers,id',
+            'reorder_level' => 'nullable|integer|min:0',
+        ]);
+
+        if (!$user->branch && !$isSystemAdmin) {
+            return response()->json(['message' => 'You must be assigned to a branch to add products.'], 403);
+        }
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('products', 'public');
+        }
+
+        $product = DB::transaction(function () use ($validated, $user, $imagePath) {
+            $product = Product::create([
+                'brand_id' => $validated['brand_id'],
+                'category_id' => $validated['category_id'],
+                'name' => $validated['name'],
+                'code' => $validated['code'] ?? null,
+                'code_2' => $validated['code_2'] ?? null,
+                'sku' => $validated['sku'] ?? null,
+                'description' => $validated['description'] ?? null,
+                'variations' => $validated['variations'] ?? null,
+                'image_path' => $imagePath,
+                'created_by' => $user->id,
+                'price' => $validated['price'] ?? null,
+                'supplier_id' => $validated['supplier_id'] ?? null,
+            ]);
+
+            if ($user->branch_id) {
+                \App\Models\BranchProduct::create([
+                    'branch_id' => $user->branch_id,
+                    'product_id' => $product->id,
+                    'quantity' => $validated['quantity'],
+                    'physical_location' => $validated['physical_location'] ?? null,
+                    'description' => $validated['description'] ?? null,
+                    'variations' => $validated['variations'] ?? null,
+                    'reorder_level' => $validated['reorder_level'] ?? 0,
+                ]);
+            }
+
+            return $product;
+        });
+
+        return response()->json([
+            'message' => 'Product created successfully.',
+            'data' => $this->formatProduct($product->load('branches', 'brand', 'category'))
+        ], 201);
+    }
+
+    /**
+     * Update the specified product.
+     */
+    public function update(Request $request, int $id)
+    {
+        $product = Product::findOrFail($id);
+        $user = $request->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:255',
+            'code_2' => 'nullable|string|max:255',
+            'sku' => 'nullable|string|max:255',
+            'barcode' => 'nullable|string|digits:13|unique:products,barcode,' . $product->id,
+            'qr_code' => 'nullable|string|digits:13|unique:products,qr_code,' . $product->id,
+            'brand_id' => 'required|exists:brands,id',
+            'category_id' => 'required|exists:categories,id',
+            'quantity' => 'required|integer|min:0',
+            'physical_location' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'variations' => 'nullable|array',
+            'image' => 'nullable|image|max:2048',
+            'price' => 'nullable|numeric|min:0',
+            'supplier_id' => 'nullable|exists:suppliers,id',
+            'reorder_level' => 'nullable|integer|min:0',
+        ]);
+
+        if ($request->hasFile('image')) {
+            if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
+                Storage::disk('public')->delete($product->image_path);
+            }
+            $validated['image_path'] = $request->file('image')->store('products', 'public');
+        }
+
+        DB::transaction(function () use ($product, $validated, $user, $isSystemAdmin) {
+            $product->update([
+                'name' => $validated['name'],
+                'code' => $validated['code'] ?? null,
+                'code_2' => $validated['code_2'] ?? null,
+                'sku' => $validated['sku'] ?? null,
+                'barcode' => $validated['barcode'] ?? null,
+                'qr_code' => $validated['qr_code'] ?? null,
+                'brand_id' => $validated['brand_id'],
+                'category_id' => $validated['category_id'],
+                'description' => $validated['description'] ?? null,
+                'variations' => $validated['variations'] ?? null,
+                'image_path' => $validated['image_path'] ?? $product->image_path,
+                'price' => $validated['price'] ?? $product->price,
+                'supplier_id' => $validated['supplier_id'] ?? $product->supplier_id,
+            ]);
+
+            if (!$isSystemAdmin && $user->branch_id) {
+                \App\Models\BranchProduct::updateOrCreate(
+                    ['branch_id' => $user->branch_id, 'product_id' => $product->id],
+                    [
+                        'quantity' => $validated['quantity'],
+                        'physical_location' => $validated['physical_location'] ?? null,
+                        'description' => $validated['description'] ?? null,
+                        'variations' => $validated['variations'] ?? null,
+                        'reorder_level' => $validated['reorder_level'] ?? 0,
+                    ]
+                );
+            }
+        });
+
+        return response()->json([
+            'message' => 'Product updated successfully.',
+            'data' => $this->formatProduct($product->fresh(['branches', 'brand', 'category']))
+        ]);
+    }
+
+    /**
+     * Remove the specified product.
+     */
+    public function destroy(int $id)
+    {
+        $product = Product::findOrFail($id);
+        
+        // Check if product is in use (e.g. sales, transfers) - keeping it simple for now as per web controller (which didn't have destroy shown but resource has it)
+        // Web ProductController didn't show destroy, but let's implement it safely.
+        
+        if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
+            Storage::disk('public')->delete($product->image_path);
+        }
+
+        $product->delete();
+
+        return response()->json(['message' => 'Product deleted successfully.']);
+    }
+
+    /**
+     * Get options for product creation/editing.
+     */
+    public function options(Request $request)
+    {
+        $user = $request->user();
+        $branchId = $user->branch_id;
+        $isSystemAdmin = $user->hasRole('System Administrator');
+
+        $brandsQuery = Brand::where('status', 'Active');
+        $categoriesQuery = Category::where('status', 'Active');
+
+        if (!$isSystemAdmin && $branchId) {
+            $brandsQuery->where('branch_id', $branchId);
+            $categoriesQuery->where('branch_id', $branchId);
+        }
+
+        return response()->json([
+            'brands' => $brandsQuery->get(['id', 'name']),
+            'categories' => $categoriesQuery->get(['id', 'name']),
+            'suppliers' => Supplier::all(['id', 'name']),
+        ]);
+    }
+
     private function formatProduct(Product $product, bool $detailed = false): array
     {
+        $user = auth()->user();
+        $isAdmin = $user->hasRole('System Administrator');
+        $branchId = $user->branch_id;
+
         $base = [
             'id'        => $product->id,
             'name'      => $product->name,
@@ -89,20 +285,40 @@ class ProductController extends Controller
             'barcode'   => $product->barcode,
             'price'     => $product->price,
             'brand'     => $product->brand?->name,
+            'brand_id'  => $product->brand_id,
             'category'  => $product->category?->name,
+            'category_id' => $product->category_id,
             'image_url' => $product->image_path ? asset('storage/' . $product->image_path) : null,
+            'description' => $product->description,
+            'variations'  => $product->variations,
+            'supplier_id' => $product->supplier_id,
         ];
 
-        if ($detailed) {
-            $base['description'] = $product->description;
-            $base['variations']  = $product->variations;
-            $base['branches']    = $product->branches->map(fn ($b) => [
-                'id'                => $b->id,
-                'name'              => $b->branch_name,
-                'quantity'          => $b->pivot->quantity,
-                'physical_location' => $b->pivot->physical_location,
-                'reorder_level'     => $b->pivot->reorder_level,
-            ]);
+        // Branch specific data (Stock Level, Reorder Level, etc.)
+        if (!$isAdmin && $branchId) {
+            $branchData = $product->branches->where('id', $branchId)->first();
+            $base['quantity'] = $branchData ? $branchData->pivot->quantity : 0;
+            $base['physical_location'] = $branchData ? $branchData->pivot->physical_location : null;
+            $base['reorder_level'] = $branchData ? $branchData->pivot->reorder_level : 0;
+            
+            if ($branchData) {
+                $base['description'] = $branchData->pivot->description ?? $base['description'];
+                $base['variations'] = $branchData->pivot->variations ?? $base['variations'];
+            }
+        } else {
+            // For admin or if no branch, show aggregate and detailed branch info if detailed requested
+            $base['quantity'] = $product->branches->sum('pivot.quantity');
+            $base['reorder_level'] = $product->branches->sum('pivot.reorder_level');
+            
+            if ($detailed) {
+                $base['branches'] = $product->branches->map(fn ($b) => [
+                    'id'                => $b->id,
+                    'name'              => $b->branch_name,
+                    'quantity'          => $b->pivot->quantity,
+                    'physical_location' => $b->pivot->physical_location,
+                    'reorder_level'     => $b->pivot->reorder_level,
+                ]);
+            }
         }
 
         return $base;

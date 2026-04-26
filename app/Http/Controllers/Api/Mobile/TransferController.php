@@ -42,6 +42,44 @@ class TransferController extends Controller
     }
 
     /**
+     * List outgoing transfers for the user's branch.
+     */
+    public function outgoing(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->branch_id) {
+            return response()->json(['message' => 'User has no branch assigned.'], 403);
+        }
+
+        $transfers = Transfer::with(['items.product', 'toBranch:id,branch_name', 'readiedBy:id,name'])
+            ->where('source_branch_id', $user->branch_id)
+            ->whereIn('status', ['readied', 'outgoing'])
+            ->latest()
+            ->get();
+
+        return response()->json(['data' => $transfers->map(fn($t) => $this->formatTransfer($t))]);
+    }
+
+    /**
+     * List incoming transfers for the user's branch.
+     */
+    public function incoming(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->branch_id) {
+            return response()->json(['message' => 'User has no branch assigned.'], 403);
+        }
+
+        $transfers = Transfer::with(['items.product', 'fromBranch:id,branch_name', 'readiedBy:id,name'])
+            ->where('destination_branch_id', $user->branch_id)
+            ->where('status', 'outgoing')
+            ->latest()
+            ->get();
+
+        return response()->json(['data' => $transfers->map(fn($t) => $this->formatTransfer($t))]);
+    }
+
+    /**
      * Show a single transfer with its items.
      */
     public function show(Request $request, int $id)
@@ -84,6 +122,78 @@ class TransferController extends Controller
         return response()->json([
             'message'  => 'Transfer confirmed successfully.',
             'transfer' => $this->formatTransfer($transfer->fresh()),
+        ]);
+    }
+
+    /**
+     * Initiate a transfer - deduct inventory.
+     */
+    public function initiate(Request $request, int $id)
+    {
+        $user = $request->user();
+        $transfer = Transfer::findOrFail($id);
+
+        if ($transfer->source_branch_id !== $user->branch_id && !$user->hasRole('System Administrator')) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        if ($transfer->status !== 'readied') {
+            return response()->json(['message' => 'Transfer cannot be initiated.'], 422);
+        }
+
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($transfer, $user) {
+                foreach ($transfer->items as $item) {
+                    $branchProduct = \Illuminate\Support\Facades\DB::table('branch_products')
+                        ->where('branch_id', $transfer->source_branch_id)
+                        ->where('product_id', $item->product_id)
+                        ->first();
+
+                    if (!$branchProduct || $branchProduct->quantity < $item->quantity) {
+                        throw new \Exception("Insufficient stock for product ID: {$item->product_id}");
+                    }
+
+                    \Illuminate\Support\Facades\DB::table('branch_products')
+                        ->where('id', $branchProduct->id)
+                        ->decrement('quantity', $item->quantity);
+                }
+
+                $transfer->update([
+                    'status' => 'outgoing',
+                    'approved_by' => $user->id,
+                ]);
+            });
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'message' => 'Transfer initiated successfully.',
+            'transfer' => $this->formatTransfer($transfer->fresh())
+        ]);
+    }
+
+    /**
+     * Reject a readied transfer.
+     */
+    public function reject(Request $request, int $id)
+    {
+        $user = $request->user();
+        $transfer = Transfer::findOrFail($id);
+
+        if ($transfer->source_branch_id !== $user->branch_id && !$user->hasRole('System Administrator')) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        if ($transfer->status !== 'readied') {
+            return response()->json(['message' => 'Transfer cannot be rejected.'], 422);
+        }
+
+        $transfer->update(['status' => 'rejected']);
+
+        return response()->json([
+            'message' => 'Transfer rejected successfully.',
+            'transfer' => $this->formatTransfer($transfer->fresh())
         ]);
     }
 
