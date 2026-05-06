@@ -116,6 +116,15 @@ class HandleInertiaRequests extends Middleware
             }
         };
 
+        $brands = [];
+        try {
+            $brands = \App\Models\Brand::where('status', 'Active')
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug']);
+        } catch (\Throwable) {
+            $brands = [];
+        }
+
         return [
             ...parent::share($request),
             'reorderCount'      => $reorderCount,
@@ -132,6 +141,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen'       => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'categories'        => $categories,
+            'brands'            => $brands,
             'notification_sound'=> $notificationSound,
         ];
     }

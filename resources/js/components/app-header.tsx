@@ -59,6 +59,12 @@ interface Category {
     }[];
 }
 
+interface Brand {
+    id: number;
+    name: string;
+    slug: string;
+}
+
 // --- 1. Organized Data ---
 
 const rightNavItems: NavItem[] = [
@@ -140,8 +146,8 @@ ListItem.displayName = "ListItem"
 // --- 3. Main Component ---
 
 export function AppHeader() {
-    const page = usePage<SharedData & { categories?: Category[]; auth: { roles: string[] } }>();
-    const { auth, categories = [] } = page.props;
+    const page = usePage<SharedData & { categories?: Category[]; brands?: Brand[]; auth: { roles: string[] } }>();
+    const { auth, categories = [], brands = [] } = page.props;
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -252,11 +258,11 @@ export function AppHeader() {
                 </Link>
 
                 {/* --- Center: Desktop Navigation --- */}
-                <div className="hidden lg:flex lg:flex-1">
+                <div className="hidden lg:flex lg:flex-1 lg:justify-center">
                     <NavigationMenu>
                         <NavigationMenuList>
 
-                            {/* Home Link */}
+                            {/* Home Dropdown */}
                             <NavigationMenuItem>
                                 <NavigationMenuTrigger className="bg-ghost"><Link href="/">Home</Link></NavigationMenuTrigger>
                                 <NavigationMenuContent>
@@ -302,65 +308,54 @@ export function AppHeader() {
                                 </NavigationMenuContent>
                             </NavigationMenuItem>
 
-                            {/* Dynamically Render Top Categories as Separate Dropdowns */}
-                            {categories.map((category) => (
-                                <NavigationMenuItem key={category.id}>
-                                    <NavigationMenuTrigger className="bg-ghost">
-                                        <Link href={`/shop/${category.slug}`}>{category.name}</Link>
-                                    </NavigationMenuTrigger>
-                                    <NavigationMenuContent>
-                                        <div className="flex w-[500px] p-4 lg:w-[600px]">
-                                            {/* Left Col: Main Link & Info */}
-                                            <div className="w-1/3 border-r pr-4">
-                                                <ul className="grid gap-3">
-                                                    <ListItem
-                                                        href={`/shop/${category.slug}`}
-                                                        title={`View all ${category.name}`}
-                                                    >
-                                                        See all {category.products_count} products.
-                                                    </ListItem>
-                                                </ul>
-                                            </div>
-
-                                            {/* Right Col: Brands */}
-                                            <div className="w-2/3 pl-4">
-                                                <h4 className="mb-2 text-sm font-medium leading-none text-muted-foreground">Popular Brands</h4>
-                                                {category.brands && category.brands.length > 0 ? (
-                                                    <ul className="grid grid-cols-2 gap-2">
-                                                        {category.brands.map((brand) => (
-                                                            <li key={brand.id}>
-                                                                <Link
-                                                                    href={`/shop/${category.slug}?brand=${brand.slug}`}
-                                                                    className="block select-none rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                                                                >
-                                                                    {brand.name}
-                                                                </Link>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                ) : (
-                                                    <p className="text-sm text-muted-foreground">No specific brands available.</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </NavigationMenuContent>
-                                </NavigationMenuItem>
-                            ))}
-
-
-                            {/* Support/Contact Dropdown */}
+                            {/* Clearance Sale! */}
                             <NavigationMenuItem>
-                                <NavigationMenuTrigger className="bg-ghost">More</NavigationMenuTrigger>
+                                <Link href="#" className={navigationMenuTriggerStyle()}>
+                                    Clearance Sale!
+                                </Link>
+                            </NavigationMenuItem>
+
+                            {/* Products Dropdown */}
+                            <NavigationMenuItem>
+                                <NavigationMenuTrigger className="bg-ghost">
+                                    <Link href="/shop?per_page=50">Products</Link>
+                                </NavigationMenuTrigger>
                                 <NavigationMenuContent>
-                                    <ul className="grid w-[600px] gap-3 md:w-[600px] md:grid-cols-2 lg:w-[600px] p-4">
-                                        {contacts.map((component) => (
+                                    <ul className="grid w-[400px] gap-1 p-4 md:w-[600px] lg:w-[900px] lg:grid-cols-5 max-h-[80vh] overflow-y-auto">
+                                        {categories.map((category) => (
                                             <ListItem
-                                                key={component.title}
-                                                title={component.title}
-                                                href={component.href}
-                                            >
-                                                {component.description}
-                                            </ListItem>
+                                                key={category.id}
+                                                title={category.name}
+                                                href={`/shop/${category.slug}`}
+                                            />
+                                        ))}
+                                    </ul>
+                                </NavigationMenuContent>
+                            </NavigationMenuItem>
+
+                            {/* New Products Link */}
+                            <NavigationMenuItem>
+                                <Link href="/shop?new=true" className={navigationMenuTriggerStyle()}>
+                                    New Products
+                                </Link>
+                            </NavigationMenuItem>
+
+                            {/* Brands Dropdown */}
+                            <NavigationMenuItem>
+                                <NavigationMenuTrigger 
+                                    className="bg-ghost"
+                                    onClick={(e) => e.preventDefault()}
+                                >
+                                    Brands
+                                </NavigationMenuTrigger>
+                                <NavigationMenuContent>
+                                    <ul className="grid w-[400px] gap-1 p-4 md:w-[600px] lg:w-[900px] lg:grid-cols-5 max-h-[80vh] overflow-y-auto">
+                                        {brands.map((brand) => (
+                                            <ListItem
+                                                key={brand.id}
+                                                title={brand.name}
+                                                href={`/shop?brand=${brand.slug}`}
+                                            />
                                         ))}
                                     </ul>
                                 </NavigationMenuContent>

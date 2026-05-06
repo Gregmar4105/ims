@@ -11,10 +11,16 @@ class ShopController extends Controller
 {
     public function index(Request $request)
     {
+        $perPage = $request->input('per_page', 12);
+        
         $query = Product::whereHas('branches', function ($query) {
                 // Same filter as welcome page to keep consistent with "Storefront" logic
                 $query->where('branch_name', 'LM2 Bicycle Trading');
             });
+
+        if ($request->boolean('new')) {
+            $query->where('created_at', '>=', now()->subDays(7));
+        }
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -35,13 +41,20 @@ class ShopController extends Controller
 
         $products = $query->with(['brand'])
             ->latest()
-            ->paginate(12)
+            ->paginate($perPage)
             ->withQueryString();
+
+        $categoryName = "All Products";
+        if ($request->filled('search')) {
+            $categoryName = "Search Results for \"{$request->input('search')}\"";
+        } elseif ($request->boolean('new')) {
+            $categoryName = "New Arrivals";
+        }
 
         return Inertia::render('Shop/Category', [
             'category' => [
                 'id' => 0,
-                'name' => $request->filled('search') ? "Search Results for \"{$request->input('search')}\"" : "All Products",
+                'name' => $categoryName,
                 'slug' => 'search-results',
                 'description' => 'Browse our collection.'
             ],
@@ -77,6 +90,8 @@ class ShopController extends Controller
 
     public function show($slug, Request $request)
     {
+        $perPage = $request->input('per_page', 12);
+        
         $category = Category::where('slug', $slug)
             ->where('status', 'Active')
             ->firstOrFail();
@@ -95,7 +110,7 @@ class ShopController extends Controller
 
         $products = $query->with(['brand'])
             ->latest()
-            ->paginate(12)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('Shop/Category', [
