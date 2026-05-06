@@ -59,7 +59,7 @@ function NavigationMenuItem({
 }
 
 const navigationMenuTriggerStyle = cva(
-  "group inline-flex h-16 w-max items-center justify-center bg-background px-4 py-2 text-sm font-medium hover:border-black border-b-2"
+  "group inline-flex h-16 w-max items-center justify-center bg-transparent px-4 py-2 text-sm font-medium hover:border-black border-b-2"
 )
 
 function NavigationMenuTrigger({

@@ -264,7 +264,7 @@ export function AppHeader() {
 
                             {/* Home Dropdown */}
                             <NavigationMenuItem>
-                                <NavigationMenuTrigger className="bg-ghost"><Link href="/">Home</Link></NavigationMenuTrigger>
+                                <NavigationMenuTrigger><Link href="/">Home</Link></NavigationMenuTrigger>
                                 <NavigationMenuContent>
                                     <ul className="grid gap-2 md:w-[500px] lg:w-[600px] lg:grid-cols-[.75fr_1fr]">
                                         <li className="row-span-3">
@@ -317,7 +317,7 @@ export function AppHeader() {
 
                             {/* Products Dropdown */}
                             <NavigationMenuItem>
-                                <NavigationMenuTrigger className="bg-ghost">
+                                <NavigationMenuTrigger>
                                     <Link href="/shop?per_page=50">Products</Link>
                                 </NavigationMenuTrigger>
                                 <NavigationMenuContent>
@@ -343,7 +343,6 @@ export function AppHeader() {
                             {/* Brands Dropdown */}
                             <NavigationMenuItem>
                                 <NavigationMenuTrigger 
-                                    className="bg-ghost"
                                     onClick={(e) => e.preventDefault()}
                                 >
                                     Brands
