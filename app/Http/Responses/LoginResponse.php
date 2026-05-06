@@ -17,7 +17,7 @@ class LoginResponse implements LoginResponseContract
 
         // 2. Check Roles (using Spatie's syntax)
         if ($user->hasRole('System Administrator')) {
-            return redirect()->intended('/system-dashboard');
+            return redirect()->intended('/branch-dashboard');
         }
 
         if ($user->hasRole('Branch Administrator')) {
