@@ -5,6 +5,7 @@ export interface Auth {
     user: User;
     roles: string[];
     permissions: string[];
+    branches?: { id: number; branch_name: string }[];
 }
 
 export interface BreadcrumbItem {
@@ -35,6 +36,10 @@ export interface SharedData {
         error?: string;
     };
     reorderCount?: number;
+    current_branch?: {
+        id: number;
+        branch_name: string;
+    } | null;
     [key: string]: unknown;
 }
 
@@ -58,3 +63,4 @@ export interface User {
     roles?: string[];
     [key: string]: unknown; // This allows for additional properties...
 }
+

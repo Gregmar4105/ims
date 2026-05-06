@@ -125,6 +125,15 @@ class HandleInertiaRequests extends Middleware
             $brands = [];
         }
 
+        // Determine active branch for administrators
+        $currentBranch = null;
+        if ($user) {
+            $activeBranchId = $request->input('branch_id', session('active_branch_id', $user->branch_id));
+            if ($activeBranchId) {
+                $currentBranch = \App\Models\Branch::find($activeBranchId);
+            }
+        }
+
         return [
             ...parent::share($request),
             'reorderCount'      => $reorderCount,
@@ -138,11 +147,19 @@ class HandleInertiaRequests extends Middleware
                 'roles'       => $request->user()
                     ? $request->user()->getRoleNames()
                     : [],
+                'branches'    => $request->user()?->hasRole('System Administrator')
+                    ? \App\Models\Branch::orderBy('branch_name')->get(['id', 'branch_name'])
+                    : [],
             ],
             'sidebarOpen'       => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'categories'        => $categories,
             'brands'            => $brands,
             'notification_sound'=> $notificationSound,
+            'current_branch'    => $currentBranch ? [
+                'id' => $currentBranch->id,
+                'branch_name' => $currentBranch->branch_name,
+            ] : null,
         ];
+
     }
 }

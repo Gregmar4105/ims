@@ -15,7 +15,18 @@ class BranchDashboardController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        
+        // Handle branch override for System Administrators
         $branchId = $user->branch_id;
+        if ($user->hasRole('System Administrator')) {
+            if ($request->has('branch_id')) {
+                $branchId = $request->input('branch_id');
+                session(['active_branch_id' => $branchId]);
+            } else {
+                $branchId = session('active_branch_id', $user->branch_id);
+            }
+        }
+
         $date = $request->input('date') ? Carbon::parse($request->input('date')) : Carbon::today();
 
         // Base Query Helpers
@@ -85,8 +96,22 @@ class BranchDashboardController extends Controller
                 return ['name' => $categoryName, 'value' => (float)$items->sum(fn($item) => $item->quantity * $item->price)];
             })
             ->values()
+            ->all();
+
+        // Product Distribution
+        $productDistribution = SaleItem::with(['product'])
+            ->whereHas('sale', function ($query) use ($branchId) {
+                $query->where('branch_id', $branchId)
+                      ->where('status', 'completed')
+                      ->whereYear('created_at', Carbon::now()->year);
+            })
+            ->get()
+            ->groupBy(fn($item) => $item->product?->name ?? 'Unknown Product')
+            ->map(function ($items, $productName) {
+                return ['name' => $productName, 'value' => (float)$items->sum(fn($item) => $item->quantity * $item->price)];
+            })
+            ->values()
             ->sortByDesc('value')
-            ->take(5)
             ->values()
             ->all();
 
@@ -133,7 +158,11 @@ class BranchDashboardController extends Controller
             ];
         })->sortByDesc('monthlyContribution')->values();
 
+        $branch = \App\Models\Branch::find($branchId);
+        $branchLocation = $branch ? $branch->location : 'Manila';
+
         return Inertia::render('BranchDashboard', [
+            'branchLocation' => $branchLocation,
             'stats' => [
                 'daily' => (float)$dailySales,
                 'weekly' => (float)$weeklySales,
@@ -142,6 +171,7 @@ class BranchDashboardController extends Controller
             ],
             'chartData' => $salesTrend,
             'pieData' => $salesDistribution,
+            'productData' => $productDistribution,
             'leaderboard' => $leaderboard,
             'filters' => [
                 'start_date' => $startDate ? $startDate->format('Y-m-d') : null,

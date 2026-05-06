@@ -4,16 +4,16 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     Activity,
     ArrowUpRight,
-    Calendar,
+    CloudSun,
     CreditCard,
     DollarSign,
     Users,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Area,
     AreaChart,
@@ -27,6 +27,7 @@ import {
     Tooltip,
     XAxis,
     YAxis,
+    Label,
 } from 'recharts';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -37,6 +38,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface DashboardProps {
+    branchLocation: string;
     stats: {
         daily: number;
         weekly: number;
@@ -45,6 +47,7 @@ interface DashboardProps {
     };
     chartData: { name: string; sales: number }[];
     pieData: { name: string; value: number }[];
+    productData: { name: string; value: number }[];
     leaderboard: {
         id: number;
         name: string;
@@ -64,7 +67,12 @@ interface DashboardProps {
     };
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+// Dynamic color generation for many categories
+const getChartColor = (index: number, total: number) => {
+    // We use a golden angle approach to spread colors evenly
+    const hue = (index * 137.5) % 360;
+    return `hsl(${hue}, 65%, 55%)`;
+};
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-PH', {
@@ -74,32 +82,173 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
-export default function BranchDashboard({ stats, chartData, pieData, leaderboard, filters }: DashboardProps) {
-    const [startDate, setStartDate] = useState<string>(filters.start_date || '');
-    const [endDate, setEndDate] = useState<string>(filters.end_date || '');
+const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales" }: { title: string; subtitle: string; data: { name: string; value: number }[]; totalLabel?: string }) => {
+    return (
+        <Card className="flex flex-col">
+            <CardHeader className="pb-0">
+                <CardTitle>{title}</CardTitle>
+                <p className="text-sm text-muted-foreground">{subtitle}</p>
+            </CardHeader>
+            <CardContent className="flex-1 pb-0">
+                <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                        <Tooltip 
+                            formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                            contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
+                        />
+                        <Pie
+                            data={data}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={70}
+                            paddingAngle={5}
+                            dataKey="value"
+                        >
+                            {data.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={getChartColor(index, data.length)} />
+                            ))}
+                            <Label
+                                content={({ viewBox }) => {
+                                    if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                                        const total = data.reduce((acc, curr) => acc + curr.value, 0);
+                                        return (
+                                            <text
+                                                x={viewBox.cx}
+                                                y={viewBox.cy}
+                                                textAnchor="middle"
+                                                dominantBaseline="middle"
+                                            >
+                                                <tspan
+                                                    x={viewBox.cx}
+                                                    y={(viewBox.cy || 0) - 5}
+                                                    className="fill-foreground text-xl font-bold"
+                                                >
+                                                    {total > 1000000 ? `${(total/1000000).toFixed(1)}M` : (total > 1000 ? `${(total/1000).toFixed(0)}K` : total.toFixed(0))}
+                                                </tspan>
+                                                <tspan
+                                                    x={viewBox.cx}
+                                                    y={(viewBox.cy || 0) + 15}
+                                                    className="fill-muted-foreground text-[10px] font-medium"
+                                                >
+                                                    {totalLabel}
+                                                </tspan>
+                                            </text>
+                                        )
+                                    }
+                                }}
+                            />
+                        </Pie>
+                    </PieChart>
+                </ResponsiveContainer>
+            </CardContent>
+            <div className="max-h-[100px] overflow-y-auto scrollbar-thin px-6 pb-6 mt-2">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
+                    {data.map((entry, index) => {
+                        const total = data.reduce((acc, curr) => acc + curr.value, 0);
+                        const percentage = total > 0 ? ((entry.value / total) * 100).toFixed(0) : 0;
+                        return (
+                            <div key={`legend-${index}`} className="flex items-center justify-between gap-2 border-b border-muted/30 pb-1">
+                                <div className="flex items-center gap-2 truncate">
+                                    <div 
+                                        className="h-2 w-2 shrink-0 rounded-full" 
+                                        style={{ backgroundColor: getChartColor(index, data.length) }}
+                                    />
+                                    <span className="truncate text-muted-foreground" title={entry.name}>
+                                        {entry.name}
+                                    </span>
+                                </div>
+                                <span className="font-medium text-foreground shrink-0">{percentage}%</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </Card>
+    );
+};
 
-    const handleFilterChange = (start: string, end: string) => {
-        setStartDate(start);
-        setEndDate(end);
+export default function BranchDashboard({ branchLocation, stats, chartData, pieData, productData, leaderboard, filters }: DashboardProps) {
+    const { auth } = usePage().props as any;
+    
+    const [greeting] = useState(() => {
+        const hour = new Date().getHours();
+        const morning = ['Good morning', 'Rise and shine', 'Top of the morning', 'Morning'];
+        const afternoon = ['Good afternoon', 'Hope you are having a great afternoon', 'Afternoon'];
+        const evening = ['Good evening', 'Hope you had a productive day', 'Evening'];
+        
+        let options = morning;
+        if (hour >= 12 && hour < 18) options = afternoon;
+        else if (hour >= 18) options = evening;
+        
+        return options[Math.floor(Math.random() * options.length)];
+    });
 
-        // Trigger fetch if both dates are present OR if one is cleared
-        if ((start && end) || (!start && !end)) {
-            router.get(
-                '/branch-dashboard',
-                { start_date: start, end_date: end },
-                {
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                }
-            );
+    const firstName = auth?.user?.name?.split(' ')[0] || 'User';
+    
+    const [weather, setWeather] = useState<string>('Fetching weather forecast...');
+
+    useEffect(() => {
+        if (!branchLocation) {
+            setWeather('Weather unavailable');
+            return;
         }
-    };
+        
+        const fetchWeather = async () => {
+            try {
+                // Extract city (typically the second to last comma-separated segment)
+                let searchLocation = branchLocation;
+                if (branchLocation.includes(',')) {
+                    const parts = branchLocation.split(',').map(p => p.trim());
+                    if (parts.length >= 2) {
+                        searchLocation = parts[parts.length - 2];
+                    }
+                }
+
+                const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchLocation)}&count=1`);
+                const geoData = await geoRes.json();
+                
+                if (geoData.results && geoData.results.length > 0) {
+                    const { latitude, longitude, name } = geoData.results[0];
+                    const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+                    const weatherData = await weatherRes.json();
+                    
+                    if (weatherData.current_weather) {
+                        const temp = weatherData.current_weather.temperature;
+                        setWeather(`${temp}°C in ${name}`);
+                    } else {
+                        setWeather(`Weather unavailable for ${name}`);
+                    }
+                } else {
+                    setWeather(`Weather unavailable for ${searchLocation}`);
+                }
+            } catch (error) {
+                console.error('Weather fetch error:', error);
+                setWeather('Weather unavailable');
+            }
+        };
+        
+        // Fetch immediately on mount or branch change
+        fetchWeather();
+        
+        // Update every 30 minutes (1800000 ms)
+        const intervalId = setInterval(fetchWeather, 30 * 60 * 1000);
+        
+        return () => clearInterval(intervalId);
+    }, [branchLocation]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Branch Dashboard" />
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4 md:p-6">
+
+                <div className="mb-4">
+                    <h1 className="text-3xl font-bold tracking-tight">{greeting}, {firstName}!</h1>
+                    <p className="text-muted-foreground mt-1 flex items-center gap-2">
+                        <CloudSun className="w-4 h-4" />
+                        {weather}
+                    </p>
+                </div>
 
                 {/* Stats Grid */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -145,122 +294,72 @@ export default function BranchDashboard({ stats, chartData, pieData, leaderboard
                     </Card>
                 </div>
 
-                {/* Graphs & Manual Tracking Layout */}
+                {/* Graphs Layout */}
                 <div className="grid gap-4 lg:grid-cols-3">
                     {/* Left: Annual Trend (Broad) */}
                     <Card className="lg:col-span-2 flex flex-col">
                         <CardHeader>
-                            <CardTitle>Sales Trend (Last 7 Days)</CardTitle>
+                            <CardTitle>Daily Sales Trend</CardTitle>
+                            <p className="text-sm text-muted-foreground">Revenue generated per day in the selected period</p>
                         </CardHeader>
                         <CardContent className="pl-2 flex-1 min-h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" vertical={false} />
+                                <LineChart data={chartData} margin={{ top: 20, right: 30, left: 10, bottom: 10 }}>
+                                    <CartesianGrid 
+                                        strokeDasharray="4 4" 
+                                        vertical={false} 
+                                        stroke="#d1d5db"
+                                    />
                                     <XAxis
                                         dataKey="name"
-                                        className="text-muted-foreground text-xs"
+                                        className="text-muted-foreground text-[11px]"
                                         tickLine={false}
                                         axisLine={false}
-                                        tickMargin={10}
+                                        tickMargin={15}
                                     />
                                     <YAxis
-                                        className="text-muted-foreground text-xs"
+                                        className="text-muted-foreground text-[11px]"
                                         tickLine={false}
                                         axisLine={false}
                                         tickMargin={10}
-                                        width={80}
-                                        tickFormatter={(value) => formatCurrency(value)}
+                                        width={60}
+                                        tickFormatter={(value) => value.toLocaleString()}
                                     />
                                     <Tooltip
-                                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
-                                        itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                        cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '4 4' }}
-                                        formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                                        contentStyle={{ 
+                                            backgroundColor: 'hsl(var(--card))', 
+                                            borderRadius: '8px', 
+                                            border: '1px solid hsl(var(--border))',
+                                            fontSize: '12px'
+                                        }}
+                                        formatter={(value: number) => [<span style={{ color: '#3b82f6' }}>{formatCurrency(value)}</span>, 'Revenue']}
                                     />
-                                    <Area
+                                    <Line
                                         type="monotone"
                                         dataKey="sales"
-                                        stroke="hsl(var(--primary))"
+                                        stroke="#3b82f6"
                                         strokeWidth={2}
-                                        fillOpacity={1}
-                                        fill="url(#colorSales)"
+                                        dot={false}
+                                        activeDot={{ r: 4, strokeWidth: 0, fill: '#3b82f6' }}
                                     />
-                                </AreaChart>
+                                </LineChart>
                             </ResponsiveContainer>
                         </CardContent>
                     </Card>
 
-                    {/* Right Column: Pie + Manual Tracking */}
+                    {/* Right Column: Distribution Charts */}
                     <div className="flex flex-col gap-4">
-                        <Card className="flex-1">
-                            <CardHeader>
-                                <CardTitle>Sales Distribution (YTD Revenue)</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ResponsiveContainer width="100%" height={250}>
-                                    <PieChart>
-                                        <Pie
-                                            data={pieData}
-                                            cx="50%"
-                                            cy="50%"
-                                            labelLine={false}
-                                            label={({ name, percent }: { name?: string; percent?: number }) => `${name || ''} ${((percent || 0) * 100).toFixed(0)}%`}
-                                            outerRadius={80}
-                                            fill="#8884d8"
-                                            dataKey="value"
-                                        >
-                                            {pieData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip formatter={(value: number) => [formatCurrency(value), 'Revenue']} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
+                        <DistributionCard 
+                            title="Sales by Category" 
+                            subtitle="Year to Date Revenue per Category" 
+                            data={pieData} 
+                        />
 
-                        <Card className="flex-1">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Calendar className="h-5 w-5" /> Manual Tracking
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div className="space-y-1">
-                                        <span className="text-xs text-muted-foreground">From</span>
-                                        <Input
-                                            type="date"
-                                            value={startDate}
-                                            onChange={(e) => handleFilterChange(e.target.value, endDate)}
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <span className="text-xs text-muted-foreground">To</span>
-                                        <Input
-                                            type="date"
-                                            value={endDate}
-                                            onChange={(e) => handleFilterChange(startDate, e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="rounded-lg border p-4 bg-muted/50">
-                                    <p className="text-sm font-medium">Revenue in Range</p>
-                                    <div className="mt-2 text-3xl font-bold text-primary">
-                                        {formatCurrency(filters.selectedDateSales ?? 0)}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        {startDate && endDate ? `${startDate} to ${endDate}` : 'Select a date range'}
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <DistributionCard 
+                            title="Sales by Product" 
+                            subtitle="Year to Date Revenue per Product" 
+                            data={productData} 
+                        />
                     </div>
                 </div>
 

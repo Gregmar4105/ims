@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "https://lm2bicycletrading.larable.dev",
     "devUrl": "https://lm2bicycletrading.larable.dev",
-    "beforeDevCommand": "",
-    "beforeBuildCommand": ""
+    "beforeDevCommand": "cmd /c echo skipping",
+    "beforeBuildCommand": "cmd /c echo skipping"
   },
   "app": {
     "windows": [
