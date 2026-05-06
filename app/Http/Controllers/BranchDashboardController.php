@@ -108,7 +108,7 @@ class BranchDashboardController extends Controller
             ->get()
             ->groupBy(fn($item) => $item->product?->name ?? 'Unknown Product')
             ->map(function ($items, $productName) {
-                return ['name' => $productName, 'value' => (float)$items->sum(fn($item) => $item->quantity * $item->price)];
+                return ['name' => $productName, 'value' => (float)$items->sum('quantity')];
             })
             ->values()
             ->sortByDesc('value')

@@ -50,7 +50,7 @@ const Sales = {
     icon: ShoppingBag,
     isActive: true,
     items: [
-        { title: "Sales List", url: "/sales-list", icon: ListChecks },
+        { title: "Sales History", url: "/sales-list", icon: ListChecks },
         { title: "New Sales", url: "/new-sales", icon: BellRing },
         { title: "Return Items", url: "/return-items", icon: RotateCcw },
     ],
@@ -62,7 +62,7 @@ const Transfer = {
     icon: ArrowLeftRight,
     isActive: true,
     items: [
-        { title: "Transfer List", url: "/transfer-list", icon: ListChecks },
+        { title: "Transfer History", url: "/transfer-list", icon: ListChecks },
         { title: "Outgoing", url: "/outgoing", icon: ArrowRightFromLine },
         { title: "Incoming", url: "/incoming", icon: ArrowLeftToLine },
         { title: "Import Transfer", url: "/import-transfer", icon: FileImage },

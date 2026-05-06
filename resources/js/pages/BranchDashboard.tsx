@@ -82,7 +82,7 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
-const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales" }: { title: string; subtitle: string; data: { name: string; value: number }[]; totalLabel?: string }) => {
+const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueType = 'currency' }: { title: string; subtitle: string; data: { name: string; value: number }[]; totalLabel?: string; valueType?: 'currency' | 'number' }) => {
     return (
         <Card className="flex flex-col">
             <CardHeader className="pb-0">
@@ -93,7 +93,7 @@ const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales" }: { tit
                 <ResponsiveContainer width="100%" height={180}>
                     <PieChart>
                         <Tooltip 
-                            formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                            formatter={(value: number) => [valueType === 'currency' ? formatCurrency(value) : value.toLocaleString(), valueType === 'currency' ? 'Revenue' : 'Quantity']}
                             contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
                         />
                         <Pie
@@ -357,8 +357,10 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
 
                         <DistributionCard 
                             title="Sales by Product" 
-                            subtitle="Year to Date Revenue per Product" 
+                            subtitle="Year to Date Total Quantity Sold per Product" 
                             data={productData} 
+                            totalLabel="Qty Sold"
+                            valueType="number"
                         />
                     </div>
                 </div>
