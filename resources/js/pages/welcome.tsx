@@ -131,9 +131,6 @@ export default function Welcome({
                                                     </p>
                                                 </div>
 
-                                                <p className="line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
-                                                    {product.description || 'No description available.'}
-                                                </p>
 
                                                 {/* Variations */}
                                                 {product.variations && Array.isArray(product.variations) && product.variations.length > 0 && (

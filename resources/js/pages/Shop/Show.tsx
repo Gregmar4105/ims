@@ -108,12 +108,6 @@ export default function Show({ product }: { product: Product }) {
                                 </p>
                             </div>
 
-                            <Separator />
-
-                            <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300">
-                                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Description</h3>
-                                <p className="whitespace-pre-wrap">{product.description || "No description available."}</p>
-                            </div>
 
                             {product.variations && Array.isArray(product.variations) && product.variations.length > 0 && (
                                 <>
