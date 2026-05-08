@@ -93,10 +93,10 @@ class ProductController extends Controller
         $isSystemAdmin = $user->hasRole('System Administrator');
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:products,name',
             'code' => 'nullable|string|max:255',
             'code_2' => 'nullable|string|max:255',
-            'sku' => 'nullable|string|max:255',
+            'sku' => 'nullable|string|max:255|unique:products,sku',
             'brand_id' => 'required|exists:brands,id',
             'category_id' => 'required|exists:categories,id',
             'quantity' => 'required|integer|min:0',
@@ -165,12 +165,24 @@ class ProductController extends Controller
         $isSystemAdmin = $user->hasRole('System Administrator');
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => ['required', 'string', 'max:255', Rule::unique('products', 'name')->ignore($product->id)],
             'code' => 'nullable|string|max:255',
             'code_2' => 'nullable|string|max:255',
-            'sku' => 'nullable|string|max:255',
-            'barcode' => 'nullable|string|digits:13|unique:products,barcode,' . $product->id,
-            'qr_code' => 'nullable|string|digits:13|unique:products,qr_code,' . $product->id,
+            'sku' => ['nullable', 'string', 'max:255', Rule::unique('products', 'sku')->ignore($product->id)],
+            'barcode' => [
+                'nullable',
+                'string',
+                'digits:13',
+                Rule::unique('products', 'barcode')->ignore($product->id),
+                Rule::unique('products', 'qr_code')->ignore($product->id),
+            ],
+            'qr_code' => [
+                'nullable',
+                'string',
+                'digits:13',
+                Rule::unique('products', 'barcode')->ignore($product->id),
+                Rule::unique('products', 'qr_code')->ignore($product->id),
+            ],
             'brand_id' => 'required|exists:brands,id',
             'category_id' => 'required|exists:categories,id',
             'quantity' => 'required|integer|min:0',

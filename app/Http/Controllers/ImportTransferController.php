@@ -146,7 +146,7 @@ class ImportTransferController extends Controller
     {
         $request->validate([
             'items' => 'required|array',
-            'items.*.item_name' => 'required|string|max:255',
+            'items.*.item_name' => 'required|string|max:255|unique:products,name',
             'items.*.category_id' => 'required|exists:categories,id',
             'items.*.brand_id' => 'required|exists:brands,id',
             'items.*.supplier_id' => 'nullable|exists:suppliers,id',
@@ -154,7 +154,7 @@ class ImportTransferController extends Controller
             'items.*.quantity' => 'required|integer|min:0',
             'items.*.code' => 'nullable|string|max:255',
             'items.*.code_2' => 'nullable|string|max:255',
-            'items.*.sku' => 'nullable|string|max:255',
+            'items.*.sku' => 'nullable|string|max:255|unique:products,sku',
             'items.*.physical_location' => 'nullable|string|max:255',
             'items.*.reorder_level' => 'nullable|integer|min:0',
         ]);

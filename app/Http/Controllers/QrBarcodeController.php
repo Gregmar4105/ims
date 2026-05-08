@@ -6,6 +6,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class QrBarcodeController extends Controller
 {
@@ -47,8 +48,20 @@ class QrBarcodeController extends Controller
         $request->validate([
             'product_id' => 'required_without:generate_all|exists:products,id',
             'generate_all' => 'boolean',
-            'barcode' => 'nullable|string|max:255|unique:products,barcode,' . $productId,
-            'qr_code' => 'nullable|string|max:255|unique:products,qr_code,' . $productId,
+            'barcode' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('products', 'barcode')->ignore($productId),
+                Rule::unique('products', 'qr_code')->ignore($productId),
+            ],
+            'qr_code' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('products', 'barcode')->ignore($productId),
+                Rule::unique('products', 'qr_code')->ignore($productId),
+            ],
         ]);
 
         $user = auth()->user();
