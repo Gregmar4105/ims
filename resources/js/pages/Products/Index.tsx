@@ -1010,20 +1010,22 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         )}
                                     </div>
                                 </div>
-                            );
-                        })}
-                    </div>
-                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
 
-                <div className="mt-8 flex justify-between items-center">
+            <div className="mt-8 flex justify-between items-center">
                     <p className="text-sm text-muted-foreground">
                         Showing <strong>{productList.length}</strong> of <strong>{products.total}</strong> results
                     </p>
                     <Pagination links={links} />
                 </div>
             </div>
+        </div>
 
-            <Dialog open={!!viewCodeProduct} onOpenChange={(open) => !open && setViewCodeProduct(null)}>
+        <Dialog open={!!viewCodeProduct} onOpenChange={(open) => !open && setViewCodeProduct(null)}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Product Codes: {viewCodeProduct?.name}</DialogTitle>
