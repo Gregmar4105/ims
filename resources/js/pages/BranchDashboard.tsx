@@ -176,6 +176,7 @@ const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueTy
 
 export default function BranchDashboard({ branchLocation, stats, chartData, pieData, productData, leaderboard, filters }: DashboardProps) {
     const { auth } = usePage().props as any;
+    const isSystemAdmin = auth.roles.includes('System Administrator');
     
     // --- Dynamic Stock Distribution State ---
     const [searchQuery, setSearchQuery] = useState('');
@@ -325,36 +326,40 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                             <p className="text-muted-foreground text-xs">Revenue today</p>
                         </CardContent>
                     </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Weekly Revenue</CardTitle>
-                            <Users className="text-muted-foreground h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.weekly)}</div>
-                            <p className="text-muted-foreground text-xs">Revenue this week</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-                            <CreditCard className="text-muted-foreground h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.monthly)}</div>
-                            <p className="text-muted-foreground text-xs">Revenue this month</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">YTD Revenue</CardTitle>
-                            <Activity className="text-muted-foreground h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.ytd)}</div>
-                            <p className="text-muted-foreground text-xs">Total revenue this year</p>
-                        </CardContent>
-                    </Card>
+                    {isSystemAdmin && (
+                        <>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Weekly Revenue</CardTitle>
+                                    <Users className="text-muted-foreground h-4 w-4" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{formatCurrency(stats.weekly)}</div>
+                                    <p className="text-muted-foreground text-xs">Revenue this week</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+                                    <CreditCard className="text-muted-foreground h-4 w-4" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{formatCurrency(stats.monthly)}</div>
+                                    <p className="text-muted-foreground text-xs">Revenue this month</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">YTD Revenue</CardTitle>
+                                    <Activity className="text-muted-foreground h-4 w-4" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{formatCurrency(stats.ytd)}</div>
+                                    <p className="text-muted-foreground text-xs">Total revenue this year</p>
+                                </CardContent>
+                            </Card>
+                        </>
+                    )}
                 </div>
 
                 {/* Graphs Layout */}
@@ -425,65 +430,67 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                             totalLabel={selectedProduct ? "Total Stock" : "Qty Sold"}
                             valueType="number"
                             headerExtra={
-                                <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full">
-                                            <Search className="h-4 w-4" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-80 p-0" align="end">
-                                        <div className="p-3 border-b">
-                                            <div className="relative">
-                                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                <Input 
-                                                    placeholder="Search any product..." 
-                                                    className="pl-8 h-9"
-                                                    value={searchQuery}
-                                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                                    autoFocus
-                                                />
+                                isSystemAdmin && (
+                                    <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full">
+                                                <Search className="h-4 w-4" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80 p-0" align="end">
+                                            <div className="p-3 border-b">
+                                                <div className="relative">
+                                                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                    <Input 
+                                                        placeholder="Search any product..." 
+                                                        className="pl-8 h-9"
+                                                        value={searchQuery}
+                                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                                        autoFocus
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="max-h-60 overflow-y-auto p-1">
-                                            {isSearching ? (
-                                                <div className="flex items-center justify-center py-4">
-                                                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                                                </div>
-                                            ) : searchResults.length > 0 ? (
-                                                searchResults.map((product) => (
-                                                    <button
-                                                        key={product.id}
-                                                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors flex flex-col"
-                                                        onClick={() => fetchDistribution(product)}
+                                            <div className="max-h-60 overflow-y-auto p-1">
+                                                {isSearching ? (
+                                                    <div className="flex items-center justify-center py-4">
+                                                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                                    </div>
+                                                ) : searchResults.length > 0 ? (
+                                                    searchResults.map((product) => (
+                                                        <button
+                                                            key={product.id}
+                                                            className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors flex flex-col"
+                                                            onClick={() => fetchDistribution(product)}
+                                                        >
+                                                            <span className="font-medium">{product.name}</span>
+                                                            <span className="text-xs text-muted-foreground">{product.code}</span>
+                                                        </button>
+                                                    ))
+                                                ) : searchQuery.length >= 2 ? (
+                                                    <div className="py-4 text-center text-sm text-muted-foreground">
+                                                        No products found
+                                                    </div>
+                                                ) : (
+                                                    <div className="py-4 text-center text-sm text-muted-foreground">
+                                                        Type to search...
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {selectedProduct && (
+                                                <div className="p-2 border-top bg-muted/30">
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="sm" 
+                                                        className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
+                                                        onClick={resetToSales}
                                                     >
-                                                        <span className="font-medium">{product.name}</span>
-                                                        <span className="text-xs text-muted-foreground">{product.code}</span>
-                                                    </button>
-                                                ))
-                                            ) : searchQuery.length >= 2 ? (
-                                                <div className="py-4 text-center text-sm text-muted-foreground">
-                                                    No products found
-                                                </div>
-                                            ) : (
-                                                <div className="py-4 text-center text-sm text-muted-foreground">
-                                                    Type to search...
+                                                        Reset to Sales View
+                                                    </Button>
                                                 </div>
                                             )}
-                                        </div>
-                                        {selectedProduct && (
-                                            <div className="p-2 border-top bg-muted/30">
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="sm" 
-                                                    className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
-                                                    onClick={resetToSales}
-                                                >
-                                                    Reset to Sales View
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </PopoverContent>
-                                </Popover>
+                                        </PopoverContent>
+                                    </Popover>
+                                )
                             }
                         />
                     </div>
