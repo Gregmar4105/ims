@@ -101,6 +101,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+    const [statusToggleProduct, setStatusToggleProduct] = useState<Product | null>(null);
 
     const toggleSelection = (productId: number) => {
         setSelectedProductIds(prev => 
@@ -252,11 +254,20 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
 
     const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all' || statusFilter !== 'all';
 
-    const handleToggleStatus = (productId: number) => {
-        router.post(`/products/${productId}/toggle-status`, {}, {
+    const handleToggleStatus = (product: Product) => {
+        setStatusToggleProduct(product);
+        setIsStatusModalOpen(true);
+    };
+
+    const executeToggleStatus = () => {
+        if (!statusToggleProduct) return;
+        
+        router.post(`/products/${statusToggleProduct.id}/toggle-status`, {}, {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success('Product status updated.');
+                toast.success(`Product ${statusToggleProduct.status === 'active' ? 'deactivated' : 'activated'}.`);
+                setIsStatusModalOpen(false);
+                setStatusToggleProduct(null);
             },
             onError: () => {
                 toast.error('Failed to update status.');
@@ -778,7 +789,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                     <Button 
                                                         variant={product.status === 'active' ? 'destructive' : 'default'} 
                                                         size="sm" 
-                                                        onClick={(e) => { e.preventDefault(); handleToggleStatus(product.id); }}
+                                                        onClick={(e) => { e.preventDefault(); handleToggleStatus(product); }}
                                                         className={`w-32 shadow-lg ${product.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
                                                     >
                                                         {product.status === 'active' ? <PowerOff className="w-4 h-4 mr-2" /> : <Power className="w-4 h-4 mr-2" />}
@@ -1039,6 +1050,43 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         </Button>
                         <Button variant="destructive" onClick={handleBulkDelete} className="flex-1">
                             Delete Permanently
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isStatusModalOpen} onOpenChange={setIsStatusModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className={`flex items-center gap-2 font-bold ${statusToggleProduct?.status === 'active' ? 'text-red-600' : 'text-emerald-600'}`}>
+                            {statusToggleProduct?.status === 'active' ? <PowerOff className="h-5 w-5" /> : <Power className="h-5 w-5" />}
+                            Confirm {statusToggleProduct?.status === 'active' ? 'Deactivation' : 'Activation'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-6 flex flex-col items-center text-center">
+                        <div className={`h-16 w-16 rounded-full flex items-center justify-center mb-4 ${statusToggleProduct?.status === 'active' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30'}`}>
+                            {statusToggleProduct?.status === 'active' ? <PowerOff className={`h-8 w-8 text-red-600`} /> : <Power className={`h-8 w-8 text-emerald-600`} />}
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">Are you sure?</h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                            You are about to {statusToggleProduct?.status === 'active' ? 'deactivate' : 'activate'} <strong>{statusToggleProduct?.name}</strong>.
+                        </p>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                            {statusToggleProduct?.status === 'active' 
+                                ? "Deactivated products won't be visible in the public catalog but will remain in your inventory records." 
+                                : "Activated products will be visible in the catalog and available for transactions."}
+                        </p>
+                    </div>
+                    <DialogFooter className="flex gap-2 sm:justify-center">
+                        <Button variant="outline" onClick={() => setIsStatusModalOpen(false)} className="flex-1">
+                            Cancel
+                        </Button>
+                        <Button 
+                            variant={statusToggleProduct?.status === 'active' ? 'destructive' : 'default'} 
+                            onClick={executeToggleStatus} 
+                            className={`flex-1 ${statusToggleProduct?.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+                        >
+                            Confirm {statusToggleProduct?.status === 'active' ? 'Deactivate' : 'Activate'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

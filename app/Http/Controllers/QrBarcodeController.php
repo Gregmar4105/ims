@@ -47,8 +47,8 @@ class QrBarcodeController extends Controller
         $request->validate([
             'product_id' => 'required_without:generate_all|exists:products,id',
             'generate_all' => 'boolean',
-            'barcode' => 'nullable|string|digits:13|unique:products,barcode,' . $productId,
-            'qr_code' => 'nullable|string|digits:13|unique:products,qr_code,' . $productId,
+            'barcode' => 'nullable|string|max:255|unique:products,barcode,' . $productId,
+            'qr_code' => 'nullable|string|max:255|unique:products,qr_code,' . $productId,
         ]);
 
         $user = auth()->user();

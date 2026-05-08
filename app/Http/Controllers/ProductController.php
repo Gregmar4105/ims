@@ -100,6 +100,11 @@ class ProductController extends Controller
                   ->orWhere('code', 'like', "%{$search}%")
                   ->orWhere('code_2', 'like', "%{$search}%")
                   ->orWhere('sku', 'like', "%{$search}%")
+                  // Exact matches for codes are prioritized by being part of the same OR group
+                  ->orWhere('barcode', $search)
+                  ->orWhere('qr_code', $search)
+                  ->orWhere('code', $search)
+                  ->orWhere('sku', $search)
                   ->orWhereHas('brand', function ($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%");
                   })
@@ -528,8 +533,8 @@ class ProductController extends Controller
             'code' => 'nullable|string|max:255',
             'code_2' => 'nullable|string|max:255',
             'sku' => 'nullable|string|max:255',
-            'barcode' => 'nullable|string|digits:13|unique:products,barcode,' . $product->id,
-            'qr_code' => 'nullable|string|digits:13|unique:products,qr_code,' . $product->id,
+            'barcode' => 'nullable|string|max:255|unique:products,barcode,' . $product->id,
+            'qr_code' => 'nullable|string|max:255|unique:products,qr_code,' . $product->id,
 
             'brand_id' => 'required|exists:brands,id',
             'category_id' => 'required|exists:categories,id',
