@@ -1009,7 +1009,6 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             </Link>
                                         )}
                                     </div>
-                                    </div>
                                 </div>
                             );
                         })}
