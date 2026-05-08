@@ -115,8 +115,17 @@ class ProductController extends Controller
         }
 
         if ($filterBranch && $filterBranch !== 'all') {
-            $query->whereHas('branches', function ($q) use ($filterBranch) {
-                $q->where('branch_name', $filterBranch);
+            $query->where(function ($q) use ($filterBranch, $search, $isSystemAdmin) {
+                $q->whereHas('branches', function ($bq) use ($filterBranch) {
+                    $bq->where('branch_name', $filterBranch);
+                });
+
+                // If searching as System Admin, allow exact matches from other branches to surface
+                if ($isSystemAdmin && $search) {
+                    $q->orWhere('barcode', $search)
+                      ->orWhere('sku', $search)
+                      ->orWhere('code', $search);
+                }
             });
         }
 
