@@ -206,8 +206,23 @@ class ProductController extends Controller
         
         $filterBranch = $filterBrand = $filterCategory = $filterStock = $search = null;
         $filterStatus = $request->query('status');
+        $filterClearance = $request->query('clearance');
 
         $query = $this->buildFilteredProductQuery($request, $user, $isSystemAdmin, $filterBranch, $filterBrand, $filterCategory, $filterStock, $search);
+
+        // Apply clearance filter
+        if ($filterClearance === 'yes') {
+            $query->whereNotNull('clearance_price')
+                  ->where(function($q) {
+                      $q->whereNull('clearance_until')
+                        ->orWhere('clearance_until', '>', now());
+                  });
+        } elseif ($filterClearance === 'no') {
+            $query->where(function($q) {
+                $q->whereNull('clearance_price')
+                  ->orWhere('clearance_until', '<=', now());
+            });
+        }
 
         // Apply status filter
         if ($filterStatus && $filterStatus !== 'all') {
@@ -247,6 +262,7 @@ class ProductController extends Controller
                 'category' => $filterCategory,
                 'stock' => $filterStock,
                 'status' => $filterStatus,
+                'clearance' => $filterClearance,
             ],
             'options' => [
                 'branches' => $branches,
@@ -668,5 +684,24 @@ class ProductController extends Controller
         });
 
         return redirect()->route('products.index')->with('success', 'Selected products deleted successfully.');
+    }
+    public function bulkClearanceSale(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:products,id',
+            'clearance_price' => 'required|numeric|min:0',
+            'duration_days' => 'required|integer|min:1',
+        ]);
+
+        $ids = $validated['ids'];
+        $clearanceUntil = now()->addDays($validated['duration_days']);
+
+        Product::whereIn('id', $ids)->update([
+            'clearance_price' => $validated['clearance_price'],
+            'clearance_until' => $clearanceUntil,
+        ]);
+
+        return redirect()->route('products.index')->with('success', 'Selected products added to clearance sale.');
     }
 }

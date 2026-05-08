@@ -17,6 +17,7 @@ Route::get('/shop', [\App\Http\Controllers\ShopController::class, 'index'])->nam
 Route::get('/shop/suggestions', [\App\Http\Controllers\ShopController::class, 'suggestions'])->name('shop.suggestions'); // Live Search Suggestions
 Route::get('/shop/{slug}', [\App\Http\Controllers\ShopController::class, 'show'])->name('shop.category');
 Route::get('/product/{product}', [\App\Http\Controllers\WelcomeController::class, 'show'])->name('product.show');
+Route::get('/clearance-sale', [\App\Http\Controllers\WelcomeController::class, 'clearanceSale'])->name('clearance.index');
 Route::get('/locations', [\App\Http\Controllers\BranchController::class, 'locations'])->name('locations.index');
 
 Route::get('/suppliers', [\App\Http\Controllers\SupplierPortalController::class, 'index'])->name('suppliers.portal');
@@ -87,6 +88,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('qr-barcodes', [\App\Http\Controllers\QrBarcodeController::class, 'store'])->name('qr-barcodes.store');
         Route::get('products/print', [\App\Http\Controllers\ProductController::class, 'print'])->name('products.print');
         Route::post('products/bulk-destroy', [\App\Http\Controllers\ProductController::class, 'bulkDestroy'])->name('products.bulkDestroy');
+        Route::post('products/bulk-clearance', [\App\Http\Controllers\ProductController::class, 'bulkClearanceSale'])->name('products.bulkClearance');
         Route::post('products/{product}/toggle-status', [\App\Http\Controllers\ProductController::class, 'toggleStatus'])->name('products.toggleStatus');
         Route::resource('products', \App\Http\Controllers\ProductController::class);
         Route::resource('product-suppliers', \App\Http\Controllers\SupplierController::class)->parameters(['product-suppliers' => 'supplier']);

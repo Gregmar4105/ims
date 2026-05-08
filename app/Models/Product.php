@@ -24,6 +24,8 @@ class Product extends Model
         'qr_code',
         'created_by',
         'price',
+        'clearance_price',
+        'clearance_until',
         'supplier_id',
         'status',
         'active_until_zero_days',
@@ -33,6 +35,7 @@ class Product extends Model
     protected $casts = [
         'variations' => 'array',
         'out_of_stock_since' => 'datetime',
+        'clearance_until' => 'datetime',
     ];
 
     public function branches()

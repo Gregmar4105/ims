@@ -82,4 +82,20 @@ class WelcomeController extends Controller
             'product' => $product,
         ]);
     }
+
+    public function clearanceSale()
+    {
+        $products = Product::whereNotNull('clearance_price')
+            ->where(function($q) {
+                $q->whereNull('clearance_until')
+                  ->orWhere('clearance_until', '>', now());
+            })
+            ->with(['category', 'brand'])
+            ->latest()
+            ->get();
+
+        return Inertia::render('Shop/Clearance', [
+            'products' => $products,
+        ]);
+    }
 }

@@ -50,6 +50,8 @@ interface Product {
     barcode: string | null;
     qr_code: string | null;
     price: number | null;
+    clearance_price: number | null;
+    clearance_until: string | null;
     code: string | null;
     code_2: string | null;
     sku: string | null;
@@ -99,17 +101,65 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const lastScanRef = useRef<number>(0);
 
     const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [isClearanceMode, setIsClearanceMode] = useState(false);
     const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [isClearanceModalOpen, setIsClearanceModalOpen] = useState(false);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [statusToggleProduct, setStatusToggleProduct] = useState<Product | null>(null);
 
+    const [clearancePrice, setClearancePrice] = useState<string>("");
+    const [clearanceDuration, setClearanceDuration] = useState<string>("30");
+
     const toggleSelection = (productId: number) => {
-        setSelectedProductIds(prev => 
-            prev.includes(productId) 
-                ? prev.filter(id => id !== productId) 
-                : [...prev, productId]
-        );
+        if (isClearanceMode) {
+            // In clearance mode, clicking an item opens the modal for that single item (or multiple if we wanted, but user said "1 click and a modal Will open")
+            // Wait, user said "same function as Delete Items button" but also "1 click and a modal Will open".
+            // Delete Items selects multiple. 
+            // "it will have the same function as the Delete Items button however it will yellow border and the items cannot be clicked multiple times, 1 click and a modal Will open"
+            // This sounds like: 
+            // 1. Enter Clearance Mode.
+            // 2. Select items (yellow border).
+            // 3. One of the clicks (maybe the first one?) or a confirmation button opens the modal.
+            // Actually, "1 click and a modal Will open" might mean after you finish selection? 
+            // Or maybe it means when you click the "Clearance Sale" button itself if items are already selected?
+            // "1 click and a modal Will open and will prompt the user to input the new amount of the product and its duration"
+            // Let's assume selection works like Delete, and then a "Confirm Clearance" button opens the modal.
+            
+            setSelectedProductIds(prev => 
+                prev.includes(productId) 
+                    ? prev.filter(id => id !== productId) 
+                    : [...prev, productId]
+            );
+        } else {
+            setSelectedProductIds(prev => 
+                prev.includes(productId) 
+                    ? prev.filter(id => id !== productId) 
+                    : [...prev, productId]
+            );
+        }
+    };
+
+    const handleClearanceSubmit = () => {
+        if (selectedProductIds.length === 0) return;
+
+        router.post("/products/bulk-clearance", {
+            ids: selectedProductIds,
+            clearance_price: clearancePrice,
+            duration_days: clearanceDuration
+        }, {
+            onSuccess: () => {
+                setIsClearanceMode(false);
+                setSelectedProductIds([]);
+                setIsClearanceModalOpen(false);
+                setClearancePrice("");
+                toast.success('Products added to clearance sale.');
+            },
+            onError: (errors) => {
+                toast.error('Failed to add products to clearance sale.');
+                console.error(errors);
+            }
+        });
     };
 
     const handleBulkDelete = () => {
@@ -252,7 +302,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         router.get("/products");
     };
 
-    const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all' || statusFilter !== 'all';
+    const clearanceFilter = filters?.clearance || "all";
+
+    const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all' || statusFilter !== 'all' || clearanceFilter !== 'all';
 
     const handleToggleStatus = (product: Product) => {
         setStatusToggleProduct(product);
@@ -497,6 +549,29 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         <FileText className="mr-2 h-4 w-4" /> Print List
                                     </Button>
                                 </a>
+                                
+                                {!isEmployee && (
+                                    <Button 
+                                        variant={isClearanceMode ? (selectedProductIds.length > 0 ? "default" : "outline") : "outline"}
+                                        size="sm" 
+                                        className={`hidden md:flex ${isClearanceMode ? 'border-yellow-500 text-yellow-600 hover:bg-yellow-50' : ''}`}
+                                        onClick={() => {
+                                            if (!isClearanceMode) {
+                                                setIsClearanceMode(true);
+                                                setIsSelectionMode(false);
+                                                setSelectedProductIds([]);
+                                            } else if (selectedProductIds.length > 0) {
+                                                setIsClearanceModalOpen(true);
+                                            } else {
+                                                setIsClearanceMode(false);
+                                                setSelectedProductIds([]);
+                                            }
+                                        }}
+                                    >
+                                        <Tag className={`h-4 w-4 ${!isClearanceMode ? 'mr-2' : (selectedProductIds.length > 0 ? 'mr-2' : 'mr-2')}`} />
+                                        {!isClearanceMode ? "Clearance Sale" : (selectedProductIds.length > 0 ? "Set Clearance Price" : "Cancel Clearance")}
+                                    </Button>
+                                )}
 
                                 {!isEmployee && (
                                     <Button 
@@ -557,6 +632,27 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     }}
                                 >
                                     <Trash2 className="h-4 w-4" />
+                                </Button>
+                            )}
+                            {!isEmployee && (
+                                <Button 
+                                    variant={isClearanceMode ? (selectedProductIds.length > 0 ? "default" : "outline") : "outline"}
+                                    size="icon" 
+                                    className={`h-10 w-10 shrink-0 ${isClearanceMode ? 'border-yellow-500 text-yellow-600 bg-yellow-50' : ''}`}
+                                    onClick={() => {
+                                        if (!isClearanceMode) {
+                                            setIsClearanceMode(true);
+                                            setIsSelectionMode(false);
+                                            setSelectedProductIds([]);
+                                        } else if (selectedProductIds.length > 0) {
+                                            setIsClearanceModalOpen(true);
+                                        } else {
+                                            setIsClearanceMode(false);
+                                            setSelectedProductIds([]);
+                                        }
+                                    }}
+                                >
+                                    <Tag className="h-4 w-4" />
                                 </Button>
                             )}
                             <div className="relative flex-1">
@@ -663,18 +759,28 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     <SelectItem value="out_of_stock">Out of Stock</SelectItem>
                                 </SelectContent>
                             </Select>
+                                            <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); updateParams({ status: val }); }}>
+                                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
+                                                    <SelectValue placeholder="Status" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">All Status</SelectItem>
+                                                    <SelectItem value="active">Active</SelectItem>
+                                                    <SelectItem value="inactive">Inactive</SelectItem>
+                                                </SelectContent>
+                                            </Select>
 
-                            <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); updateParams({ status: val }); }}>
-                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
-                                    <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Status</SelectItem>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="inactive">Inactive</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                            <Select value={clearanceFilter} onValueChange={(val) => { updateParams({ clearance: val }); }}>
+                                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
+                                                    <SelectValue placeholder="Clearance" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">All Items</SelectItem>
+                                                    <SelectItem value="yes">On Clearance</SelectItem>
+                                                    <SelectItem value="no">Not on Clearance</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
 
                         {hasActiveFilters && (
                             <Button variant="ghost" size="sm" onClick={clearFilters} title="Clear Filters" className="h-9 px-2 text-red-500 hover:text-red-700 hover:bg-red-50">
@@ -695,7 +801,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         </p>
                         <Link href="/products/create">
                             <Button variant="link" className="mt-2">
-                                Add Product
+                            Add Product
                             </Button>
                         </Link>
                     </div>
@@ -706,20 +812,22 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             return (
                                 <div 
                                     key={product.id} 
-                                    onClick={() => isSelectionMode && toggleSelection(product.id)}
+                                    onClick={() => (isSelectionMode || isClearanceMode) && toggleSelection(product.id)}
                                     className={`group relative flex w-full flex-col overflow-hidden rounded-xl border transition-all duration-300 hover:shadow-lg dark:bg-transparent ${
-                                        isSelectionMode ? 'cursor-pointer' : ''
+                                        (isSelectionMode || isClearanceMode) ? 'cursor-pointer' : ''
                                     } ${
-                                        isSelected 
+                                        isSelectionMode && isSelected 
                                             ? 'border-red-500 ring-2 ring-red-500 bg-red-50/30 dark:bg-red-900/10 shadow-red-100 dark:shadow-none' 
-                                            : product.status === 'inactive'
-                                                ? 'border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50 opacity-60'
-                                                : 'border-black/10 bg-white dark:border-sidebar-border'
+                                            : isClearanceMode && isSelected
+                                                ? 'border-yellow-500 ring-2 ring-yellow-500 bg-yellow-50/30 dark:bg-yellow-900/10 shadow-yellow-100 dark:shadow-none'
+                                                : product.status === 'inactive'
+                                                    ? 'border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50 opacity-60'
+                                                    : 'border-black/10 bg-white dark:border-sidebar-border'
                                     }`}
                                 >
                                     {/* Image Section */}
                                     <div className="relative aspect-square overflow-hidden bg-neutral-50 dark:bg-white/5">
-                                        {isSelectionMode ? (
+                                        {(isSelectionMode || isClearanceMode) ? (
                                             <div className="block h-full w-full">
                                                 {product.image_path ? (
                                                     <img
@@ -733,9 +841,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                     </div>
                                                 )}
                                                 {isSelected && (
-                                                    <div className="absolute inset-0 bg-red-500/10 flex items-center justify-center backdrop-blur-[1px]">
-                                                        <div className="bg-red-600 text-white rounded-full p-3 shadow-xl animate-in zoom-in duration-200">
-                                                            <Trash2 className="h-6 w-6" />
+                                                    <div className={`absolute inset-0 ${isSelectionMode ? 'bg-red-500/10' : 'bg-yellow-500/10'} flex items-center justify-center backdrop-blur-[1px]`}>
+                                                        <div className={`${isSelectionMode ? 'bg-red-600' : 'bg-yellow-500'} text-white rounded-full p-3 shadow-xl animate-in zoom-in duration-200`}>
+                                                            {isSelectionMode ? <Trash2 className="h-6 w-6" /> : <Tag className="h-6 w-6 text-black" />}
                                                         </div>
                                                     </div>
                                                 )}
@@ -756,149 +864,119 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             </Link>
                                         )}
 
-                                    {/* Vibrant Quantity Badge */}
-                                    <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
-                                        <Badge className={`shadow-sm border-0 font-bold ${product.quantity === 0 ? 'bg-red-600 hover:bg-red-700 text-white' :
-                                            product.quantity <= 5 ? 'bg-amber-500 hover:bg-amber-600 text-white' :
-                                                'bg-emerald-500 hover:bg-emerald-600 text-white'
-                                            }`}>
-                                            Qty: {product.quantity}
-                                        </Badge>
-                                        {product.status === 'inactive' && (
-                                            <Badge className="shadow-sm border-0 font-bold bg-gray-500 hover:bg-gray-600 text-white text-[10px]">
-                                                Inactive
+                                        {/* Vibrant Quantity Badge */}
+                                        <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                                            <Badge className={`shadow-sm border-0 font-bold ${product.quantity === 0 ? 'bg-red-600 hover:bg-red-700 text-white' :
+                                                product.quantity <= 5 ? 'bg-amber-500 hover:bg-amber-600 text-white' :
+                                                    'bg-emerald-500 hover:bg-emerald-600 text-white'
+                                                }`}>
+                                                Qty: {product.quantity}
                                             </Badge>
-                                        )}
-                                    </div>
-
-                                    {/* Hover Overlay for Quick Actions */}
-                                    {!isSelectionMode && (
-                                        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none">
-                                            <div className="pointer-events-auto flex flex-col gap-2">
-                                                <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white">
-                                                    <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
-                                                </Button>
-                                                {!isEmployee && (
-                                                    <Link href={`/products/${product.id}/edit`}>
-                                                        <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
-                                                            Edit Product
-                                                        </Button>
-                                                    </Link>
-                                                )}
-                                                {!isEmployee && (
-                                                    <Button 
-                                                        variant={product.status === 'active' ? 'destructive' : 'default'} 
-                                                        size="sm" 
-                                                        onClick={(e) => { e.preventDefault(); handleToggleStatus(product); }}
-                                                        className={`w-32 shadow-lg ${product.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
-                                                    >
-                                                        {product.status === 'active' ? <PowerOff className="w-4 h-4 mr-2" /> : <Power className="w-4 h-4 mr-2" />}
-                                                        {product.status === 'active' ? 'Deactivate' : 'Activate'}
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Content Section */}
-                                <div className="flex flex-1 flex-col justify-between gap-3 p-3">
-                                    {/* Header & Price */}
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between items-start gap-2">
-                                            {isSelectionMode ? (
-                                                <div className="flex-1">
-                                                    <h3 className={`font-bold line-clamp-1 text-base transition-colors ${isSelected ? 'text-red-600' : 'text-gray-900 dark:text-white'}`} title={product.name}>
-                                                        {product.name}
-                                                    </h3>
-                                                </div>
-                                            ) : (
-                                                <Link href={`/products/${product.id}`} className="hover:underline flex-1">
-                                                    <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1 text-base group-hover:text-blue-600 transition-colors" title={product.name}>
-                                                        {product.name}
-                                                    </h3>
-                                                </Link>
-                                            )}
-                                            <span className="text-base font-extrabold text-black dark:text-white whitespace-nowrap">
-                                                ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
-                                            </span>
-                                        </div>
-
-                                        {/* Brand Pop */}
-                                        <div className="flex items-center gap-2 mb-2">
-                                            {product.brand && (
-                                                <Badge variant="outline" className="rounded text-[10px] font-bold uppercase tracking-wider bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600">
-                                                    {product.brand.name}
+                                            {product.status === 'inactive' && (
+                                                <Badge className="shadow-sm border-0 font-bold bg-gray-500 hover:bg-gray-600 text-white text-[10px]">
+                                                    Inactive
                                                 </Badge>
                                             )}
-                                            {product.category && (
-                                                <span className="text-[10px] text-gray-500">{product.category.name}</span>
-                                            )}
                                         </div>
 
-                                        {/* Codes Grid (Expanded Font & Added 2Code) */}
-                                        <div className="grid grid-cols-3 gap-2 text-[10px] bg-gray-50 dark:bg-gray-900/50 p-2 rounded border border-gray-100 dark:border-gray-800">
-                                            <div className="flex flex-col">
-                                                <span className="text-gray-400 uppercase text-[9px]">SKU</span>
-                                                <span className="font-mono font-bold text-xs truncate" title={product.sku || ''}>{product.sku || '-'}</span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-gray-400 uppercase text-[9px]">Code</span>
-                                                <span className="font-mono font-bold text-xs truncate" title={product.code || ''}>{product.code || '-'}</span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-gray-400 uppercase text-[9px]">2Code</span>
-                                                <span className="font-mono font-bold text-xs truncate" title={product.code_2 || ''}>{product.code_2 || '-'}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Description - Below Codes */}
-                                        {product.description ? (
-                                            <p className="line-clamp-2 text-xs text-gray-700 dark:text-gray-300 mt-2">
-                                                {product.description}
-                                            </p>
-                                        ) : (
-                                            <p className="line-clamp-2 text-xs text-gray-400 mt-2">No description.</p>
-                                        )}
-                                    </div>
-
-                                    {/* Footer: Variations & Details CTA */}
-                                    <div className="flex items-end justify-between pt-1 border-t border-gray-100 dark:border-gray-800 mt-1 min-h-[30px]">
-                                        {/* Variations on Left */}
-                                        <div className="flex flex-col gap-1 flex-1 min-w-0 mr-2">
-                                            {product.variations && product.variations.length > 0 && (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {product.variations.slice(0, 2).map((v, i) => (
-                                                        <span key={i} className="text-[10px] inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-medium whitespace-nowrap overflow-hidden max-w-full">
-                                                            <span className="font-bold mr-1">{v.name}:</span> <span className="truncate">{v.options}</span>
-                                                        </span>
-                                                    ))}
-                                                    {product.variations.length > 2 && (
-                                                        <span className="text-[9px] text-gray-400">+{product.variations.length - 2}</span>
+                                        {/* Hover Overlay for Quick Actions */}
+                                        {!isSelectionMode && !isClearanceMode && (
+                                            <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none">
+                                                <div className="pointer-events-auto flex flex-col gap-2">
+                                                    <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white">
+                                                        <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
+                                                    </Button>
+                                                    {!isEmployee && (
+                                                        <Link href={`/products/${product.id}/edit`}>
+                                                            <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
+                                                                Edit Product
+                                                            </Button>
+                                                        </Link>
+                                                    )}
+                                                    {!isEmployee && (
+                                                        <Button 
+                                                            variant={product.status === 'active' ? 'destructive' : 'default'} 
+                                                            size="sm" 
+                                                            onClick={(e) => { e.preventDefault(); handleToggleStatus(product); }}
+                                                            className={`w-32 shadow-lg ${product.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+                                                        >
+                                                            {product.status === 'active' ? <PowerOff className="w-4 h-4 mr-2" /> : <Power className="w-4 h-4 mr-2" />}
+                                                            {product.status === 'active' ? 'Deactivate' : 'Activate'}
+                                                        </Button>
                                                     )}
                                                 </div>
-                                            )}
-                                            {!product.variations?.length && product.branch && (
-                                                <span className="text-[10px] text-orange-600 dark:text-orange-400 truncate flex items-center gap-1 font-medium">
-                                                    <Layers className="h-3 w-3" />
-                                                    {product.branch.branch_name}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {isSelectionMode ? (
-                                            <div className="shrink-0 flex items-center gap-1 text-xs font-bold text-red-600 whitespace-nowrap">
-                                                {isSelected ? 'Selected' : 'Select'}
                                             </div>
-                                        ) : (
-                                            <Link href={`/products/${product.id}`} className="shrink-0">
-                                                <button className="group/btn flex items-center gap-1 text-xs font-bold text-gray-900 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400 whitespace-nowrap">
-                                                    View Details
-                                                    <ArrowRight className="h-3 w-3 -translate-x-1 transition-transform group-hover/btn:translate-x-0" />
-                                                </button>
-                                            </Link>
                                         )}
                                     </div>
+
+                                    {/* Content Section */}
+                                    <div className="flex flex-1 flex-col justify-between p-4">
+                                        <div>
+                                            <div className="flex flex-col gap-1 mb-2">
+                                                {product.clearance_price && (
+                                                    <div className="bg-yellow-400 text-black text-[10px] font-bold px-2 py-0.5 self-start uppercase">
+                                                        Clearance Sale
+                                                    </div>
+                                                )}
+                                                <h3 className={`font-bold text-sm line-clamp-2 ${isSelected && isSelectionMode ? 'text-red-600' : ''}`} title={product.name}>
+                                                    {product.name}
+                                                </h3>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 mb-3">
+                                                {product.clearance_price ? (
+                                                    <div className="flex flex-col">
+                                                        <span className="bg-yellow-400 text-black font-bold px-2 py-1 text-base self-start">
+                                                            ₱{Number(product.clearance_price).toLocaleString()}
+                                                        </span>
+                                                        <span className="text-xs text-gray-400 line-through mt-1">
+                                                            ₱{product.price ? Number(product.price).toLocaleString() : '0.00'}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-lg font-bold text-black dark:text-white">
+                                                        ₱{product.price ? Number(product.price).toLocaleString() : '0.00'}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-1 mb-3">
+                                                {product.brand && (
+                                                    <Badge variant="outline" className="text-[10px] py-0 h-5">
+                                                        {product.brand.name}
+                                                    </Badge>
+                                                )}
+                                                {product.category && (
+                                                    <Badge variant="outline" className="text-[10px] py-0 h-5">
+                                                        {product.category.name}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            
+                                            <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-2 grid grid-cols-3 gap-1 text-[9px] uppercase tracking-tighter">
+                                                <div className="flex flex-col">
+                                                    <span className="text-gray-400">SKU</span>
+                                                    <span className="font-bold truncate" title={product.sku || '-'}>{product.sku || '-'}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-gray-400">CODE</span>
+                                                    <span className="font-bold truncate" title={product.code || '-'}>{product.code || '-'}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-gray-400">2CODE</span>
+                                                    <span className="font-bold truncate" title={product.code_2 || '-'}>{product.code_2 || '-'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/10 flex items-center justify-between">
+                                            <div className="text-[10px] text-gray-400">
+                                                COLOR: {product.variations?.find(v => v.name.toLowerCase() === 'color')?.options || 'N/A'}
+                                            </div>
+                                            <Link href={`/products/${product.id}`} className="text-xs font-bold flex items-center hover:underline">
+                                                View Details <ArrowRight className="ml-1 h-3 w-3" />
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -1023,6 +1101,43 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            {/* Clearance Modal */}
+            <Dialog open={isClearanceModalOpen} onOpenChange={setIsClearanceModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Set Clearance Sale</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="clearance-price">New Amount (₱)</Label>
+                            <Input
+                                id="clearance-price"
+                                type="number"
+                                placeholder="Enter discounted price"
+                                value={clearancePrice}
+                                onChange={(e) => setClearancePrice(e.target.value)}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="clearance-duration">Duration (Days)</Label>
+                            <Input
+                                id="clearance-duration"
+                                type="number"
+                                placeholder="Enter duration in days"
+                                value={clearanceDuration}
+                                onChange={(e) => setClearanceDuration(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsClearanceModalOpen(false)}>Cancel</Button>
+                        <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold" onClick={handleClearanceSubmit}>
+                            Confirm Clearance
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
