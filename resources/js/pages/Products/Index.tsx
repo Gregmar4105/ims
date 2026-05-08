@@ -95,6 +95,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const [category, setCategory] = useState<string>(filters?.category || "all");
     const [stock, setStock] = useState<string>(filters?.stock || "all");
     const [statusFilter, setStatusFilter] = useState<string>(filters?.status || "all");
+    const [clearance, setClearance] = useState<string>(filters?.clearance || "all");
     const [showFilters, setShowFilters] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -103,63 +104,19 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [isClearanceMode, setIsClearanceMode] = useState(false);
     const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
-    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [isClearanceModalOpen, setIsClearanceModalOpen] = useState(false);
+    const [clearancePrice, setClearancePrice] = useState("");
+    const [durationDays, setDurationDays] = useState("30");
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [statusToggleProduct, setStatusToggleProduct] = useState<Product | null>(null);
 
-    const [clearancePrice, setClearancePrice] = useState<string>("");
-    const [clearanceDuration, setClearanceDuration] = useState<string>("30");
-
     const toggleSelection = (productId: number) => {
-        if (isClearanceMode) {
-            // In clearance mode, clicking an item opens the modal for that single item (or multiple if we wanted, but user said "1 click and a modal Will open")
-            // Wait, user said "same function as Delete Items button" but also "1 click and a modal Will open".
-            // Delete Items selects multiple. 
-            // "it will have the same function as the Delete Items button however it will yellow border and the items cannot be clicked multiple times, 1 click and a modal Will open"
-            // This sounds like: 
-            // 1. Enter Clearance Mode.
-            // 2. Select items (yellow border).
-            // 3. One of the clicks (maybe the first one?) or a confirmation button opens the modal.
-            // Actually, "1 click and a modal Will open" might mean after you finish selection? 
-            // Or maybe it means when you click the "Clearance Sale" button itself if items are already selected?
-            // "1 click and a modal Will open and will prompt the user to input the new amount of the product and its duration"
-            // Let's assume selection works like Delete, and then a "Confirm Clearance" button opens the modal.
-            
-            setSelectedProductIds(prev => 
-                prev.includes(productId) 
-                    ? prev.filter(id => id !== productId) 
-                    : [...prev, productId]
-            );
-        } else {
-            setSelectedProductIds(prev => 
-                prev.includes(productId) 
-                    ? prev.filter(id => id !== productId) 
-                    : [...prev, productId]
-            );
-        }
-    };
-
-    const handleClearanceSubmit = () => {
-        if (selectedProductIds.length === 0) return;
-
-        router.post("/products/bulk-clearance", {
-            ids: selectedProductIds,
-            clearance_price: clearancePrice,
-            duration_days: clearanceDuration
-        }, {
-            onSuccess: () => {
-                setIsClearanceMode(false);
-                setSelectedProductIds([]);
-                setIsClearanceModalOpen(false);
-                setClearancePrice("");
-                toast.success('Products added to clearance sale.');
-            },
-            onError: (errors) => {
-                toast.error('Failed to add products to clearance sale.');
-                console.error(errors);
-            }
-        });
+        setSelectedProductIds(prev => 
+            prev.includes(productId) 
+                ? prev.filter(id => id !== productId) 
+                : [...prev, productId]
+        );
     };
 
     const handleBulkDelete = () => {
@@ -253,6 +210,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         setCategory(filters?.category || "all");
         setStock(filters?.stock || "all");
         setStatusFilter(filters?.status || "all");
+        setClearance(filters?.clearance || "all");
     }, [filters]);
 
     function updateParams(newParams: any) {
@@ -302,9 +260,32 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         router.get("/products");
     };
 
-    const clearanceFilter = filters?.clearance || "all";
+    const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all' || statusFilter !== 'all';
 
-    const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all' || statusFilter !== 'all' || clearanceFilter !== 'all';
+    const handleBulkClearance = () => {
+        if (!clearancePrice || !durationDays) {
+            toast.error("Please fill in all fields.");
+            return;
+        }
+
+        router.post(route('products.bulk-clearance'), {
+            ids: selectedProductIds,
+            clearance_price: clearancePrice,
+            duration_days: durationDays,
+        }, {
+            onSuccess: () => {
+                toast.success("Clearance sale set successfully!");
+                setIsClearanceModalOpen(false);
+                setIsClearanceMode(false);
+                setSelectedProductIds([]);
+                setClearancePrice("");
+            },
+            onError: (err) => {
+                console.error(err);
+                toast.error("Failed to set clearance sale.");
+            }
+        });
+    };
 
     const handleToggleStatus = (product: Product) => {
         setStatusToggleProduct(product);
@@ -549,33 +530,28 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         <FileText className="mr-2 h-4 w-4" /> Print List
                                     </Button>
                                 </a>
-                                
+
                                 {!isEmployee && (
                                     <Button 
                                         variant="outline"
                                         size="sm" 
-                                        className={`hidden md:flex transition-all duration-300 ${
-                                            isClearanceMode 
-                                                ? (selectedProductIds.length > 0 
-                                                    ? 'border-yellow-500 bg-yellow-500 text-black font-bold shadow-[0_0_15px_rgba(234,179,8,0.4)] animate-pulse' 
-                                                    : 'border-yellow-500 text-yellow-600 bg-yellow-50')
-                                                : 'hover:border-yellow-400 hover:text-yellow-600'
-                                        }`}
+                                        className={`hidden md:flex border-yellow-500 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700 transition-all ${isClearanceMode ? 'bg-yellow-500 text-black hover:bg-yellow-600 border-yellow-600' : ''} ${selectedProductIds.length > 0 && isClearanceMode ? 'animate-pulse ring-2 ring-yellow-400 ring-offset-2' : ''}`}
                                         onClick={() => {
-                                            if (!isClearanceMode) {
+                                            if (isClearanceMode) {
+                                                if (selectedProductIds.length > 0) {
+                                                    setIsClearanceModalOpen(true);
+                                                } else {
+                                                    setIsClearanceMode(false);
+                                                }
+                                            } else {
                                                 setIsClearanceMode(true);
                                                 setIsSelectionMode(false);
-                                                setSelectedProductIds([]);
-                                            } else if (selectedProductIds.length > 0) {
-                                                setIsClearanceModalOpen(true);
-                                            } else {
-                                                setIsClearanceMode(false);
                                                 setSelectedProductIds([]);
                                             }
                                         }}
                                     >
-                                        <Tag className={`h-4 w-4 ${isClearanceMode && selectedProductIds.length > 0 ? 'mr-2' : 'mr-2'}`} />
-                                        {!isClearanceMode ? "Clearance Sale" : (selectedProductIds.length > 0 ? "Set Clearance Price" : "Cancel Clearance")}
+                                        <Tag className="mr-2 h-4 w-4" />
+                                        {isClearanceMode ? (selectedProductIds.length > 0 ? `Set Price (${selectedProductIds.length})` : 'Cancel') : 'Clearance Sale'}
                                     </Button>
                                 )}
 
@@ -587,6 +563,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         onClick={() => {
                                             if (!isSelectionMode) {
                                                 setIsSelectionMode(true);
+                                                setIsClearanceMode(false);
+                                                setSelectedProductIds([]);
                                             } else if (selectedProductIds.length > 0) {
                                                 setIsConfirmModalOpen(true);
                                             } else {
@@ -607,6 +585,21 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         </Button>
                                     </Link>
                                 )}
+                            {/* Clearance Filter */}
+                            <div className="space-y-2">
+                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                    <Tag className="h-3 w-3" /> Clearance Sale
+                                </Label>
+                                <Select value={filters.clearance || 'all'} onValueChange={(val) => handleFilterChange('clearance', val)}>
+                                    <SelectTrigger className="h-9">
+                                        <SelectValue placeholder="All Products" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Products</SelectItem>
+                                        <SelectItem value="on_clearance">On Clearance</SelectItem>
+                                        <SelectItem value="no_clearance">Not on Clearance</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 
@@ -638,33 +631,6 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     }}
                                 >
                                     <Trash2 className="h-4 w-4" />
-                                </Button>
-                            )}
-                            {!isEmployee && (
-                                <Button 
-                                    variant="outline"
-                                    size="icon" 
-                                    className={`h-10 w-10 shrink-0 transition-all duration-300 ${
-                                        isClearanceMode 
-                                            ? (selectedProductIds.length > 0 
-                                                ? 'border-yellow-500 bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.4)] animate-pulse' 
-                                                : 'border-yellow-500 text-yellow-600 bg-yellow-50')
-                                            : 'hover:border-yellow-400 hover:text-yellow-600'
-                                    }`}
-                                    onClick={() => {
-                                        if (!isClearanceMode) {
-                                            setIsClearanceMode(true);
-                                            setIsSelectionMode(false);
-                                            setSelectedProductIds([]);
-                                        } else if (selectedProductIds.length > 0) {
-                                            setIsClearanceModalOpen(true);
-                                        } else {
-                                            setIsClearanceMode(false);
-                                            setSelectedProductIds([]);
-                                        }
-                                    }}
-                                >
-                                    <Tag className="h-4 w-4" />
                                 </Button>
                             )}
                             <div className="relative flex-1">
@@ -771,28 +737,29 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     <SelectItem value="out_of_stock">Out of Stock</SelectItem>
                                 </SelectContent>
                             </Select>
-                                            <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); updateParams({ status: val }); }}>
-                                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
-                                                    <SelectValue placeholder="Status" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="all">All Status</SelectItem>
-                                                    <SelectItem value="active">Active</SelectItem>
-                                                    <SelectItem value="inactive">Inactive</SelectItem>
-                                                </SelectContent>
-                                            </Select>
 
-                                            <Select value={clearanceFilter} onValueChange={(val) => { updateParams({ clearance: val }); }}>
-                                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
-                                                    <SelectValue placeholder="Clearance" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="all">All Items</SelectItem>
-                                                    <SelectItem value="yes">On Clearance</SelectItem>
-                                                    <SelectItem value="no">Not on Clearance</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
+                            <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); updateParams({ status: val }); }}>
+                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Status</SelectItem>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="inactive">Inactive</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <Select value={clearance} onValueChange={(val) => { setClearance(val); updateParams({ clearance: val }); }}>
+                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
+                                    <SelectValue placeholder="Clearance Sale" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Products</SelectItem>
+                                    <SelectItem value="on_clearance">On Clearance</SelectItem>
+                                    <SelectItem value="no_clearance">Not on Clearance</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
 
                         {hasActiveFilters && (
                             <Button variant="ghost" size="sm" onClick={clearFilters} title="Clear Filters" className="h-9 px-2 text-red-500 hover:text-red-700 hover:bg-red-50">
@@ -813,7 +780,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         </p>
                         <Link href="/products/create">
                             <Button variant="link" className="mt-2">
-                            Add Product
+                                Add Product
                             </Button>
                         </Link>
                     </div>
@@ -876,71 +843,172 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             </Link>
                                         )}
 
-                                        {/* Original Quantity Badge */}
-                                        <div className="absolute top-2 right-2">
-                                            <Badge variant={product.quantity === 0 ? "destructive" : "secondary"} className="font-bold">
-                                                Qty: {product.quantity}
+                                    {/* Vibrant Quantity Badge */}
+                                    <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                                        <Badge className={`shadow-sm border-0 font-bold ${product.quantity === 0 ? 'bg-red-600 hover:bg-red-700 text-white' :
+                                            product.quantity <= 5 ? 'bg-amber-500 hover:bg-amber-600 text-white' :
+                                                'bg-emerald-500 hover:bg-emerald-600 text-white'
+                                            }`}>
+                                            Qty: {product.quantity}
+                                        </Badge>
+                                        {product.status === 'inactive' && (
+                                            <Badge className="shadow-sm border-0 font-bold bg-gray-500 hover:bg-gray-600 text-white text-[10px]">
+                                                Inactive
                                             </Badge>
-                                        </div>
+                                        )}
                                     </div>
 
-                                    {/* Content Section */}
-                                    <div className="flex flex-1 flex-col justify-between p-4">
-                                        <div>
-                                            <div className="flex flex-col gap-1">
-                                                {product.clearance_price && (
-                                                    <div className="bg-yellow-400 text-black text-[10px] font-bold px-2 py-0.5 self-start uppercase mb-1">
-                                                        Clearance Sale
-                                                    </div>
+                                    {/* Hover Overlay for Quick Actions */}
+                                    {!isSelectionMode && !isClearanceMode && (
+                                        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none">
+                                            <div className="pointer-events-auto flex flex-col gap-2">
+                                                <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white">
+                                                    <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
+                                                </Button>
+                                                {!isEmployee && (
+                                                    <Link href={`/products/${product.id}/edit`}>
+                                                        <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
+                                                            Edit Product
+                                                        </Button>
+                                                    </Link>
                                                 )}
-                                                <h3 className={`font-bold text-sm line-clamp-2 ${isSelected && isSelectionMode ? 'text-red-600' : ''}`} title={product.name}>
-                                                    {product.name}
-                                                </h3>
+                                                {!isEmployee && (
+                                                    <Button 
+                                                        variant={product.status === 'active' ? 'destructive' : 'default'} 
+                                                        size="sm" 
+                                                        onClick={(e) => { e.preventDefault(); handleToggleStatus(product); }}
+                                                        className={`w-32 shadow-lg ${product.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+                                                    >
+                                                        {product.status === 'active' ? <PowerOff className="w-4 h-4 mr-2" /> : <Power className="w-4 h-4 mr-2" />}
+                                                        {product.status === 'active' ? 'Deactivate' : 'Activate'}
+                                                    </Button>
+                                                )}
                                             </div>
+                                        </div>
+                                    )}
+                                </div>
 
-                                            <div className="mt-1 flex items-center gap-2">
+                                {/* Content Section */}
+                                <div className="flex flex-1 flex-col justify-between gap-3 p-3">
+                                    {/* Header & Price */}
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between items-start gap-2">
+                                            {isSelectionMode || isClearanceMode ? (
+                                                <div className="flex-1">
+                                                    {product.clearance_price && (
+                                                        <div className="bg-yellow-400 text-black text-[9px] font-bold px-1.5 py-0.5 self-start uppercase mb-1 inline-block">
+                                                            Clearance Sale
+                                                        </div>
+                                                    )}
+                                                    <h3 className={`font-bold line-clamp-1 text-base transition-colors ${isSelected ? (isSelectionMode ? 'text-red-600' : 'text-yellow-600') : 'text-gray-900 dark:text-white'}`} title={product.name}>
+                                                        {product.name}
+                                                    </h3>
+                                                </div>
+                                            ) : (
+                                                <Link href={`/products/${product.id}`} className="hover:underline flex-1">
+                                                    {product.clearance_price && (
+                                                        <div className="bg-yellow-400 text-black text-[9px] font-bold px-1.5 py-0.5 self-start uppercase mb-1 inline-block">
+                                                            Clearance Sale
+                                                        </div>
+                                                    )}
+                                                    <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1 text-base group-hover:text-blue-600 transition-colors" title={product.name}>
+                                                        {product.name}
+                                                    </h3>
+                                                </Link>
+                                            )}
+                                            <div className="flex flex-col items-end">
                                                 {product.clearance_price ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-lg font-bold text-yellow-600">
-                                                            ₱{Number(product.clearance_price).toLocaleString()}
+                                                    <>
+                                                        <span className="text-base font-extrabold text-yellow-600 whitespace-nowrap">
+                                                            ₱{Number(product.clearance_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                                         </span>
-                                                        <span className="text-sm text-gray-400 line-through">
-                                                            ₱{product.price ? Number(product.price).toLocaleString() : '0.00'}
+                                                        <span className="text-[10px] text-gray-400 line-through">
+                                                            ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
                                                         </span>
-                                                    </div>
+                                                    </>
                                                 ) : (
-                                                    <span className="text-lg font-bold text-black dark:text-white">
-                                                        ₱{product.price ? Number(product.price).toLocaleString() : '0.00'}
+                                                    <span className="text-base font-extrabold text-black dark:text-white whitespace-nowrap">
+                                                        ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
                                                     </span>
                                                 )}
                                             </div>
+                                        </div>
 
-                                            <div className="mt-2 flex flex-wrap gap-1">
-                                                {product.brand && (
-                                                    <Badge variant="outline" className="text-[10px] h-5 py-0">
-                                                        {product.brand.name}
-                                                    </Badge>
-                                                )}
-                                                {product.category && (
-                                                    <Badge variant="outline" className="text-[10px] h-5 py-0">
-                                                        {product.category.name}
-                                                    </Badge>
-                                                )}
+                                        {/* Brand Pop */}
+                                        <div className="flex items-center gap-2 mb-2">
+                                            {product.brand && (
+                                                <Badge variant="outline" className="rounded text-[10px] font-bold uppercase tracking-wider bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600">
+                                                    {product.brand.name}
+                                                </Badge>
+                                            )}
+                                            {product.category && (
+                                                <span className="text-[10px] text-gray-500">{product.category.name}</span>
+                                            )}
+                                        </div>
+
+                                        {/* Codes Grid (Expanded Font & Added 2Code) */}
+                                        <div className="grid grid-cols-3 gap-2 text-[10px] bg-gray-50 dark:bg-gray-900/50 p-2 rounded border border-gray-100 dark:border-gray-800">
+                                            <div className="flex flex-col">
+                                                <span className="text-gray-400 uppercase text-[9px]">SKU</span>
+                                                <span className="font-mono font-bold text-xs truncate" title={product.sku || ''}>{product.sku || '-'}</span>
                                             </div>
-
-                                            <div className="mt-2 line-clamp-2 text-xs text-gray-500 min-h-[32px]">
-                                                {product.description || 'No description available.'}
+                                            <div className="flex flex-col">
+                                                <span className="text-gray-400 uppercase text-[9px]">Code</span>
+                                                <span className="font-mono font-bold text-xs truncate" title={product.code || ''}>{product.code || '-'}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-gray-400 uppercase text-[9px]">2Code</span>
+                                                <span className="font-mono font-bold text-xs truncate" title={product.code_2 || ''}>{product.code_2 || '-'}</span>
                                             </div>
                                         </div>
 
-                                        <div className="mt-4 flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
-                                            <div className="text-[10px] font-medium text-gray-400">
-                                                SKU: {product.sku || 'N/A'}
+                                        {/* Description - Below Codes */}
+                                        {product.description ? (
+                                            <p className="line-clamp-2 text-xs text-gray-700 dark:text-gray-300 mt-2">
+                                                {product.description}
+                                            </p>
+                                        ) : (
+                                            <p className="line-clamp-2 text-xs text-gray-400 mt-2">No description.</p>
+                                        )}
+                                    </div>
+
+                                    {/* Footer: Variations & Details CTA */}
+                                    <div className="flex items-end justify-between pt-1 border-t border-gray-100 dark:border-gray-800 mt-1 min-h-[30px]">
+                                        {/* Variations on Left */}
+                                        <div className="flex flex-col gap-1 flex-1 min-w-0 mr-2">
+                                            {product.variations && product.variations.length > 0 && (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {product.variations.slice(0, 2).map((v, i) => (
+                                                        <span key={i} className="text-[10px] inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-medium whitespace-nowrap overflow-hidden max-w-full">
+                                                            <span className="font-bold mr-1">{v.name}:</span> <span className="truncate">{v.options}</span>
+                                                        </span>
+                                                    ))}
+                                                    {product.variations.length > 2 && (
+                                                        <span className="text-[9px] text-gray-400">+{product.variations.length - 2}</span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {!product.variations?.length && product.branch && (
+                                                <span className="text-[10px] text-orange-600 dark:text-orange-400 truncate flex items-center gap-1 font-medium">
+                                                    <Layers className="h-3 w-3" />
+                                                    {product.branch.branch_name}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {isSelectionMode || isClearanceMode ? (
+                                            <div className={`shrink-0 flex items-center gap-1 text-xs font-bold whitespace-nowrap ${isSelectionMode ? 'text-red-600' : 'text-yellow-600'}`}>
+                                                {isSelected ? 'Selected' : 'Select'}
                                             </div>
-                                            <Link href={`/products/${product.id}`} className="text-xs font-bold text-gray-900 dark:text-gray-200 hover:underline">
-                                                Details
+                                        ) : (
+                                            <Link href={`/products/${product.id}`} className="shrink-0">
+                                                <button className="group/btn flex items-center gap-1 text-xs font-bold text-gray-900 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400 whitespace-nowrap">
+                                                    View Details
+                                                    <ArrowRight className="h-3 w-3 -translate-x-1 transition-transform group-hover/btn:translate-x-0" />
+                                                </button>
                                             </Link>
-                                        </div>
+                                        )}
+                                    </div>
                                     </div>
                                 </div>
                             );
@@ -1069,55 +1137,45 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
             <Dialog open={isClearanceModalOpen} onOpenChange={setIsClearanceModalOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Tag className="h-5 w-5 text-yellow-500" />
-                            Set Clearance Sale
-                        </DialogTitle>
+                        <DialogTitle>Set Clearance Sale</DialogTitle>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        {selectedProductIds.length > 0 && (
-                            <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-dashed">
-                                <Label className="text-[10px] text-gray-400 uppercase">Selected Products Current Price</Label>
-                                <div className="mt-1 space-y-1 max-h-32 overflow-y-auto">
-                                    {productList
-                                        .filter(p => selectedProductIds.includes(p.id))
-                                        .map(p => (
-                                            <div key={p.id} className="flex justify-between items-center text-xs">
-                                                <span className="truncate mr-4 flex-1">{p.name}</span>
-                                                <span className="font-bold whitespace-nowrap">₱{p.price ? Number(p.price).toLocaleString() : '0.00'}</span>
-                                            </div>
-                                        ))
-                                    }
-                                </div>
+                    <div className="py-4 space-y-4">
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-100 dark:border-yellow-800">
+                            <p className="text-sm text-yellow-800 dark:text-yellow-400 font-medium mb-2">
+                                Selected Products ({selectedProductIds.length}):
+                            </p>
+                            <div className="max-h-[150px] overflow-y-auto space-y-2">
+                                {productList.filter(p => selectedProductIds.includes(p.id)).map(p => (
+                                    <div key={p.id} className="text-xs flex justify-between items-center bg-white dark:bg-black/20 p-2 rounded">
+                                        <span className="truncate flex-1 mr-2">{p.name}</span>
+                                        <span className="font-bold">₱{p.price ? Number(p.price).toLocaleString() : '0.00'}</span>
+                                    </div>
+                                ))}
                             </div>
-                        )}
-                        <div className="grid gap-2">
-                            <Label htmlFor="clearance-price">New Amount (₱)</Label>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>New Clearance Price (₱)</Label>
                             <Input
-                                id="clearance-price"
                                 type="number"
-                                placeholder="Enter discounted price"
+                                placeholder="0.00"
                                 value={clearancePrice}
                                 onChange={(e) => setClearancePrice(e.target.value)}
-                                className="border-yellow-200 focus:ring-yellow-500"
                             />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="clearance-duration">Duration (Days)</Label>
+                        <div className="space-y-2">
+                            <Label>Duration (Days)</Label>
                             <Input
-                                id="clearance-duration"
                                 type="number"
-                                placeholder="Enter duration in days"
-                                value={clearanceDuration}
-                                onChange={(e) => setClearanceDuration(e.target.value)}
+                                placeholder="30"
+                                value={durationDays}
+                                onChange={(e) => setDurationDays(e.target.value)}
                             />
                         </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsClearanceModalOpen(false)}>Cancel</Button>
-                        <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold" onClick={handleClearanceSubmit}>
-                            Confirm Clearance
-                        </Button>
+                        <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold" onClick={handleBulkClearance}>Set Clearance Price</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
