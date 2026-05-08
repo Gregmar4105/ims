@@ -585,21 +585,6 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         </Button>
                                     </Link>
                                 )}
-                            {/* Clearance Filter */}
-                            <div className="space-y-2">
-                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                                    <Tag className="h-3 w-3" /> Clearance Sale
-                                </Label>
-                                <Select value={filters.clearance || 'all'} onValueChange={(val) => handleFilterChange('clearance', val)}>
-                                    <SelectTrigger className="h-9">
-                                        <SelectValue placeholder="All Products" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Products</SelectItem>
-                                        <SelectItem value="on_clearance">On Clearance</SelectItem>
-                                        <SelectItem value="no_clearance">Not on Clearance</SelectItem>
-                                    </SelectContent>
-                                </Select>
                             </div>
                         </div>
 
