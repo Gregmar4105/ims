@@ -54,6 +54,7 @@ interface Props {
 
 export default function Index({ suppliers, filters }: Props) {
     const { auth } = usePage<SharedData>().props;
+    const isSystemAdmin = auth.roles.includes('System Administrator');
     const isEmployee = auth.roles.includes('Employee') && !auth.roles.includes('System Administrator') && !auth.roles.includes('Branch Administrator');
     const [search, setSearch] = useState(filters.search || '');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -128,7 +129,7 @@ export default function Index({ suppliers, filters }: Props) {
                             <p className="text-muted-foreground">Manage your product suppliers inventory source.</p>
                         </div>
                     </div>
-                    {!isEmployee && (
+                    {isSystemAdmin && (
                         <Button onClick={() => { setEditingSupplier(null); setIsCreateOpen(true); }}>
                             <Plus className="mr-2 h-4 w-4" /> Add Supplier
                         </Button>
@@ -175,7 +176,7 @@ export default function Index({ suppliers, filters }: Props) {
                                             <TableCell>{supplier.email || '-'}</TableCell>
                                             <TableCell>{supplier.phone || '-'}</TableCell>
                                             <TableCell className="text-right">
-                                                {!isEmployee && (
+                                                {isSystemAdmin && (
                                                     <div className="flex justify-end">
                                                         <Button variant="ghost" size="icon" onClick={() => setEditingSupplier(supplier)}>
                                                             <Pencil className="h-4 w-4" />
