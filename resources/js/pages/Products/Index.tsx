@@ -753,7 +753,6 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         )}
                     </div>
                 </div>
-            </div>
 
             <div className="p-4 flex-1 overflow-y-auto min-h-0">
                 {productList.length === 0 ? (
