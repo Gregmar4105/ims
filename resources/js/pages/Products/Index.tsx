@@ -876,57 +876,20 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             </Link>
                                         )}
 
-                                        {/* Vibrant Quantity Badge */}
-                                        <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
-                                            <Badge className={`shadow-sm border-0 font-bold ${product.quantity === 0 ? 'bg-red-600 hover:bg-red-700 text-white' :
-                                                product.quantity <= 5 ? 'bg-amber-500 hover:bg-amber-600 text-white' :
-                                                    'bg-emerald-500 hover:bg-emerald-600 text-white'
-                                                }`}>
+                                        {/* Original Quantity Badge */}
+                                        <div className="absolute top-2 right-2">
+                                            <Badge variant={product.quantity === 0 ? "destructive" : "secondary"} className="font-bold">
                                                 Qty: {product.quantity}
                                             </Badge>
-                                            {product.status === 'inactive' && (
-                                                <Badge className="shadow-sm border-0 font-bold bg-gray-500 hover:bg-gray-600 text-white text-[10px]">
-                                                    Inactive
-                                                </Badge>
-                                            )}
                                         </div>
-
-                                        {/* Hover Overlay for Quick Actions */}
-                                        {!isSelectionMode && !isClearanceMode && (
-                                            <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none">
-                                                <div className="pointer-events-auto flex flex-col gap-2">
-                                                    <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white">
-                                                        <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
-                                                    </Button>
-                                                    {!isEmployee && (
-                                                        <Link href={`/products/${product.id}/edit`}>
-                                                            <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
-                                                                Edit Product
-                                                            </Button>
-                                                        </Link>
-                                                    )}
-                                                    {!isEmployee && (
-                                                        <Button 
-                                                            variant={product.status === 'active' ? 'destructive' : 'default'} 
-                                                            size="sm" 
-                                                            onClick={(e) => { e.preventDefault(); handleToggleStatus(product); }}
-                                                            className={`w-32 shadow-lg ${product.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
-                                                        >
-                                                            {product.status === 'active' ? <PowerOff className="w-4 h-4 mr-2" /> : <Power className="w-4 h-4 mr-2" />}
-                                                            {product.status === 'active' ? 'Deactivate' : 'Activate'}
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
 
                                     {/* Content Section */}
                                     <div className="flex flex-1 flex-col justify-between p-4">
                                         <div>
-                                            <div className="flex flex-col gap-1 mb-2">
+                                            <div className="flex flex-col gap-1">
                                                 {product.clearance_price && (
-                                                    <div className="bg-yellow-400 text-black text-[10px] font-bold px-2 py-0.5 self-start uppercase">
+                                                    <div className="bg-yellow-400 text-black text-[10px] font-bold px-2 py-0.5 self-start uppercase mb-1">
                                                         Clearance Sale
                                                     </div>
                                                 )}
@@ -935,13 +898,13 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                 </h3>
                                             </div>
 
-                                            <div className="flex items-center gap-2 mb-3">
+                                            <div className="mt-1 flex items-center gap-2">
                                                 {product.clearance_price ? (
-                                                    <div className="flex flex-col">
-                                                        <span className="bg-yellow-400 text-black font-bold px-2 py-1 text-base self-start">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-lg font-bold text-yellow-600">
                                                             ₱{Number(product.clearance_price).toLocaleString()}
                                                         </span>
-                                                        <span className="text-xs text-gray-400 line-through mt-1">
+                                                        <span className="text-sm text-gray-400 line-through">
                                                             ₱{product.price ? Number(product.price).toLocaleString() : '0.00'}
                                                         </span>
                                                     </div>
@@ -952,41 +915,30 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                 )}
                                             </div>
 
-                                            <div className="flex flex-wrap gap-1 mb-3">
+                                            <div className="mt-2 flex flex-wrap gap-1">
                                                 {product.brand && (
-                                                    <Badge variant="outline" className="text-[10px] py-0 h-5">
+                                                    <Badge variant="outline" className="text-[10px] h-5 py-0">
                                                         {product.brand.name}
                                                     </Badge>
                                                 )}
                                                 {product.category && (
-                                                    <Badge variant="outline" className="text-[10px] py-0 h-5">
+                                                    <Badge variant="outline" className="text-[10px] h-5 py-0">
                                                         {product.category.name}
                                                     </Badge>
                                                 )}
                                             </div>
-                                            
-                                            <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-2 grid grid-cols-3 gap-1 text-[9px] uppercase tracking-tighter">
-                                                <div className="flex flex-col">
-                                                    <span className="text-gray-400">SKU</span>
-                                                    <span className="font-bold truncate" title={product.sku || '-'}>{product.sku || '-'}</span>
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-gray-400">CODE</span>
-                                                    <span className="font-bold truncate" title={product.code || '-'}>{product.code || '-'}</span>
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-gray-400">2CODE</span>
-                                                    <span className="font-bold truncate" title={product.code_2 || '-'}>{product.code_2 || '-'}</span>
-                                                </div>
+
+                                            <div className="mt-2 line-clamp-2 text-xs text-gray-500 min-h-[32px]">
+                                                {product.description || 'No description available.'}
                                             </div>
                                         </div>
 
-                                        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/10 flex items-center justify-between">
-                                            <div className="text-[10px] text-gray-400">
-                                                COLOR: {product.variations?.find(v => v.name.toLowerCase() === 'color')?.options || 'N/A'}
+                                        <div className="mt-4 flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
+                                            <div className="text-[10px] font-medium text-gray-400">
+                                                SKU: {product.sku || 'N/A'}
                                             </div>
-                                            <Link href={`/products/${product.id}`} className="text-xs font-bold flex items-center hover:underline">
-                                                View Details <ArrowRight className="ml-1 h-3 w-3" />
+                                            <Link href={`/products/${product.id}`} className="text-xs font-bold text-gray-900 dark:text-gray-200 hover:underline">
+                                                Details
                                             </Link>
                                         </div>
                                     </div>
