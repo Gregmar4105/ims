@@ -43,6 +43,11 @@ class ProductController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('barcode', 'like', "%{$search}%")
+                  ->orWhere('qr_code', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('code_2', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%")
                   ->orWhereHas('brand', function ($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%");
                   })
@@ -495,5 +500,28 @@ class ProductController extends Controller
         });
 
         return redirect()->route('products.index')->with('success', 'Product updated successfully.');
+    }
+
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return back()->with('error', 'No products selected.');
+        }
+
+        DB::transaction(function () use ($ids) {
+            $products = Product::whereIn('id', $ids)->get();
+            foreach ($products as $product) {
+                // Delete image if exists
+                if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
+                    Storage::disk('public')->delete($product->image_path);
+                }
+                // Delete pivot and product
+                $product->branches()->detach();
+                $product->delete();
+            }
+        });
+
+        return redirect()->route('products.index')->with('success', 'Selected products deleted successfully.');
     }
 }

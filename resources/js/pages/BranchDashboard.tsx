@@ -29,6 +29,9 @@ import {
     YAxis,
     Label,
 } from 'recharts';
+import { Search, Loader2 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -82,12 +85,15 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
-const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueType = 'currency' }: { title: string; subtitle: string; data: { name: string; value: number }[]; totalLabel?: string; valueType?: 'currency' | 'number' }) => {
+const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueType = 'currency', headerExtra }: { title: string; subtitle: string; data: { name: string; value: number }[]; totalLabel?: string; valueType?: 'currency' | 'number'; headerExtra?: React.ReactNode }) => {
     return (
         <Card className="flex flex-col">
-            <CardHeader className="pb-0">
-                <CardTitle>{title}</CardTitle>
-                <p className="text-sm text-muted-foreground">{subtitle}</p>
+            <CardHeader className="pb-0 flex flex-row items-start justify-between space-y-0">
+                <div className="flex-1">
+                    <CardTitle className="leading-tight">{title}</CardTitle>
+                    <p className="text-sm text-muted-foreground">{subtitle}</p>
+                </div>
+                {headerExtra}
             </CardHeader>
             <CardContent className="flex-1 pb-0">
                 <ResponsiveContainer width="100%" height={180}>
@@ -170,6 +176,63 @@ const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueTy
 
 export default function BranchDashboard({ branchLocation, stats, chartData, pieData, productData, leaderboard, filters }: DashboardProps) {
     const { auth } = usePage().props as any;
+    
+    // --- Dynamic Stock Distribution State ---
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<any>(null);
+    const [stockDistribution, setStockDistribution] = useState<any[]>(productData);
+    const [stockTitle, setStockTitle] = useState("Sales by Product");
+    const [stockSubtitle, setStockSubtitle] = useState("Year to Date Total Quantity Sold per Product");
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            if (searchQuery.length >= 2) {
+                handleSearch(searchQuery);
+            } else {
+                setSearchResults([]);
+            }
+        }, 300);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchQuery]);
+
+    const handleSearch = async (query: string) => {
+        setIsSearching(true);
+        try {
+            const response = await fetch(`/branch-dashboard/api/products/search?search=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            setSearchResults(data);
+        } catch (error) {
+            console.error('Error searching products:', error);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const fetchDistribution = async (product: any) => {
+        try {
+            const response = await fetch(`/branch-dashboard/api/products/${product.id}/distribution`);
+            const data = await response.json();
+            setStockDistribution(data.distribution);
+            setSelectedProduct(product);
+            setStockTitle(`Stock: ${product.name}`);
+            setStockSubtitle(`Current inventory across all branches`);
+            setIsSearchOpen(false);
+            setSearchQuery('');
+        } catch (error) {
+            console.error('Error fetching distribution:', error);
+        }
+    };
+
+    const resetToSales = () => {
+        setStockDistribution(productData);
+        setSelectedProduct(null);
+        setStockTitle("Sales by Product");
+        setStockSubtitle("Year to Date Total Quantity Sold per Product");
+    };
     
     const [greeting] = useState(() => {
         const hour = new Date().getHours();
@@ -356,11 +419,72 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                         />
 
                         <DistributionCard 
-                            title="Sales by Product" 
-                            subtitle="Year to Date Total Quantity Sold per Product" 
-                            data={productData} 
-                            totalLabel="Qty Sold"
+                            title={stockTitle} 
+                            subtitle={stockSubtitle} 
+                            data={stockDistribution} 
+                            totalLabel={selectedProduct ? "Total Stock" : "Qty Sold"}
                             valueType="number"
+                            headerExtra={
+                                <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full">
+                                            <Search className="h-4 w-4" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80 p-0" align="end">
+                                        <div className="p-3 border-b">
+                                            <div className="relative">
+                                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                <Input 
+                                                    placeholder="Search any product..." 
+                                                    className="pl-8 h-9"
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    autoFocus
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="max-h-60 overflow-y-auto p-1">
+                                            {isSearching ? (
+                                                <div className="flex items-center justify-center py-4">
+                                                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                                </div>
+                                            ) : searchResults.length > 0 ? (
+                                                searchResults.map((product) => (
+                                                    <button
+                                                        key={product.id}
+                                                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors flex flex-col"
+                                                        onClick={() => fetchDistribution(product)}
+                                                    >
+                                                        <span className="font-medium">{product.name}</span>
+                                                        <span className="text-xs text-muted-foreground">{product.code}</span>
+                                                    </button>
+                                                ))
+                                            ) : searchQuery.length >= 2 ? (
+                                                <div className="py-4 text-center text-sm text-muted-foreground">
+                                                    No products found
+                                                </div>
+                                            ) : (
+                                                <div className="py-4 text-center text-sm text-muted-foreground">
+                                                    Type to search...
+                                                </div>
+                                            )}
+                                        </div>
+                                        {selectedProduct && (
+                                            <div className="p-2 border-top bg-muted/30">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm" 
+                                                    className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
+                                                    onClick={resetToSales}
+                                                >
+                                                    Reset to Sales View
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </PopoverContent>
+                                </Popover>
+                            }
                         />
                     </div>
                 </div>

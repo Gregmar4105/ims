@@ -180,4 +180,35 @@ class BranchDashboardController extends Controller
             ],
         ]);
     }
+
+    public function searchProducts(Request $request)
+    {
+        $search = $request->query('search');
+        if (!$search) return response()->json([]);
+
+        $products = \App\Models\Product::where('name', 'like', "%{$search}%")
+            ->orWhere('code', 'like', "%{$search}%")
+            ->orWhere('sku', 'like', "%{$search}%")
+            ->limit(10)
+            ->get(['id', 'name', 'code']);
+
+        return response()->json($products);
+    }
+
+    public function getProductDistribution(\App\Models\Product $product)
+    {
+        $distribution = $product->branches()
+            ->get()
+            ->map(function ($branch) {
+                return [
+                    'name' => $branch->branch_name,
+                    'value' => (int)$branch->pivot->quantity
+                ];
+            });
+
+        return response()->json([
+            'product' => $product->name,
+            'distribution' => $distribution
+        ]);
+    }
 }

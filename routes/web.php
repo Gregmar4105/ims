@@ -62,6 +62,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
     Route::get('branch-dashboard', [\App\Http\Controllers\BranchDashboardController::class, 'index'])
         ->name('branch.dashboard');
+    Route::get('branch-dashboard/api/products/search', [\App\Http\Controllers\BranchDashboardController::class, 'searchProducts'])->name('branch.dashboard.products.search');
+    Route::get('branch-dashboard/api/products/{product}/distribution', [\App\Http\Controllers\BranchDashboardController::class, 'getProductDistribution'])->name('branch.dashboard.products.distribution');
     Route::get('employee-dashboard', [\App\Http\Controllers\EmployeeDashboardController::class, 'index'])
         ->name('employee.dashboard')->middleware('role:Employee');
 
@@ -83,6 +85,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('qr-barcodes', [\App\Http\Controllers\QrBarcodeController::class, 'index'])->name('qr-barcodes.index');
         Route::post('qr-barcodes', [\App\Http\Controllers\QrBarcodeController::class, 'store'])->name('qr-barcodes.store');
         Route::get('products/print', [\App\Http\Controllers\ProductController::class, 'print'])->name('products.print');
+        Route::post('products/bulk-destroy', [\App\Http\Controllers\ProductController::class, 'bulkDestroy'])->name('products.bulkDestroy');
         Route::resource('products', \App\Http\Controllers\ProductController::class);
         Route::resource('product-suppliers', \App\Http\Controllers\SupplierController::class)->parameters(['product-suppliers' => 'supplier']);
     });

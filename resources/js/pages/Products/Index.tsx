@@ -2,7 +2,9 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
-import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight, Filter, FileText } from 'lucide-react';
+import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight, Filter, FileText, Camera, StopCircle, Scan } from 'lucide-react';
+import { Html5Qrcode } from 'html5-qrcode';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import { handleNativePrintFallback } from '@/lib/utils';
@@ -87,6 +89,103 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const [category, setCategory] = useState<string>(filters?.category || "all");
     const [stock, setStock] = useState<string>(filters?.stock || "all");
     const [showFilters, setShowFilters] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
+    const scannerRef = useRef<Html5Qrcode | null>(null);
+    const lastScanRef = useRef<number>(0);
+
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+
+    const toggleSelection = (productId: number) => {
+        setSelectedProductIds(prev => 
+            prev.includes(productId) 
+                ? prev.filter(id => id !== productId) 
+                : [...prev, productId]
+        );
+    };
+
+    const handleBulkDelete = () => {
+        router.post("/products/bulk-destroy", {
+            ids: selectedProductIds
+        }, {
+            onSuccess: () => {
+                setIsSelectionMode(false);
+                setSelectedProductIds([]);
+                setIsConfirmModalOpen(false);
+                toast.success('Selected products deleted successfully.');
+            },
+            onError: () => {
+                toast.error('Failed to delete selected products.');
+            }
+        });
+    };
+
+    const playBeep = () => {
+        try {
+            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.setValueAtTime(800, ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.1);
+        } catch (e) {
+            console.error("Audio beep failed", e);
+        }
+    };
+
+    useEffect(() => {
+        if (isScanning) {
+            const timer = setTimeout(() => {
+                const html5QrCode = new Html5Qrcode("search-scanner-reader");
+                scannerRef.current = html5QrCode;
+
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    (decodedText) => {
+                        const now = Date.now();
+                        if (now - lastScanRef.current < 1500) return;
+                        lastScanRef.current = now;
+                        playBeep();
+                        if (navigator.vibrate) navigator.vibrate(200);
+                        
+                        setSearch(decodedText);
+                        updateParams({ search: decodedText });
+                        setIsScanning(false);
+                        toast.success(`Scanned: ${decodedText}`);
+                    },
+                    (errorMessage) => { }
+                ).catch(err => {
+                    console.error("Error starting scanner", err);
+                    toast.error("Could not start camera");
+                    setIsScanning(false);
+                });
+            }, 100);
+
+            return () => {
+                clearTimeout(timer);
+            };
+        }
+    }, [isScanning]);
+
+    const stopScanner = async () => {
+        if (scannerRef.current) {
+            try {
+                if (scannerRef.current.isScanning) {
+                    await scannerRef.current.stop();
+                }
+                scannerRef.current.clear();
+            } catch (e) {
+                console.error("Error stopping scanner", e);
+            }
+            scannerRef.current = null;
+        }
+        setIsScanning(false);
+    };
 
     const debounceTimer = useRef<number | null>(null);
 
@@ -370,6 +469,27 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 </a>
 
                                 {!isEmployee && (
+                                    <Button 
+                                        variant={isSelectionMode ? (selectedProductIds.length > 0 ? "destructive" : "outline") : "outline"}
+                                        size="sm" 
+                                        className="hidden md:flex"
+                                        onClick={() => {
+                                            if (!isSelectionMode) {
+                                                setIsSelectionMode(true);
+                                            } else if (selectedProductIds.length > 0) {
+                                                setIsConfirmModalOpen(true);
+                                            } else {
+                                                setIsSelectionMode(false);
+                                                setSelectedProductIds([]);
+                                            }
+                                        }}
+                                    >
+                                        <Trash2 className={`h-4 w-4 ${!isSelectionMode ? 'mr-2' : (selectedProductIds.length > 0 ? 'mr-2' : 'mr-2')}`} />
+                                        {!isSelectionMode ? "Delete Items" : (selectedProductIds.length > 0 ? "Confirm Deletion" : "Cancel Selection")}
+                                    </Button>
+                                )}
+
+                                {!isEmployee && (
                                     <Link href="/products/create">
                                         <Button size="sm" className="bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black">
                                             <Plus className="mr-2 h-4 w-4" /> Add Product
@@ -390,6 +510,25 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     <FileText className="h-4 w-4" />
                                 </Button>
                             </a>
+                            {!isEmployee && (
+                                <Button 
+                                    variant={isSelectionMode ? (selectedProductIds.length > 0 ? "destructive" : "outline") : "outline"}
+                                    size="icon" 
+                                    className={`h-10 w-10 shrink-0 ${isSelectionMode && selectedProductIds.length > 0 ? 'animate-pulse ring-2 ring-red-500 ring-offset-2' : ''}`}
+                                    onClick={() => {
+                                        if (!isSelectionMode) {
+                                            setIsSelectionMode(true);
+                                        } else if (selectedProductIds.length > 0) {
+                                            setIsConfirmModalOpen(true);
+                                        } else {
+                                            setIsSelectionMode(false);
+                                            setSelectedProductIds([]);
+                                        }
+                                    }}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            )}
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
                                 <Input
@@ -397,8 +536,16 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     placeholder="Search..."
                                     value={search}
                                     onChange={handleSearchChange}
-                                    className="pl-9 h-10 bg-white dark:bg-gray-800"
+                                    className="pl-9 pr-10 h-10 bg-white dark:bg-gray-800"
                                 />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-0 top-0 h-10 w-10 text-gray-400 hover:text-black dark:hover:text-white"
+                                    onClick={() => setIsScanning(true)}
+                                >
+                                    <Scan className="h-4 w-4" />
+                                </Button>
                             </div>
                             <Button
                                 variant={showFilters || hasActiveFilters ? "default" : "outline"}
@@ -420,11 +567,19 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <Input
                                 type="text"
-                                placeholder="Search products..."
+                                placeholder="Search products, codes, or SKU..."
                                 value={search}
                                 onChange={handleSearchChange}
-                                className="pl-10"
+                                className="pl-10 pr-10"
                             />
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-0 top-0 h-10 w-10 text-gray-400 hover:text-black dark:hover:text-white"
+                                onClick={() => setIsScanning(true)}
+                            >
+                                <Scan className="h-5 w-5" />
+                            </Button>
                         </div>
 
                         {/* Filter Group - wrapped for mobile Layout */}
@@ -505,23 +660,58 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                        {productList.map((product: Product) => (
-                            <div key={product.id} className="group relative flex w-full flex-col overflow-hidden rounded-xl border border-black/10 bg-white transition-all hover:shadow-lg dark:border-sidebar-border dark:bg-transparent">
-                                {/* Image Section */}
-                                <div className="relative aspect-square overflow-hidden bg-neutral-50 dark:bg-white/5">
-                                    <Link href={`/products/${product.id}`} className="block h-full w-full">
-                                        {product.image_path ? (
-                                            <img
-                                                className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
-                                                src={`/storage/${product.image_path}`}
-                                                alt={product.name}
-                                            />
-                                        ) : (
-                                            <div className="flex h-full w-full items-center justify-center">
-                                                <PackageOpen className="h-20 w-20 text-gray-300" />
+                        {productList.map((product: Product) => {
+                            const isSelected = selectedProductIds.includes(product.id);
+                            return (
+                                <div 
+                                    key={product.id} 
+                                    onClick={() => isSelectionMode && toggleSelection(product.id)}
+                                    className={`group relative flex w-full flex-col overflow-hidden rounded-xl border transition-all duration-300 hover:shadow-lg dark:bg-transparent ${
+                                        isSelectionMode ? 'cursor-pointer' : ''
+                                    } ${
+                                        isSelected 
+                                            ? 'border-red-500 ring-2 ring-red-500 bg-red-50/30 dark:bg-red-900/10 shadow-red-100 dark:shadow-none' 
+                                            : 'border-black/10 bg-white dark:border-sidebar-border'
+                                    }`}
+                                >
+                                    {/* Image Section */}
+                                    <div className="relative aspect-square overflow-hidden bg-neutral-50 dark:bg-white/5">
+                                        {isSelectionMode ? (
+                                            <div className="block h-full w-full">
+                                                {product.image_path ? (
+                                                    <img
+                                                        className={`absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 ${isSelected ? 'scale-90' : 'group-hover:scale-110'}`}
+                                                        src={`/storage/${product.image_path}`}
+                                                        alt={product.name}
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center">
+                                                        <PackageOpen className="h-20 w-20 text-gray-300" />
+                                                    </div>
+                                                )}
+                                                {isSelected && (
+                                                    <div className="absolute inset-0 bg-red-500/10 flex items-center justify-center backdrop-blur-[1px]">
+                                                        <div className="bg-red-600 text-white rounded-full p-3 shadow-xl animate-in zoom-in duration-200">
+                                                            <Trash2 className="h-6 w-6" />
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
+                                        ) : (
+                                            <Link href={`/products/${product.id}`} className="block h-full w-full">
+                                                {product.image_path ? (
+                                                    <img
+                                                        className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
+                                                        src={`/storage/${product.image_path}`}
+                                                        alt={product.name}
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center">
+                                                        <PackageOpen className="h-20 w-20 text-gray-300" />
+                                                    </div>
+                                                )}
+                                            </Link>
                                         )}
-                                    </Link>
 
                                     {/* Vibrant Quantity Badge */}
                                     <div className="absolute top-2 right-2">
@@ -534,20 +724,22 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     </div>
 
                                     {/* Hover Overlay for Quick Actions */}
-                                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none">
-                                        <div className="pointer-events-auto flex flex-col gap-2">
-                                            <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white">
-                                                <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
-                                            </Button>
-                                            {!isEmployee && (
-                                                <Link href={`/products/${product.id}/edit`}>
-                                                    <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
-                                                        Edit Product
-                                                    </Button>
-                                                </Link>
-                                            )}
+                                    {!isSelectionMode && (
+                                        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none">
+                                            <div className="pointer-events-auto flex flex-col gap-2">
+                                                <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white">
+                                                    <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
+                                                </Button>
+                                                {!isEmployee && (
+                                                    <Link href={`/products/${product.id}/edit`}>
+                                                        <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
+                                                            Edit Product
+                                                        </Button>
+                                                    </Link>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
 
                                 {/* Content Section */}
@@ -555,11 +747,19 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     {/* Header & Price */}
                                     <div className="space-y-1">
                                         <div className="flex justify-between items-start gap-2">
-                                            <Link href={`/products/${product.id}`} className="hover:underline flex-1">
-                                                <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1 text-base group-hover:text-blue-600 transition-colors" title={product.name}>
-                                                    {product.name}
-                                                </h3>
-                                            </Link>
+                                            {isSelectionMode ? (
+                                                <div className="flex-1">
+                                                    <h3 className={`font-bold line-clamp-1 text-base transition-colors ${isSelected ? 'text-red-600' : 'text-gray-900 dark:text-white'}`} title={product.name}>
+                                                        {product.name}
+                                                    </h3>
+                                                </div>
+                                            ) : (
+                                                <Link href={`/products/${product.id}`} className="hover:underline flex-1">
+                                                    <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1 text-base group-hover:text-blue-600 transition-colors" title={product.name}>
+                                                        {product.name}
+                                                    </h3>
+                                                </Link>
+                                            )}
                                             <span className="text-base font-extrabold text-black dark:text-white whitespace-nowrap">
                                                 ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
                                             </span>
@@ -627,16 +827,23 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             )}
                                         </div>
 
-                                        <Link href={`/products/${product.id}`} className="shrink-0">
-                                            <button className="group/btn flex items-center gap-1 text-xs font-bold text-gray-900 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400 whitespace-nowrap">
-                                                View Details
-                                                <ArrowRight className="h-3 w-3 -translate-x-1 transition-transform group-hover/btn:translate-x-0" />
-                                            </button>
-                                        </Link>
+                                        {isSelectionMode ? (
+                                            <div className="shrink-0 flex items-center gap-1 text-xs font-bold text-red-600 whitespace-nowrap">
+                                                {isSelected ? 'Selected' : 'Select'}
+                                            </div>
+                                        ) : (
+                                            <Link href={`/products/${product.id}`} className="shrink-0">
+                                                <button className="group/btn flex items-center gap-1 text-xs font-bold text-gray-900 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400 whitespace-nowrap">
+                                                    View Details
+                                                    <ArrowRight className="h-3 w-3 -translate-x-1 transition-transform group-hover/btn:translate-x-0" />
+                                                </button>
+                                            </Link>
+                                        )}
+                                    </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 
@@ -755,6 +962,70 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             Close
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600 font-bold">
+                            <Trash2 className="h-5 w-5" /> Confirm Deletion
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-6 flex flex-col items-center text-center">
+                        <div className="h-16 w-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                            <Trash2 className="h-8 w-8 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">Are you absolutely sure?</h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                            You are about to delete <strong>{selectedProductIds.length}</strong> selected products.
+                        </p>
+                        <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                            <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                                IMPORTANT: This action cannot be undone. All product data, images, and stock records will be permanently removed.
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter className="flex gap-2 sm:justify-center">
+                        <Button variant="outline" onClick={() => setIsConfirmModalOpen(false)} className="flex-1">
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleBulkDelete} className="flex-1">
+                            Delete Permanently
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={isScanning} onOpenChange={(open) => !open && stopScanner()}>
+                <DialogContent className="sm:max-w-md p-0 overflow-hidden border-none bg-black">
+                    <DialogHeader className="p-4 absolute top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-sm text-white border-none">
+                        <DialogTitle className="text-white">Scan Barcode / QR Code</DialogTitle>
+                    </DialogHeader>
+                    
+                    <div className="relative min-h-[400px] flex items-center justify-center bg-black">
+                        <div id="search-scanner-reader" className="w-full h-full [&>video]:object-cover [&>video]:h-[400px]"></div>
+                        
+                        {/* Scan Line Animation */}
+                        <div className="absolute inset-x-0 mx-auto w-[80%] h-0.5 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-[scan_2s_ease-in-out_infinite] top-0 pointer-events-none z-10"></div>
+                        <div className="absolute inset-0 border-[60px] border-black/50 pointer-events-none z-0"></div>
+                        
+                        <style>{`
+                            @keyframes scan {
+                                0%, 100% { top: 20%; opacity: 0; }
+                                10% { opacity: 1; }
+                                50% { top: 80%; }
+                                90% { opacity: 1; }
+                            }
+                        `}</style>
+
+                        <Button
+                            size="icon"
+                            variant="destructive"
+                            className="absolute bottom-6 rounded-full h-14 w-14 shadow-xl z-50 border-2 border-white/20"
+                            onClick={stopScanner}
+                        >
+                            <X className="w-6 h-6" />
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </AppLayout>
