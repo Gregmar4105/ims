@@ -13,8 +13,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Upload } from 'lucide-react';
+import { Plus, Trash2, Upload, Store, Clock, Info, Power, PowerOff } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -65,6 +66,9 @@ interface Product {
     code_2: string | null;
     sku: string | null;
     reorder_level: number | null;
+    status: string;
+    active_until_zero_days: number | null;
+    out_of_stock_since: string | null;
 }
 
 interface Props {
@@ -72,9 +76,12 @@ interface Props {
     brands: Brand[];
     categories: Category[];
     suppliers: Supplier[];
+    isSystemAdmin: boolean;
+    currentBranch: { id: number; branch_name: string } | null;
+    notInBranch: boolean;
 }
 
-export default function Edit({ product, brands, categories, suppliers }: Props) {
+export default function Edit({ product, brands, categories, suppliers, isSystemAdmin, currentBranch, notInBranch }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
         name: product.name,
@@ -91,6 +98,8 @@ export default function Edit({ product, brands, categories, suppliers }: Props) 
         barcode: product.barcode || '',
         qr_code: product.qr_code || '',
         reorder_level: product.reorder_level !== null ? String(product.reorder_level) : '',
+        active_until_zero_days: product.active_until_zero_days !== null ? String(product.active_until_zero_days) : '',
+        status: product.status || 'active',
         variations: product.variations || [] as Variation[],
         image: null as File | null,
     });
@@ -98,6 +107,16 @@ export default function Edit({ product, brands, categories, suppliers }: Props) 
     const [imagePreview, setImagePreview] = useState<string | null>(
         product.image_path ? `/storage/${product.image_path}` : null
     );
+
+    // Determine zero stock option from existing value
+    const getInitialZeroStockOption = () => {
+        if (product.active_until_zero_days === null) return 'forever';
+        if (product.active_until_zero_days === 0) return 'immediately';
+        if ([7, 14, 30].includes(product.active_until_zero_days)) return String(product.active_until_zero_days);
+        return 'custom';
+    };
+    const [zeroStockOption, setZeroStockOption] = useState<string>(getInitialZeroStockOption());
+    const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
     function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
@@ -127,6 +146,34 @@ export default function Edit({ product, brands, categories, suppliers }: Props) 
         setData('variations', newVariations);
     }
 
+    function handleZeroStockChange(value: string) {
+        setZeroStockOption(value);
+        if (value === 'forever') {
+            setData('active_until_zero_days', '');
+        } else if (value === 'immediately') {
+            setData('active_until_zero_days', '0');
+        } else if (value === 'custom') {
+            setData('active_until_zero_days', product.active_until_zero_days !== null ? String(product.active_until_zero_days) : '7');
+        } else {
+            setData('active_until_zero_days', value);
+        }
+    }
+
+    function handleToggleStatus() {
+        setIsTogglingStatus(true);
+        router.post(`/products/${product.id}/toggle-status`, {}, {
+            onSuccess: () => {
+                setIsTogglingStatus(false);
+                const newStatus = product.status === 'active' ? 'inactive' : 'active';
+                toast.success(`Product ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully.`);
+            },
+            onError: () => {
+                setIsTogglingStatus(false);
+                toast.error('Failed to toggle product status.');
+            }
+        });
+    }
+
     function submit(e: React.FormEvent) {
         e.preventDefault();
         post(`/products/${product.id}`);
@@ -144,7 +191,62 @@ export default function Edit({ product, brands, categories, suppliers }: Props) 
                             Update the details of the product.
                         </p>
                     </div>
+                    <div className="flex items-center gap-3">
+                        <div className={`hidden sm:flex flex-col items-end`}>
+                            <p className={`text-xs font-bold uppercase tracking-wider ${
+                                product.status === 'active' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+                            }`}>
+                                {product.status === 'active' ? 'Active' : 'Inactive'}
+                            </p>
+                            {product.out_of_stock_since && (
+                                <p className="text-[10px] text-muted-foreground">
+                                    OOS: {new Date(product.out_of_stock_since).toLocaleDateString()}
+                                </p>
+                            )}
+                        </div>
+                        <Button 
+                            type="button" 
+                            variant={product.status === 'active' ? 'destructive' : 'default'}
+                            size="sm"
+                            onClick={handleToggleStatus}
+                            disabled={isTogglingStatus}
+                            className={product.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+                        >
+                            {isTogglingStatus ? '...' : (product.status === 'active' ? 'Deactivate' : 'Activate')}
+                        </Button>
+                    </div>
                 </div>
+
+                {/* Branch indicator for System Admin */}
+                {isSystemAdmin && currentBranch && (
+                    <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                        <Store className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <div>
+                            <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+                                Editing stock for: <span className="text-blue-600 dark:text-blue-300">{currentBranch.branch_name}</span>
+                            </p>
+                            <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-0.5">
+                                Switch branches from the header dropdown to edit stock for a different branch.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Branch Availability Alert */}
+                {isSystemAdmin && notInBranch && currentBranch && (
+                    <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                        <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <div>
+                            <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                                Not in Current Branch
+                            </p>
+                            <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-0.5">
+                                This product is currently not available in <strong>{currentBranch.branch_name}</strong>. 
+                                Saving this form will create a new record for this product in this branch.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border shadow-sm">
                     <form onSubmit={submit} className="space-y-6">
@@ -328,6 +430,42 @@ export default function Edit({ product, brands, categories, suppliers }: Props) 
                                 />
                                 {errors.physical_location && <p className="text-sm text-red-500">{errors.physical_location}</p>}
                             </div>
+                        </div>
+
+                        {/* Active When Out of Stock */}
+                        <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                <Label className="text-sm font-semibold">Keep Active When Out of Stock</Label>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-3">
+                                Choose how long this product stays visible and active after its stock reaches 0.
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Select value={zeroStockOption} onValueChange={handleZeroStockChange}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select option" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="forever">Stay Active Forever</SelectItem>
+                                        <SelectItem value="immediately">Deactivate Immediately</SelectItem>
+                                        <SelectItem value="7">7 Days</SelectItem>
+                                        <SelectItem value="14">14 Days</SelectItem>
+                                        <SelectItem value="30">30 Days</SelectItem>
+                                        <SelectItem value="custom">Custom Days</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {zeroStockOption === 'custom' && (
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={data.active_until_zero_days}
+                                        onChange={e => setData('active_until_zero_days', e.target.value)}
+                                        placeholder="Enter number of days"
+                                    />
+                                )}
+                            </div>
+                            {errors.active_until_zero_days && <p className="text-sm text-red-500 mt-2">{errors.active_until_zero_days}</p>}
                         </div>
 
                         <div className="space-y-2">

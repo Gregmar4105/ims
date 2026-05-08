@@ -25,10 +25,14 @@ class Product extends Model
         'created_by',
         'price',
         'supplier_id',
+        'status',
+        'active_until_zero_days',
+        'out_of_stock_since',
     ];
 
     protected $casts = [
         'variations' => 'array',
+        'out_of_stock_since' => 'datetime',
     ];
 
     public function branches()

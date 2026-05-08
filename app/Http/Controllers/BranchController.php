@@ -105,4 +105,17 @@ class BranchController extends Controller
             'branches' => $branches
         ]);
     }
+
+    public function switch(Request $request)
+    {
+        $request->validate([
+            'branch_id' => 'required|exists:branches,id'
+        ]);
+
+        if ($request->user()->hasRole('System Administrator')) {
+            session(['active_branch_id' => $request->branch_id]);
+        }
+
+        return back();
+    }
 }

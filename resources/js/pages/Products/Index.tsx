@@ -2,7 +2,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
-import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight, Filter, FileText, Camera, StopCircle, Scan } from 'lucide-react';
+import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight, Filter, FileText, Camera, StopCircle, Scan, Power, PowerOff } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -53,6 +53,9 @@ interface Product {
     code: string | null;
     code_2: string | null;
     sku: string | null;
+    status: string;
+    active_until_zero_days: number | null;
+    out_of_stock_since: string | null;
     branch?: { branch_name: string };
     brand?: { name: string };
     category?: { name: string };
@@ -67,6 +70,7 @@ interface Props {
         brand?: string;
         category?: string;
         stock?: string;
+        status?: string;
     };
     options: {
         branches: string[];
@@ -88,6 +92,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const [brand, setBrand] = useState<string>(filters?.brand || "all");
     const [category, setCategory] = useState<string>(filters?.category || "all");
     const [stock, setStock] = useState<string>(filters?.stock || "all");
+    const [statusFilter, setStatusFilter] = useState<string>(filters?.status || "all");
     const [showFilters, setShowFilters] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -195,6 +200,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         setBrand(filters?.brand || "all");
         setCategory(filters?.category || "all");
         setStock(filters?.stock || "all");
+        setStatusFilter(filters?.status || "all");
     }, [filters]);
 
     function updateParams(newParams: any) {
@@ -240,10 +246,23 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         setBrand("all");
         setCategory("all");
         setStock("all");
+        setStatusFilter("all");
         router.get("/products");
     };
 
-    const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all';
+    const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all' || statusFilter !== 'all';
+
+    const handleToggleStatus = (productId: number) => {
+        router.post(`/products/${productId}/toggle-status`, {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success('Product status updated.');
+            },
+            onError: () => {
+                toast.error('Failed to update status.');
+            }
+        });
+    };
 
     const [viewCodeProduct, setViewCodeProduct] = useState<Product | null>(null);
 
@@ -624,13 +643,24 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
 
                             <Select value={stock} onValueChange={(val) => { setStock(val); updateParams({ stock: val }); }}>
                                 <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
+                                    <SelectValue placeholder="Stock" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Stock</SelectItem>
+                                    <SelectItem value="in_stock">In Stock</SelectItem>
+                                    <SelectItem value="low_stock">Low Stock</SelectItem>
+                                    <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); updateParams({ status: val }); }}>
+                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
                                     <SelectValue placeholder="Status" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Status</SelectItem>
-                                    <SelectItem value="in_stock">In Stock</SelectItem>
-                                    <SelectItem value="low_stock">Low Stock</SelectItem>
-                                    <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="inactive">Inactive</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -671,7 +701,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     } ${
                                         isSelected 
                                             ? 'border-red-500 ring-2 ring-red-500 bg-red-50/30 dark:bg-red-900/10 shadow-red-100 dark:shadow-none' 
-                                            : 'border-black/10 bg-white dark:border-sidebar-border'
+                                            : product.status === 'inactive'
+                                                ? 'border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50 opacity-60'
+                                                : 'border-black/10 bg-white dark:border-sidebar-border'
                                     }`}
                                 >
                                     {/* Image Section */}
@@ -714,13 +746,18 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         )}
 
                                     {/* Vibrant Quantity Badge */}
-                                    <div className="absolute top-2 right-2">
+                                    <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
                                         <Badge className={`shadow-sm border-0 font-bold ${product.quantity === 0 ? 'bg-red-600 hover:bg-red-700 text-white' :
                                             product.quantity <= 5 ? 'bg-amber-500 hover:bg-amber-600 text-white' :
                                                 'bg-emerald-500 hover:bg-emerald-600 text-white'
                                             }`}>
                                             Qty: {product.quantity}
                                         </Badge>
+                                        {product.status === 'inactive' && (
+                                            <Badge className="shadow-sm border-0 font-bold bg-gray-500 hover:bg-gray-600 text-white text-[10px]">
+                                                Inactive
+                                            </Badge>
+                                        )}
                                     </div>
 
                                     {/* Hover Overlay for Quick Actions */}
@@ -736,6 +773,17 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                             Edit Product
                                                         </Button>
                                                     </Link>
+                                                )}
+                                                {!isEmployee && (
+                                                    <Button 
+                                                        variant={product.status === 'active' ? 'destructive' : 'default'} 
+                                                        size="sm" 
+                                                        onClick={(e) => { e.preventDefault(); handleToggleStatus(product.id); }}
+                                                        className={`w-32 shadow-lg ${product.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+                                                    >
+                                                        {product.status === 'active' ? <PowerOff className="w-4 h-4 mr-2" /> : <Power className="w-4 h-4 mr-2" />}
+                                                        {product.status === 'active' ? 'Deactivate' : 'Activate'}
+                                                    </Button>
                                                 )}
                                             </div>
                                         </div>

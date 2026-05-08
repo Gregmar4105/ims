@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Brand;
+use App\Models\Branch;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -14,10 +15,61 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
+    /**
+     * Auto-deactivate products whose out-of-stock grace period has expired.
+     * Called at query time instead of using a scheduled task.
+     */
+    protected function autoDeactivateExpiredProducts(): void
+    {
+        Product::where('status', 'active')
+            ->whereNotNull('active_until_zero_days')
+            ->whereNotNull('out_of_stock_since')
+            ->whereRaw('DATE_ADD(out_of_stock_since, INTERVAL active_until_zero_days DAY) <= NOW()')
+            ->update(['status' => 'inactive']);
+    }
+
+    /**
+     * Update the out_of_stock_since timestamp for a product based on total stock.
+     */
+    protected function updateOutOfStockTimestamp(Product $product): void
+    {
+        $totalStock = $product->branches()->sum('branch_products.quantity');
+
+        if ($totalStock <= 0 && is_null($product->out_of_stock_since)) {
+            $product->update(['out_of_stock_since' => now()]);
+        } elseif ($totalStock > 0 && !is_null($product->out_of_stock_since)) {
+            $product->update(['out_of_stock_since' => null]);
+        }
+    }
+
+    /**
+     * Resolve the target branch ID for the current user.
+     * System Admins use the session-stored active branch; others use their own branch.
+     */
+    protected function resolveTargetBranchId($user, bool $isSystemAdmin): ?int
+    {
+        if ($isSystemAdmin) {
+            return session('active_branch_id', $user->branch_id);
+        }
+        return $user->branch_id;
+    }
+
     protected function buildFilteredProductQuery(Request $request, $user, $isSystemAdmin, &$filterBranch, &$filterBrand, &$filterCategory, &$filterStock, &$search)
     {
         $search = $request->query('search');
         $filterBranch = $request->query('branch');
+        
+        // Default to session branch for System Admins if no explicit filter is set in request
+        if ($isSystemAdmin && !$request->has('branch')) {
+            $sessionBranchId = session('active_branch_id');
+            if ($sessionBranchId) {
+                $sessionBranch = Branch::find($sessionBranchId);
+                if ($sessionBranch) {
+                    $filterBranch = $sessionBranch->branch_name;
+                }
+            }
+        }
+
         $filterBrand = $request->query('brand');
         $filterCategory = $request->query('category');
         $filterStock = $request->query('stock');
@@ -134,10 +186,19 @@ class ProductController extends Controller
     {
         $user = auth()->user();
         $isSystemAdmin = $user->hasRole('System Administrator');
+
+        // Auto-deactivate products whose grace period has expired
+        $this->autoDeactivateExpiredProducts();
         
         $filterBranch = $filterBrand = $filterCategory = $filterStock = $search = null;
+        $filterStatus = $request->query('status');
 
         $query = $this->buildFilteredProductQuery($request, $user, $isSystemAdmin, $filterBranch, $filterBrand, $filterCategory, $filterStock, $search);
+
+        // Apply status filter
+        if ($filterStatus && $filterStatus !== 'all') {
+            $query->where('status', $filterStatus);
+        }
 
         $products = $query->latest()->paginate(12)->withQueryString();
 
@@ -171,6 +232,7 @@ class ProductController extends Controller
                 'brand' => $filterBrand,
                 'category' => $filterCategory,
                 'stock' => $filterStock,
+                'status' => $filterStatus,
             ],
             'options' => [
                 'branches' => $branches,
@@ -254,24 +316,29 @@ class ProductController extends Controller
         $branchId = $user->branch_id;
         $isSystemAdmin = $user->hasRole('System Administrator');
 
-        if (!$branchId && !$isSystemAdmin) {
+        // For System Admin, use the session-stored active branch
+        $targetBranchId = $this->resolveTargetBranchId($user, $isSystemAdmin);
+
+        if (!$targetBranchId && !$isSystemAdmin) {
             return Inertia::render('Products/Create', [
                 'brands' => [],
                 'categories' => [],
+                'isSystemAdmin' => false,
+                'currentBranch' => null,
             ]);
         }
 
         if ($isSystemAdmin) {
             $brands = Brand::where('status', 'Active')->get()
-                ->sortByDesc(function ($brand) use ($branchId) {
-                    return $brand->branch_id === $branchId ? 1 : 0;
+                ->sortByDesc(function ($brand) use ($targetBranchId) {
+                    return $brand->branch_id === $targetBranchId ? 1 : 0;
                 })
                 ->unique('name')
                 ->values();
 
             $categories = Category::where('status', 'Active')->get()
-                ->sortByDesc(function ($category) use ($branchId) {
-                    return $category->branch_id === $branchId ? 1 : 0;
+                ->sortByDesc(function ($category) use ($targetBranchId) {
+                    return $category->branch_id === $targetBranchId ? 1 : 0;
                 })
                 ->unique('name')
                 ->values();
@@ -287,16 +354,25 @@ class ProductController extends Controller
 
         $suppliers = \App\Models\Supplier::all(['id', 'name']);
 
+        // Get current branch info for display
+        $currentBranch = $targetBranchId ? Branch::find($targetBranchId) : null;
+
         return Inertia::render('Products/Create', [
             'brands' => $brands,
             'categories' => $categories,
             'suppliers' => $suppliers,
+            'isSystemAdmin' => $isSystemAdmin,
+            'currentBranch' => $currentBranch ? [
+                'id' => $currentBranch->id,
+                'branch_name' => $currentBranch->branch_name,
+            ] : null,
         ]);
     }
 
     public function store(Request $request)
     {
         $user = $request->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -315,15 +391,19 @@ class ProductController extends Controller
             'price' => 'nullable|numeric|min:0',
             'supplier_id' => 'nullable|exists:suppliers,id',
             'reorder_level' => 'nullable|integer|min:0',
+            'active_until_zero_days' => 'nullable|integer|min:0',
         ]);
 
-        $isSystemAdmin = $user->hasRole('System Administrator');
+        // Resolve target branch: System Admin uses session branch, others use their own
+        $targetBranchId = $this->resolveTargetBranchId($user, $isSystemAdmin);
         
-        if (!$user->branch && !$isSystemAdmin) {
+        if (!$targetBranchId && !$isSystemAdmin) {
             return back()->withErrors(['branch' => 'You must be assigned to a branch to add products.']);
         }
 
-        $branchName = $user->branch ? $user->branch->branch_name : 'System';
+        // Get branch info for image path
+        $targetBranch = $targetBranchId ? Branch::find($targetBranchId) : null;
+        $branchName = $targetBranch ? $targetBranch->branch_name : 'System';
         $brand = Brand::find($validated['brand_id']);
         $category = Category::find($validated['category_id']);
         
@@ -345,7 +425,7 @@ class ProductController extends Controller
             $validated['image_path'] = $path;
         }
 
-        DB::transaction(function () use ($validated, $user) {
+        DB::transaction(function () use ($validated, $user, $targetBranchId) {
             // Create Global Product
             $product = Product::create([
                 'brand_id' => $validated['brand_id'],
@@ -364,12 +444,15 @@ class ProductController extends Controller
                 'qr_code' => null,
                 'price' => $validated['price'] ?? null,
                 'supplier_id' => $validated['supplier_id'] ?? null,
+                'status' => 'active',
+                'active_until_zero_days' => $validated['active_until_zero_days'] ?? null,
+                'out_of_stock_since' => ($validated['quantity'] <= 0) ? now() : null,
             ]);
 
-            // Create Branch Product (Stock) if user has a branch
-            if ($user->branch_id) {
+            // Create Branch Product (Stock) using the resolved target branch
+            if ($targetBranchId) {
                 \App\Models\BranchProduct::create([
-                    'branch_id' => $user->branch_id,
+                    'branch_id' => $targetBranchId,
                     'product_id' => $product->id,
                     'quantity' => $validated['quantity'],
                     'physical_location' => $validated['physical_location'] ?? null,
@@ -380,7 +463,7 @@ class ProductController extends Controller
             }
         });
 
-        return redirect()->route('products.index')->with('success', 'Product added successfully.');
+        return redirect()->route('products.show', $product->id)->with('success', 'Product added successfully.');
     }
 
     public function edit(Product $product)
@@ -388,26 +471,29 @@ class ProductController extends Controller
         $user = auth()->user();
         $isSystemAdmin = $user->hasRole('System Administrator');
 
-        // Authorization: System Admin or has stock in branch
-        // We check if the product is associated with the user's branch
-        $hasStock = $product->branches()->where('branch_id', $user->branch_id)->exists();
+        // Resolve target branch for loading branch-specific data
+        $targetBranchId = $this->resolveTargetBranchId($user, $isSystemAdmin);
 
-        if (!$isSystemAdmin && !$hasStock) {
-            abort(403, 'Unauthorized action.');
+        // Authorization: System Admin or has stock in branch
+        if (!$isSystemAdmin) {
+            $hasStock = $product->branches()->where('branch_id', $user->branch_id)->exists();
+            if (!$hasStock) {
+                abort(403, 'Unauthorized action.');
+            }
         }
 
-        // Load branch specific data for the form
-        if (!$isSystemAdmin) {
-            $branchProduct = $product->branches()->where('branch_id', $user->branch_id)->first();
-            $product->quantity = $branchProduct ? $branchProduct->pivot->quantity : 0;
-            $product->physical_location = $branchProduct ? $branchProduct->pivot->physical_location : '';
-            if ($branchProduct) {
-                $product->description = $branchProduct->pivot->description ?? $product->description;
-                $product->variations = $branchProduct->pivot->variations ?? $product->variations;
-                $product->reorder_level = $branchProduct->pivot->reorder_level ?? 0;
-            } else {
-                $product->reorder_level = 0;
-            }
+        // Load branch specific data for the form (works for both admin and non-admin)
+        $branchProduct = $product->branches()->where('branch_id', $targetBranchId)->first();
+        $notInBranch = !$branchProduct;
+        
+        $product->quantity = $branchProduct ? $branchProduct->pivot->quantity : 0;
+        $product->physical_location = $branchProduct ? $branchProduct->pivot->physical_location : '';
+        if ($branchProduct) {
+            $product->description = $branchProduct->pivot->description ?? $product->description;
+            $product->variations = $branchProduct->pivot->variations ?? $product->variations;
+            $product->reorder_level = $branchProduct->pivot->reorder_level ?? 0;
+        } else {
+            $product->reorder_level = 0;
         }
 
         $brands = Brand::where('status', 'Active')->get();
@@ -415,11 +501,20 @@ class ProductController extends Controller
 
         $suppliers = \App\Models\Supplier::all(['id', 'name']);
 
+        // Get current branch info for display
+        $currentBranch = $targetBranchId ? Branch::find($targetBranchId) : null;
+
         return Inertia::render('Products/Edit', [
             'product' => $product,
             'brands' => $brands,
             'categories' => $categories,
             'suppliers' => $suppliers,
+            'isSystemAdmin' => $isSystemAdmin,
+            'currentBranch' => $currentBranch ? [
+                'id' => $currentBranch->id,
+                'branch_name' => $currentBranch->branch_name,
+            ] : null,
+            'notInBranch' => $notInBranch,
         ]);
     }
 
@@ -448,6 +543,8 @@ class ProductController extends Controller
             'price' => 'nullable|numeric|min:0', 
             'supplier_id' => 'nullable|exists:suppliers,id',
             'reorder_level' => 'nullable|integer|min:0',
+            'active_until_zero_days' => 'nullable|integer|min:0',
+            'status' => 'nullable|string|in:active,inactive',
         ]);
 
         // Handle Image Upload if provided
@@ -462,7 +559,10 @@ class ProductController extends Controller
             $validated['image_path'] = $path;
         }
 
-        DB::transaction(function () use ($product, $validated, $user, $isSystemAdmin) {
+        // Resolve target branch
+        $targetBranchId = $this->resolveTargetBranchId($user, $isSystemAdmin);
+
+        DB::transaction(function () use ($product, $validated, $user, $isSystemAdmin, $targetBranchId) {
             // Update Global Product Details
             $product->update([
                 'name' => $validated['name'],
@@ -479,13 +579,15 @@ class ProductController extends Controller
                 'image_path' => $validated['image_path'] ?? $product->image_path,
                 'price' => $validated['price'] ?? $product->price,
                 'supplier_id' => $validated['supplier_id'] ?? $product->supplier_id,
+                'active_until_zero_days' => $validated['active_until_zero_days'] ?? null,
+                'status' => $validated['status'] ?? $product->status,
             ]);
 
-            // Update Branch Stock
-            if (!$isSystemAdmin && $user->branch_id) {
+            // Update Branch Stock — works for BOTH System Admin and Branch Admin
+            if ($targetBranchId) {
                 \App\Models\BranchProduct::updateOrCreate(
                     [
-                        'branch_id' => $user->branch_id,
+                        'branch_id' => $targetBranchId,
                         'product_id' => $product->id,
                     ],
                     [
@@ -497,9 +599,26 @@ class ProductController extends Controller
                     ]
                 );
             }
+
+            // Update out_of_stock_since timestamp
+            $this->updateOutOfStockTimestamp($product->fresh());
         });
 
-        return redirect()->route('products.index')->with('success', 'Product updated successfully.');
+        return redirect()->route('products.show', $product->id)->with('success', 'Product updated successfully.');
+    }
+
+    public function toggleStatus(Product $product)
+    {
+        $newStatus = $product->status === 'active' ? 'inactive' : 'active';
+        
+        $product->update([
+            'status' => $newStatus,
+            // If reactivating, clear out_of_stock_since so the timer resets
+            'out_of_stock_since' => $newStatus === 'active' ? null : $product->out_of_stock_since,
+        ]);
+
+        $label = $newStatus === 'active' ? 'activated' : 'deactivated';
+        return back()->with('success', "Product {$label} successfully.");
     }
 
     public function bulkDestroy(Request $request)

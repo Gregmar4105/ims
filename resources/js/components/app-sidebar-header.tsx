@@ -44,7 +44,7 @@ export function AppSidebarHeader({
                                 {auth.branches.map((branch) => (
                                     <DropdownMenuItem
                                         key={branch.id}
-                                        onClick={() => router.get('/branch-dashboard', { branch_id: branch.id })}
+                                        onClick={() => router.post('/branches/switch', { branch_id: branch.id })}
                                         className="cursor-pointer font-medium"
                                     >
                                         {branch.branch_name}

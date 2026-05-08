@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Upload } from 'lucide-react';
+import { Plus, Trash2, Upload, Store, Clock, Info } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -51,9 +51,11 @@ interface Props {
     brands: Brand[];
     categories: Category[];
     suppliers: Supplier[];
+    isSystemAdmin: boolean;
+    currentBranch: { id: number; branch_name: string } | null;
 }
 
-export default function Create({ brands, categories, suppliers }: Props) {
+export default function Create({ brands, categories, suppliers, isSystemAdmin, currentBranch }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         brand_id: '',
@@ -67,11 +69,13 @@ export default function Create({ brands, categories, suppliers }: Props) {
         code_2: '',
         sku: '',
         reorder_level: '',
+        active_until_zero_days: '' as string,
         variations: [] as Variation[],
         image: null as File | null,
     });
 
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [zeroStockOption, setZeroStockOption] = useState<string>('forever');
 
     function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
@@ -101,6 +105,19 @@ export default function Create({ brands, categories, suppliers }: Props) {
         setData('variations', newVariations);
     }
 
+    function handleZeroStockChange(value: string) {
+        setZeroStockOption(value);
+        if (value === 'forever') {
+            setData('active_until_zero_days', '');
+        } else if (value === 'immediately') {
+            setData('active_until_zero_days', '0');
+        } else if (value === 'custom') {
+            setData('active_until_zero_days', '7');
+        } else {
+            setData('active_until_zero_days', value);
+        }
+    }
+
     function submit(e: React.FormEvent) {
         e.preventDefault();
         post('/products');
@@ -115,10 +132,39 @@ export default function Create({ brands, categories, suppliers }: Props) {
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Add New Product</h1>
                         <p className="text-sm text-muted-foreground mt-1">
-                            Enter the details of the new product. It will be associated with your branch.
+                            Enter the details of the new product.
                         </p>
                     </div>
                 </div>
+
+                {/* Branch indicator for System Admin */}
+                {isSystemAdmin && currentBranch && (
+                    <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                        <Store className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <div>
+                            <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+                                Creating product for: <span className="text-blue-600 dark:text-blue-300">{currentBranch.branch_name}</span>
+                            </p>
+                            <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-0.5">
+                                Switch branches from the header dropdown to change the target branch.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {isSystemAdmin && !currentBranch && (
+                    <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                        <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <div>
+                            <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                                No branch selected
+                            </p>
+                            <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-0.5">
+                                Please select a branch from the Branch Dashboard first to assign stock.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border shadow-sm">
                     <form onSubmit={submit} className="space-y-6">
@@ -277,6 +323,42 @@ export default function Create({ brands, categories, suppliers }: Props) {
                                 />
                                 {errors.physical_location && <p className="text-sm text-red-500">{errors.physical_location}</p>}
                             </div>
+                        </div>
+
+                        {/* Active When Out of Stock */}
+                        <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                <Label className="text-sm font-semibold">Keep Active When Out of Stock</Label>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-3">
+                                Choose how long this product stays visible and active after its stock reaches 0.
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Select value={zeroStockOption} onValueChange={handleZeroStockChange}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select option" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="forever">Stay Active Forever</SelectItem>
+                                        <SelectItem value="immediately">Deactivate Immediately</SelectItem>
+                                        <SelectItem value="7">7 Days</SelectItem>
+                                        <SelectItem value="14">14 Days</SelectItem>
+                                        <SelectItem value="30">30 Days</SelectItem>
+                                        <SelectItem value="custom">Custom Days</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {zeroStockOption === 'custom' && (
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={data.active_until_zero_days}
+                                        onChange={e => setData('active_until_zero_days', e.target.value)}
+                                        placeholder="Enter number of days"
+                                    />
+                                )}
+                            </div>
+                            {errors.active_until_zero_days && <p className="text-sm text-red-500 mt-2">{errors.active_until_zero_days}</p>}
                         </div>
 
                         <div className="space-y-2">

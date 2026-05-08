@@ -79,6 +79,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('permissions', \App\Http\Controllers\PermissionController::class)->middleware('password.confirm');
     // Protected Resources (Read-only for Employees)
     Route::middleware(['restrict.employee'])->group(function () {
+        Route::post('branches/switch', [\App\Http\Controllers\BranchController::class, 'switch'])->name('branches.switch');
         Route::resource('branches', \App\Http\Controllers\BranchController::class);
         Route::resource('brands', \App\Http\Controllers\BrandController::class);
         Route::resource('categories', \App\Http\Controllers\CategoryController::class);
@@ -86,6 +87,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('qr-barcodes', [\App\Http\Controllers\QrBarcodeController::class, 'store'])->name('qr-barcodes.store');
         Route::get('products/print', [\App\Http\Controllers\ProductController::class, 'print'])->name('products.print');
         Route::post('products/bulk-destroy', [\App\Http\Controllers\ProductController::class, 'bulkDestroy'])->name('products.bulkDestroy');
+        Route::post('products/{product}/toggle-status', [\App\Http\Controllers\ProductController::class, 'toggleStatus'])->name('products.toggleStatus');
         Route::resource('products', \App\Http\Controllers\ProductController::class);
         Route::resource('product-suppliers', \App\Http\Controllers\SupplierController::class)->parameters(['product-suppliers' => 'supplier']);
     });
