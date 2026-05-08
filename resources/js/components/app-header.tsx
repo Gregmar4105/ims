@@ -310,7 +310,7 @@ export function AppHeader() {
 
                             {/* Clearance Sale! */}
                             <NavigationMenuItem>
-                                <Link href="#" className={navigationMenuTriggerStyle()}>
+                                <Link href="/clearance-sale" className={cn(navigationMenuTriggerStyle(), "text-yellow-600 font-bold")}>
                                     Clearance Sale!
                                 </Link>
                             </NavigationMenuItem>

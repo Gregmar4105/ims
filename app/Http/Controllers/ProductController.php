@@ -695,7 +695,7 @@ class ProductController extends Controller
         ]);
 
         $ids = $validated['ids'];
-        $clearanceUntil = now()->addDays($validated['duration_days']);
+        $clearanceUntil = now()->addDays((int)$validated['duration_days']);
 
         Product::whereIn('id', $ids)->update([
             'clearance_price' => $validated['clearance_price'],

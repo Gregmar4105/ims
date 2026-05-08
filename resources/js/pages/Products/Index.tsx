@@ -552,9 +552,15 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 
                                 {!isEmployee && (
                                     <Button 
-                                        variant={isClearanceMode ? (selectedProductIds.length > 0 ? "default" : "outline") : "outline"}
+                                        variant="outline"
                                         size="sm" 
-                                        className={`hidden md:flex ${isClearanceMode ? 'border-yellow-500 text-yellow-600 hover:bg-yellow-50' : ''}`}
+                                        className={`hidden md:flex transition-all duration-300 ${
+                                            isClearanceMode 
+                                                ? (selectedProductIds.length > 0 
+                                                    ? 'border-yellow-500 bg-yellow-500 text-black font-bold shadow-[0_0_15px_rgba(234,179,8,0.4)] animate-pulse' 
+                                                    : 'border-yellow-500 text-yellow-600 bg-yellow-50')
+                                                : 'hover:border-yellow-400 hover:text-yellow-600'
+                                        }`}
                                         onClick={() => {
                                             if (!isClearanceMode) {
                                                 setIsClearanceMode(true);
@@ -568,7 +574,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             }
                                         }}
                                     >
-                                        <Tag className={`h-4 w-4 ${!isClearanceMode ? 'mr-2' : (selectedProductIds.length > 0 ? 'mr-2' : 'mr-2')}`} />
+                                        <Tag className={`h-4 w-4 ${isClearanceMode && selectedProductIds.length > 0 ? 'mr-2' : 'mr-2'}`} />
                                         {!isClearanceMode ? "Clearance Sale" : (selectedProductIds.length > 0 ? "Set Clearance Price" : "Cancel Clearance")}
                                     </Button>
                                 )}
@@ -636,9 +642,15 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             )}
                             {!isEmployee && (
                                 <Button 
-                                    variant={isClearanceMode ? (selectedProductIds.length > 0 ? "default" : "outline") : "outline"}
+                                    variant="outline"
                                     size="icon" 
-                                    className={`h-10 w-10 shrink-0 ${isClearanceMode ? 'border-yellow-500 text-yellow-600 bg-yellow-50' : ''}`}
+                                    className={`h-10 w-10 shrink-0 transition-all duration-300 ${
+                                        isClearanceMode 
+                                            ? (selectedProductIds.length > 0 
+                                                ? 'border-yellow-500 bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.4)] animate-pulse' 
+                                                : 'border-yellow-500 text-yellow-600 bg-yellow-50')
+                                            : 'hover:border-yellow-400 hover:text-yellow-600'
+                                    }`}
                                     onClick={() => {
                                         if (!isClearanceMode) {
                                             setIsClearanceMode(true);
@@ -1105,9 +1117,28 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
             <Dialog open={isClearanceModalOpen} onOpenChange={setIsClearanceModalOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Set Clearance Sale</DialogTitle>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Tag className="h-5 w-5 text-yellow-500" />
+                            Set Clearance Sale
+                        </DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
+                        {selectedProductIds.length > 0 && (
+                            <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-dashed">
+                                <Label className="text-[10px] text-gray-400 uppercase">Selected Products Current Price</Label>
+                                <div className="mt-1 space-y-1 max-h-32 overflow-y-auto">
+                                    {productList
+                                        .filter(p => selectedProductIds.includes(p.id))
+                                        .map(p => (
+                                            <div key={p.id} className="flex justify-between items-center text-xs">
+                                                <span className="truncate mr-4 flex-1">{p.name}</span>
+                                                <span className="font-bold whitespace-nowrap">₱{p.price ? Number(p.price).toLocaleString() : '0.00'}</span>
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            </div>
+                        )}
                         <div className="grid gap-2">
                             <Label htmlFor="clearance-price">New Amount (₱)</Label>
                             <Input
@@ -1116,6 +1147,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 placeholder="Enter discounted price"
                                 value={clearancePrice}
                                 onChange={(e) => setClearancePrice(e.target.value)}
+                                className="border-yellow-200 focus:ring-yellow-500"
                             />
                         </div>
                         <div className="grid gap-2">

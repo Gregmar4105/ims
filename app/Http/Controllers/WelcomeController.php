@@ -95,6 +95,8 @@ class WelcomeController extends Controller
             ->get();
 
         return Inertia::render('Shop/Clearance', [
+            'canLogin' => Route::has('login'),
+            'canRegister' => Features::enabled(Features::registration()),
             'products' => $products,
         ]);
     }
