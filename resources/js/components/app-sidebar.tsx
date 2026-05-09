@@ -96,6 +96,11 @@ const Products = {
             url: "/qr-barcodes",
             icon: ScanBarcode,
         },
+        {
+            title: "Photo Uploads",
+            url: "/temporary-photo-product-upload",
+            icon: FileImage,
+        },
     ],
 }
 

@@ -90,6 +90,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('products/bulk-destroy', [\App\Http\Controllers\ProductController::class, 'bulkDestroy'])->name('products.bulkDestroy');
         Route::post('products/bulk-clearance', [\App\Http\Controllers\ProductController::class, 'bulkClearanceSale'])->name('products.bulkClearance');
         Route::post('products/{product}/toggle-status', [\App\Http\Controllers\ProductController::class, 'toggleStatus'])->name('products.toggleStatus');
+        
+        // Temporary Photo Upload Routes
+        Route::get('temporary-photo-product-upload', [\App\Http\Controllers\TemporaryPhotoUploadController::class, 'index'])->name('products.temporary-upload');
+        Route::get('api/products/search-for-upload', [\App\Http\Controllers\TemporaryPhotoUploadController::class, 'search'])->name('api.products.search-upload');
+        Route::post('api/products/bulk-photo-update', [\App\Http\Controllers\TemporaryPhotoUploadController::class, 'update'])->name('api.products.bulk-upload');
+
         Route::resource('products', \App\Http\Controllers\ProductController::class);
         Route::resource('product-suppliers', \App\Http\Controllers\SupplierController::class)->parameters(['product-suppliers' => 'supplier']);
     });
