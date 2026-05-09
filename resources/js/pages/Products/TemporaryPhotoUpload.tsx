@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -33,9 +33,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
     ];
 
     const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
-    const { data, setData, post, processing, reset } = useForm({
-        mappings: [] as { productId: number; photo: File }[],
-    });
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         const newItems = acceptedFiles.map((file) => ({
@@ -48,8 +46,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
         setUploadItems((prev) => [...prev, ...newItems]);
     }, []);
 
-    // Manual drag and drop handling since react-dropzone isn't in package.json yet
-    // I will implement a simple one to avoid dependency issues if it fails to install
+    // Manual drag and drop handling
     const [isDragging, setIsDragging] = useState(false);
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -92,31 +89,33 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
 
     const handleSubmit = () => {
         const mappings = uploadItems
-            .filter((item) => item.productId !== null)
-            .map((item) => ({
-                productId: item.productId as number,
-                photo: item.file,
-            }));
+            .filter((item) => item.productId !== null);
 
         if (mappings.length === 0) {
             toast.error('Please map at least one photo to a product.');
             return;
         }
 
-        // We use FormData for file uploads
+        setIsProcessing(true);
         const formData = new FormData();
+        
         mappings.forEach((m, index) => {
-            formData.append(`mappings[${index}][productId]`, m.productId.toString());
-            formData.append(`mappings[${index}][photo]`, m.photo);
+            formData.append(`mappings[${index}][productId]`, m.productId!.toString());
+            formData.append(`mappings[${index}][photo]`, m.file);
         });
 
-        post('/api/products/bulk-photo-update', {
-            data: formData,
+        router.post('/api/products/bulk-photo-update', formData, {
             forceFormData: true,
             onSuccess: () => {
                 setUploadItems([]);
                 toast.success('Photos updated successfully!');
+                setIsProcessing(false);
             },
+            onError: (errors) => {
+                console.error(errors);
+                toast.error('Failed to upload photos. Please check file sizes or selection.');
+                setIsProcessing(false);
+            }
         });
     };
 
@@ -174,8 +173,8 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center justify-between">
                             <h2 className="text-xl font-semibold">Pending Uploads ({uploadItems.length})</h2>
-                            <Button onClick={handleSubmit} disabled={processing} className="gap-2">
-                                {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                            <Button onClick={handleSubmit} disabled={isProcessing} className="gap-2">
+                                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                 Update {uploadItems.filter(i => i.productId).length} Products
                             </Button>
                         </div>

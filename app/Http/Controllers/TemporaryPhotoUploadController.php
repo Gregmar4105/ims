@@ -43,20 +43,23 @@ class TemporaryPhotoUploadController extends Controller
 
     public function update(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'mappings' => 'required|array',
             'mappings.*.productId' => 'required|exists:products,id',
             'mappings.*.photo' => 'required|image|max:5120', // 5MB max
         ]);
 
-        $mappings = $request->input('mappings');
-        $files = $request->file('mappings');
-
-        DB::transaction(function () use ($mappings, $files) {
-            foreach ($mappings as $index => $mapping) {
+        DB::transaction(function () use ($validated, $request) {
+            foreach ($validated['mappings'] as $index => $mapping) {
                 $productId = $mapping['productId'];
                 $product = Product::findOrFail($productId);
-                $file = $files[$index]['photo'];
+                
+                // Retrieve the specific file for this mapping
+                $file = $request->file("mappings.{$index}.photo");
+
+                if (!$file) {
+                    continue;
+                }
 
                 // Delete old image if exists
                 if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
@@ -66,7 +69,7 @@ class TemporaryPhotoUploadController extends Controller
                 // Generate filename similar to ProductController
                 $safeName = Str::slug($product->name);
                 $extension = $file->getClientOriginalExtension();
-                $filename = "bulk_{$productId}_{$safeName}_{$index}_" . time() . ".{$extension}";
+                $filename = "bulk_{$productId}_{$safeName}_" . time() . ".{$extension}";
                 
                 $path = $file->storeAs('products/bulk-uploads', $filename, 'public');
 
