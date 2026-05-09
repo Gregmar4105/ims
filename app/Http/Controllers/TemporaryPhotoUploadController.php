@@ -13,10 +13,9 @@ class TemporaryPhotoUploadController extends Controller
 {
     public function index()
     {
-        $productsMissingImages = Product::whereNull('image_path')
-            ->orWhere('image_path', '')
-            ->latest()
-            ->get();
+        $productsMissingImages = Product::all()->filter(function ($product) {
+            return empty($product->image_path) || !Storage::disk('public')->exists($product->image_path);
+        })->values();
 
         return Inertia::render('Products/TemporaryPhotoUpload', [
             'productsMissingImages' => $productsMissingImages,

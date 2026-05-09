@@ -110,7 +110,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
             formData.append(`mappings[${index}][photo]`, m.photo);
         });
 
-        post(route('api.products.bulk-upload'), {
+        post('/api/products/bulk-photo-update', {
             data: formData,
             forceFormData: true,
             onSuccess: () => {
@@ -193,23 +193,42 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
                 )}
 
                 {/* Failed Photos / Remaining Products */}
-                <Card className="border-red-100 dark:border-red-900/30">
-                    <CardHeader className="bg-red-50/50 dark:bg-red-900/10">
-                        <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                <Card className="border-red-100 dark:border-red-900/30 overflow-hidden">
+                    <CardHeader className="bg-red-50/50 dark:bg-red-900/10 flex flex-row items-center justify-between py-3">
+                        <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400 text-lg">
                             <AlertCircle className="w-5 h-5" />
-                            Products Missing Photos ({missingCount})
+                            Missing Product Photos ({missingCount})
                         </CardTitle>
+                        <div className="relative w-64">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Filter missing..."
+                                className="pl-8 h-8 text-xs bg-background/50"
+                                onChange={(e) => {
+                                    const val = e.target.value.toLowerCase();
+                                    const items = document.querySelectorAll('.missing-product-item');
+                                    items.forEach(item => {
+                                        const text = item.getAttribute('data-search')?.toLowerCase() || '';
+                                        (item as HTMLElement).style.display = text.includes(val) ? 'flex' : 'none';
+                                    });
+                                }}
+                            />
+                        </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                        <div className="divide-y divide-border">
+                        <div className="max-h-[400px] overflow-y-auto divide-y divide-border">
                             {productsMissingImages.length > 0 ? (
                                 productsMissingImages.map((product) => (
-                                    <div key={product.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                                    <div 
+                                        key={product.id} 
+                                        data-search={`${product.name} ${product.sku}`}
+                                        className="missing-product-item flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
+                                    >
                                         <div className="flex flex-col">
-                                            <span className="font-medium">{product.name}</span>
-                                            <span className="text-xs text-muted-foreground font-mono">{product.sku || 'No SKU'}</span>
+                                            <span className="font-medium text-sm">{product.name}</span>
+                                            <span className="text-[10px] text-muted-foreground font-mono">{product.sku || 'No SKU'}</span>
                                         </div>
-                                        <Badge variant="outline" className="bg-background">
+                                        <Badge variant="outline" className="bg-red-100/50 text-red-600 border-red-200 text-[10px] h-5">
                                             No Image
                                         </Badge>
                                     </div>
@@ -250,7 +269,7 @@ function UploadCard({
         const timer = setTimeout(async () => {
             setLoading(true);
             try {
-                const response = await axios.get(route('api.products.search-upload'), {
+                const response = await axios.get('/api/products/search-for-upload', {
                     params: { query: search },
                 });
                 setResults(response.data);
@@ -347,5 +366,3 @@ function UploadCard({
     );
 }
 
-// Helper for ziggy-js route
-const route = (name: string, params?: any) => (window as any).route(name, params);
