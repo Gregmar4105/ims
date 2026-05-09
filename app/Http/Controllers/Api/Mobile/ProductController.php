@@ -10,6 +10,7 @@ use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
@@ -246,13 +247,23 @@ class ProductController extends Controller
     {
         $product = Product::findOrFail($id);
         
-        // Check if product is in use (e.g. sales, transfers) - keeping it simple for now as per web controller (which didn't have destroy shown but resource has it)
-        // Web ProductController didn't show destroy, but let's implement it safely.
-        
         if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
             Storage::disk('public')->delete($product->image_path);
         }
 
+        // Release unique identifiers to allow re-adding
+        $timestamp = time();
+        $product->update([
+            'name' => Str::limit($product->name, 200) . " (deleted-{$timestamp})",
+            'sku' => $product->sku ? $product->sku . "-del-{$timestamp}" : null,
+            'barcode' => $product->barcode ? $product->barcode . "-del-{$timestamp}" : null,
+            'qr_code' => $product->qr_code ? $product->qr_code . "-del-{$timestamp}" : null,
+            'code' => $product->code ? $product->code . "-del-{$timestamp}" : null,
+            'code_2' => $product->code_2 ? $product->code_2 . "-del-{$timestamp}" : null,
+        ]);
+
+        // Clean up branch links and delete
+        $product->branches()->detach();
         $product->delete();
 
         return response()->json(['message' => 'Product deleted successfully.']);

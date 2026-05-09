@@ -677,6 +677,18 @@ class ProductController extends Controller
                 if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
                     Storage::disk('public')->delete($product->image_path);
                 }
+
+                // Release unique identifiers to allow re-adding
+                $timestamp = time();
+                $product->update([
+                    'name' => Str::limit($product->name, 200) . " (deleted-{$timestamp})",
+                    'sku' => $product->sku ? $product->sku . "-del-{$timestamp}" : null,
+                    'barcode' => $product->barcode ? $product->barcode . "-del-{$timestamp}" : null,
+                    'qr_code' => $product->qr_code ? $product->qr_code . "-del-{$timestamp}" : null,
+                    'code' => $product->code ? $product->code . "-del-{$timestamp}" : null,
+                    'code_2' => $product->code_2 ? $product->code_2 . "-del-{$timestamp}" : null,
+                ]);
+
                 // Delete pivot and product
                 $product->branches()->detach();
                 $product->delete();
