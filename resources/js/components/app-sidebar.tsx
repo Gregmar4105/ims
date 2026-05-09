@@ -347,15 +347,6 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                 </Collapsible>
 
-                {can('employee') &&
-                    <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Branch Chat">
-                            <MessagesSquare />
-                            <a href="/branch-chats">
-                                <span>Branch Chat</span>
-                            </a>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>}
 
                 {can('employee') &&
                     <SidebarMenuItem>

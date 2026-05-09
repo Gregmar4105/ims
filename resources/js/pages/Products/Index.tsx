@@ -568,7 +568,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     <Button 
                                         variant={isSelectionMode ? (selectedProductIds.length > 0 ? "destructive" : "outline") : "outline"}
                                         size="sm" 
-                                        className="hidden md:flex"
+                                        className={`hidden md:flex ${!isSelectionMode ? 'border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700' : ''}`}
                                         onClick={() => {
                                             if (!isSelectionMode) {
                                                 setIsSelectionMode(true);
@@ -612,7 +612,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 <Button 
                                     variant={isSelectionMode ? (selectedProductIds.length > 0 ? "destructive" : "outline") : "outline"}
                                     size="icon" 
-                                    className={`h-10 w-10 shrink-0 ${isSelectionMode && selectedProductIds.length > 0 ? 'animate-pulse ring-2 ring-red-500 ring-offset-2' : ''}`}
+                                    className={`h-10 w-10 shrink-0 ${isSelectionMode && selectedProductIds.length > 0 ? 'animate-pulse ring-2 ring-red-500 ring-offset-2' : ''} ${!isSelectionMode ? 'border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700' : ''}`}
                                     onClick={() => {
                                         if (!isSelectionMode) {
                                             setIsSelectionMode(true);
