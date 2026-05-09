@@ -96,6 +96,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('api/products/search-for-upload', [\App\Http\Controllers\TemporaryPhotoUploadController::class, 'search'])->name('api.products.search-upload');
         Route::post('api/products/bulk-photo-update', [\App\Http\Controllers\TemporaryPhotoUploadController::class, 'update'])->name('api.products.bulk-upload');
 
+        // Drag and Drop Upload Routes
+        Route::get('drag-and-drop-product-upload', [\App\Http\Controllers\DragAndDropUploadController::class, 'index'])->name('products.drag-and-drop-upload');
+        Route::post('api/products/bulk-create', [\App\Http\Controllers\DragAndDropUploadController::class, 'store'])->name('api.products.bulk-create');
+        Route::post('api/products/validate-field', [\App\Http\Controllers\DragAndDropUploadController::class, 'validateField'])->name('api.products.validate-field');
+
         Route::resource('products', \App\Http\Controllers\ProductController::class);
         Route::resource('product-suppliers', \App\Http\Controllers\SupplierController::class)->parameters(['product-suppliers' => 'supplier']);
     });

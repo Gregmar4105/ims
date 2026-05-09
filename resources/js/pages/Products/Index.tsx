@@ -2,7 +2,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
-import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight, Filter, FileText, Camera, StopCircle, Scan, Power, PowerOff } from 'lucide-react';
+import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight, Filter, FileText, Camera, StopCircle, Scan, Power, PowerOff, Upload } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -530,6 +530,15 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         <FileText className="mr-2 h-4 w-4" /> Print List
                                     </Button>
                                 </a>
+
+                                {!isEmployee && (
+                                    <Link href="/drag-and-drop-product-upload">
+                                        <Button variant="outline" size="sm" className="hidden md:flex border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700">
+                                            <Upload className="mr-2 h-4 w-4" />
+                                            Multiple Uploads
+                                        </Button>
+                                    </Link>
+                                )}
 
                                 {!isEmployee && (
                                     <Button 
