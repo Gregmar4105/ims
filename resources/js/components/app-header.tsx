@@ -360,6 +360,13 @@ export function AppHeader() {
                                 </NavigationMenuContent>
                             </NavigationMenuItem>
 
+                            {/* Download Link */}
+                            <NavigationMenuItem>
+                                <Link href="/downloads" className={navigationMenuTriggerStyle()}>
+                                    Download
+                                </Link>
+                            </NavigationMenuItem>
+
                         </NavigationMenuList>
                     </NavigationMenu>
                 </div>

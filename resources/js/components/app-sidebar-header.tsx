@@ -6,11 +6,19 @@ import { SharedData } from '@/types';
 import { Store, ChevronDown } from 'lucide-react';
 import { NotificationBell } from './notification-bell';
 import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Link } from '@inertiajs/react';
+import { Download } from 'lucide-react';
 
 export function AppSidebarHeader({
     breadcrumbs = [],
@@ -31,15 +39,27 @@ export function AppSidebarHeader({
                 {branchName && (
                     auth.branches && auth.branches.length > 0 ? (
                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-border/50 hover:bg-muted transition-colors outline-none">
-                                    <Store className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm font-medium">
-                                        {branchName}
-                                    </span>
-                                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                                </button>
-                            </DropdownMenuTrigger>
+                                <div className="hidden md:flex items-center gap-2">
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Link href="/downloads" className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-blue-600">
+                                                    <Download className="h-4 w-4" />
+                                                </Link>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Download App</TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                    <DropdownMenuTrigger asChild>
+                                        <button className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-border/50 hover:bg-muted transition-colors outline-none">
+                                            <Store className="h-4 w-4 text-muted-foreground" />
+                                            <span className="text-sm font-medium">
+                                                {branchName}
+                                            </span>
+                                            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                </div>
                             <DropdownMenuContent align="end" className="w-56">
                                 {auth.branches.map((branch) => (
                                     <DropdownMenuItem
@@ -53,11 +73,23 @@ export function AppSidebarHeader({
                             </DropdownMenuContent>
                         </DropdownMenu>
                     ) : (
-                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-border/50">
-                            <Store className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
-                                {branchName}
-                            </span>
+                        <div className="hidden md:flex items-center gap-2">
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Link href="/downloads" className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-blue-600">
+                                            <Download className="h-4 w-4" />
+                                        </Link>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Download App</TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-border/50">
+                                <Store className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">
+                                    {branchName}
+                                </span>
+                            </div>
                         </div>
                     )
                 )}
