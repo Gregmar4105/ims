@@ -108,6 +108,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('api/categories/search', [\App\Http\Controllers\CategoryController::class, 'search'])->name('categories.search');
         Route::get('api/suppliers/search', [\App\Http\Controllers\SupplierController::class, 'search'])->name('suppliers.search');
 
+        Route::get('api/products/search', [\App\Http\Controllers\ProductController::class, 'search'])->name('products.search');
         Route::resource('products', \App\Http\Controllers\ProductController::class);
         Route::resource('product-suppliers', \App\Http\Controllers\SupplierController::class)->parameters(['product-suppliers' => 'supplier']);
     });

@@ -13,6 +13,8 @@ use Carbon\Carbon;
 
 class SaleController extends Controller
 {
+    use \App\Traits\IntelligentSearch;
+
     /**
      * Display sales list - all for sysadmin, branch-only for others
      */
@@ -216,33 +218,35 @@ class SaleController extends Controller
         if (!$search) return response()->json([]);
         
         $user = auth()->user();
-        
         if (!$user->branch_id) {
             return response()->json(['error' => 'User does not belong to a branch'], 403);
         }
         
-        $products = DB::table('products')
-            ->join('branch_products', 'products.id', '=', 'branch_products.product_id')
-            ->where('branch_products.branch_id', $user->branch_id)
-            ->where('branch_products.quantity', '>', 0)
-            ->where(function ($query) use ($search) {
-                $query->where('products.name', 'like', "%{$search}%")
-                      ->orWhere('products.barcode', 'like', "%{$search}%")
-                      ->orWhere('products.qr_code', 'like', "%{$search}%");
-            })
-            ->select(
-                'products.id',
-                'products.name',
-                'products.barcode',
-                'products.qr_code',
-                'products.price',
-                'products.image_path',
-                'branch_products.quantity as available_quantity'
-            )
-            ->limit(10)
-            ->get();
+        $products = $this->performIntelligentSearch(
+            $search,
+            ['barcode', 'qr_code'],
+            $user->branch_id
+        );
+
+        // Map to include available_quantity from branch_products
+        $results = $products->map(function($p) use ($user) {
+            $branchProduct = DB::table('branch_products')
+                ->where('branch_id', $user->branch_id)
+                ->where('product_id', $p->id)
+                ->first();
+                
+            return [
+                'id' => $p->id,
+                'name' => $p->name,
+                'barcode' => $p->barcode,
+                'qr_code' => $p->qr_code,
+                'price' => $p->price,
+                'image_path' => $p->image_path,
+                'available_quantity' => $branchProduct ? $branchProduct->quantity : 0,
+            ];
+        });
             
-        return response()->json($products);
+        return response()->json($results);
     }
 
     /**

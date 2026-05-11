@@ -674,10 +674,11 @@ function ProductUploadCard({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <Label>Product Name*</Label>
-                            <Input 
+                            <AutocompleteInput 
                                 value={item.name} 
-                                onChange={e => onUpdate('name', e.target.value)}
+                                onValueChange={val => onUpdate('name', val)}
                                 placeholder="Product Name"
+                                searchUrl="/api/products/search"
                                 className={item.errors.name ? 'border-red-500' : ''}
                             />
                         </div>

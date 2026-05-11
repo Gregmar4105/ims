@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 
 class TemporaryPhotoUploadController extends Controller
 {
+    use \App\Traits\IntelligentSearch;
+
     public function index()
     {
         $productsMissingImages = Product::all()->filter(function ($product) {
@@ -25,20 +27,17 @@ class TemporaryPhotoUploadController extends Controller
 
     public function search(Request $request)
     {
-        $search = $request->query('query');
-        
-        if (!$search) {
-            return response()->json([]);
-        }
+        $products = $this->performIntelligentSearch(
+            $request->query('query', ''),
+            ['sku', 'barcode', 'qr_code', 'code', 'code_2']
+        );
 
-        $products = Product::where('name', 'like', "%{$search}%")
-            ->orWhere('sku', 'like', "%{$search}%")
-            ->orWhere('barcode', 'like', "%{$search}%")
-            ->orWhere('qr_code', 'like', "%{$search}%")
-            ->limit(10)
-            ->get(['id', 'name', 'sku', 'image_path']);
-
-        return response()->json($products);
+        return response()->json($products->map(fn($p) => [
+            'id' => $p->id, 
+            'name' => $p->name, 
+            'sku' => $p->sku, 
+            'image_path' => $p->image_path
+        ]));
     }
 
     public function update(Request $request)

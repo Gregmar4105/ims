@@ -216,14 +216,13 @@ export default function Create({ brands, categories, suppliers, isSystemAdmin, c
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label htmlFor="name">Product Name</Label>
-                                <Input
-                                    id="name"
+                                <AutocompleteInput
                                     value={data.name}
-                                    onChange={e => setData('name', e.target.value)}
+                                    onValueChange={(val) => setData('name', val)}
                                     placeholder="e.g. Keysto-121"
-                                    required
+                                    searchUrl="/api/products/search"
+                                    error={errors.name}
                                 />
-                                {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
                             </div>
 
                             <div className="space-y-2">

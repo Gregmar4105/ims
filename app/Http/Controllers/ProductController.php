@@ -15,6 +15,8 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
+    use \App\Traits\IntelligentSearch;
+
     /**
      * Auto-deactivate products whose out-of-stock grace period has expired.
      * Called at query time instead of using a scheduled task.
@@ -221,6 +223,16 @@ class ProductController extends Controller
             }
         }
         return $product;
+    }
+
+    public function search(Request $request)
+    {
+        $products = $this->performIntelligentSearch(
+            $request->query('search', ''),
+            ['sku', 'barcode', 'qr_code', 'code', 'code_2']
+        );
+
+        return response()->json($products->map(fn($p) => ['id' => $p->id, 'name' => $p->name]));
     }
 
     public function index(Request $request)
