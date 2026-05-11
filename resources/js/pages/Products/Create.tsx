@@ -243,7 +243,7 @@ export default function Create({ brands, categories, suppliers, isSystemAdmin, c
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="barcode">Barcode</Label>
+                                <Label htmlFor="barcode">Barcode (Optional)</Label>
                                 <div className="relative">
                                     <Barcode className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                     <Input
@@ -258,7 +258,7 @@ export default function Create({ brands, categories, suppliers, isSystemAdmin, c
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="qr_code">QR Code</Label>
+                                <Label htmlFor="qr_code">QR Code (Optional)</Label>
                                 <div className="relative">
                                     <QrCode className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                     <Input
