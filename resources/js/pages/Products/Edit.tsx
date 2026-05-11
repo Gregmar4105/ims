@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Upload, Store, Clock, Info, Power, PowerOff } from 'lucide-react';
+import { Plus, Trash2, Upload, Store, Clock, Info, Power, PowerOff, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -587,7 +587,14 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
 
                         <div className="flex justify-end pt-4">
                             <Button type="submit" disabled={processing}>
-                                {processing ? 'Updating...' : 'Update Product'}
+                                {processing ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Updating...
+                                    </>
+                                ) : (
+                                    'Update Product'
+                                )}
                             </Button>
                         </div>
                     </form>

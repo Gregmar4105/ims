@@ -2,7 +2,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
-import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight, Filter, FileText, Camera, StopCircle, Scan, Power, PowerOff, Upload } from 'lucide-react';
+import { Search, PackageOpen, Plus, MapPin, Layers, X, Printer, Sparkles, Trash2, Tag, ScanBarcode, Truck, Package, Info, ArrowRight, Filter, FileText, Camera, StopCircle, Scan, Power, PowerOff, Upload, Loader2 } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -148,8 +148,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const [isClearanceMode, setIsClearanceMode] = useState(false);
     const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
     const [isClearanceModalOpen, setIsClearanceModalOpen] = useState(false);
-    const [clearancePrice, setClearancePrice] = useState("");
-    const [durationDays, setDurationDays] = useState("30");
+    const [clearanceUpdates, setClearanceUpdates] = useState<Record<number, { price: string, until: string }>>({});
+    const [isUpdating, setIsUpdating] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [statusToggleProduct, setStatusToggleProduct] = useState<Product | null>(null);
@@ -312,26 +312,30 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all' || statusFilter !== 'all';
 
     const handleBulkClearance = () => {
-        if (!clearancePrice || !durationDays) {
-            toast.error("Please fill in all fields.");
-            return;
-        }
+        const updates = Object.entries(clearanceUpdates).map(([id, data]) => ({
+            id: parseInt(id),
+            clearance_price: data.price,
+            clearance_until: data.until
+        }));
 
+        if (updates.length === 0) return;
+
+        setIsUpdating(true);
         router.post('/products/bulk-clearance', {
-            ids: selectedProductIds,
-            clearance_price: clearancePrice,
-            duration_days: durationDays,
+            products: updates,
         }, {
             onSuccess: () => {
-                toast.success("Clearance sale set successfully!");
+                toast.success("Clearance sales updated successfully!");
                 setIsClearanceModalOpen(false);
                 setIsClearanceMode(false);
                 setSelectedProductIds([]);
-                setClearancePrice("");
+                setClearanceUpdates({});
+                setIsUpdating(false);
             },
             onError: (err) => {
                 console.error(err);
-                toast.error("Failed to set clearance sale.");
+                toast.error("Failed to update clearance sales.");
+                setIsUpdating(false);
             }
         });
     };
@@ -597,13 +601,15 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         onClick={() => {
                                             if (isClearanceMode) {
                                                 if (selectedProductIds.length > 0) {
-                                                    // If exactly one product selected, pre-fill its current clearance price
-                                                    if (selectedProductIds.length === 1) {
-                                                        const p = productList.find(p => p.id === selectedProductIds[0]);
-                                                        if (p?.clearance_price) {
-                                                            setClearancePrice(String(p.clearance_price));
-                                                        }
-                                                    }
+                                                    // Initialize individual updates with current values
+                                                    const initialUpdates: Record<number, { price: string, until: string }> = {};
+                                                    productList.filter(p => selectedProductIds.includes(p.id)).forEach(p => {
+                                                        initialUpdates[p.id] = {
+                                                            price: p.clearance_price ? String(p.clearance_price) : '',
+                                                            until: p.clearance_until ? new Date(p.clearance_until).toISOString().split('T')[0] : ''
+                                                        };
+                                                    });
+                                                    setClearanceUpdates(initialUpdates);
                                                     setIsClearanceModalOpen(true);
                                                 } else {
                                                     setIsClearanceMode(false);
@@ -1220,47 +1226,90 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
             </Dialog>
             {/* Clearance Modal */}
             <Dialog open={isClearanceModalOpen} onOpenChange={setIsClearanceModalOpen}>
-                <DialogContent>
+                <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
-                        <DialogTitle>Set Clearance Sale</DialogTitle>
+                        <DialogTitle>Individual Clearance Updates</DialogTitle>
                     </DialogHeader>
-                    <div className="py-4 space-y-4">
-                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-100 dark:border-yellow-800">
-                            <p className="text-sm text-yellow-800 dark:text-yellow-400 font-medium mb-2">
+                    <div className="py-4 flex-1 overflow-y-auto space-y-4">
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-100 dark:border-yellow-800">
+                            <p className="text-sm text-yellow-800 dark:text-yellow-400 font-medium mb-3">
                                 Selected Products ({selectedProductIds.length}):
                             </p>
-                            <div className="max-h-[150px] overflow-y-auto space-y-2">
+                            <div className="space-y-4">
                                 {productList.filter(p => selectedProductIds.includes(p.id)).map(p => (
-                                    <div key={p.id} className="text-xs flex justify-between items-center bg-white dark:bg-black/20 p-2 rounded">
-                                        <span className="truncate flex-1 mr-2">{p.name}</span>
-                                        <span className="font-bold">₱{p.price ? Number(p.price).toLocaleString() : '0.00'}</span>
+                                    <div key={p.id} className="bg-white dark:bg-black/20 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="text-sm font-bold truncate">{p.name}</h4>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className="text-xs text-muted-foreground line-through">₱{p.price ? Number(p.price).toLocaleString() : '0.00'}</span>
+                                                    {p.clearance_until && (
+                                                        <Badge variant="outline" className="text-[10px] h-4 px-1 border-yellow-300 text-yellow-700 bg-yellow-50">
+                                                            Ends: {new Date(p.clearance_until).toLocaleDateString()}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter block">Current Clr.</span>
+                                                <span className="text-sm font-bold text-yellow-600">₱{p.clearance_price ? Number(p.clearance_price).toLocaleString() : '---'}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor={`price-${p.id}`} className="text-[10px] font-bold uppercase">New Price (₱)</Label>
+                                                <Input
+                                                    id={`price-${p.id}`}
+                                                    type="number"
+                                                    size="sm"
+                                                    placeholder="0.00"
+                                                    value={clearanceUpdates[p.id]?.price || ''}
+                                                    onChange={(e) => setClearanceUpdates(prev => ({
+                                                        ...prev,
+                                                        [p.id]: { ...prev[p.id], price: e.target.value }
+                                                    }))}
+                                                    className="h-8 text-sm"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor={`date-${p.id}`} className="text-[10px] font-bold uppercase">Expiration Date</Label>
+                                                <Input
+                                                    id={`date-${p.id}`}
+                                                    type="date"
+                                                    size="sm"
+                                                    value={clearanceUpdates[p.id]?.until || ''}
+                                                    onChange={(e) => setClearanceUpdates(prev => ({
+                                                        ...prev,
+                                                        [p.id]: { ...prev[p.id], until: e.target.value }
+                                                    }))}
+                                                    className="h-8 text-sm"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
-
-                        <div className="space-y-2">
-                            <Label>New Clearance Price (₱)</Label>
-                            <Input
-                                type="number"
-                                placeholder="0.00"
-                                value={clearancePrice}
-                                onChange={(e) => setClearancePrice(e.target.value)}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Duration (Days)</Label>
-                            <Input
-                                type="number"
-                                placeholder="30"
-                                value={durationDays}
-                                onChange={(e) => setDurationDays(e.target.value)}
-                            />
-                        </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsClearanceModalOpen(false)}>Cancel</Button>
-                        <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold" onClick={handleBulkClearance}>Set Clearance Price</Button>
+                        <Button variant="outline" onClick={() => setIsClearanceModalOpen(false)} disabled={isUpdating}>
+                            Cancel
+                        </Button>
+                        <Button 
+                            className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold" 
+                            onClick={handleBulkClearance}
+                            disabled={isUpdating}
+                        >
+                            {isUpdating ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Updating...
+                                </>
+                            ) : (
+                                'Update Clearance Sales'
+                            )}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

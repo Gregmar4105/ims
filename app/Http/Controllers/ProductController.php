@@ -707,20 +707,21 @@ class ProductController extends Controller
     public function bulkClearanceSale(Request $request)
     {
         $validated = $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:products,id',
-            'clearance_price' => 'required|numeric|min:0',
-            'duration_days' => 'required|integer|min:1',
+            'products' => 'required|array',
+            'products.*.id' => 'required|exists:products,id',
+            'products.*.clearance_price' => 'required|numeric|min:0',
+            'products.*.clearance_until' => 'nullable|date',
         ]);
 
-        $ids = $validated['ids'];
-        $clearanceUntil = now()->addDays((int)$validated['duration_days']);
+        \DB::transaction(function() use ($validated) {
+            foreach ($validated['products'] as $item) {
+                Product::where('id', $item['id'])->update([
+                    'clearance_price' => $item['clearance_price'],
+                    'clearance_until' => $item['clearance_until'],
+                ]);
+            }
+        });
 
-        Product::whereIn('id', $ids)->update([
-            'clearance_price' => $validated['clearance_price'],
-            'clearance_until' => $clearanceUntil,
-        ]);
-
-        return redirect()->route('products.index')->with('success', 'Clearance sale updated for selected products.');
+        return redirect()->route('products.index')->with('success', 'Clearance sales updated successfully.');
     }
 }
