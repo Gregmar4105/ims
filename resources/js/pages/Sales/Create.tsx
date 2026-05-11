@@ -252,7 +252,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
             return;
         }
 
-        if (newQuantity < 1) return;
+        if (newQuantity < 0) return;
 
         setCart(prev => prev.map(item =>
             item.product_id === productId
@@ -263,6 +263,11 @@ export default function Create({ products, pendingSales }: { products: Product[]
 
     const handleReadySale = () => {
         if (cart.length === 0) return;
+        
+        if (cart.some(item => item.quantity < 1)) {
+            toast.error('Please ensure all items have a quantity of at least 1');
+            return;
+        }
 
         data.items = cart.map(item => ({
             product_id: item.product_id,
@@ -469,8 +474,20 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                         </Button>
                                                         <Input
                                                             type="number"
-                                                            value={item.quantity}
-                                                            onChange={(e) => updateQuantity(item.product_id, parseInt(e.target.value) || 0)}
+                                                            value={item.quantity || ''}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (val === '') {
+                                                                    updateQuantity(item.product_id, 0);
+                                                                } else {
+                                                                    updateQuantity(item.product_id, parseInt(val));
+                                                                }
+                                                            }}
+                                                            onBlur={() => {
+                                                                if (item.quantity < 1) {
+                                                                    updateQuantity(item.product_id, 1);
+                                                                }
+                                                            }}
                                                             className="w-16 h-8 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none px-1"
                                                             min="1"
                                                             max={item.product.available_quantity}
