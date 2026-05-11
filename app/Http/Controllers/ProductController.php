@@ -478,23 +478,24 @@ class ProductController extends Controller
             $supplierId = $supplier->id;
         }
 
-        // Get branch info for image path
-        $targetBranch = $targetBranchId ? Branch::find($targetBranchId) : null;
-        $branchName = $targetBranch ? $targetBranch->branch_name : 'System';
-        
-        $safeBranch = str_replace(' ', '', $branchName);
-        $safeBrand = str_replace(' ', '', $brand ? $brand->name : 'Unknown');
-        $safeCategory = str_replace(' ', '', $category ? $category->name : 'Unknown');
-        $safeProduct = str_replace(' ', '-', $validated['name']);
-        
-        $extension = $request->file('image')->getClientOriginalExtension();
-        $filename = "{$safeBranch}.{$safeBrand}.{$safeCategory}.{$safeProduct}.{$extension}";
-        
-        $folderPath = 'products/' . $branchName; // Keep original branch name for folder
-
         // Handle Image Upload
         if ($request->hasFile('image')) {
             $file = $request->file('image');
+            
+            // Get branch info for image path
+            $targetBranch = $targetBranchId ? Branch::find($targetBranchId) : null;
+            $branchName = $targetBranch ? $targetBranch->branch_name : 'System';
+            
+            $safeBranch = Str::slug($branchName);
+            $safeBrand = Str::slug($brand ? $brand->name : 'Unknown');
+            $safeCategory = Str::slug($category ? $category->name : 'Unknown');
+            $safeProduct = Str::slug($validated['name']);
+            
+            $extension = $file->getClientOriginalExtension();
+            $filename = "{$safeBranch}.{$safeBrand}.{$safeCategory}.{$safeProduct}.{$extension}";
+            
+            $folderPath = 'products/' . $branchName; // Keep original branch name for folder
+            
             // Store in public disk
             $path = $file->storeAs($folderPath, $filename, 'public');
             $validated['image_path'] = $path;
@@ -642,8 +643,20 @@ class ProductController extends Controller
                 Storage::disk('public')->delete($product->image_path);
             }
 
-            // Re-construct filename logic... (simplified for brevity)
-            $path = $request->file('image')->store('products', 'public');
+            $file = $request->file('image');
+            $targetBranch = $targetBranchId ? Branch::find($targetBranchId) : null;
+            $branchName = $targetBranch ? $targetBranch->branch_name : 'System';
+
+            $safeBranch = Str::slug($branchName);
+            $safeBrand = Str::slug($brand ? $brand->name : 'Unknown');
+            $safeCategory = Str::slug($category ? $category->name : 'Unknown');
+            $safeProduct = Str::slug($validated['name']);
+
+            $extension = $file->getClientOriginalExtension();
+            $filename = "{$safeBranch}.{$safeBrand}.{$safeCategory}.{$safeProduct}.{$extension}";
+
+            $folderPath = 'products/' . $branchName;
+            $path = $file->storeAs($folderPath, $filename, 'public');
             $validated['image_path'] = $path;
         }
 
@@ -694,7 +707,7 @@ class ProductController extends Controller
             $supplierId = $supplier->id;
         }
 
-        DB::transaction(function () use ($product, $validated, $user, $isSystemAdmin, $targetBranchId, $brand, $category, $supplierId) {
+        DB::transaction(function () use ($product, $validated, $user, $isSystemAdmin, $targetBranchId, $brand, $category, $supplierId, $request) {
             // Update Global Product Details
             $product->update([
                 'name' => $validated['name'],
