@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router, Link } from '@inertiajs/react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -189,6 +189,7 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
 
             <div className="p-4 md:p-6">
                 <div className="flex items-center justify-between mb-6">
+                    <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-3">
                             <Link href="/products">
                                 <Button variant="outline" size="sm">
@@ -202,7 +203,7 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <div className={`hidden sm:flex flex-col items-end`}>
+                        <div className="hidden sm:flex flex-col items-end">
                             <p className={`text-xs font-bold uppercase tracking-wider ${
                                 product.status === 'active' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
                             }`}>
