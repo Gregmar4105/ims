@@ -244,7 +244,8 @@ export default function Create({ products, pendingSales }: { products: Product[]
     };
 
     const updateQuantity = (productId: number, newQuantity: number) => {
-        const product = products.find(p => p.id === productId);
+        const cartItem = cart.find(item => item.product_id === productId);
+        const product = cartItem?.product || products.find(p => p.id === productId);
         if (!product) return;
 
         if (newQuantity > product.available_quantity) {
@@ -473,14 +474,13 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                             -
                                                         </Button>
                                                         <Input
-                                                            type="number"
+                                                            type="text"
+                                                            inputMode="numeric"
                                                             value={item.quantity || ''}
                                                             onChange={(e) => {
                                                                 const val = e.target.value;
-                                                                if (val === '') {
-                                                                    updateQuantity(item.product_id, 0);
-                                                                } else {
-                                                                    updateQuantity(item.product_id, parseInt(val));
+                                                                if (val === '' || /^\d+$/.test(val)) {
+                                                                    updateQuantity(item.product_id, val === '' ? 0 : parseInt(val));
                                                                 }
                                                             }}
                                                             onBlur={() => {
