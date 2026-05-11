@@ -137,8 +137,7 @@ export default function Create({ brands, categories, suppliers, isSystemAdmin, c
                         <div className="flex items-center gap-3">
                             <Link href="/products">
                                 <Button variant="outline" size="sm">
-                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
-                                </Button>
+                                    <ArrowLeft className="mr-2 h-4 w-4" /></Button>
                             </Link>
                             <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Add New Product</h1>
                         </div>
