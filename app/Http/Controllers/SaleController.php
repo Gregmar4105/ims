@@ -189,6 +189,7 @@ class SaleController extends Controller
                 'products.barcode',
                 'products.qr_code',
                 'products.price',
+                'products.image_path',
                 'branch_products.quantity as available_quantity'
             )
             ->get();
@@ -235,6 +236,7 @@ class SaleController extends Controller
                 'products.barcode',
                 'products.qr_code',
                 'products.price',
+                'products.image_path',
                 'branch_products.quantity as available_quantity'
             )
             ->limit(10)
@@ -268,6 +270,7 @@ class SaleController extends Controller
                 'products.barcode',
                 'products.qr_code',
                 'products.price',
+                'products.image_path',
                 'branch_products.quantity as available_quantity'
             )
             ->first();

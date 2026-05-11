@@ -22,6 +22,7 @@ interface Product {
     qr_code: string | null;
     price: number | null;
     available_quantity: number;
+    image_path: string | null;
 }
 
 interface SaleItem {
@@ -428,8 +429,16 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                         {cart.map((item) => (
                                             <div key={item.product_id} className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-accent/5 transition-colors">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="h-10 w-10 rounded bg-primary/10 flex items-center justify-center text-primary">
-                                                        <Package className="w-5 h-5" />
+                                                    <div className="h-10 w-10 rounded bg-primary/10 flex items-center justify-center text-primary overflow-hidden border">
+                                                        {item.product.image_path ? (
+                                                            <img 
+                                                                src={`/storage/${item.product.image_path}`} 
+                                                                alt={item.product.name} 
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <Package className="w-5 h-5" />
+                                                        )}
                                                     </div>
                                                     <div>
                                                         <h4 className="font-medium">{item.product.name}</h4>
@@ -458,7 +467,14 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                         >
                                                             -
                                                         </Button>
-                                                        <span className="w-8 text-center font-medium">{item.quantity}</span>
+                                                        <Input
+                                                            type="number"
+                                                            value={item.quantity}
+                                                            onChange={(e) => updateQuantity(item.product_id, parseInt(e.target.value) || 0)}
+                                                            className="w-16 h-8 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none px-1"
+                                                            min="1"
+                                                            max={item.product.available_quantity}
+                                                        />
                                                         <Button
                                                             variant="outline"
                                                             size="icon"
