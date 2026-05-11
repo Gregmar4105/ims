@@ -62,30 +62,22 @@ export default function Show({ product }: Props) {
 
             <div className="p-4 md:p-8 space-y-6">
                 <div className="flex items-center justify-between gap-4 w-full">
-                    {isEmployee && (
-                        <div className="flex gap-2">
-                            <Link href="/products">
-                                <Button variant="outline">
-                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
-                                </Button>
-                            </Link>
-                        </div>
-                    )}
-                    <div className="space-y-1">
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white text-left">{product.name}</h1>
-                        <div className="flex items-center gap-2 text-sm text-gray-500 justify-start">
-                            <span className="font-semibold text-blue-600">{product.brand?.name}</span>
-                            <span>•</span>
-                            <span>{product.category?.name}</span>
+                    <div className="flex items-center gap-4">
+                        <Button variant="outline" size="sm" onClick={() => window.history.back()}>
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
+                        </Button>
+                        <div className="space-y-1">
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white text-left">{product.name}</h1>
+                            <div className="flex items-center gap-2 text-sm text-gray-500 justify-start">
+                                <span className="font-semibold text-blue-600">{product.brand?.name}</span>
+                                <span>•</span>
+                                <span>{product.category?.name}</span>
+                            </div>
                         </div>
                     </div>
+
                     {!isEmployee && (
                         <div className="flex gap-2">
-                            <Link href="/products">
-                                <Button variant="outline">
-                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
-                                </Button>
-                            </Link>
                             <Link href={`/products/${product.id}/edit`}>
                                 <Button>
                                     <Edit className="mr-2 h-4 w-4" /> Edit Product
