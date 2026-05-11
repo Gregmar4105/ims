@@ -636,30 +636,6 @@ class ProductController extends Controller
             'status' => 'nullable|string|in:active,inactive',
         ]);
 
-        // Handle Image Upload if provided
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
-                Storage::disk('public')->delete($product->image_path);
-            }
-
-            $file = $request->file('image');
-            $targetBranch = $targetBranchId ? Branch::find($targetBranchId) : null;
-            $branchName = $targetBranch ? $targetBranch->branch_name : 'System';
-
-            $safeBranch = Str::slug($branchName);
-            $safeBrand = Str::slug($brand ? $brand->name : 'Unknown');
-            $safeCategory = Str::slug($category ? $category->name : 'Unknown');
-            $safeProduct = Str::slug($validated['name']);
-
-            $extension = $file->getClientOriginalExtension();
-            $filename = "{$safeBranch}.{$safeBrand}.{$safeCategory}.{$safeProduct}.{$extension}";
-
-            $folderPath = 'products/' . $branchName;
-            $path = $file->storeAs($folderPath, $filename, 'public');
-            $validated['image_path'] = $path;
-        }
-
         // Resolve target branch
         $targetBranchId = $this->resolveTargetBranchId($user, $isSystemAdmin);
 
@@ -705,6 +681,30 @@ class ProductController extends Controller
                 $supplier = \App\Models\Supplier::create(['name' => $validated['supplier']]);
             }
             $supplierId = $supplier->id;
+        }
+
+        // Handle Image Upload if provided
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
+                Storage::disk('public')->delete($product->image_path);
+            }
+
+            $file = $request->file('image');
+            $targetBranch = $targetBranchId ? Branch::find($targetBranchId) : null;
+            $branchName = $targetBranch ? $targetBranch->branch_name : 'System';
+
+            $safeBranch = Str::slug($branchName);
+            $safeBrand = Str::slug($brand ? $brand->name : 'Unknown');
+            $safeCategory = Str::slug($category ? $category->name : 'Unknown');
+            $safeProduct = Str::slug($validated['name']);
+
+            $extension = $file->getClientOriginalExtension();
+            $filename = "{$safeBranch}.{$safeBrand}.{$safeCategory}.{$safeProduct}.{$extension}";
+
+            $folderPath = 'products/' . $branchName;
+            $path = $file->storeAs($folderPath, $filename, 'public');
+            $validated['image_path'] = $path;
         }
 
         DB::transaction(function () use ($product, $validated, $user, $isSystemAdmin, $targetBranchId, $brand, $category, $supplierId, $request) {
