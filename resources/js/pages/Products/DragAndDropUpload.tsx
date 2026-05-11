@@ -455,14 +455,16 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
                             <div className="flex flex-col gap-1">
                                 <h2 className="text-xl font-semibold">Queue ({uploadItems.length})</h2>
                                 {isProcessing && (
-                                    <div className="w-64 h-2 bg-muted rounded-full overflow-hidden">
-                                        <div 
-                                            className="h-full bg-primary transition-all duration-300" 
-                                            style={{ width: `${uploadProgress}%` }}
-                                        />
-                                    </div>
-                                    <span className="text-[10px] font-bold text-primary animate-pulse">Processing Queue...</span>
-                                </div>
+                                    <>
+                                        <div className="w-64 h-2 bg-muted rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full bg-primary transition-all duration-300" 
+                                                style={{ width: `${uploadProgress}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-[10px] font-bold text-primary animate-pulse">Processing Queue...</span>
+                                    </>
+                                )}
                             </div>
                             <div className="flex gap-2">
                                 <Button variant="outline" onClick={() => setUploadItems([])} disabled={isProcessing}>
