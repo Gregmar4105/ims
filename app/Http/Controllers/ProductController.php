@@ -410,8 +410,11 @@ class ProductController extends Controller
             'code' => 'nullable|string|max:255',
             'code_2' => 'nullable|string|max:255',
             'sku' => 'nullable|string|max:255|unique:products,sku',
-            'brand_id' => 'required|exists:brands,id',
-            'category_id' => 'required|exists:categories,id',
+            'barcode' => 'nullable|string|max:255|unique:products,barcode',
+            'qr_code' => 'nullable|string|max:255|unique:products,qr_code',
+            'brand' => 'required|string|max:255',
+            'category' => 'required|string|max:255',
+            'supplier' => 'nullable|string|max:255',
             'quantity' => 'required|integer|min:0',
             'physical_location' => 'nullable|string|max:255',
             'description' => 'nullable|string',
@@ -420,7 +423,6 @@ class ProductController extends Controller
             'variations.*.options' => 'required|string', // Comma separated
             'image' => 'required|image|max:2048', // 2MB Max
             'price' => 'nullable|numeric|min:0',
-            'supplier_id' => 'nullable|exists:suppliers,id',
             'reorder_level' => 'nullable|integer|min:0',
             'active_until_zero_days' => 'nullable|integer|min:0',
         ]);
@@ -432,11 +434,53 @@ class ProductController extends Controller
             return back()->withErrors(['branch' => 'You must be assigned to a branch to add products.']);
         }
 
+        // Resolve or Create Brand
+        $brand = Brand::where('name', $validated['brand'])
+            ->where(function($q) use ($targetBranchId) {
+                $q->where('branch_id', $targetBranchId)->orWhereNull('branch_id');
+            })
+            ->first();
+        
+        if (!$brand) {
+            $brand = Brand::create([
+                'name' => $validated['brand'],
+                'slug' => Str::slug($validated['brand']),
+                'status' => 'Active',
+                'branch_id' => $targetBranchId,
+                'created_by' => $user->id,
+            ]);
+        }
+
+        // Resolve or Create Category
+        $category = Category::where('name', $validated['category'])
+            ->where(function($q) use ($targetBranchId) {
+                $q->where('branch_id', $targetBranchId)->orWhereNull('branch_id');
+            })
+            ->first();
+        
+        if (!$category) {
+            $category = Category::create([
+                'name' => $validated['category'],
+                'slug' => Str::slug($validated['category']),
+                'status' => 'Active',
+                'branch_id' => $targetBranchId,
+                'created_by' => $user->id,
+            ]);
+        }
+
+        // Resolve or Create Supplier
+        $supplierId = null;
+        if (!empty($validated['supplier'])) {
+            $supplier = \App\Models\Supplier::where('name', $validated['supplier'])->first();
+            if (!$supplier) {
+                $supplier = \App\Models\Supplier::create(['name' => $validated['supplier']]);
+            }
+            $supplierId = $supplier->id;
+        }
+
         // Get branch info for image path
         $targetBranch = $targetBranchId ? Branch::find($targetBranchId) : null;
         $branchName = $targetBranch ? $targetBranch->branch_name : 'System';
-        $brand = Brand::find($validated['brand_id']);
-        $category = Category::find($validated['category_id']);
         
         $safeBranch = str_replace(' ', '', $branchName);
         $safeBrand = str_replace(' ', '', $brand ? $brand->name : 'Unknown');
@@ -456,11 +500,11 @@ class ProductController extends Controller
             $validated['image_path'] = $path;
         }
 
-        DB::transaction(function () use ($validated, $user, $targetBranchId) {
+        DB::transaction(function () use ($validated, $user, $targetBranchId, $brand, $category, $supplierId) {
             // Create Global Product
             $product = Product::create([
-                'brand_id' => $validated['brand_id'],
-                'category_id' => $validated['category_id'],
+                'brand_id' => $brand->id,
+                'category_id' => $category->id,
 
                 'name' => $validated['name'],
                 'code' => $validated['code'] ?? null,
@@ -470,11 +514,10 @@ class ProductController extends Controller
                 'variations' => $validated['variations'] ?? null,
                 'image_path' => $validated['image_path'],
                 'created_by' => $user->id,
-                // Barcode and QR code will be generated manually via /qr-barcodes
-                'barcode' => null,
-                'qr_code' => null,
+                'barcode' => $validated['barcode'] ?? null,
+                'qr_code' => $validated['qr_code'] ?? null,
                 'price' => $validated['price'] ?? null,
-                'supplier_id' => $validated['supplier_id'] ?? null,
+                'supplier_id' => $supplierId,
                 'status' => 'active',
                 'active_until_zero_days' => $validated['active_until_zero_days'] ?? null,
                 'out_of_stock_since' => ($validated['quantity'] <= 0) ? now() : null,
@@ -574,8 +617,9 @@ class ProductController extends Controller
                 Rule::unique('products', 'qr_code')->ignore($product->id),
             ],
 
-            'brand_id' => 'required|exists:brands,id',
-            'category_id' => 'required|exists:categories,id',
+            'brand' => 'required|string|max:255',
+            'category' => 'required|string|max:255',
+            'supplier' => 'nullable|string|max:255',
             'quantity' => 'required|integer|min:0',
             'physical_location' => 'nullable|string|max:255',
             'description' => 'nullable|string',
@@ -586,7 +630,6 @@ class ProductController extends Controller
             'price' => 'nullable|numeric|min:0', 
             'clearance_price' => 'nullable|numeric|min:0',
             'clearance_until' => 'nullable|date',
-            'supplier_id' => 'nullable|exists:suppliers,id',
             'reorder_level' => 'nullable|integer|min:0',
             'active_until_zero_days' => 'nullable|integer|min:0',
             'status' => 'nullable|string|in:active,inactive',
@@ -607,7 +650,51 @@ class ProductController extends Controller
         // Resolve target branch
         $targetBranchId = $this->resolveTargetBranchId($user, $isSystemAdmin);
 
-        DB::transaction(function () use ($product, $validated, $user, $isSystemAdmin, $targetBranchId) {
+        // Resolve or Create Brand
+        $brand = Brand::where('name', $validated['brand'])
+            ->where(function($q) use ($targetBranchId) {
+                $q->where('branch_id', $targetBranchId)->orWhereNull('branch_id');
+            })
+            ->first();
+        
+        if (!$brand) {
+            $brand = Brand::create([
+                'name' => $validated['brand'],
+                'slug' => Str::slug($validated['brand']),
+                'status' => 'Active',
+                'branch_id' => $targetBranchId,
+                'created_by' => $user->id,
+            ]);
+        }
+
+        // Resolve or Create Category
+        $category = Category::where('name', $validated['category'])
+            ->where(function($q) use ($targetBranchId) {
+                $q->where('branch_id', $targetBranchId)->orWhereNull('branch_id');
+            })
+            ->first();
+        
+        if (!$category) {
+            $category = Category::create([
+                'name' => $validated['category'],
+                'slug' => Str::slug($validated['category']),
+                'status' => 'Active',
+                'branch_id' => $targetBranchId,
+                'created_by' => $user->id,
+            ]);
+        }
+
+        // Resolve or Create Supplier
+        $supplierId = null;
+        if (!empty($validated['supplier'])) {
+            $supplier = \App\Models\Supplier::where('name', $validated['supplier'])->first();
+            if (!$supplier) {
+                $supplier = \App\Models\Supplier::create(['name' => $validated['supplier']]);
+            }
+            $supplierId = $supplier->id;
+        }
+
+        DB::transaction(function () use ($product, $validated, $user, $isSystemAdmin, $targetBranchId, $brand, $category, $supplierId) {
             // Update Global Product Details
             $product->update([
                 'name' => $validated['name'],
@@ -617,15 +704,15 @@ class ProductController extends Controller
                 'barcode' => $validated['barcode'] ?? null,
                 'qr_code' => $validated['qr_code'] ?? null,
 
-                'brand_id' => $validated['brand_id'],
-                'category_id' => $validated['category_id'],
+                'brand_id' => $brand->id,
+                'category_id' => $category->id,
                 'description' => $validated['description'] ?? null,
                 'variations' => $validated['variations'] ?? null,
                 'image_path' => $validated['image_path'] ?? $product->image_path,
                 'price' => $validated['price'] ?? $product->price,
                 'clearance_price' => $request->has('clearance_price') ? $validated['clearance_price'] : $product->clearance_price,
                 'clearance_until' => $request->has('clearance_until') ? $validated['clearance_until'] : $product->clearance_until,
-                'supplier_id' => $validated['supplier_id'] ?? $product->supplier_id,
+                'supplier_id' => $supplierId,
                 'active_until_zero_days' => $validated['active_until_zero_days'] ?? null,
                 'status' => $validated['status'] ?? $product->status,
             ]);

@@ -13,9 +13,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Upload, Store, Clock, Info, Power, PowerOff, Loader2, Tag, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Upload, Store, Clock, Info, Power, PowerOff, Loader2, Tag, ArrowLeft, QrCode, Barcode } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { AutocompleteInput } from '@/components/AutocompleteInput';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -87,9 +88,9 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
         name: product.name,
-        brand_id: String(product.brand_id),
-        category_id: String(product.category_id),
-        supplier_id: product.supplier_id ? String(product.supplier_id) : '',
+        brand: brands.find(b => b.id === product.brand_id)?.name || '',
+        category: categories.find(c => c.id === product.category_id)?.name || '',
+        supplier: suppliers.find(s => s.id === product.supplier_id)?.name || '',
         quantity: String(product.quantity),
         physical_location: product.physical_location || '',
         description: product.description || '',
@@ -259,56 +260,38 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
 
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border shadow-sm">
                     <form onSubmit={submit} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-2">
                                 <Label htmlFor="brand">Brand</Label>
-                                <Select value={data.brand_id} onValueChange={(val) => setData('brand_id', val)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Brand" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {brands.map((brand) => (
-                                            <SelectItem key={brand.id} value={String(brand.id)}>
-                                                {brand.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.brand_id && <p className="text-sm text-red-500">{errors.brand_id}</p>}
+                                <AutocompleteInput
+                                    value={data.brand}
+                                    onValueChange={(val) => setData('brand', val)}
+                                    placeholder="Search or type brand name"
+                                    searchUrl="/api/brands/search"
+                                    error={errors.brand}
+                                />
                             </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="category">Category</Label>
-                                <Select value={data.category_id} onValueChange={(val) => setData('category_id', val)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {categories.map((category) => (
-                                            <SelectItem key={category.id} value={String(category.id)}>
-                                                {category.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.category_id && <p className="text-sm text-red-500">{errors.category_id}</p>}
+                                <AutocompleteInput
+                                    value={data.category}
+                                    onValueChange={(val) => setData('category', val)}
+                                    placeholder="Search or type category name"
+                                    searchUrl="/api/categories/search"
+                                    error={errors.category}
+                                />
                             </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="supplier">Supplier (Optional)</Label>
-                                <Select value={data.supplier_id} onValueChange={(val) => setData('supplier_id', val)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Supplier" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {suppliers.map((supplier) => (
-                                            <SelectItem key={supplier.id} value={String(supplier.id)}>
-                                                {supplier.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.supplier_id && <p className="text-sm text-red-500">{errors.supplier_id}</p>}
+                                <AutocompleteInput
+                                    value={data.supplier}
+                                    onValueChange={(val) => setData('supplier', val)}
+                                    placeholder="Search or type supplier name"
+                                    searchUrl="/api/suppliers/search"
+                                    error={errors.supplier}
+                                />
                             </div>
                         </div>
 
@@ -391,25 +374,32 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="barcode">Barcode (13 Digits)</Label>
-                                <Input
-                                    id="barcode"
-                                    value={data.barcode}
-                                    onChange={e => setData('barcode', e.target.value)}
-                                    placeholder="13-digit barcode"
-                                    maxLength={13}
-                                />
+                                <Label htmlFor="barcode">Barcode</Label>
+                                <div className="relative">
+                                    <Barcode className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="barcode"
+                                        className="pl-9"
+                                        value={data.barcode}
+                                        onChange={e => setData('barcode', e.target.value)}
+                                        placeholder="Scan or enter barcode"
+                                    />
+                                </div>
                                 {errors.barcode && <p className="text-sm text-red-500">{errors.barcode}</p>}
                             </div>
+
                             <div className="space-y-2">
-                                <Label htmlFor="qr_code">QR Code (13 Digits)</Label>
-                                <Input
-                                    id="qr_code"
-                                    value={data.qr_code}
-                                    onChange={e => setData('qr_code', e.target.value)}
-                                    placeholder="13-digit QR number"
-                                    maxLength={13}
-                                />
+                                <Label htmlFor="qr_code">QR Code</Label>
+                                <div className="relative">
+                                    <QrCode className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="qr_code"
+                                        className="pl-9"
+                                        value={data.qr_code}
+                                        onChange={e => setData('qr_code', e.target.value)}
+                                        placeholder="Scan or enter QR code"
+                                    />
+                                </div>
                                 {errors.qr_code && <p className="text-sm text-red-500">{errors.qr_code}</p>}
                             </div>
                         </div>

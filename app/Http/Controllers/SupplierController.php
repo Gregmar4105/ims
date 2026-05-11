@@ -99,4 +99,16 @@ class SupplierController extends Controller
         $supplier->delete();
         return redirect()->back()->with('success', 'Supplier deleted successfully.');
     }
+
+    public function search(Request $request)
+    {
+        $search = $request->query('search');
+
+        $suppliers = Supplier::where('name', 'like', "%{$search}%")
+            ->latest()
+            ->take(10)
+            ->get(['id', 'name']);
+
+        return response()->json($suppliers);
+    }
 }

@@ -98,4 +98,24 @@ class BrandController extends Controller
         $brand->delete();
         return redirect()->back()->with('success', 'Brand deleted successfully.');
     }
+
+    public function search(Request $request)
+    {
+        $search = $request->query('search');
+        $user = auth()->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+
+        $query = Brand::where('status', 'Active');
+
+        if (!$isSystemAdmin) {
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        $brands = $query->where('name', 'like', "%{$search}%")
+            ->latest()
+            ->take(10)
+            ->get(['id', 'name']);
+
+        return response()->json($brands);
+    }
 }

@@ -13,9 +13,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Upload, Store, Clock, Info, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Upload, Store, Clock, Info, ArrowLeft, QrCode, Barcode } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from '@inertiajs/react';
+import { AutocompleteInput } from '@/components/AutocompleteInput';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -59,13 +60,15 @@ interface Props {
 export default function Create({ brands, categories, suppliers, isSystemAdmin, currentBranch }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
-        brand_id: '',
-        category_id: '',
-        supplier_id: '',
+        brand: '',
+        category: '',
+        supplier: '',
         quantity: '',
         physical_location: '',
         description: '',
         price: '',
+        barcode: '',
+        qr_code: '',
         code: '',
         code_2: '',
         sku: '',
@@ -176,56 +179,38 @@ export default function Create({ brands, categories, suppliers, isSystemAdmin, c
 
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border shadow-sm">
                     <form onSubmit={submit} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-2">
                                 <Label htmlFor="brand">Brand</Label>
-                                <Select value={data.brand_id} onValueChange={(val) => setData('brand_id', val)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Brand" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {brands.map((brand) => (
-                                            <SelectItem key={brand.id} value={String(brand.id)}>
-                                                {brand.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.brand_id && <p className="text-sm text-red-500">{errors.brand_id}</p>}
+                                <AutocompleteInput
+                                    value={data.brand}
+                                    onValueChange={(val) => setData('brand', val)}
+                                    placeholder="Search or type brand name"
+                                    searchUrl="/api/brands/search"
+                                    error={errors.brand}
+                                />
                             </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="category">Category</Label>
-                                <Select value={data.category_id} onValueChange={(val) => setData('category_id', val)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {categories.map((category) => (
-                                            <SelectItem key={category.id} value={String(category.id)}>
-                                                {category.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.category_id && <p className="text-sm text-red-500">{errors.category_id}</p>}
+                                <AutocompleteInput
+                                    value={data.category}
+                                    onValueChange={(val) => setData('category', val)}
+                                    placeholder="Search or type category name"
+                                    searchUrl="/api/categories/search"
+                                    error={errors.category}
+                                />
                             </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="supplier">Supplier (Optional)</Label>
-                                <Select value={data.supplier_id} onValueChange={(val) => setData('supplier_id', val)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Supplier" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {suppliers.map((supplier) => (
-                                            <SelectItem key={supplier.id} value={String(supplier.id)}>
-                                                {supplier.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.supplier_id && <p className="text-sm text-red-500">{errors.supplier_id}</p>}
+                                <AutocompleteInput
+                                    value={data.supplier}
+                                    onValueChange={(val) => setData('supplier', val)}
+                                    placeholder="Search or type supplier name"
+                                    searchUrl="/api/suppliers/search"
+                                    error={errors.supplier}
+                                />
                             </div>
                         </div>
 
@@ -255,11 +240,43 @@ export default function Create({ brands, categories, suppliers, isSystemAdmin, c
                                 />
                                 {errors.quantity && <p className="text-sm text-red-500">{errors.quantity}</p>}
                             </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="barcode">Barcode</Label>
+                                <div className="relative">
+                                    <Barcode className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="barcode"
+                                        className="pl-9"
+                                        value={data.barcode}
+                                        onChange={e => setData('barcode', e.target.value)}
+                                        placeholder="Scan or enter barcode"
+                                    />
+                                </div>
+                                {errors.barcode && <p className="text-sm text-red-500">{errors.barcode}</p>}
+                            </div>
 
                             <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                    <Label htmlFor="reorder_level">Reorder Level</Label>
+                                <Label htmlFor="qr_code">QR Code</Label>
+                                <div className="relative">
+                                    <QrCode className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="qr_code"
+                                        className="pl-9"
+                                        value={data.qr_code}
+                                        onChange={e => setData('qr_code', e.target.value)}
+                                        placeholder="Scan or enter QR code"
+                                    />
                                 </div>
+                                {errors.qr_code && <p className="text-sm text-red-500">{errors.qr_code}</p>}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="reorder_level">Reorder Level</Label>
                                 <Input
                                     id="reorder_level"
                                     type="number"
@@ -267,9 +284,33 @@ export default function Create({ brands, categories, suppliers, isSystemAdmin, c
                                     value={data.reorder_level}
                                     onChange={e => setData('reorder_level', e.target.value)}
                                     placeholder="0"
-                                    title="Quantity at which to reorder"
                                 />
                                 {errors.reorder_level && <p className="text-sm text-red-500">{errors.reorder_level}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="price">Price (₱)</Label>
+                                <Input
+                                    id="price"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={data.price}
+                                    onChange={e => setData('price', e.target.value)}
+                                    placeholder="0.00"
+                                />
+                                {errors.price && <p className="text-sm text-red-500">{errors.price}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="physical_location">Physical Location</Label>
+                                <Input
+                                    id="physical_location"
+                                    value={data.physical_location}
+                                    onChange={e => setData('physical_location', e.target.value)}
+                                    placeholder="e.g. Aisle 3, Shelf B"
+                                />
+                                {errors.physical_location && <p className="text-sm text-red-500">{errors.physical_location}</p>}
                             </div>
                         </div>
 
@@ -303,33 +344,6 @@ export default function Create({ brands, categories, suppliers, isSystemAdmin, c
                                     placeholder="Stock Keeping Unit"
                                 />
                                 {errors.sku && <p className="text-sm text-red-500">{errors.sku}</p>}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="price">Price (₱)</Label>
-                                <Input
-                                    id="price"
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={data.price}
-                                    onChange={e => setData('price', e.target.value)}
-                                    placeholder="0.00"
-                                />
-                                {errors.price && <p className="text-sm text-red-500">{errors.price}</p>}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="physical_location">Physical Location</Label>
-                                <Input
-                                    id="physical_location"
-                                    value={data.physical_location}
-                                    onChange={e => setData('physical_location', e.target.value)}
-                                    placeholder="e.g. Aisle 3, Shelf B"
-                                />
-                                {errors.physical_location && <p className="text-sm text-red-500">{errors.physical_location}</p>}
                             </div>
                         </div>
 

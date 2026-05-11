@@ -102,6 +102,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('api/products/bulk-create', [\App\Http\Controllers\DragAndDropUploadController::class, 'store'])->name('api.products.bulk-create');
         Route::post('api/products/validate-field', [\App\Http\Controllers\DragAndDropUploadController::class, 'validateField'])->name('api.products.validate-field');
 
+        // Search API for Autocomplete
+        Route::get('api/brands/search', [\App\Http\Controllers\BrandController::class, 'search'])->name('brands.search');
+        Route::get('api/categories/search', [\App\Http\Controllers\CategoryController::class, 'search'])->name('categories.search');
+        Route::get('api/suppliers/search', [\App\Http\Controllers\SupplierController::class, 'search'])->name('suppliers.search');
+
         Route::resource('products', \App\Http\Controllers\ProductController::class);
         Route::resource('product-suppliers', \App\Http\Controllers\SupplierController::class)->parameters(['product-suppliers' => 'supplier']);
     });

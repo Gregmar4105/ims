@@ -95,4 +95,24 @@ class CategoryController extends Controller
         $category->delete();
         return redirect()->back()->with('success', 'Category deleted successfully.');
     }
+
+    public function search(Request $request)
+    {
+        $search = $request->query('search');
+        $user = auth()->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+
+        $query = Category::where('status', 'Active');
+
+        if (!$isSystemAdmin) {
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        $categories = $query->where('name', 'like', "%{$search}%")
+            ->latest()
+            ->take(10)
+            ->get(['id', 'name']);
+
+        return response()->json($categories);
+    }
 }
