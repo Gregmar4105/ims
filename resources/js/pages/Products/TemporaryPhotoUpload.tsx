@@ -25,6 +25,9 @@ interface UploadItem {
     preview: string;
     productId: number | null;
     productName: string | null;
+    status: 'pending' | 'uploading' | 'success' | 'error';
+    progress: number;
+    errorMessage?: string;
 }
 
 export default function TemporaryPhotoUpload({ productsMissingImages, missingCount }: { productsMissingImages: Product[], missingCount: number }) {
@@ -87,6 +90,8 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
             preview: URL.createObjectURL(file),
             productId: null,
             productName: null,
+            status: 'pending',
+            progress: 0,
         }));
         
         setUploadItems((prev) => [...prev, ...newItems]);
@@ -191,7 +196,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
         );
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const mappings = uploadItems
             .filter((item) => item.productId !== null);
 
@@ -202,31 +207,67 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
 
         setIsProcessing(true);
         setUploadProgress(0);
-        const formData = new FormData();
-        
-        mappings.forEach((m, index) => {
-            formData.append(`mappings[${index}][productId]`, m.productId!.toString());
-            formData.append(`mappings[${index}][photo]`, m.file);
-        });
 
-        router.post('/api/products/bulk-photo-update', formData, {
-            forceFormData: true,
-            onProgress: (progress) => {
-                if (progress) setUploadProgress(progress.percentage);
-            },
-            onSuccess: () => {
-                setUploadItems([]);
-                toast.success('Photos updated successfully!');
-                setIsProcessing(false);
-                setUploadProgress(0);
-            },
-            onError: (errors) => {
-                console.error(errors);
-                toast.error('Failed to upload photos. Please check file sizes or selection.');
-                setIsProcessing(false);
-                setUploadProgress(0);
+        const totalItems = mappings.length;
+        let completedItems = 0;
+
+        for (let i = 0; i < mappings.length; i++) {
+            const item = mappings[i];
+
+            if (item.status === 'success') {
+                completedItems++;
+                continue;
             }
-        });
+
+            updateItemStatus(item.id, 'uploading');
+
+            const formData = new FormData();
+            formData.append(`mappings[0][productId]`, item.productId!.toString());
+            formData.append(`mappings[0][photo]`, item.file);
+
+            try {
+                await axios.post('/api/products/bulk-photo-update', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    onUploadProgress: (progressEvent) => {
+                        if (progressEvent.total) {
+                            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                            updateItemProgress(item.id, percent);
+                            
+                            // Overall progress
+                            const overall = ((completedItems + (percent / 100)) / totalItems) * 100;
+                            setUploadProgress(Math.round(overall));
+                        }
+                    }
+                });
+
+                updateItemStatus(item.id, 'success');
+                completedItems++;
+                setUploadProgress(Math.round((completedItems / totalItems) * 100));
+            } catch (error: any) {
+                console.error(`Error uploading photo for product ${item.productName}:`, error);
+                const msg = error.response?.data?.message || error.message || 'Unknown error';
+                setUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'error', errorMessage: msg } : i));
+                toast.error(`Failed to upload ${item.productName}: ${msg}`);
+            }
+        }
+
+        setIsProcessing(false);
+        
+        const allSuccess = mappings.every(item => item.status === 'success');
+        if (allSuccess) {
+            toast.success('All photos updated successfully!');
+            // Optional: setUploadItems([])
+        } else {
+            toast.warning('Finished processing with some errors.');
+        }
+    };
+
+    const updateItemStatus = (id: string, status: 'pending' | 'uploading' | 'success' | 'error') => {
+        setUploadItems(prev => prev.map(item => item.id === id ? { ...item, status } : item));
+    };
+
+    const updateItemProgress = (id: string, progress: number) => {
+        setUploadItems(prev => prev.map(item => item.id === id ? { ...item, progress } : item));
     };
 
     return (
@@ -447,9 +488,46 @@ function UploadCard({
                     >
                         <X className="w-4 h-4" />
                     </button>
-                    {item.productId && (
+                    {item.productId && item.status === 'pending' && (
                         <div className="absolute inset-0 bg-primary/20 flex items-center justify-center backdrop-blur-[1px]">
                             <Badge className="bg-primary text-white scale-110 shadow-lg border-none px-3">Mapped</Badge>
+                        </div>
+                    )}
+
+                    {item.status === 'uploading' && (
+                        <div className="absolute inset-0 z-50 bg-background/50 backdrop-blur-[1px] flex flex-col items-center justify-center p-4">
+                            <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />
+                            <span className="text-[10px] font-bold text-primary mb-2">{item.progress}%</span>
+                            <ProgressBar value={item.progress} className="h-1.5 w-full" />
+                        </div>
+                    )}
+
+                    {item.status === 'success' && (
+                        <div className="absolute inset-0 z-50 bg-green-500/20 backdrop-blur-[1px] flex items-center justify-center">
+                            <div className="bg-green-500 text-white rounded-full p-2 shadow-lg animate-in zoom-in-50">
+                                <Check className="w-6 h-6" />
+                            </div>
+                        </div>
+                    )}
+
+                    {item.status === 'error' && (
+                        <div className="absolute inset-0 z-50 bg-red-500/20 backdrop-blur-[1px] flex flex-col items-center justify-center p-2 text-center">
+                            <div className="bg-red-500 text-white rounded-full p-1.5 shadow-lg mb-2">
+                                <X className="w-4 h-4" />
+                            </div>
+                            {item.errorMessage && (
+                                <p className="text-[9px] font-bold text-red-600 bg-white/90 px-2 py-1 rounded border border-red-200 mb-2 max-w-full truncate">
+                                    {item.errorMessage}
+                                </p>
+                            )}
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-6 text-[10px] bg-white border-red-200 text-red-600 hover:bg-red-50"
+                                onClick={() => updateItemStatus(item.id, 'pending')}
+                            >
+                                Retry
+                            </Button>
                         </div>
                     )}
                 </div>

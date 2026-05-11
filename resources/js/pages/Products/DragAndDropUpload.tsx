@@ -59,6 +59,9 @@ interface UploadItem {
     errors: Record<string, string>;
     isValidating: Record<string, boolean>;
     isFetching: boolean;
+    status: 'pending' | 'uploading' | 'success' | 'error';
+    progress: number;
+    errorMessage?: string;
 }
 
 interface Props {
@@ -150,6 +153,8 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
                 errors: {},
                 isValidating: {},
                 isFetching: true,
+                status: 'pending',
+                progress: 0,
             };
         });
 
@@ -284,7 +289,7 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
         }
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (uploadItems.length === 0) {
             toast.error('Please add at least one product.');
             return;
@@ -305,46 +310,75 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
         setIsProcessing(true);
         setUploadProgress(0);
 
-        const formData = new FormData();
-        
-        uploadItems.forEach((item, index) => {
-            formData.append(`products[${index}][name]`, item.name);
-            formData.append(`products[${index}][brand]`, item.brand);
-            formData.append(`products[${index}][category]`, item.category);
-            if (item.supplier) formData.append(`products[${index}][supplier]`, item.supplier);
-            formData.append(`products[${index}][quantity]`, item.quantity);
-            if (item.price) formData.append(`products[${index}][price]`, item.price);
-            if (item.sku) formData.append(`products[${index}][sku]`, item.sku);
-            if (item.barcode) formData.append(`products[${index}][barcode]`, item.barcode);
-            if (item.qr_code) formData.append(`products[${index}][qr_code]`, item.qr_code);
-            if (item.code) formData.append(`products[${index}][code]`, item.code);
-            if (item.code_2) formData.append(`products[${index}][code_2]`, item.code_2);
-            if (item.reorder_level) formData.append(`products[${index}][reorder_level]`, item.reorder_level);
-            if (item.active_until_zero_days) formData.append(`products[${index}][active_until_zero_days]`, item.active_until_zero_days);
-            if (item.physical_location) formData.append(`products[${index}][physical_location]`, item.physical_location);
-            if (item.description) formData.append(`products[${index}][description]`, item.description);
-            if (item.variations.length > 0) formData.append(`products[${index}][variations]`, JSON.stringify(item.variations));
-            if (item.file) formData.append(`products[${index}][photo]`, item.file);
-        });
+        const totalItems = uploadItems.length;
+        let completedItems = 0;
 
-        router.post('/api/products/bulk-create', formData, {
-            forceFormData: true,
-            onProgress: (progress) => {
-                if (progress) setUploadProgress(progress.percentage);
-            },
-            onSuccess: () => {
-                setUploadItems([]);
-                toast.success('Products processed successfully!');
-                setIsProcessing(false);
-                setUploadProgress(0);
-            },
-            onError: (errors) => {
-                console.error(errors);
-                toast.error('Failed to process products. Please check your inputs.');
-                setIsProcessing(false);
-                setUploadProgress(0);
+        for (let i = 0; i < uploadItems.length; i++) {
+            const item = uploadItems[i];
+            
+            // Skip already successful ones if re-running
+            if (item.status === 'success') {
+                completedItems++;
+                continue;
             }
-        });
+
+            updateItem(item.id, 'status', 'uploading');
+
+            const formData = new FormData();
+            formData.append(`products[0][name]`, item.name);
+            formData.append(`products[0][brand]`, item.brand);
+            formData.append(`products[0][category]`, item.category);
+            if (item.supplier) formData.append(`products[0][supplier]`, item.supplier);
+            formData.append(`products[0][quantity]`, item.quantity);
+            if (item.price) formData.append(`products[0][price]`, item.price);
+            if (item.sku) formData.append(`products[0][sku]`, item.sku);
+            if (item.barcode) formData.append(`products[0][barcode]`, item.barcode);
+            if (item.qr_code) formData.append(`products[0][qr_code]`, item.qr_code);
+            if (item.code) formData.append(`products[0][code]`, item.code);
+            if (item.code_2) formData.append(`products[0][code_2]`, item.code_2);
+            if (item.reorder_level) formData.append(`products[0][reorder_level]`, item.reorder_level);
+            if (item.active_until_zero_days) formData.append(`products[0][active_until_zero_days]`, item.active_until_zero_days);
+            if (item.physical_location) formData.append(`products[0][physical_location]`, item.physical_location);
+            if (item.description) formData.append(`products[0][description]`, item.description);
+            if (item.variations.length > 0) formData.append(`products[0][variations]`, JSON.stringify(item.variations));
+            if (item.file) formData.append(`products[0][photo]`, item.file);
+
+            try {
+                await axios.post('/api/products/bulk-create', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    onUploadProgress: (progressEvent) => {
+                        if (progressEvent.total) {
+                            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                            updateItem(item.id, 'progress', percent);
+                            
+                            // Overall progress
+                            const overall = ((completedItems + (percent / 100)) / totalItems) * 100;
+                            setUploadProgress(Math.round(overall));
+                        }
+                    }
+                });
+                
+                updateItem(item.id, 'status', 'success');
+                completedItems++;
+                setUploadProgress(Math.round((completedItems / totalItems) * 100));
+            } catch (error: any) {
+                console.error(`Error uploading item ${item.name}:`, error);
+                const msg = error.response?.data?.message || error.message || 'Unknown error';
+                setUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'error', errorMessage: msg } : i));
+                toast.error(`Failed to upload ${item.name}: ${msg}`);
+                // Continue with next item instead of stopping the whole queue
+            }
+        }
+
+        setIsProcessing(false);
+        
+        const allSuccess = uploadItems.every(item => item.status === 'success');
+        if (allSuccess) {
+            toast.success('All products processed successfully!');
+            // Optional: setUploadItems([]) or redirect
+        } else {
+            toast.warning('Finished processing with some errors. Please check the items marked in red.');
+        }
     };
 
     return (
@@ -427,7 +461,8 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
                                             style={{ width: `${uploadProgress}%` }}
                                         />
                                     </div>
-                                )}
+                                    <span className="text-[10px] font-bold text-primary animate-pulse">Processing Queue...</span>
+                                </div>
                             </div>
                             <div className="flex gap-2">
                                 <Button variant="outline" onClick={() => setUploadItems([])} disabled={isProcessing}>
@@ -501,6 +536,51 @@ function ProductUploadCard({
                     <div className="flex items-center gap-2 px-4 py-2 bg-background rounded-full shadow-lg border">
                         <Loader2 className="w-4 h-4 animate-spin text-primary" />
                         <span className="text-sm font-medium">Fetching details...</span>
+                    </div>
+                </div>
+            )}
+
+            {item.status === 'uploading' && (
+                <div className="absolute inset-0 z-50 bg-background/50 backdrop-blur-[1px] flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-3 w-64">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-background rounded-full shadow-lg border">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            <span className="text-sm font-medium">Uploading {item.progress}%</span>
+                        </div>
+                        <ProgressBar value={item.progress} className="h-2 w-full shadow-sm" />
+                    </div>
+                </div>
+            )}
+
+            {item.status === 'success' && (
+                <div className="absolute inset-0 z-50 bg-green-500/10 backdrop-blur-[1px] flex items-center justify-center">
+                    <div className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-full shadow-xl animate-in zoom-in-50 duration-300">
+                        <Check className="w-5 h-5" />
+                        <span className="text-sm font-bold">Successfully Uploaded</span>
+                    </div>
+                </div>
+            )}
+
+            {item.status === 'error' && (
+                <div className="absolute inset-0 z-50 bg-red-500/10 backdrop-blur-[1px] flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2 max-w-[80%]">
+                        <div className="flex items-center gap-2 px-6 py-3 bg-red-500 text-white rounded-full shadow-xl">
+                            <AlertCircle className="w-5 h-5" />
+                            <span className="text-sm font-bold">Upload Failed</span>
+                        </div>
+                        {item.errorMessage && (
+                            <div className="bg-background/90 text-red-600 text-[10px] font-bold px-3 py-1.5 rounded-md border border-red-200 shadow-sm text-center">
+                                {item.errorMessage}
+                            </div>
+                        )}
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-2 bg-background border-red-200 text-red-600 hover:bg-red-50"
+                            onClick={() => updateItem(item.id, 'status', 'pending')}
+                        >
+                            Retry
+                        </Button>
                     </div>
                 </div>
             )}
