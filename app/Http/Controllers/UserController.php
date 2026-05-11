@@ -38,12 +38,19 @@ class UserController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        // Append raw branch_id so the frontend can detect "branch was archived"
+        // (branch relation is null but branch_id is non-null) vs "never assigned"
+        $users->getCollection()->transform(function ($user) {
+            $user->raw_branch_id = $user->branch_id;
+            return $user;
+        });
+
         return Inertia::render('Users/Index', [
             'users' => $users,
             'filters' => [
                 'search' => $search,
             ],
-            'branches' => Branch::all(),
+            'branches' => Branch::all(),  // SoftDeletes excludes archived branches automatically
             'roles' => Role::all(),
         ]);
     }

@@ -3,7 +3,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Head, Link, usePage, router } from '@inertiajs/react';
-import { Plus, Pencil, Trash, BadgeCheckIcon, BadgeAlert, Search, UserCog } from 'lucide-react';
+import { Plus, Pencil, Trash, BadgeCheckIcon, BadgeAlert, Search, UserCog, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Pagination from '@/components/Pagination';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -37,20 +37,20 @@ export default function Index({ users, branches, roles }: any) {
 
     // ---- Local instant filtering ----
     const filteredUsers = useMemo(() => {
-        // Use userList here instead of users.data to match your normalization logic above
         if (!userList) return [];
 
         const q = search.toLowerCase();
 
-        return userList.filter(({ name, email, email_verified_at, created_at, branch, roles, profile_photo_url, onesignal_player_id }: any) =>
+        return userList.filter(({ name, email, email_verified_at, created_at, branch, roles, profile_photo_url, onesignal_player_id, raw_branch_id }: any) =>
             (name || "").toLowerCase().includes(q) ||
             (email || "").toLowerCase().includes(q) ||
             (email_verified_at || "").includes(q) ||
             (created_at || "").includes(q) ||
-            // Added search support for Branch, Role, and OneSignal ID names if they exist
             (branch?.branch_name || "").toLowerCase().includes(q) ||
             (roles?.[0]?.name || "").toLowerCase().includes(q) ||
-            (onesignal_player_id || "").toLowerCase().includes(q)
+            (onesignal_player_id || "").toLowerCase().includes(q) ||
+            // Also match users whose branch was archived
+            (!branch && raw_branch_id && 'archived'.includes(q))
         );
     }, [search, userList]);
 
@@ -218,7 +218,7 @@ export default function Index({ users, branches, roles }: any) {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredUsers.map(({ id, name, email, email_verified_at, user_status, created_at, branch, roles, profile_photo_url, onesignal_player_id }: any) => (
+                                filteredUsers.map(({ id, name, email, email_verified_at, user_status, created_at, branch, roles, profile_photo_url, onesignal_player_id, raw_branch_id }: any) => (
                                     <TableRow key={id}>
                                         <TableCell className="font-medium">{id}</TableCell>
                                         <TableCell className="py-4">
@@ -255,6 +255,15 @@ export default function Index({ users, branches, roles }: any) {
                                             {branch ? (
                                                 <div className="font-normal">
                                                     {branch.branch_name || branch.name}
+                                                </div>
+                                            ) : raw_branch_id ? (
+                                                // branch_id was set but the branch relation is null —
+                                                // this means the branch was soft-archived
+                                                <div className="flex items-center gap-1.5">
+                                                    <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                                    <span className="text-amber-600 dark:text-amber-400 font-medium text-sm">
+                                                        Branch Archived
+                                                    </span>
                                                 </div>
                                             ) : (
                                                 <span className="text-muted-foreground italic text-sm">No Branch</span>

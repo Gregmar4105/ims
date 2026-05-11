@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -87,15 +88,30 @@ class BranchController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
-     */
-    /**
-     * Remove the specified resource from storage.
+     * Soft-archive the branch.
+     *
+     * The branch row is NEVER physically removed so all historical FK references
+     * (sales, transfers, messages, branch_products) remain intact.
+     * We:
+     *   1. Rename it with an [ARCHIVED] prefix so it is identifiable in raw DB views.
+     *   2. Set branch_id = null for every user who belonged to it.
+     *   3. Soft-delete (sets deleted_at) — Laravel automatically excludes it from
+     *      every Branch query across the entire application.
      */
     public function destroy(Branch $branch)
     {
+        // 1. Rename to make the archive state visible in raw DB queries
+        $branch->branch_name = '[ARCHIVED] ' . $branch->branch_name;
+        $branch->branch_status = 'Inactive';
+        $branch->save();
+
+        // 2. Detach all users so they don't get routed into dead branch flows
+        User::where('branch_id', $branch->id)->update(['branch_id' => null]);
+
+        // 3. Soft-delete (sets deleted_at — excluded from all future queries)
         $branch->delete();
-        return redirect()->route('branches.index')->with('success', 'Branch deleted successfully.');
+
+        return redirect()->route('branches.index')->with('success', 'Branch archived successfully.');
     }
 
     public function locations()

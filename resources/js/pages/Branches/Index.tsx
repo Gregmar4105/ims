@@ -3,7 +3,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Head, Link, usePage, router } from '@inertiajs/react';
-import { Plus, Pencil, Trash, Search, Building } from 'lucide-react';
+import { Plus, Pencil, ArchiveX, Search, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Pagination from '@/components/Pagination';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -115,11 +115,11 @@ export default function Index({ branches }: any) {
                 setIsDeleting(false);
                 setIsDeleteOpen(false);
                 setDeleteId(null);
-                toast.success('Branch deleted successfully');
+                toast.success('Branch archived successfully');
             },
             onError: () => {
                 setIsDeleting(false);
-                toast.error('Failed to delete branch');
+                toast.error('Failed to archive branch');
             }
         });
     };
@@ -193,10 +193,11 @@ export default function Index({ branches }: any) {
                                                 <Button
                                                     variant="outline"
                                                     size="icon"
-                                                    className="h-8 w-8 text-red-600 hover:text-red-700"
+                                                    className="h-8 w-8 text-amber-600 hover:text-amber-700 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20"
                                                     onClick={() => confirmDelete(id)}
+                                                    title="Archive branch"
                                                 >
-                                                    <Trash className="h-4 w-4" />
+                                                    <ArchiveX className="h-4 w-4" />
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -217,8 +218,8 @@ export default function Index({ branches }: any) {
                 onClose={() => setIsDeleteOpen(false)}
                 onConfirm={handleDelete}
                 processing={isDeleting}
-                title="Delete Branch"
-                description="Are you sure you want to delete this branch? This action cannot be undone."
+                title="Archive Branch"
+                description="This branch will be hidden from the entire system. All historical sales, transfers, and messages tied to this branch are preserved in the database. Users assigned to this branch will be disconnected and will need to be reassigned."
             />
         </AppLayout>
     );
