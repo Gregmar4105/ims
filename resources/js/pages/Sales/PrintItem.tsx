@@ -17,6 +17,7 @@ interface Sale {
         id: number;
         quantity: number;
         price: number;
+        original_price: number | null;
         product: { name: string; barcode: string; qr_code: string };
     }>;
 }
@@ -101,7 +102,14 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                                         <p className="text-xs text-gray-500 font-mono mt-0.5">{item.product.barcode || item.product.qr_code}</p>
                                     </TableCell>
                                     <TableCell className="text-right py-3">{item.quantity}</TableCell>
-                                    <TableCell className="text-right py-3">₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</TableCell>
+                                    <TableCell className="text-right py-3">
+                                        <div className="flex flex-col items-end">
+                                            <span className="font-medium">₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                            {item.original_price && Number(item.original_price) !== Number(item.price) && (
+                                                <span className="text-[10px] text-gray-400 line-through">₱{Number(item.original_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                            )}
+                                        </div>
+                                    </TableCell>
                                     <TableCell className="text-right py-3 pr-0 font-medium font-mono">
                                         ₱{(item.quantity * item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </TableCell>

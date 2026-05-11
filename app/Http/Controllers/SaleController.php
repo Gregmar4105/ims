@@ -291,6 +291,8 @@ class SaleController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
+            'items.*.price' => 'required|numeric|min:0',
+            'items.*.original_price' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
         ]);
         
@@ -311,14 +313,12 @@ class SaleController extends Controller
             ]);
             
             foreach ($request->items as $item) {
-                // Fetch current price
-                $product = \App\Models\Product::find($item['product_id']);
-                
                 SaleItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
-                    'price' => $product ? $product->price : 0,
+                    'price' => $item['price'],
+                    'original_price' => $item['original_price'],
                 ]);
             }
         });

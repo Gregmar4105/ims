@@ -20,6 +20,8 @@ interface SaleItem {
         qr_code: string;
     };
     quantity: number;
+    price: number;
+    original_price: number | null;
 }
 
 interface Sale {
@@ -370,8 +372,9 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                                         <Table>
                                             <TableHeader className="bg-muted/10">
                                                 <TableRow>
-                                                    <TableHead className="w-[50%] pl-6">Product</TableHead>
+                                                    <TableHead className="w-[40%] pl-6">Product</TableHead>
                                                     <TableHead>Identifiers</TableHead>
+                                                    <TableHead className="text-right">Price</TableHead>
                                                     <TableHead className="text-right pr-6">Quantity</TableHead>
                                                 </TableRow>
                                             </TableHeader>
@@ -400,6 +403,17 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                                                                         <span className="font-mono">{item.product.qr_code}</span>
                                                                     </div>
                                                                 )}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="text-right">
+                                                            <div className="flex flex-col items-end">
+                                                                <span className="font-bold">₱{Number(item.price * item.quantity).toFixed(2)}</span>
+                                                                <div className="flex flex-col items-end text-[10px]">
+                                                                    {item.original_price && Number(item.original_price) !== Number(item.price) && (
+                                                                        <span className="text-muted-foreground line-through">₱{Number(item.original_price).toFixed(2)}</span>
+                                                                    )}
+                                                                    <span className="text-muted-foreground">₱{Number(item.price).toFixed(2)} ea</span>
+                                                                </div>
                                                             </div>
                                                         </TableCell>
                                                         <TableCell className="text-right font-semibold pr-6">

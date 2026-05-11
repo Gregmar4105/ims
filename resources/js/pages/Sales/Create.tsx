@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, Plus, Trash2, Scan, ShoppingCart, Check, X, AlertCircle, Loader2, Barcode, Camera } from 'lucide-react';
+import { Package, Plus, Trash2, Scan, ShoppingCart, Check, X, AlertCircle, Loader2, Barcode, Camera, TicketPercent } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 
 import { usePermission } from '@/hooks/usePermission';
 import { Html5Qrcode } from 'html5-qrcode';
@@ -28,6 +29,7 @@ interface Product {
 interface SaleItem {
     product_id: number;
     quantity: number;
+    price: number; // The current selling price (can be discounted)
     product: Product;
 }
 
@@ -63,9 +65,13 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const lastScanRef = useRef<number>(0);
 
     const { data, setData, post, processing, reset, errors } = useForm({
-        items: [] as { product_id: number; quantity: number }[],
+        items: [] as { product_id: number; quantity: number; price: number; original_price: number }[],
         notes: '',
     });
+
+    const [discountModalOpen, setDiscountModalOpen] = useState(false);
+    const [selectedItemForDiscount, setSelectedItemForDiscount] = useState<SaleItem | null>(null);
+    const [newPrice, setNewPrice] = useState<string>('');
 
     // Focus scanner input on load and after actions
     useEffect(() => {
@@ -235,7 +241,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                 );
             }
             toast.success('Item added to list');
-            return [...prev, { product_id: product.id, quantity: 1, product: product }];
+            return [...prev, { product_id: product.id, quantity: 1, price: Number(product.price) || 0, product: product }];
         });
     };
 
@@ -262,6 +268,29 @@ export default function Create({ products, pendingSales }: { products: Product[]
         ));
     };
 
+    const handleOpenDiscountModal = (item: SaleItem) => {
+        setSelectedItemForDiscount(item);
+        setNewPrice(item.price.toString());
+        setDiscountModalOpen(true);
+    };
+
+    const handleApplyDiscount = () => {
+        if (!selectedItemForDiscount) return;
+        const price = parseFloat(newPrice);
+        if (isNaN(price) || price < 0) {
+            toast.error('Please enter a valid price');
+            return;
+        }
+
+        setCart(prev => prev.map(item => 
+            item.product_id === selectedItemForDiscount.product_id 
+                ? { ...item, price: price }
+                : item
+        ));
+        setDiscountModalOpen(false);
+        setSelectedItemForDiscount(null);
+        toast.success('Price updated for this item');
+    };
     const handleReadySale = () => {
         if (cart.length === 0) return;
         
@@ -272,7 +301,9 @@ export default function Create({ products, pendingSales }: { products: Product[]
 
         data.items = cart.map(item => ({
             product_id: item.product_id,
-            quantity: item.quantity
+            quantity: item.quantity,
+            price: item.price,
+            original_price: Number(item.product.price) || 0
         }));
 
         post('/sales', {
@@ -461,9 +492,23 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 <div className="flex items-center gap-4">
                                                     <div className="flex items-center gap-2">
                                                         <div className="flex flex-col items-end mr-4">
-                                                            <span className="text-sm font-bold">₱{item.product.price ? (Number(item.product.price) * item.quantity).toFixed(2) : '0.00'}</span>
-                                                            <span className="text-[10px] text-muted-foreground">₱{item.product.price ? Number(item.product.price).toFixed(2) : '0.00'} ea</span>
+                                                            <span className="text-sm font-bold">₱{(item.price * item.quantity).toFixed(2)}</span>
+                                                            <div className="flex flex-col items-end">
+                                                                {item.price !== Number(item.product.price) && (
+                                                                    <span className="text-[10px] text-muted-foreground line-through">₱{Number(item.product.price).toFixed(2)}</span>
+                                                                )}
+                                                                <span className="text-[10px] text-primary font-medium">₱{item.price.toFixed(2)} ea</span>
+                                                            </div>
                                                         </div>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-primary border-primary/20 hover:bg-primary/10"
+                                                            onClick={() => handleOpenDiscountModal(item)}
+                                                            title="Apply Discount"
+                                                        >
+                                                            <TicketPercent className="w-4 h-4" />
+                                                        </Button>
                                                         <Button
                                                             variant="outline"
                                                             size="icon"
@@ -521,7 +566,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                     <div className="text-sm text-muted-foreground">
                                         Total Items: <span className="font-medium text-foreground">{cart.reduce((acc, item) => acc + item.quantity, 0)}</span>
                                         <div className="text-xl font-bold text-primary mt-1">
-                                            Total: ₱{cart.reduce((acc, item) => acc + (item.quantity * (Number(item.product.price) || 0)), 0).toFixed(2)}
+                                            Total: ₱{cart.reduce((acc, item) => acc + (item.quantity * item.price), 0).toFixed(2)}
                                         </div>
                                     </div>
                                     <Button
@@ -596,8 +641,47 @@ export default function Create({ products, pendingSales }: { products: Product[]
                     </div>
                 </div>
 
-
-
+                {/* Discount Modal */}
+                <Dialog open={discountModalOpen} onOpenChange={setDiscountModalOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Apply Discount</DialogTitle>
+                            <DialogDescription>
+                                Set a custom price for {selectedItemForDiscount?.product.name} for this sale.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex flex-col gap-4 py-4">
+                            <div className="flex flex-col gap-2">
+                                <Label>Original Base Price</Label>
+                                <div className="text-lg font-semibold text-muted-foreground">
+                                    ₱{Number(selectedItemForDiscount?.product.price || 0).toFixed(2)}
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="new-price">New Price (per item)</Label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₱</span>
+                                    <Input
+                                        id="new-price"
+                                        type="number"
+                                        step="0.01"
+                                        className="pl-7"
+                                        value={newPrice}
+                                        onChange={(e) => setNewPrice(e.target.value)}
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleApplyDiscount();
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setDiscountModalOpen(false)}>Cancel</Button>
+                            <Button onClick={handleApplyDiscount}>Apply New Price</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
             </div>
         </AppLayout>
