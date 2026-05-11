@@ -207,6 +207,43 @@ class SaleController extends Controller
     }
 
     /**
+     * Search products in branch inventory
+     */
+    public function search(Request $request)
+    {
+        $search = $request->query('search');
+        if (!$search) return response()->json([]);
+        
+        $user = auth()->user();
+        
+        if (!$user->branch_id) {
+            return response()->json(['error' => 'User does not belong to a branch'], 403);
+        }
+        
+        $products = DB::table('products')
+            ->join('branch_products', 'products.id', '=', 'branch_products.product_id')
+            ->where('branch_products.branch_id', $user->branch_id)
+            ->where('branch_products.quantity', '>', 0)
+            ->where(function ($query) use ($search) {
+                $query->where('products.name', 'like', "%{$search}%")
+                      ->orWhere('products.barcode', 'like', "%{$search}%")
+                      ->orWhere('products.qr_code', 'like', "%{$search}%");
+            })
+            ->select(
+                'products.id',
+                'products.name',
+                'products.barcode',
+                'products.qr_code',
+                'products.price',
+                'branch_products.quantity as available_quantity'
+            )
+            ->limit(10)
+            ->get();
+            
+        return response()->json($products);
+    }
+
+    /**
      * Look up product by barcode or QR code
      */
     public function lookup(Request $request)

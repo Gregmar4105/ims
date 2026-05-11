@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 
 import { usePermission } from '@/hooks/usePermission';
 import { Html5Qrcode } from 'html5-qrcode';
+import { useDebounce } from '@/hooks/use-debounce';
+import axios from 'axios';
 
 interface Product {
     id: number;
@@ -51,6 +53,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const [isProcessing, setIsProcessing] = useState(false);
     const [showScanner, setShowScanner] = useState(false);
     const [scannerError, setScannerError] = useState<string | null>(null);
+    const [searchResults, setSearchResults] = useState<Product[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    
+    const debouncedSearch = useDebounce(scannedCode, 300);
     const scannerInputRef = useRef<HTMLInputElement>(null);
     const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
     const lastScanRef = useRef<number>(0);
@@ -111,6 +117,30 @@ export default function Create({ products, pendingSales }: { products: Product[]
             }
         };
     }, [showScanner]);
+
+    // Handle debounced search
+    useEffect(() => {
+        const fetchResults = async () => {
+            if (debouncedSearch.trim().length < 1) {
+                setSearchResults([]);
+                return;
+            }
+
+            setIsSearching(true);
+            try {
+                const response = await axios.get('/api/sales/search-products', {
+                    params: { search: debouncedSearch }
+                });
+                setSearchResults(response.data);
+            } catch (error) {
+                console.error("Error searching products:", error);
+            } finally {
+                setIsSearching(false);
+            }
+        };
+
+        fetchResults();
+    }, [debouncedSearch]);
 
     const normalizeCode = (code: string | null) => {
         if (!code) return '';
@@ -290,6 +320,51 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                         autoFocus
                                         disabled={isProcessing}
                                     />
+                                    {isSearching && (
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                        </div>
+                                    )}
+
+                                    {/* Search Results Dropdown */}
+                                    {searchResults.length > 0 && (
+                                        <div className="absolute z-50 w-full mt-2 bg-popover border rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                                            <div className="max-h-[300px] overflow-y-auto">
+                                                {searchResults.map((product) => (
+                                                    <div 
+                                                        key={product.id}
+                                                        className="flex items-center justify-between p-3 hover:bg-accent cursor-pointer border-b last:border-0 transition-colors"
+                                                        onClick={() => {
+                                                            addToCart(product);
+                                                            setScannedCode('');
+                                                            setSearchResults([]);
+                                                            scannerInputRef.current?.focus();
+                                                        }}
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <span className="font-semibold text-sm">{product.name}</span>
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal">
+                                                                    {product.barcode || product.qr_code || 'No Code'}
+                                                                </Badge>
+                                                                <span className="text-[10px] text-muted-foreground">
+                                                                    Stock: {product.available_quantity}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <span className="font-bold text-primary">₱{Number(product.price).toFixed(2)}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="bg-muted/30 p-2 text-center border-t">
+                                                <p className="text-[10px] text-muted-foreground">
+                                                    Showing {searchResults.length} results. Click to add to cart.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <Button
