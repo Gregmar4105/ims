@@ -585,7 +585,7 @@ class ProductController extends Controller
             'image' => 'nullable|image|max:2048',
             'price' => 'nullable|numeric|min:0', 
             'clearance_price' => 'nullable|numeric|min:0',
-            'duration_days' => 'nullable|integer|min:0',
+            'clearance_until' => 'nullable|date',
             'supplier_id' => 'nullable|exists:suppliers,id',
             'reorder_level' => 'nullable|integer|min:0',
             'active_until_zero_days' => 'nullable|integer|min:0',
@@ -624,9 +624,7 @@ class ProductController extends Controller
                 'image_path' => $validated['image_path'] ?? $product->image_path,
                 'price' => $validated['price'] ?? $product->price,
                 'clearance_price' => $request->has('clearance_price') ? $validated['clearance_price'] : $product->clearance_price,
-                'clearance_until' => ($request->filled('duration_days') && $validated['duration_days'] > 0) 
-                    ? now()->addDays((int)$validated['duration_days']) 
-                    : ($request->filled('clearance_price') && $validated['clearance_price'] == 0 ? null : $product->clearance_until),
+                'clearance_until' => $request->has('clearance_until') ? $validated['clearance_until'] : $product->clearance_until,
                 'supplier_id' => $validated['supplier_id'] ?? $product->supplier_id,
                 'active_until_zero_days' => $validated['active_until_zero_days'] ?? null,
                 'status' => $validated['status'] ?? $product->status,

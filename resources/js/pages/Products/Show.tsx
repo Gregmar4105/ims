@@ -72,9 +72,23 @@ export default function Show({ product }: Props) {
                     </div>
                     {!isEmployee && (
                         <div className="flex gap-2">
+                            <Link href="/products">
+                                <Button variant="outline">
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
+                                </Button>
+                            </Link>
                             <Link href={`/products/${product.id}/edit`}>
                                 <Button>
                                     <Edit className="mr-2 h-4 w-4" /> Edit Product
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
+                    {isEmployee && (
+                         <div className="flex gap-2">
+                            <Link href="/products">
+                                <Button variant="outline">
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
                                 </Button>
                             </Link>
                         </div>

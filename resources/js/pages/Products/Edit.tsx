@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Upload, Store, Clock, Info, Power, PowerOff, Loader2, Tag } from 'lucide-react';
+import { Plus, Trash2, Upload, Store, Clock, Info, Power, PowerOff, Loader2, Tag, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -104,7 +104,7 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
         status: product.status || 'active',
         variations: product.variations || [] as Variation[],
         clearance_price: product.clearance_price ? String(product.clearance_price) : '',
-        duration_days: '',
+        clearance_until: product.clearance_until ? new Date(product.clearance_until).toISOString().split('T')[0] : '',
         image: null as File | null,
     });
 
@@ -189,9 +189,15 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
 
             <div className="p-4 md:p-6">
                 <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Edit Product</h1>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <div className="flex items-center gap-3">
+                            <Link href="/products">
+                                <Button variant="outline" size="sm">
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
+                                </Button>
+                            </Link>
+                            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Edit Product</h1>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1 ml-9">
                             Update the details of the product.
                         </p>
                     </div>
@@ -437,17 +443,31 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
                         </div>
 
                         {/* Clearance Sale Section */}
-                        <div className="p-4 rounded-lg border border-yellow-200 dark:border-yellow-900/50 bg-yellow-50/30 dark:bg-yellow-900/10">
-                            <div className="flex items-center gap-2 mb-3">
-                                <Tag className="h-4 w-4 text-yellow-600" />
-                                <Label className="text-sm font-semibold">Clearance Sale Settings</Label>
+                        <div className="p-5 rounded-xl border border-yellow-200 dark:border-yellow-900/50 bg-yellow-50/30 dark:bg-yellow-900/10 shadow-sm">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded-lg">
+                                        <Tag className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                                    </div>
+                                    <div>
+                                        <Label className="text-base font-bold text-yellow-900 dark:text-yellow-100">Clearance Sale Settings</Label>
+                                        <p className="text-[10px] text-yellow-700/70 dark:text-yellow-400/70 font-medium">SET A LOWER PRICE FOR A LIMITED TIME</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter block text-right">Standard Price</span>
+                                    <span className="text-sm font-bold text-gray-900 dark:text-white">₱{product.price ? Number(product.price).toLocaleString() : '0.00'}</span>
+                                </div>
                             </div>
-                            <p className="text-xs text-muted-foreground mb-4">
-                                Set a lower price for a limited time. Setting price to 0 or clearing it will remove the clearance status.
-                            </p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start bg-white/50 dark:bg-black/20 p-4 rounded-lg border border-yellow-100 dark:border-yellow-800/50">
                                 <div className="space-y-2">
-                                    <Label htmlFor="clearance_price">Clearance Price (₱)</Label>
+                                    <div className="flex justify-between items-center">
+                                        <Label htmlFor="clearance_price" className="text-xs font-bold uppercase tracking-wider text-yellow-800 dark:text-yellow-300">Clearance Price (₱)</Label>
+                                        {product.clearance_price && (
+                                            <span className="text-[10px] font-medium text-yellow-600">Current: ₱{Number(product.clearance_price).toLocaleString()}</span>
+                                        )}
+                                    </div>
                                     <Input
                                         id="clearance_price"
                                         type="number"
@@ -456,27 +476,27 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
                                         value={data.clearance_price}
                                         onChange={e => setData('clearance_price', e.target.value)}
                                         placeholder="0.00"
-                                        className="border-yellow-200 dark:border-yellow-800 focus-visible:ring-yellow-500"
+                                        className="border-yellow-200 dark:border-yellow-800 focus-visible:ring-yellow-500 font-bold text-yellow-700 dark:text-yellow-400"
                                     />
                                     {errors.clearance_price && <p className="text-sm text-red-500">{errors.clearance_price}</p>}
+                                    <p className="text-[10px] text-muted-foreground italic">Setting price to 0 or clearing it removes clearance status.</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="duration_days">New Duration (Days)</Label>
+                                    <div className="flex justify-between items-center">
+                                        <Label htmlFor="clearance_until" className="text-xs font-bold uppercase tracking-wider text-yellow-800 dark:text-yellow-300">Expiration Date</Label>
+                                        {product.clearance_until && (
+                                            <span className="text-[10px] font-medium text-yellow-600">Ends: {new Date(product.clearance_until).toLocaleDateString()}</span>
+                                        )}
+                                    </div>
                                     <Input
-                                        id="duration_days"
-                                        type="number"
-                                        min="1"
-                                        value={data.duration_days}
-                                        onChange={e => setData('duration_days', e.target.value)}
-                                        placeholder="Add days to current expiry"
-                                        className="border-yellow-200 dark:border-yellow-800 focus-visible:ring-yellow-500"
+                                        id="clearance_until"
+                                        type="date"
+                                        value={data.clearance_until}
+                                        onChange={e => setData('clearance_until', e.target.value)}
+                                        className="border-yellow-200 dark:border-yellow-800 focus-visible:ring-yellow-500 font-medium"
                                     />
-                                    {product.clearance_until && (
-                                        <p className="text-[10px] text-yellow-700 dark:text-yellow-400 font-medium">
-                                            Current Expiry: {new Date(product.clearance_until).toLocaleDateString()}
-                                        </p>
-                                    )}
-                                    {errors.duration_days && <p className="text-sm text-red-500">{errors.duration_days}</p>}
+                                    {errors.clearance_until && <p className="text-sm text-red-500">{errors.clearance_until}</p>}
+                                    <p className="text-[10px] text-muted-foreground italic">The product will revert to standard price after this date.</p>
                                 </div>
                             </div>
                         </div>

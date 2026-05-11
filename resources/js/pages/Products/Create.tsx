@@ -13,8 +13,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Upload, Store, Clock, Info } from 'lucide-react';
+import { Plus, Trash2, Upload, Store, Clock, Info, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -129,9 +130,16 @@ export default function Create({ brands, categories, suppliers, isSystemAdmin, c
 
             <div className="p-4 md:p-6">
                 <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Add New Product</h1>
-                        <p className="text-sm text-muted-foreground mt-1">
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-3">
+                            <Link href="/products">
+                                <Button variant="outline" size="sm">
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
+                                </Button>
+                            </Link>
+                            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Add New Product</h1>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1 ml-9">
                             Enter the details of the new product.
                         </p>
                     </div>
