@@ -163,7 +163,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     };
 
     const handleBulkDelete = () => {
-        router.post(route('products.bulk-destroy'), {
+        router.post("/products/bulk-destroy", {
             ids: selectedProductIds
         }, {
             onSuccess: () => {
@@ -317,7 +317,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
             return;
         }
 
-        router.post(route('products.bulk-clearance'), {
+        router.post('/products/bulk-clearance', {
             ids: selectedProductIds,
             clearance_price: clearancePrice,
             duration_days: durationDays,
