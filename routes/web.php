@@ -94,8 +94,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // Temporary Photo Upload Routes
         Route::get('temporary-photo-product-upload', [\App\Http\Controllers\TemporaryPhotoUploadController::class, 'index'])->name('products.temporary-upload');
-        Route::get('api/products/search-for-upload', [\App\Http\Controllers\TemporaryPhotoUploadController::class, 'search'])->name('api.products.search-upload');
-        Route::post('api/products/bulk-photo-update', [\App\Http\Controllers\TemporaryPhotoUploadController::class, 'update'])->name('api.products.bulk-upload');
+        Route::get('api/products/search-for-upload', [\App\Http\Controllers\TemporaryPhotoUploadController::class, 'search'])->name('products.search-for-upload');
+        Route::get('api/products/missing-photos-count', [\App\Http\Controllers\TemporaryPhotoUploadController::class, 'missingStats'])->name('products.missing-photos-count');
+        Route::post('api/products/bulk-photo-update', [\App\Http\Controllers\TemporaryPhotoUploadController::class, 'update'])->name('products.bulk-photo-update');
 
         // Drag and Drop Upload Routes
         Route::get('drag-and-drop-product-upload', [\App\Http\Controllers\DragAndDropUploadController::class, 'index'])->name('products.drag-and-drop-upload');

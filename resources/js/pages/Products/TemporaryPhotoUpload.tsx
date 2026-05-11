@@ -30,11 +30,14 @@ interface UploadItem {
     errorMessage?: string;
 }
 
-export default function TemporaryPhotoUpload({ productsMissingImages, missingCount }: { productsMissingImages: Product[], missingCount: number }) {
+export default function TemporaryPhotoUpload({ productsMissingImages: initialProductsMissingImages, missingCount: initialMissingCount }: { productsMissingImages: Product[], missingCount: number }) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Products', href: '/products' },
         { title: 'Temporary Photo Upload', href: '/temporary-photo-product-upload' },
     ];
+
+    const [missingProducts, setMissingProducts] = useState<Product[]>(initialProductsMissingImages);
+    const [count, setCount] = useState<number>(initialMissingCount);
 
     const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -43,12 +46,26 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
     const [isLocalProcessing, setIsLocalProcessing] = useState(false);
     const [localProgress, setLocalProgress] = useState(0);
 
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            try {
+                const response = await axios.get('/api/products/missing-photos-count');
+                setMissingProducts(response.data.productsMissingImages);
+                setCount(response.data.missingCount);
+            } catch (error) {
+                console.error('Error polling missing stats:', error);
+            }
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, []);
+
     const autoMapFile = async (item: UploadItem) => {
         // Extract name from filename
         const filename = item.file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ").trim();
         
-        // Try to find in productsMissingImages first (fastest)
-        const localMatch = productsMissingImages.find(p => 
+        // Try to find in missingProducts first (fastest)
+        const localMatch = missingProducts.find(p => 
             p.name.toLowerCase() === filename.toLowerCase() || 
             (p.sku && p.sku.toLowerCase() === filename.toLowerCase())
         );
@@ -112,7 +129,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
         } else {
             toast.success(`Successfully added ${newItems.length} items`);
         }
-    }, [productsMissingImages]);
+    }, [missingProducts]);
 
     // Manual drag and drop handling
     const [isDragging, setIsDragging] = useState(false);
@@ -310,7 +327,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-medium text-muted-foreground leading-none uppercase tracking-wider">Missing</p>
-                                    <p className="text-xl font-bold text-primary">{missingCount}</p>
+                                    <p className="text-xl font-bold text-primary">{count}</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -410,7 +427,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
                     <CardHeader className="bg-red-50/50 dark:bg-red-900/10 flex flex-row items-center justify-between py-3">
                         <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400 text-lg">
                             <AlertCircle className="w-5 h-5" />
-                            Missing Product Photos ({missingCount})
+                            Missing Product Photos ({count})
                         </CardTitle>
                         <div className="relative w-64">
                             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -430,8 +447,8 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
                     </CardHeader>
                     <CardContent className="p-0">
                         <div className="max-h-[400px] overflow-y-auto divide-y divide-border">
-                            {productsMissingImages.length > 0 ? (
-                                productsMissingImages.map((product) => (
+                            {missingProducts.length > 0 ? (
+                                missingProducts.map((product) => (
                                     <div 
                                         key={product.id} 
                                         data-search={`${product.name} ${product.sku}`}

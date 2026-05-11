@@ -25,6 +25,18 @@ class TemporaryPhotoUploadController extends Controller
         ]);
     }
 
+    public function missingStats()
+    {
+        $productsMissingImages = Product::all()->filter(function ($product) {
+            return empty($product->image_path) || !Storage::disk('public')->exists($product->image_path);
+        })->values();
+
+        return response()->json([
+            'productsMissingImages' => $productsMissingImages,
+            'missingCount' => $productsMissingImages->count(),
+        ]);
+    }
+
     public function search(Request $request)
     {
         $products = $this->performIntelligentSearch(
