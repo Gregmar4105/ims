@@ -69,10 +69,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
 
     // Focus scanner input on load and after actions
     useEffect(() => {
-        if (!showScanner) {
+        if (!showScanner && document.activeElement?.tagName !== 'INPUT') {
             scannerInputRef.current?.focus();
         }
-    }, [cart, showScanner]);
+    }, [cart.length, showScanner]);
 
     // Initialize/Cleanup Scanner
     useEffect(() => {
