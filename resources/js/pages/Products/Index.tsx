@@ -261,7 +261,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         const params = new URLSearchParams(currentUrl.search);
 
         Object.keys(newParams).forEach(key => {
-            if (newParams[key] && newParams[key] !== 'all') {
+            if (newParams[key]) {
                 params.set(key, newParams[key]);
             } else {
                 params.delete(key);
@@ -729,17 +729,13 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         {/* Filter Group - wrapped for mobile Layout */}
                         <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
                             {isSystemAdmin && (
-                                <Select value={branch} onValueChange={(val) => { setBranch(val); updateParams({ branch: val }); }}>
-                                    <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
-                                        <SelectValue placeholder="Branch" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Branches</SelectItem>
-                                        {options.branches.map((b) => (
-                                            <SelectItem key={b} value={b}>{b}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect 
+                                    options={options.branches} 
+                                    value={branch} 
+                                    onValueChange={(val) => { setBranch(val); updateParams({ branch: val }); }} 
+                                    placeholder="Branch" 
+                                    allLabel="All Branches"
+                                />
                             )}
 
                             <SearchableSelect 
@@ -747,6 +743,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 value={brand} 
                                 onValueChange={(val) => { setBrand(val); updateParams({ brand: val }); }} 
                                 placeholder="Brand" 
+                                allLabel="All Brands"
                             />
 
                             <SearchableSelect 
@@ -762,13 +759,11 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             updateParams({ category: subs[0] });
                                         } else {
                                             // Don't update params yet, wait for sub-category if there are multiple
-                                            // Or filter by prefix if supported. Here we'll just wait for sub selection
-                                            // or default to all in that group if we want.
-                                            // For now, let's just set it to 'all' in the sub-dropdown context.
                                         }
                                     }
                                 }} 
                                 placeholder="Category" 
+                                allLabel="All Categories"
                             />
 
                             {baseCategory !== 'all' && subCategories.length > 1 && (
@@ -777,6 +772,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     value={subCategory} 
                                     onValueChange={(val) => { setSubCategory(val); updateParams({ category: val }); }} 
                                     placeholder="Sub-Category" 
+                                    allLabel="All Sub-Categories"
                                     getLabel={(opt) => opt === 'all' ? 'All' : opt.replace(new RegExp(`^${baseCategory}\\s*`), '') || opt}
                                 />
                             )}

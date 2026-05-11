@@ -13,6 +13,7 @@ interface SearchableSelectProps {
   value: string
   onValueChange: (value: string) => void
   placeholder: string
+  allLabel?: string
   emptyMessage?: string
   className?: string
   triggerClassName?: string
@@ -24,6 +25,7 @@ export function SearchableSelect({
   value,
   onValueChange,
   placeholder,
+  allLabel,
   emptyMessage = "No results found.",
   className,
   triggerClassName,
@@ -94,7 +96,7 @@ export function SearchableSelect({
                 value === 'all' ? "opacity-100" : "opacity-0"
               )}
             />
-            All {placeholder}s
+            {allLabel || `All ${placeholder}s`}
           </div>
           {filteredOptions.length === 0 ? (
             <div className="py-6 text-center text-sm text-muted-foreground">{emptyMessage}</div>
