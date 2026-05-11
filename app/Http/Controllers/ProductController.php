@@ -137,9 +137,10 @@ class ProductController extends Controller
 
         if ($filterCategory && $filterCategory !== 'all') {
             $query->whereHas('category', function ($q) use ($filterCategory) {
-                $q->where('name', $filterCategory);
+                $q->where('name', 'like', "{$filterCategory}%");
             });
         }
+
 
         if ($filterStock && $filterStock !== 'all') {
             if (!$isSystemAdmin && $user->branch_id) {

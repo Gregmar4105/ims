@@ -9,9 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import { handleNativePrintFallback } from '@/lib/utils';
 import Pagination from '@/components/Pagination';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SearchableSelect } from '@/components/SearchableSelect';
+
 import {
     Select,
     SelectContent,
@@ -97,6 +99,47 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const [statusFilter, setStatusFilter] = useState<string>(filters?.status || "all");
     const [clearance, setClearance] = useState<string>(filters?.clearance || "all");
     const [showFilters, setShowFilters] = useState(false);
+
+    // Intelligent Category Grouping
+    const categoryGroups = useMemo(() => {
+        const groups: Record<string, string[]> = {};
+        options.categories.forEach(cat => {
+            const firstWord = cat.split(' ')[0];
+            if (!groups[firstWord]) groups[firstWord] = [];
+            groups[firstWord].push(cat);
+        });
+        return groups;
+    }, [options.categories]);
+
+    const baseCategories = useMemo(() => Object.keys(categoryGroups).sort(), [categoryGroups]);
+
+
+    const [baseCategory, setBaseCategory] = useState<string>(() => {
+        if (filters?.category && filters.category !== 'all') {
+            return filters.category.split(' ')[0];
+        }
+        return "all";
+    });
+
+    const [subCategory, setSubCategory] = useState<string>(filters?.category || "all");
+
+    useEffect(() => {
+        if (filters?.category && filters.category !== 'all') {
+            const firstWord = filters.category.split(' ')[0];
+            setBaseCategory(firstWord);
+            setSubCategory(filters.category);
+        } else {
+            setBaseCategory("all");
+            setSubCategory("all");
+        }
+    }, [filters?.category]);
+
+    const subCategories = useMemo(() => {
+        if (baseCategory === 'all') return [];
+        return categoryGroups[baseCategory] || [];
+    }, [baseCategory, categoryGroups]);
+
+
     const [isScanning, setIsScanning] = useState(false);
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const lastScanRef = useRef<number>(0);
@@ -255,10 +298,13 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         setBranch("all");
         setBrand("all");
         setCategory("all");
+        setBaseCategory("all");
+        setSubCategory("all");
         setStock("all");
         setStatusFilter("all");
         router.get("/products");
     };
+
 
     const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all' || statusFilter !== 'all';
 
@@ -696,29 +742,46 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 </Select>
                             )}
 
-                            <Select value={brand} onValueChange={(val) => { setBrand(val); updateParams({ brand: val }); }}>
-                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
-                                    <SelectValue placeholder="Brand" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Brands</SelectItem>
-                                    {options.brands.map((b) => (
-                                        <SelectItem key={b} value={b}>{b}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <SearchableSelect 
+                                options={options.brands} 
+                                value={brand} 
+                                onValueChange={(val) => { setBrand(val); updateParams({ brand: val }); }} 
+                                placeholder="Brand" 
+                            />
 
-                            <Select value={category} onValueChange={(val) => { setCategory(val); updateParams({ category: val }); }}>
-                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
-                                    <SelectValue placeholder="Category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Categories</SelectItem>
-                                    {options.categories.map((c) => (
-                                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <SearchableSelect 
+                                options={baseCategories} 
+                                value={baseCategory} 
+                                onValueChange={(val) => { 
+                                    setBaseCategory(val); 
+                                    if (val === 'all') {
+                                        updateParams({ category: 'all' });
+                                    } else {
+                                        const subs = categoryGroups[val];
+                                        if (subs.length === 1) {
+                                            updateParams({ category: subs[0] });
+                                        } else {
+                                            // Don't update params yet, wait for sub-category if there are multiple
+                                            // Or filter by prefix if supported. Here we'll just wait for sub selection
+                                            // or default to all in that group if we want.
+                                            // For now, let's just set it to 'all' in the sub-dropdown context.
+                                        }
+                                    }
+                                }} 
+                                placeholder="Category" 
+                            />
+
+                            {baseCategory !== 'all' && subCategories.length > 1 && (
+                                <SearchableSelect 
+                                    options={subCategories} 
+                                    value={subCategory} 
+                                    onValueChange={(val) => { setSubCategory(val); updateParams({ category: val }); }} 
+                                    placeholder="Sub-Category" 
+                                    getLabel={(opt) => opt === 'all' ? 'All' : opt.replace(new RegExp(`^${baseCategory}\\s*`), '') || opt}
+                                />
+                            )}
+
+
 
                             <Select value={stock} onValueChange={(val) => { setStock(val); updateParams({ stock: val }); }}>
                                 <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
