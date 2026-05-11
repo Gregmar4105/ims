@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Upload, X, Check, Loader2, Image as ImageIcon, AlertCircle, FolderOpen } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { Progress } from '@/components/ui/progress';
 
 interface Product {
     id: number;
@@ -36,6 +37,9 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
     const [isProcessing, setIsProcessing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
+    const [isLocalProcessing, setIsLocalProcessing] = useState(false);
+    const [localProgress, setLocalProgress] = useState(0);
+
     const autoMapFile = async (item: UploadItem) => {
         // Extract name from filename
         const filename = item.file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ").trim();
@@ -48,7 +52,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
 
         if (localMatch) {
             updateMapping(item.id, localMatch.id, localMatch.name);
-            return;
+            return true;
         }
 
         // Otherwise try the API
@@ -62,15 +66,22 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
                 );
                 if (exactMatch) {
                     updateMapping(item.id, exactMatch.id, exactMatch.name);
+                    return true;
                 }
             }
         } catch (error) {
             console.error('Auto-map error:', error);
         }
+        return false;
     };
 
-    const processFiles = useCallback((files: File[]) => {
-        const newItems = files.map((file) => ({
+    const processFiles = useCallback(async (files: File[]) => {
+        if (files.length === 0) return;
+
+        setIsLocalProcessing(true);
+        setLocalProgress(0);
+
+        const newItems: UploadItem[] = files.map((file) => ({
             id: Math.random().toString(36).substring(7),
             file,
             preview: URL.createObjectURL(file),
@@ -80,10 +91,22 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
         
         setUploadItems((prev) => [...prev, ...newItems]);
 
-        // Trigger auto-mapping for each new item
-        newItems.forEach(item => {
-            autoMapFile(item);
-        });
+        let matchedCount = 0;
+        for (let i = 0; i < newItems.length; i++) {
+            const item = newItems[i];
+            const matched = await autoMapFile(item);
+            if (matched) matchedCount++;
+            setLocalProgress(Math.round(((i + 1) / newItems.length) * 100));
+        }
+
+        setIsLocalProcessing(false);
+        setLocalProgress(100);
+
+        if (matchedCount > 0) {
+            toast.success(`Successfully added ${newItems.length} items (${matchedCount} auto-mapped)`);
+        } else {
+            toast.success(`Successfully added ${newItems.length} items`);
+        }
     }, [productsMissingImages]);
 
     // Manual drag and drop handling
@@ -98,23 +121,57 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
         setIsDragging(false);
     };
 
-    const handleDrop = (e: React.DragEvent) => {
+    const getFilesFromEntries = async (entries: any[]) => {
+        const files: File[] = [];
+        const readEntry = async (entry: any) => {
+            if (entry.isFile) {
+                const file = await new Promise<File>((resolve) => entry.file(resolve));
+                if (file.type.startsWith('image/')) {
+                    files.push(file);
+                }
+            } else if (entry.isDirectory) {
+                const reader = entry.createReader();
+                const readAllEntries = async () => {
+                    const dirEntries: any[] = await new Promise((resolve) => reader.readEntries(resolve));
+                    if (dirEntries.length > 0) {
+                        for (const child of dirEntries) {
+                            await readEntry(child);
+                        }
+                        await readAllEntries();
+                    }
+                };
+                await readAllEntries();
+            }
+        };
+
+        for (const entry of entries) {
+            await readEntry(entry);
+        }
+        return files;
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
-        const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
-        processFiles(files);
+
+        const items = e.dataTransfer.items;
+        if (items) {
+            const entries = [];
+            for (let i = 0; i < items.length; i++) {
+                const entry = items[i].webkitGetAsEntry();
+                if (entry) entries.push(entry);
+            }
+            const files = await getFilesFromEntries(entries);
+            processFiles(files);
+        } else {
+            const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+            processFiles(files);
+        }
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             processFiles(Array.from(e.target.files));
-        }
-    };
-
-    const handleFolderSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            const files = Array.from(e.target.files).filter(file => file.type.startsWith('image/'));
-            processFiles(files);
         }
     };
 
@@ -195,20 +252,24 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
                                 </div>
                             </CardContent>
                         </Card>
-                        <Button variant="outline" className="gap-2 relative overflow-hidden group">
-                            <FolderOpen className="w-4 h-4" />
-                            <span>Upload Folder</span>
-                            <Input
-                                type="file"
-                                //@ts-ignore
-                                webkitdirectory=""
-                                directory=""
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                onChange={handleFolderSelect}
-                            />
-                        </Button>
                     </div>
                 </div>
+
+                {/* Local Progress Indicator */}
+                {isLocalProcessing && (
+                    <Card className="bg-primary/5 border-primary/20 shadow-none overflow-hidden animate-in fade-in slide-in-from-top-4">
+                        <CardContent className="p-4 space-y-3">
+                            <div className="flex items-center justify-between text-sm font-medium">
+                                <div className="flex items-center gap-2">
+                                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                                    <span>Processing files and auto-mapping...</span>
+                                </div>
+                                <span className="text-primary">{localProgress}%</span>
+                            </div>
+                            <Progress value={localProgress} className="h-2" />
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Upload Section */}
                 <div
@@ -223,7 +284,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
                         <Upload className={`w-8 h-8 ${isDragging ? 'text-primary animate-bounce' : 'text-muted-foreground'}`} />
                     </div>
                     <div className="text-center">
-                        <p className="text-lg font-semibold">Drag and drop multiple photos here</p>
+                        <p className="text-lg font-semibold">Drag and drop multiple photos or folders here</p>
                         <p className="text-sm text-muted-foreground">or click to browse from your computer</p>
                     </div>
                     <Input
