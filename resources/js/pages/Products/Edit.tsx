@@ -193,7 +193,7 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
                         <div className="flex items-center gap-3">
                             <Link href="/products">
                                 <Button variant="outline" size="sm">
-                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
+                                    <ArrowLeft className="mr-2 h-4 w-4" />
                                 </Button>
                             </Link>
                             <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Edit Product</h1>

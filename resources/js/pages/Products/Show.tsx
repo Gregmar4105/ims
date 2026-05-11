@@ -62,6 +62,15 @@ export default function Show({ product }: Props) {
 
             <div className="p-4 md:p-8 space-y-6">
                 <div className="flex items-center justify-between gap-4 w-full">
+                    {isEmployee && (
+                        <div className="flex gap-2">
+                            <Link href="/products">
+                                <Button variant="outline">
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
                     <div className="space-y-1">
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white text-left">{product.name}</h1>
                         <div className="flex items-center gap-2 text-sm text-gray-500 justify-start">
@@ -80,15 +89,6 @@ export default function Show({ product }: Props) {
                             <Link href={`/products/${product.id}/edit`}>
                                 <Button>
                                     <Edit className="mr-2 h-4 w-4" /> Edit Product
-                                </Button>
-                            </Link>
-                        </div>
-                    )}
-                    {isEmployee && (
-                         <div className="flex gap-2">
-                            <Link href="/products">
-                                <Button variant="outline">
-                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
                                 </Button>
                             </Link>
                         </div>
