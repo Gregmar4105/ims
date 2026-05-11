@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Upload, Store, Clock, Info, Power, PowerOff, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Upload, Store, Clock, Info, Power, PowerOff, Loader2, Tag } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -69,6 +69,8 @@ interface Product {
     status: string;
     active_until_zero_days: number | null;
     out_of_stock_since: string | null;
+    clearance_price: number | null;
+    clearance_until: string | null;
 }
 
 interface Props {
