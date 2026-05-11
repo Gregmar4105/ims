@@ -13,7 +13,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { AutocompleteInput } from '@/components/AutocompleteInput';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 
 interface Variation {
     name: string;
@@ -384,7 +384,7 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
                                 </div>
                                 <span className="text-primary">{localProgress}%</span>
                             </div>
-                            <Progress value={localProgress} className="h-2" />
+                            <ProgressBar value={localProgress} className="h-2" />
                         </CardContent>
                     </Card>
                 )}

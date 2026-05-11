@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Upload, X, Check, Loader2, Image as ImageIcon, AlertCircle, FolderOpen } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Progress } from '@/components/ui/progress';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 
 interface Product {
     id: number;
@@ -266,7 +266,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
                                 </div>
                                 <span className="text-primary">{localProgress}%</span>
                             </div>
-                            <Progress value={localProgress} className="h-2" />
+                            <ProgressBar value={localProgress} className="h-2" />
                         </CardContent>
                     </Card>
                 )}
