@@ -312,6 +312,9 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
 
         const totalItems = uploadItems.length;
         let completedItems = 0;
+        let successCount = 0;
+        let errorCount = 0;
+        const errorMessages = new Set<string>();
 
         for (let i = 0; i < uploadItems.length; i++) {
             const item = uploadItems[i];
@@ -319,6 +322,7 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
             // Skip already successful ones if re-running
             if (item.status === 'success') {
                 completedItems++;
+                successCount++;
                 continue;
             }
 
@@ -360,10 +364,25 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
                 
                 updateItem(item.id, 'status', 'success');
                 completedItems++;
+                successCount++;
                 setUploadProgress(Math.round((completedItems / totalItems) * 100));
             } catch (error: any) {
                 console.error(`Error uploading item ${item.name}:`, error);
-                const msg = error.response?.data?.message || error.message || 'Unknown error';
+                
+                let msg = error.response?.data?.message || error.message || 'Unknown error';
+                
+                // Extract Laravel validation errors if present
+                if (error.response?.status === 422 && error.response?.data?.errors) {
+                    const validationErrors = error.response.data.errors;
+                    const firstKey = Object.keys(validationErrors)[0];
+                    if (validationErrors[firstKey] && validationErrors[firstKey][0]) {
+                        msg = validationErrors[firstKey][0];
+                    }
+                }
+
+                errorCount++;
+                errorMessages.add(msg);
+                
                 setUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'error', errorMessage: msg } : i));
                 toast.error(`Failed to upload ${item.name}: ${msg}`);
                 // Continue with next item instead of stopping the whole queue
@@ -372,12 +391,15 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
 
         setIsProcessing(false);
         
-        const allSuccess = uploadItems.every(item => item.status === 'success');
-        if (allSuccess) {
+        if (errorCount === 0) {
             toast.success('All products processed successfully!');
-            // Optional: setUploadItems([]) or redirect
         } else {
-            toast.warning('Finished processing with some errors. Please check the items marked in red.');
+            const uniqueErrors = Array.from(errorMessages);
+            if (uniqueErrors.length === 1) {
+                toast.error(`Finished with ${errorCount} error(s): ${uniqueErrors[0]}`);
+            } else {
+                toast.warning(`Finished processing with ${errorCount} errors. Please check the items marked in red.`);
+            }
         }
     };
 

@@ -210,12 +210,15 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
 
         const totalItems = mappings.length;
         let completedItems = 0;
+        let successCount = 0;
+        let errorCount = 0;
+        const errorMessages = new Set<string>();
 
         for (let i = 0; i < mappings.length; i++) {
             const item = mappings[i];
 
             if (item.status === 'success') {
-                completedItems++;
+                successCount++;
                 continue;
             }
 
@@ -242,10 +245,25 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
 
                 updateItemStatus(item.id, 'success');
                 completedItems++;
+                successCount++;
                 setUploadProgress(Math.round((completedItems / totalItems) * 100));
             } catch (error: any) {
                 console.error(`Error uploading photo for product ${item.productName}:`, error);
-                const msg = error.response?.data?.message || error.message || 'Unknown error';
+                
+                let msg = error.response?.data?.message || error.message || 'Unknown error';
+                
+                // Extract Laravel validation errors if present
+                if (error.response?.status === 422 && error.response?.data?.errors) {
+                    const validationErrors = error.response.data.errors;
+                    const firstKey = Object.keys(validationErrors)[0];
+                    if (validationErrors[firstKey] && validationErrors[firstKey][0]) {
+                        msg = validationErrors[firstKey][0];
+                    }
+                }
+
+                errorCount++;
+                errorMessages.add(msg);
+                
                 setUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'error', errorMessage: msg } : i));
                 toast.error(`Failed to upload ${item.productName}: ${msg}`);
             }
@@ -253,12 +271,15 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
 
         setIsProcessing(false);
         
-        const allSuccess = mappings.every(item => item.status === 'success');
-        if (allSuccess) {
+        if (errorCount === 0) {
             toast.success('All photos updated successfully!');
-            // Optional: setUploadItems([])
         } else {
-            toast.warning('Finished processing with some errors.');
+            const uniqueErrors = Array.from(errorMessages);
+            if (uniqueErrors.length === 1) {
+                toast.error(`Finished with ${errorCount} error(s): ${uniqueErrors[0]}`);
+            } else {
+                toast.warning(`Finished processing with ${errorCount} errors. Check individual items.`);
+            }
         }
     };
 
