@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Upload, X, Check, Loader2, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Search, Upload, X, Check, Loader2, Image as ImageIcon, AlertCircle, FolderOpen } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -34,17 +34,57 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
 
     const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
-    const onDrop = useCallback((acceptedFiles: File[]) => {
-        const newItems = acceptedFiles.map((file) => ({
+    const autoMapFile = async (item: UploadItem) => {
+        // Extract name from filename
+        const filename = item.file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ").trim();
+        
+        // Try to find in productsMissingImages first (fastest)
+        const localMatch = productsMissingImages.find(p => 
+            p.name.toLowerCase() === filename.toLowerCase() || 
+            (p.sku && p.sku.toLowerCase() === filename.toLowerCase())
+        );
+
+        if (localMatch) {
+            updateMapping(item.id, localMatch.id, localMatch.name);
+            return;
+        }
+
+        // Otherwise try the API
+        try {
+            const response = await axios.get('/api/products/search-for-upload', { params: { query: filename } });
+            if (response.data && response.data.length > 0) {
+                // If there's an exact match in name or SKU
+                const exactMatch = response.data.find((p: Product) => 
+                    p.name.toLowerCase() === filename.toLowerCase() || 
+                    (p.sku && p.sku.toLowerCase() === filename.toLowerCase())
+                );
+                if (exactMatch) {
+                    updateMapping(item.id, exactMatch.id, exactMatch.name);
+                }
+            }
+        } catch (error) {
+            console.error('Auto-map error:', error);
+        }
+    };
+
+    const processFiles = useCallback((files: File[]) => {
+        const newItems = files.map((file) => ({
             id: Math.random().toString(36).substring(7),
             file,
             preview: URL.createObjectURL(file),
             productId: null,
             productName: null,
         }));
+        
         setUploadItems((prev) => [...prev, ...newItems]);
-    }, []);
+
+        // Trigger auto-mapping for each new item
+        newItems.forEach(item => {
+            autoMapFile(item);
+        });
+    }, [productsMissingImages]);
 
     // Manual drag and drop handling
     const [isDragging, setIsDragging] = useState(false);
@@ -62,12 +102,19 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
         e.preventDefault();
         setIsDragging(false);
         const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
-        onDrop(files);
+        processFiles(files);
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            onDrop(Array.from(e.target.files));
+            processFiles(Array.from(e.target.files));
+        }
+    };
+
+    const handleFolderSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const files = Array.from(e.target.files).filter(file => file.type.startsWith('image/'));
+            processFiles(files);
         }
     };
 
@@ -97,6 +144,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
         }
 
         setIsProcessing(true);
+        setUploadProgress(0);
         const formData = new FormData();
         
         mappings.forEach((m, index) => {
@@ -106,15 +154,20 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
 
         router.post('/api/products/bulk-photo-update', formData, {
             forceFormData: true,
+            onProgress: (progress) => {
+                if (progress) setUploadProgress(progress.percentage);
+            },
             onSuccess: () => {
                 setUploadItems([]);
                 toast.success('Photos updated successfully!');
                 setIsProcessing(false);
+                setUploadProgress(0);
             },
             onError: (errors) => {
                 console.error(errors);
                 toast.error('Failed to upload photos. Please check file sizes or selection.');
                 setIsProcessing(false);
+                setUploadProgress(0);
             }
         });
     };
@@ -125,22 +178,36 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
 
             <div className="flex flex-col gap-6 p-4 md:p-8">
                 {/* Header Section */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">Photo Product Uploads</h1>
                         <p className="text-muted-foreground mt-1">Bulk upload and anchor photos to products.</p>
                     </div>
-                    <Card className="bg-primary/5 border-primary/20">
-                        <CardContent className="flex items-center gap-4 py-3">
-                            <div className="p-2 bg-primary/10 rounded-full">
-                                <ImageIcon className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground leading-none">Missing Photos</p>
-                                <p className="text-2xl font-bold text-primary">{missingCount}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <div className="flex items-center gap-4">
+                        <Card className="bg-primary/5 border-primary/20 shadow-none">
+                            <CardContent className="flex items-center gap-4 py-2 px-4">
+                                <div className="p-1.5 bg-primary/10 rounded-full">
+                                    <ImageIcon className="w-4 h-4 text-primary" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-medium text-muted-foreground leading-none uppercase tracking-wider">Missing</p>
+                                    <p className="text-xl font-bold text-primary">{missingCount}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Button variant="outline" className="gap-2 relative overflow-hidden group">
+                            <FolderOpen className="w-4 h-4" />
+                            <span>Upload Folder</span>
+                            <Input
+                                type="file"
+                                //@ts-ignore
+                                webkitdirectory=""
+                                directory=""
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                onChange={handleFolderSelect}
+                            />
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Upload Section */}
@@ -171,14 +238,38 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
                 {/* Processing List */}
                 {uploadItems.length > 0 && (
                     <div className="flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-semibold">Pending Uploads ({uploadItems.length})</h2>
-                            <Button onClick={handleSubmit} disabled={isProcessing} className="gap-2">
-                                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                Update {uploadItems.filter(i => i.productId).length} Products
-                            </Button>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 z-20 bg-background/95 backdrop-blur py-4 border-b">
+                            <div className="flex flex-col gap-1">
+                                <h2 className="text-xl font-semibold">Pending Uploads ({uploadItems.length})</h2>
+                                {isProcessing && (
+                                    <div className="w-64 h-2 bg-muted rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-full bg-primary transition-all duration-300" 
+                                            style={{ width: `${uploadProgress}%` }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setUploadItems([])} disabled={isProcessing}>
+                                    Clear All
+                                </Button>
+                                <Button onClick={handleSubmit} disabled={isProcessing} className="gap-2 min-w-[150px]">
+                                    {isProcessing ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            <span>Uploading {uploadProgress}%</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check className="w-4 h-4" />
+                                            <span>Update {uploadItems.filter(i => i.productId).length} Products</span>
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4">
                             {uploadItems.map((item) => (
                                 <UploadCard
                                     key={item.id}
@@ -192,7 +283,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
                 )}
 
                 {/* Failed Photos / Remaining Products */}
-                <Card className="border-red-100 dark:border-red-900/30 overflow-hidden">
+                <Card className="border-red-100 dark:border-red-900/30 overflow-hidden shadow-sm">
                     <CardHeader className="bg-red-50/50 dark:bg-red-900/10 flex flex-row items-center justify-between py-3">
                         <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400 text-lg">
                             <AlertCircle className="w-5 h-5" />
@@ -202,7 +293,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
                             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
                                 placeholder="Filter missing..."
-                                className="pl-8 h-8 text-xs bg-background/50"
+                                className="pl-8 h-8 text-xs bg-background/50 border-red-200 focus-visible:ring-red-400"
                                 onChange={(e) => {
                                     const val = e.target.value.toLowerCase();
                                     const items = document.querySelectorAll('.missing-product-item');
@@ -221,7 +312,7 @@ export default function TemporaryPhotoUpload({ productsMissingImages, missingCou
                                     <div 
                                         key={product.id} 
                                         data-search={`${product.name} ${product.sku}`}
-                                        className="missing-product-item flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
+                                        className="missing-product-item flex items-center justify-between p-3 hover:bg-red-50/30 dark:hover:bg-red-900/10 transition-colors"
                                     >
                                         <div className="flex flex-col">
                                             <span className="font-medium text-sm">{product.name}</span>
@@ -296,8 +387,8 @@ function UploadCard({
                         <X className="w-4 h-4" />
                     </button>
                     {item.productId && (
-                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                            <Badge className="bg-primary text-white scale-110 shadow-lg">Mapped</Badge>
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center backdrop-blur-[1px]">
+                            <Badge className="bg-primary text-white scale-110 shadow-lg border-none px-3">Mapped</Badge>
                         </div>
                     )}
                 </div>
@@ -305,11 +396,11 @@ function UploadCard({
                 {/* Search Section */}
                 <div className="w-2/3 p-4 flex flex-col gap-3 relative">
                     <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                             Anchor to Product
                         </label>
                         {item.productName && (
-                            <Badge variant="secondary" className="max-w-[150px] truncate">
+                            <Badge variant="secondary" className="max-w-[150px] truncate bg-primary/10 text-primary border-none text-[10px]">
                                 {item.productName}
                             </Badge>
                         )}
@@ -318,15 +409,15 @@ function UploadCard({
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
-                            placeholder="Search by name, SKU or barcode..."
-                            className="pl-9 bg-muted/30 focus-visible:ring-primary/30"
+                            placeholder="Search name, SKU, barcode..."
+                            className="pl-9 bg-muted/30 border-none focus-visible:ring-primary/30 h-10 text-sm"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onFocus={() => setShowResults(true)}
                         />
                         
                         {showResults && (results.length > 0 || loading) && (
-                            <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border rounded-md shadow-xl max-h-48 overflow-y-auto">
+                            <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border rounded-md shadow-2xl max-h-48 overflow-y-auto">
                                 {loading ? (
                                     <div className="p-4 flex justify-center">
                                         <Loader2 className="w-5 h-5 animate-spin text-primary" />
@@ -342,8 +433,8 @@ function UploadCard({
                                                 setSearch('');
                                             }}
                                         >
-                                            <span className="font-medium text-sm text-foreground">{product.name}</span>
-                                            <span className="text-xs text-muted-foreground font-mono">{product.sku || 'No SKU'}</span>
+                                            <span className="font-semibold text-sm text-foreground">{product.name}</span>
+                                            <span className="text-[10px] text-muted-foreground font-mono mt-0.5">{product.sku || 'No SKU'}</span>
                                         </button>
                                     ))
                                 )}
@@ -357,7 +448,7 @@ function UploadCard({
                     </div>
                     
                     <p className="text-[10px] text-muted-foreground mt-auto italic">
-                        Tip: Drag more photos anytime to add to this list.
+                        Tip: Name files as product names or SKUs for auto-mapping.
                     </p>
                 </div>
             </div>

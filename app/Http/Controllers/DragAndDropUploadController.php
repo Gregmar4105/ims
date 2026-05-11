@@ -70,6 +70,51 @@ class DragAndDropUploadController extends Controller
         return response()->json(['exists' => $query->exists()]);
     }
 
+    public function getDetails(Request $request)
+    {
+        $field = $request->input('field', 'name');
+        $value = $request->input('value');
+        $user = Auth::user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+        $targetBranchId = $isSystemAdmin ? session('active_branch_id') : $user->branch_id;
+
+        if (!$value) {
+            return response()->json(null);
+        }
+
+        $product = Product::where($field, $value)
+            ->with(['brand', 'category', 'supplier'])
+            ->first();
+
+        if (!$product) {
+            // Also check cross-codes
+            if ($field === 'barcode' || $field === 'qr_code') {
+                $product = Product::where('barcode', $value)
+                    ->orWhere('qr_code', $value)
+                    ->with(['brand', 'category', 'supplier'])
+                    ->first();
+            }
+        }
+
+        if ($product) {
+            $branchProduct = $product->branches()->where('branch_id', $targetBranchId)->first();
+            
+            // Map pivot data to product object for frontend convenience
+            $product->quantity = $branchProduct ? $branchProduct->pivot->quantity : 0;
+            $product->physical_location = $branchProduct ? $branchProduct->pivot->physical_location : '';
+            $product->reorder_level = $branchProduct ? $branchProduct->pivot->reorder_level : 0;
+            
+            // Brand, Category, Supplier names instead of just IDs for autocompletes
+            $product->brand_name = $product->brand ? $product->brand->name : '';
+            $product->category_name = $product->category ? $product->category->name : '';
+            $product->supplier_name = $product->supplier ? $product->supplier->name : '';
+
+            return response()->json($product);
+        }
+
+        return response()->json(null);
+    }
+
     public function store(Request $request)
     {
         $user = Auth::user();
@@ -85,24 +130,29 @@ class DragAndDropUploadController extends Controller
         $validated = $request->validate([
             'products' => 'required|array',
             'products.*.name' => 'required|string|max:255',
-            'products.*.brand_id' => 'required|exists:brands,id',
-            'products.*.category_id' => 'required|exists:categories,id',
-            'products.*.supplier_id' => 'nullable|exists:suppliers,id',
+            'products.*.brand' => 'required|string|max:255',
+            'products.*.category' => 'required|string|max:255',
+            'products.*.supplier' => 'nullable|string|max:255',
             'products.*.quantity' => 'required|integer|min:0',
             'products.*.price' => 'nullable|numeric|min:0',
             'products.*.sku' => 'nullable|string|max:255',
             'products.*.barcode' => 'nullable|string|max:255',
             'products.*.qr_code' => 'nullable|string|max:255',
+            'products.*.code' => 'nullable|string|max:255',
+            'products.*.code_2' => 'nullable|string|max:255',
+            'products.*.reorder_level' => 'nullable|integer|min:0',
+            'products.*.active_until_zero_days' => 'nullable|integer|min:0',
             'products.*.physical_location' => 'nullable|string|max:255',
             'products.*.description' => 'nullable|string',
-            'products.*.photo' => 'required|image|max:5120', // 5MB max
+            'products.*.variations' => 'nullable|array',
+            'products.*.photo' => 'nullable|image|max:5120', // Optional if updating existing
         ]);
 
-        $results = DB::transaction(function () use ($validated, $request, $targetBranchId, $user) {
-            $createdCount = 0;
+        $processedCount = DB::transaction(function () use ($validated, $request, $targetBranchId, $user) {
+            $count = 0;
             foreach ($validated['products'] as $index => $productData) {
-                // Double check uniqueness in DB during transaction
-                $exists = Product::where('name', $productData['name'])
+                // Find existing product by name, sku, barcode, or qr_code
+                $product = Product::where('name', $productData['name'])
                     ->when($productData['sku'], function ($q) use ($productData) {
                         return $q->orWhere('sku', $productData['sku']);
                     })
@@ -114,50 +164,81 @@ class DragAndDropUploadController extends Controller
                         return $q->orWhere('qr_code', $productData['qr_code'])
                                  ->orWhere('barcode', $productData['qr_code']);
                     })
-                    ->exists();
+                    ->first();
 
-                if ($exists) {
-                    continue; 
+                // Resolve Brand
+                $brand = Brand::firstOrCreate(
+                    ['name' => $productData['brand'], 'branch_id' => $targetBranchId],
+                    ['slug' => Str::slug($productData['brand']), 'status' => 'Active', 'created_by' => $user->id]
+                );
+
+                // Resolve Category
+                $category = Category::firstOrCreate(
+                    ['name' => $productData['category'], 'branch_id' => $targetBranchId],
+                    ['slug' => Str::slug($productData['category']), 'status' => 'Active', 'created_by' => $user->id]
+                );
+
+                // Resolve Supplier
+                $supplierId = null;
+                if (!empty($productData['supplier'])) {
+                    $supplier = \App\Models\Supplier::firstOrCreate(['name' => $productData['supplier']]);
+                    $supplierId = $supplier->id;
                 }
 
+                // Handle Photo
+                $path = $product ? $product->image_path : null;
                 $file = $request->file("products.{$index}.photo");
-                $path = null;
                 if ($file) {
+                    // Delete old image if exists
+                    if ($path && Storage::disk('public')->exists($path)) {
+                        Storage::disk('public')->delete($path);
+                    }
                     $safeName = Str::slug($productData['name']);
-                    $filename = "bulk_create_{$safeName}_" . time() . "_" . $index . "." . $file->getClientOriginalExtension();
+                    $filename = "bulk_{$safeName}_" . time() . "_" . $index . "." . $file->getClientOriginalExtension();
                     $path = $file->storeAs('products', $filename, 'public');
                 }
 
-                $product = Product::create([
-                    'brand_id' => $productData['brand_id'],
-                    'category_id' => $productData['category_id'],
-                    'name' => $productData['name'],
-                    'sku' => $productData['sku'] ?? null,
-                    'barcode' => $productData['barcode'] ?? null,
-                    'qr_code' => $productData['qr_code'] ?? null,
-                    'price' => $productData['price'] ?? 0,
-                    'description' => $productData['description'] ?? null,
-                    'supplier_id' => $productData['supplier_id'] ?? null,
-                    'image_path' => $path,
-                    'created_by' => $user->id,
-                    'status' => 'active',
-                ]);
+                // Update or Create Product
+                $product = Product::updateOrCreate(
+                    ['name' => $productData['name']],
+                    [
+                        'brand_id' => $brand->id,
+                        'category_id' => $category->id,
+                        'sku' => $productData['sku'] ?? ($product ? $product->sku : null),
+                        'barcode' => $productData['barcode'] ?? ($product ? $product->barcode : null),
+                        'qr_code' => $productData['qr_code'] ?? ($product ? $product->qr_code : null),
+                        'code' => $productData['code'] ?? ($product ? $product->code : null),
+                        'code_2' => $productData['code_2'] ?? ($product ? $product->code_2 : null),
+                        'price' => $productData['price'] ?? ($product ? $product->price : 0),
+                        'description' => $productData['description'] ?? ($product ? $product->description : null),
+                        'variations' => $productData['variations'] ?? ($product ? $product->variations : null),
+                        'supplier_id' => $supplierId ?? ($product ? $product->supplier_id : null),
+                        'image_path' => $path,
+                        'active_until_zero_days' => $productData['active_until_zero_days'] ?? ($product ? $product->active_until_zero_days : null),
+                        'created_by' => $product ? $product->created_by : $user->id,
+                        'status' => 'active',
+                    ]
+                );
 
+                // Update or Create Branch Product
                 if ($targetBranchId) {
-                    \App\Models\BranchProduct::create([
-                        'branch_id' => $targetBranchId,
-                        'product_id' => $product->id,
-                        'quantity' => $productData['quantity'],
-                        'physical_location' => $productData['physical_location'] ?? null,
-                        'description' => $productData['description'] ?? null,
-                    ]);
+                    \App\Models\BranchProduct::updateOrCreate(
+                        ['branch_id' => $targetBranchId, 'product_id' => $product->id],
+                        [
+                            'quantity' => $productData['quantity'],
+                            'physical_location' => $productData['physical_location'] ?? null,
+                            'description' => $productData['description'] ?? null,
+                            'variations' => $productData['variations'] ?? null,
+                            'reorder_level' => $productData['reorder_level'] ?? 0,
+                        ]
+                    );
                 }
 
-                $createdCount++;
+                $count++;
             }
-            return $createdCount;
+            return $count;
         });
 
-        return back()->with('success', "{$results} products created successfully.");
+        return back()->with('success', "{$processedCount} products processed successfully.");
     }
 }

@@ -101,6 +101,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('drag-and-drop-product-upload', [\App\Http\Controllers\DragAndDropUploadController::class, 'index'])->name('products.drag-and-drop-upload');
         Route::post('api/products/bulk-create', [\App\Http\Controllers\DragAndDropUploadController::class, 'store'])->name('api.products.bulk-create');
         Route::post('api/products/validate-field', [\App\Http\Controllers\DragAndDropUploadController::class, 'validateField'])->name('api.products.validate-field');
+        Route::get('api/products/details', [\App\Http\Controllers\DragAndDropUploadController::class, 'getDetails'])->name('api.products.details');
 
         // Search API for Autocomplete
         Route::get('api/brands/search', [\App\Http\Controllers\BrandController::class, 'search'])->name('brands.search');
