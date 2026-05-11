@@ -261,7 +261,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         const params = new URLSearchParams(currentUrl.search);
 
         Object.keys(newParams).forEach(key => {
-            if (newParams[key]) {
+            // Keep 'all' only for branch to override session defaults; 
+            // for others, 'all' means the parameter can be removed for a cleaner URL.
+            if (newParams[key] && (newParams[key] !== 'all' || key === 'branch')) {
                 params.set(key, newParams[key]);
             } else {
                 params.delete(key);
@@ -302,6 +304,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         setSubCategory("all");
         setStock("all");
         setStatusFilter("all");
+        setClearance("all");
         router.get("/products");
     };
 
@@ -802,7 +805,29 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 </SelectContent>
                             </Select>
 
-                            <Select value={clearance} onValueChange={(val) => { setClearance(val); updateParams({ clearance: val }); }}>
+                            <Select value={clearance} onValueChange={(val) => { 
+                                setClearance(val); 
+                                if (val === 'all') {
+                                    // Disregard the rest of the filters except for branch when clicking All Products
+                                    setSearch("");
+                                    setBrand("all");
+                                    setCategory("all");
+                                    setBaseCategory("all");
+                                    setSubCategory("all");
+                                    setStock("all");
+                                    setStatusFilter("all");
+                                    updateParams({ 
+                                        clearance: 'all',
+                                        search: '',
+                                        brand: 'all',
+                                        category: 'all',
+                                        stock: 'all',
+                                        status: 'all'
+                                    });
+                                } else {
+                                    updateParams({ clearance: val });
+                                }
+                            }}>
                                 <SelectTrigger className="w-full md:w-[140px] h-9 text-xs md:text-sm">
                                     <SelectValue placeholder="Clearance Sale" />
                                 </SelectTrigger>

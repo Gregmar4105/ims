@@ -44,10 +44,11 @@ export function SearchableSelect({
   }, [options, search])
 
   const selectedLabel = React.useMemo(() => {
-    if (!value || value === 'all') return placeholder
+    if (value === 'all') return allLabel || `All ${placeholder}s`
+    if (!value) return placeholder
     const found = options.find((option) => option === value)
     return found ? getLabel(found) : value
-  }, [options, value, placeholder, getLabel])
+  }, [options, value, placeholder, allLabel, getLabel])
 
 
   return (

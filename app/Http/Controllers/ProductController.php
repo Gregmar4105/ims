@@ -212,13 +212,13 @@ class ProductController extends Controller
         $query = $this->buildFilteredProductQuery($request, $user, $isSystemAdmin, $filterBranch, $filterBrand, $filterCategory, $filterStock, $search);
 
         // Apply clearance filter
-        if ($filterClearance === 'yes') {
+        if ($filterClearance === 'on_clearance') {
             $query->whereNotNull('clearance_price')
                   ->where(function($q) {
                       $q->whereNull('clearance_until')
                         ->orWhere('clearance_until', '>', now());
                   });
-        } elseif ($filterClearance === 'no') {
+        } elseif ($filterClearance === 'no_clearance') {
             $query->where(function($q) {
                 $q->whereNull('clearance_price')
                   ->orWhere('clearance_until', '<=', now());
