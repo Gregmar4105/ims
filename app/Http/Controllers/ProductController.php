@@ -154,17 +154,43 @@ class ProductController extends Controller
                         $q->where('branch_products.quantity', '>', 0)->where('branch_products.quantity', '<=', 5);
                     }
                 });
-            } elseif ($isSystemAdmin && $filterBranch && $filterBranch !== 'all') {
-                 $query->whereHas('branches', function ($q) use ($filterBranch, $filterStock) {
-                    $q->where('branch_name', $filterBranch);
+            } elseif ($isSystemAdmin) {
+                if ($filterBranch && $filterBranch !== 'all') {
+                    $query->whereHas('branches', function ($q) use ($filterBranch, $filterStock) {
+                        $q->where('branch_name', $filterBranch);
+                        if ($filterStock === 'in_stock') {
+                            $q->where('branch_products.quantity', '>', 0);
+                        } elseif ($filterStock === 'out_of_stock') {
+                            $q->where('branch_products.quantity', '=', 0);
+                        } elseif ($filterStock === 'low_stock') {
+                            $q->where('branch_products.quantity', '>', 0)->where('branch_products.quantity', '<=', 5);
+                        }
+                    });
+                } else {
+                    // "All Branches" view for System Admin
                     if ($filterStock === 'in_stock') {
-                        $q->where('branch_products.quantity', '>', 0);
+                        // At least one branch has it in stock
+                        $query->whereHas('branches', function ($q) {
+                            $q->where('branch_products.quantity', '>', 0);
+                        });
                     } elseif ($filterStock === 'out_of_stock') {
-                        $q->where('branch_products.quantity', '=', 0);
+                        // Total quantity across all branches is 0 (or no branches)
+                        $query->whereDoesntHave('branches', function ($q) {
+                            $q->where('branch_products.quantity', '>', 0);
+                        });
                     } elseif ($filterStock === 'low_stock') {
-                        $q->where('branch_products.quantity', '>', 0)->where('branch_products.quantity', '<=', 5);
+                        // Total quantity across all branches is 1-5
+                        $query->where(function($q) {
+                            $subquery = DB::table('branch_products')
+                                ->selectRaw('SUM(quantity)')
+                                ->whereColumn('product_id', 'products.id');
+                            
+                            $q->whereRaw("({$subquery->toSql()}) > 0")
+                              ->whereRaw("({$subquery->toSql()}) <= 5")
+                              ->mergeBindings($subquery);
+                        });
                     }
-                });
+                }
             }
         }
 
