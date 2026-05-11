@@ -64,7 +64,7 @@ export default function Show({ product }: Props) {
                 <div className="flex items-center justify-between gap-4 w-full">
                     <div className="flex items-center gap-4">
                         <Button variant="outline" size="sm" onClick={() => window.history.back()}>
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
+                            <ArrowLeft className="mr-2 h-4 w-4" />
                         </Button>
                         <div className="space-y-1">
                             <h1 className="text-3xl font-bold text-gray-900 dark:text-white text-left">{product.name}</h1>
