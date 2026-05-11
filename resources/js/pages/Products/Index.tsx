@@ -163,7 +163,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     };
 
     const handleBulkDelete = () => {
-        router.post("/products/bulk-destroy", {
+        router.post(route('products.bulk-destroy'), {
             ids: selectedProductIds
         }, {
             onSuccess: () => {
@@ -597,6 +597,13 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         onClick={() => {
                                             if (isClearanceMode) {
                                                 if (selectedProductIds.length > 0) {
+                                                    // If exactly one product selected, pre-fill its current clearance price
+                                                    if (selectedProductIds.length === 1) {
+                                                        const p = productList.find(p => p.id === selectedProductIds[0]);
+                                                        if (p?.clearance_price) {
+                                                            setClearancePrice(String(p.clearance_price));
+                                                        }
+                                                    }
                                                     setIsClearanceModalOpen(true);
                                                 } else {
                                                     setIsClearanceMode(false);

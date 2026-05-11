@@ -101,6 +101,8 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
         active_until_zero_days: product.active_until_zero_days !== null ? String(product.active_until_zero_days) : '',
         status: product.status || 'active',
         variations: product.variations || [] as Variation[],
+        clearance_price: product.clearance_price ? String(product.clearance_price) : '',
+        duration_days: '',
         image: null as File | null,
     });
 
@@ -429,6 +431,51 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
                                     placeholder="e.g. Aisle 3, Shelf B"
                                 />
                                 {errors.physical_location && <p className="text-sm text-red-500">{errors.physical_location}</p>}
+                            </div>
+                        </div>
+
+                        {/* Clearance Sale Section */}
+                        <div className="p-4 rounded-lg border border-yellow-200 dark:border-yellow-900/50 bg-yellow-50/30 dark:bg-yellow-900/10">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Tag className="h-4 w-4 text-yellow-600" />
+                                <Label className="text-sm font-semibold">Clearance Sale Settings</Label>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-4">
+                                Set a lower price for a limited time. Setting price to 0 or clearing it will remove the clearance status.
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="clearance_price">Clearance Price (₱)</Label>
+                                    <Input
+                                        id="clearance_price"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={data.clearance_price}
+                                        onChange={e => setData('clearance_price', e.target.value)}
+                                        placeholder="0.00"
+                                        className="border-yellow-200 dark:border-yellow-800 focus-visible:ring-yellow-500"
+                                    />
+                                    {errors.clearance_price && <p className="text-sm text-red-500">{errors.clearance_price}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="duration_days">New Duration (Days)</Label>
+                                    <Input
+                                        id="duration_days"
+                                        type="number"
+                                        min="1"
+                                        value={data.duration_days}
+                                        onChange={e => setData('duration_days', e.target.value)}
+                                        placeholder="Add days to current expiry"
+                                        className="border-yellow-200 dark:border-yellow-800 focus-visible:ring-yellow-500"
+                                    />
+                                    {product.clearance_until && (
+                                        <p className="text-[10px] text-yellow-700 dark:text-yellow-400 font-medium">
+                                            Current Expiry: {new Date(product.clearance_until).toLocaleDateString()}
+                                        </p>
+                                    )}
+                                    {errors.duration_days && <p className="text-sm text-red-500">{errors.duration_days}</p>}
+                                </div>
                             </div>
                         </div>
 

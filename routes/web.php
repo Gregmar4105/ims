@@ -88,8 +88,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('qr-barcodes', [\App\Http\Controllers\QrBarcodeController::class, 'index'])->name('qr-barcodes.index');
         Route::post('qr-barcodes', [\App\Http\Controllers\QrBarcodeController::class, 'store'])->name('qr-barcodes.store');
         Route::get('products/print', [\App\Http\Controllers\ProductController::class, 'print'])->name('products.print');
-        Route::post('products/bulk-destroy', [\App\Http\Controllers\ProductController::class, 'bulkDestroy'])->name('products.bulkDestroy');
-        Route::post('products/bulk-clearance', [\App\Http\Controllers\ProductController::class, 'bulkClearanceSale'])->name('products.bulkClearance');
+        Route::post('products/bulk-destroy', [\App\Http\Controllers\ProductController::class, 'bulkDestroy'])->name('products.bulk-destroy');
+        Route::post('products/bulk-clearance', [\App\Http\Controllers\ProductController::class, 'bulkClearanceSale'])->name('products.bulk-clearance');
         Route::post('products/{product}/toggle-status', [\App\Http\Controllers\ProductController::class, 'toggleStatus'])->name('products.toggleStatus');
         
         // Temporary Photo Upload Routes
