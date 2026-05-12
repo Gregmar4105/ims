@@ -18,7 +18,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Link } from '@inertiajs/react';
-import { Download, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Download, CloudSync, CloudCheck } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -41,7 +41,7 @@ export function AppSidebarHeader({
         setShowCheck(false);
 
         try {
-            await axios.post(route('google-sheets.sync-all'));
+            await axios.post('/google-sheets/sync-all');
             toast.success('Google Sheets sync completed!');
             setShowCheck(true);
             setTimeout(() => setShowCheck(false), 3000);
@@ -77,9 +77,9 @@ export function AppSidebarHeader({
                                                         }`}
                                                     >
                                                         {showCheck ? (
-                                                            <CheckCircle2 className="h-5 w-5" />
+                                                            <CloudCheck className="h-5 w-5" />
                                                         ) : (
-                                                            <RefreshCw className={`h-5 w-5 ${isSyncing ? 'animate-spin-slow' : ''}`} />
+                                                            <CloudSync className={`h-5 w-5 ${isSyncing ? 'animate-spin-slow' : ''}`} />
                                                         )}
                                                     </button>
                                                 </TooltipTrigger>
@@ -131,9 +131,9 @@ export function AppSidebarHeader({
                                                 }`}
                                             >
                                                 {showCheck ? (
-                                                    <CheckCircle2 className="h-5 w-5" />
+                                                    <CloudCheck className="h-5 w-5" />
                                                 ) : (
-                                                    <RefreshCw className={`h-5 w-5 ${isSyncing ? 'animate-spin-slow' : ''}`} />
+                                                    <CloudSync className={`h-5 w-5 ${isSyncing ? 'animate-spin-slow' : ''}`} />
                                                 )}
                                             </button>
                                         </TooltipTrigger>
