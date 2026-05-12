@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save, CheckCircle, PlusCircle, HelpCircle, Sparkles } from 'lucide-react';
+import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save, CheckCircle, PlusCircle, HelpCircle, Sparkles, Barcode, QrCode, Eye } from 'lucide-react';
 import { toast } from 'sonner';
+import { AutocompleteInput } from '@/components/AutocompleteInput';
 import axios from 'axios';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -37,11 +38,17 @@ interface InventoryItem {
     code?: string;
     code_2?: string;
     sku?: string;
+    barcode?: string;
+    qr_code?: string;
     physical_location?: string;
     reorder_level?: number;
     current_stock?: number;
     description?: string;
     variations?: Variation[];
+    // Helper fields for autocomplete
+    brand_name?: string;
+    category_name?: string;
+    supplier_name?: string;
 }
 
 interface AnalysisResult {
@@ -70,16 +77,20 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
     const [items, setItems] = useState<InventoryItem[]>([]);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         // Check both prop (from render) and flash (fallback)
         const result = analysis_result || flash?.analysis_result;
         if (result?.inventory_items) {
-            setItems(result.inventory_items);
-            if (!flash?.success && !analysis_result) {
-                // Only toast if we didn't just get a success message from backend to avoid double toast
-                // But actually backend now sends success prop or flash.
-            }
+            // Map IDs to names for AutocompleteInput if they exist
+            const mappedItems = result.inventory_items.map((item: InventoryItem) => ({
+                ...item,
+                brand_name: item.brand_id ? brands.find(b => String(b.id) === String(item.brand_id))?.name : '',
+                category_name: item.category_id ? categories.find(c => String(c.id) === String(item.category_id))?.name : '',
+                supplier_name: item.supplier_id ? suppliers.find(s => String(s.id) === String(item.supplier_id))?.name : '',
+            }));
+            setItems(mappedItems);
         }
     }, [analysis_result, flash]);
 
@@ -151,14 +162,17 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
 
     const submitAll = () => {
         setIsConfirmModalOpen(false);
-        router.post('/import-transfer/bulk-store', { items: items.filter(i => !i.exists_in_branch) } as any, {
+        
+        const preparedItems = items.filter(i => !i.exists_in_branch);
+
+        router.post('/import-transfer/bulk-store', { items: preparedItems } as any, {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
                 toast.success('Successfully created new products.');
-                // Inertia will handle the redirect sent by the backend.
             },
-            onError: () => {
+            onError: (err) => {
+                console.error(err);
                 toast.error("Failed to process the items. Please check if all required fields are filled.");
             }
         });
@@ -178,7 +192,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Upload Section */}
-                    <Card className="lg:col-span-4 sticky top-6">
+                    <Card className="lg:col-span-6 sticky top-6">
                         <CardHeader className="flex flex-col gap-2">
                             <div>
                                 <CardTitle className="flex items-center gap-2">
@@ -203,12 +217,16 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={submit} className="space-y-4">
-                                <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-pointer relative h-48 bg-muted/5">
+                                <div 
+                                    className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-pointer relative h-96 bg-muted/5 overflow-hidden"
+                                    onClick={() => previewUrl && setIsModalOpen(true)}
+                                >
                                     <input
                                         type="file"
                                         accept="image/*"
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                         onChange={handleFileChange}
+                                        onClick={(e) => e.stopPropagation()}
                                     />
                                     <div className="flex flex-col items-center gap-2 pointer-events-none w-full h-full justify-center">
                                         {previewUrl ? (
@@ -218,8 +236,8 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                                     alt="Preview"
                                                     className="w-full h-full object-contain rounded-md"
                                                 />
-                                                <div className="absolute bottom-2 left-0 right-0 text-center bg-black/50 text-white text-xs py-1 rounded-b-md mx-2">
-                                                    Click to change
+                                                <div className="absolute bottom-2 left-0 right-0 text-center bg-black/50 text-white text-xs py-1.5 rounded-b-md mx-2 flex items-center justify-center gap-2">
+                                                    <Eye className="w-3 h-3" /> Click to view full size
                                                 </div>
                                             </div>
                                         ) : data.image ? (
@@ -230,9 +248,9 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                             </>
                                         ) : (
                                             <>
-                                                <Upload className="h-10 w-10 text-muted-foreground" />
-                                                <span className="font-medium text-sm">Click to upload or drag and drop</span>
-                                                <span className="text-xs text-muted-foreground">Maximum file size: 10MB</span>
+                                                <Upload className="h-12 w-12 text-muted-foreground mb-2" />
+                                                <span className="font-medium text-base">Click to upload or drag and drop</span>
+                                                <span className="text-xs text-muted-foreground">Supported: JPG, PNG (Max 10MB)</span>
                                             </>
                                         )}
                                     </div>
@@ -269,7 +287,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                     </Card>
 
                     {/* Results Section */}
-                    <div className="lg:col-span-8 flex flex-col h-full min-h-[500px]">
+                    <div className="lg:col-span-6 flex flex-col h-full min-h-[500px]">
                         {processing ? (
                             <Card className="border-blue-200 bg-white shadow-md flex-1">
                                 <CardContent className="h-full min-h-[300px] flex flex-col items-center justify-center p-8 text-blue-600">
@@ -332,80 +350,87 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
 
                                                 {/* Header fields always shown */}
                                                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end mb-4">
-                                                    <div className="sm:col-span-4 space-y-1.5">
-                                                        <Label className="text-xs text-muted-foreground">Product Name</Label>
-                                                        <Input
+                                                    <div className="sm:col-span-6 space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Product Name</Label>
+                                                        <AutocompleteInput
                                                             value={item.item_name}
-                                                            onChange={(e) => updateItem(idx, 'item_name', e.target.value)}
+                                                            onValueChange={(val) => updateItem(idx, 'item_name', val)}
+                                                            placeholder="Search or type product name"
+                                                            searchUrl="/api/products/search"
                                                             className="font-medium"
                                                         />
                                                     </div>
 
-                                                    {item.exists_in_branch ? (
-                                                        <div className="sm:col-span-2 space-y-1.5">
-                                                            <Label className="text-xs text-muted-foreground">Current Stock</Label>
-                                                            <div className="flex h-9 w-full items-center justify-center rounded-md border border-input bg-muted/30 px-3 py-1 text-sm font-medium">
-                                                                {item.current_stock ?? 0}
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="sm:col-span-2 hidden sm:block"></div>
-                                                    )}
+                                                    <div className="sm:col-span-3 space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Qty Sent</Label>
+                                                        <Input
+                                                            type="number"
+                                                            value={item.quantity}
+                                                            onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value) || 0)}
+                                                            className="text-right font-medium"
+                                                        />
+                                                    </div>
 
-                                                    <div className="sm:col-span-6 space-y-1.5">
-                                                        <Label className="text-xs text-muted-foreground">Quantity Sent</Label>
-                                                        <div className="flex gap-2">
-                                                            <Input
-                                                                type="number"
-                                                                value={item.quantity}
-                                                                onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value) || 0)}
-                                                                className="text-right font-medium"
-                                                            />
-                                                            {item.exists_in_branch && (
-                                                                <Button
-                                                                    variant="secondary"
-                                                                    onClick={() => updateStock(idx)}
-                                                                    disabled={!item.quantity || item.quantity <= 0}
-                                                                    className="shrink-0"
-                                                                >
-                                                                    Update Stock
-                                                                </Button>
-                                                            )}
-                                                        </div>
+                                                    <div className="sm:col-span-3 space-y-1.5">
+                                                        {item.exists_in_branch ? (
+                                                            <>
+                                                                <Label className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Stock</Label>
+                                                                <div className="flex h-9 w-full items-center justify-center rounded-md border border-input bg-muted/30 px-3 py-1 text-sm font-bold text-primary">
+                                                                    {item.current_stock ?? 0}
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <div className="h-9"></div>
+                                                        )}
                                                     </div>
                                                 </div>
 
-                                                <div className="pt-4 border-t mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                                                     <div className="space-y-1.5">
                                                         <Label className="text-xs text-muted-foreground">Category</Label>
-                                                        <Select value={item.category_id || ''} onValueChange={(val) => updateItem(idx, 'category_id', val)}>
-                                                            <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
-                                                            <SelectContent>
-                                                                {categories.map((c) => (<SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <AutocompleteInput
+                                                            value={item.category_name || ''}
+                                                            onValueChange={(val) => updateItem(idx, 'category_name', val)}
+                                                            placeholder="Search or type category"
+                                                            searchUrl="/api/categories/search"
+                                                        />
                                                     </div>
                                                     <div className="space-y-1.5">
                                                         <Label className="text-xs text-muted-foreground">Brand</Label>
-                                                        <Select value={item.brand_id || ''} onValueChange={(val) => updateItem(idx, 'brand_id', val)}>
-                                                            <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
-                                                            <SelectContent>
-                                                                {brands.map((b) => (<SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <AutocompleteInput
+                                                            value={item.brand_name || ''}
+                                                            onValueChange={(val) => updateItem(idx, 'brand_name', val)}
+                                                            placeholder="Search or type brand"
+                                                            searchUrl="/api/brands/search"
+                                                        />
                                                     </div>
                                                     <div className="space-y-1.5">
                                                         <Label className="text-xs text-muted-foreground">Supplier (Optional)</Label>
-                                                        <Select value={item.supplier_id || ''} onValueChange={(val) => updateItem(idx, 'supplier_id', val)}>
-                                                            <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
-                                                            <SelectContent>
-                                                                {suppliers.map((s) => (<SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <AutocompleteInput
+                                                            value={item.supplier_name || ''}
+                                                            onValueChange={(val) => updateItem(idx, 'supplier_name', val)}
+                                                            placeholder="Search or type supplier"
+                                                            searchUrl="/api/suppliers/search"
+                                                        />
                                                     </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
                                                     <div className="space-y-1.5">
                                                         <Label className="text-xs text-muted-foreground">Price (₱)</Label>
                                                         <Input type="number" className="h-9" value={item.price || ''} onChange={(e) => updateItem(idx, 'price', e.target.value)} placeholder="0.00" />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground flex items-center gap-1"><Barcode className="w-3 h-3" /> Barcode</Label>
+                                                        <Input className="h-9" value={item.barcode || ''} onChange={(e) => updateItem(idx, 'barcode', e.target.value)} placeholder="Scan Barcode" />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground flex items-center gap-1"><QrCode className="w-3 h-3" /> QR Code</Label>
+                                                        <Input className="h-9" value={item.qr_code || ''} onChange={(e) => updateItem(idx, 'qr_code', e.target.value)} placeholder="Scan QR" />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs text-muted-foreground">SKU</Label>
+                                                        <Input className="h-9" value={item.sku || ''} onChange={(e) => updateItem(idx, 'sku', e.target.value)} placeholder="SKU" />
                                                     </div>
                                                     <div className="space-y-1.5">
                                                         <Label className="text-xs text-muted-foreground">Code</Label>
@@ -416,10 +441,6 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                                         <Input className="h-9" value={item.code_2 || ''} onChange={(e) => updateItem(idx, 'code_2', e.target.value)} placeholder="2Code" />
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-xs text-muted-foreground">SKU</Label>
-                                                        <Input className="h-9" value={item.sku || ''} onChange={(e) => updateItem(idx, 'sku', e.target.value)} placeholder="SKU" />
-                                                    </div>
-                                                    <div className="space-y-1.5">
                                                         <Label className="text-xs text-muted-foreground">Physical Loc.</Label>
                                                         <Input className="h-9" value={item.physical_location || ''} onChange={(e) => updateItem(idx, 'physical_location', e.target.value)} placeholder="Location" />
                                                     </div>
@@ -428,6 +449,20 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                                         <Input type="number" className="h-9" value={item.reorder_level ?? ''} onChange={(e) => updateItem(idx, 'reorder_level', parseInt(e.target.value) || 0)} placeholder="0" />
                                                     </div>
                                                 </div>
+
+                                                {item.exists_in_branch && (
+                                                    <div className="mt-4 flex justify-end">
+                                                        <Button
+                                                            variant="secondary"
+                                                            size="sm"
+                                                            onClick={() => updateStock(idx)}
+                                                            disabled={!item.quantity || item.quantity <= 0}
+                                                            className="gap-2"
+                                                        >
+                                                            <Save className="w-3.5 h-3.5" /> Update Existing Stock
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </CardContent>
                                         </Card>
                                     ))}
@@ -467,6 +502,28 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                             {processing ? "Saving..." : "Confirm & Save"}
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Photo Viewer Modal */}
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogContent className="max-w-5xl p-0 overflow-hidden border-none bg-transparent shadow-none">
+                    <div className="relative group">
+                        {previewUrl && (
+                            <>
+                                <div className="absolute top-4 left-4 z-10">
+                                    <Badge className="bg-black/60 text-white backdrop-blur-md border-none px-4 py-1.5 text-sm font-medium">
+                                        Packing List Image
+                                    </Badge>
+                                </div>
+                                <img 
+                                    src={previewUrl} 
+                                    alt="Full Size Preview" 
+                                    className="w-full h-auto max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                                />
+                            </>
+                        )}
+                    </div>
                 </DialogContent>
             </Dialog>
         </AppLayout>

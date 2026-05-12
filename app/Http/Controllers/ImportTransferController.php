@@ -146,33 +146,83 @@ class ImportTransferController extends Controller
     {
         $request->validate([
             'items' => 'required|array',
-            'items.*.item_name' => 'required|string|max:255|unique:products,name',
-            'items.*.category_id' => 'required|exists:categories,id',
-            'items.*.brand_id' => 'required|exists:brands,id',
-            'items.*.supplier_id' => 'nullable|exists:suppliers,id',
+            'items.*.item_name' => 'required|string|max:255',
+            'items.*.category_name' => 'required|string|max:255',
+            'items.*.brand_name' => 'required|string|max:255',
+            'items.*.supplier_name' => 'nullable|string|max:255',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.quantity' => 'required|integer|min:0',
             'items.*.code' => 'nullable|string|max:255',
             'items.*.code_2' => 'nullable|string|max:255',
-            'items.*.sku' => 'nullable|string|max:255|unique:products,sku',
+            'items.*.sku' => 'nullable|string|max:255',
+            'items.*.barcode' => 'nullable|string|max:255',
+            'items.*.qr_code' => 'nullable|string|max:255',
             'items.*.physical_location' => 'nullable|string|max:255',
             'items.*.reorder_level' => 'nullable|integer|min:0',
         ]);
 
         $branchId = auth()->user()->branch_id;
+        $userId = auth()->id();
 
         foreach ($request->items as $item) {
+            // Resolve or Create Brand
+            $brand = Brand::where('name', $item['brand_name'])
+                ->where(function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+                })
+                ->first();
+            
+            if (!$brand) {
+                $brand = Brand::create([
+                    'name' => $item['brand_name'],
+                    'slug' => \Illuminate\Support\Str::slug($item['brand_name']),
+                    'status' => 'Active',
+                    'branch_id' => $branchId,
+                    'created_by' => $userId,
+                ]);
+            }
+
+            // Resolve or Create Category
+            $category = Category::where('name', $item['category_name'])
+                ->where(function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+                })
+                ->first();
+            
+            if (!$category) {
+                $category = Category::create([
+                    'name' => $item['category_name'],
+                    'slug' => \Illuminate\Support\Str::slug($item['category_name']),
+                    'status' => 'Active',
+                    'branch_id' => $branchId,
+                    'created_by' => $userId,
+                ]);
+            }
+
+            // Resolve or Create Supplier
+            $supplierId = null;
+            if (!empty($item['supplier_name'])) {
+                $supplier = Supplier::where('name', $item['supplier_name'])->first();
+                if (!$supplier) {
+                    $supplier = Supplier::create(['name' => $item['supplier_name']]);
+                }
+                $supplierId = $supplier->id;
+            }
+
             $product = Product::create([
                 'name' => $item['item_name'],
-                'category_id' => $item['category_id'],
-                'brand_id' => $item['brand_id'],
-                'supplier_id' => $item['supplier_id'] ?? null,
+                'category_id' => $category->id,
+                'brand_id' => $brand->id,
+                'supplier_id' => $supplierId,
                 'price' => $item['price'],
                 'code' => $item['code'] ?? null,
                 'code_2' => $item['code_2'] ?? null,
                 'sku' => $item['sku'] ?? null,
-                'created_by' => auth()->id(),
+                'barcode' => $item['barcode'] ?? null,
+                'qr_code' => $item['qr_code'] ?? null,
+                'created_by' => $userId,
                 'image_path' => 'new_product_import.png',
+                'status' => 'active',
             ]);
 
             BranchProduct::create([
