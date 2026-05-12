@@ -22,6 +22,8 @@ class GoogleSheetsSyncController extends Controller
      */
     public function syncAll()
     {
+        file_put_contents(base_path('sync_debug.txt'), 'Sync started at ' . now()->toDateTimeString() . "\n", FILE_APPEND);
+        
         // Increase execution time for large syncs
         set_time_limit(300);
         
