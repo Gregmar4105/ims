@@ -94,6 +94,7 @@ class GoogleSheetsService
 
             return true;
         } catch (\Exception $e) {
+            file_put_contents(base_path('sync_debug.txt'), 'API ERROR (createBranchSheet): ' . $e->getMessage() . "\n", FILE_APPEND);
             Log::error('Google Sheets Create Sheet Error: ' . $e->getMessage());
             return false;
         }
@@ -168,6 +169,7 @@ class GoogleSheetsService
                 $params
             );
         } catch (\Exception $e) {
+            file_put_contents(base_path('sync_debug.txt'), 'API ERROR (updateSheetContent): ' . $e->getMessage() . "\n", FILE_APPEND);
             Log::error('Google Sheets Update Sheet Content Error: ' . $e->getMessage());
             return false;
         }
