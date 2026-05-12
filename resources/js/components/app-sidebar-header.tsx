@@ -273,7 +273,7 @@ export function AppSidebarHeader({
                                 <div className="grid grid-cols-2 gap-2 mt-2">
                                     <Button 
                                         variant="outline" 
-                                        className={`h-12 gap-2 font-bold transition-all border-2 ${hasCopied ? 'border-green-500 text-green-600 bg-green-50' : 'hover:border-blue-500 hover:text-blue-600'}`}
+                                        className={`h-14 gap-2 font-bold transition-all border-2 ${hasCopied ? 'border-green-500 text-green-600 bg-green-50' : 'hover:border-blue-500 hover:text-blue-600'}`}
                                         onClick={handleCopyLink}
                                     >
                                         {hasCopied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
@@ -281,11 +281,12 @@ export function AppSidebarHeader({
                                     </Button>
                                     <Button 
                                         asChild
-                                        className="h-12 gap-2 font-bold bg-[#0F9D58] hover:bg-[#0B8043] text-white border-2 border-transparent shadow-lg shadow-green-500/20"
+                                        variant="outline"
+                                        className="h-14 gap-3 font-extrabold border-2 border-[#0F9D58] text-[#0F9D58] bg-green-50/50 hover:bg-green-100 transition-all shadow-md flex-1 text-base"
                                     >
                                         <a href={SHEET_URL} target="_blank" rel="noopener noreferrer">
-                                            {/* Google Sheets Logo SVG - 25% Bigger */}
-                                            <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            {/* Google Sheets Logo SVG - Large */}
+                                            <svg className="h-8 w-8 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M14 2H6C4.89 2 4 2.9 4 4V20C4 21.1 4.89 22 6 22H18C19.11 22 20 21.1 20 20V8L14 2Z" fill="#0F9D58"/>
                                                 <path d="M14 8V2L20 8H14Z" fill="#81C784"/>
                                                 <path d="M16 12H8V14H16V12ZM16 16H8V18H16V16ZM12 8H8V10H12V8Z" fill="white"/>
