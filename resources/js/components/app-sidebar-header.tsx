@@ -18,7 +18,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Link } from '@inertiajs/react';
-import { Download, CloudSync, CloudCheck } from 'lucide-react';
+import { Download, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -77,9 +77,9 @@ export function AppSidebarHeader({
                                                         }`}
                                                     >
                                                         {showCheck ? (
-                                                            <CloudCheck className="h-5 w-5" />
+                                                            <CheckCircle2 className="h-5 w-5" />
                                                         ) : (
-                                                            <CloudSync className={`h-5 w-5 ${isSyncing ? 'animate-spin-slow' : ''}`} />
+                                                            <RefreshCw className={`h-5 w-5 ${isSyncing ? 'animate-spin-slow' : ''}`} />
                                                         )}
                                                     </button>
                                                 </TooltipTrigger>
@@ -131,9 +131,9 @@ export function AppSidebarHeader({
                                                 }`}
                                             >
                                                 {showCheck ? (
-                                                    <CloudCheck className="h-5 w-5" />
+                                                    <CheckCircle2 className="h-5 w-5" />
                                                 ) : (
-                                                    <CloudSync className={`h-5 w-5 ${isSyncing ? 'animate-spin-slow' : ''}`} />
+                                                    <RefreshCw className={`h-5 w-5 ${isSyncing ? 'animate-spin-slow' : ''}`} />
                                                 )}
                                             </button>
                                         </TooltipTrigger>
