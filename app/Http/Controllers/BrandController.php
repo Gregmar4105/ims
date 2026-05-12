@@ -47,11 +47,6 @@ class BrandController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'status' => 'required|in:Active,Inactive',
-        ]);
-
         $user = auth()->user();
         $branchId = $user->branch_id;
 
@@ -59,14 +54,19 @@ class BrandController extends Controller
              return back()->withErrors(['branch' => 'You must be assigned to a branch to create brands.']);
         }
 
-        // Check if brand already exists for this branch
-        $existingBrand = Brand::where('name', $request->name)
-            ->where('branch_id', $branchId)
-            ->first();
-
-        if ($existingBrand) {
-            return redirect()->back()->with('success', 'Brand already exists.');
-        }
+        $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('brands')->where(function ($query) use ($branchId) {
+                    return $query->where('branch_id', $branchId);
+                }),
+            ],
+            'status' => 'required|in:Active,Inactive',
+        ], [
+            'name.unique' => 'A brand with this name already exists in your branch.',
+        ]);
 
         Brand::create([
             'name' => $request->name,
@@ -112,6 +112,7 @@ class BrandController extends Controller
         }
 
         $brands = $query->where('name', 'like', "%{$search}%")
+            ->orWhereRaw('LOWER(name) LIKE ?', ["%" . strtolower($search) . "%"])
             ->latest()
             ->take(10)
             ->get(['id', 'name']);

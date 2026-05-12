@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Search, Pencil, Trash2, Truck } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { AutocompleteInput } from "@/components/AutocompleteInput";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -208,14 +209,13 @@ export default function Index({ suppliers, filters }: Props) {
                     <form onSubmit={submit} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Name</Label>
-                            <Input
-                                id="name"
+                            <AutocompleteInput
                                 value={data.name}
-                                onChange={(e) => setData('name', e.target.value)}
-                                placeholder="Supplier Name"
-                                required
+                                onValueChange={val => setData('name', val)}
+                                placeholder="Enter supplier name"
+                                searchUrl="/api/suppliers/search"
+                                error={errors.name}
                             />
-                            {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="contact_person">Contact Person</Label>
@@ -281,14 +281,13 @@ export default function Index({ suppliers, filters }: Props) {
                     <form onSubmit={submit} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="edit-name">Name</Label>
-                            <Input
-                                id="edit-name"
+                            <AutocompleteInput
                                 value={data.name}
-                                onChange={(e) => setData('name', e.target.value)}
-                                placeholder="Supplier Name"
-                                required
+                                onValueChange={val => setData('name', val)}
+                                placeholder="Enter supplier name"
+                                searchUrl="/product-suppliers/search"
+                                error={errors.name}
                             />
-                            {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="edit-contact_person">Contact Person</Label>

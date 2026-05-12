@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Validation\Rule;
 
 class SupplierController extends Controller
 {
@@ -45,11 +46,18 @@ class SupplierController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('suppliers'),
+            ],
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:255',
             'address' => 'nullable|string',
             'contact_person' => 'nullable|string|max:255',
+        ], [
+            'name.unique' => 'A supplier with this name already exists.',
         ]);
 
         Supplier::create($validated);
@@ -105,6 +113,7 @@ class SupplierController extends Controller
         $search = $request->query('search');
 
         $suppliers = Supplier::where('name', 'like', "%{$search}%")
+            ->orWhereRaw('LOWER(name) LIKE ?', ["%" . strtolower($search) . "%"])
             ->latest()
             ->take(10)
             ->get(['id', 'name']);

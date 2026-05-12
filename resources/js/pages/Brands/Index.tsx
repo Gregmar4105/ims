@@ -32,6 +32,7 @@ import { Plus, Pencil, Trash2, Search, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import Pagination from '@/components/Pagination';
 import { Badge } from "@/components/ui/badge";
+import { AutocompleteInput } from "@/components/AutocompleteInput";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -229,13 +230,13 @@ export default function Index({ brands, filters }: Props) {
                     <form onSubmit={submit} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Name</Label>
-                            <Input
-                                id="name"
+                            <AutocompleteInput
                                 value={data.name}
-                                onChange={e => setData('name', e.target.value)}
-                                required
+                                onValueChange={val => setData('name', val)}
+                                placeholder="Enter brand name"
+                                searchUrl="/api/brands/search"
+                                error={errors.name}
                             />
-                            {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="status">Status</Label>

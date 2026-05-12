@@ -44,11 +44,6 @@ class CategoryController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'status' => 'required|in:Active,Inactive',
-        ]);
-
         $user = auth()->user();
         $branchId = $user->branch_id;
 
@@ -56,14 +51,19 @@ class CategoryController extends Controller
              return back()->withErrors(['branch' => 'You must be assigned to a branch to create categories.']);
         }
 
-        // Check if category already exists for this branch
-        $existingCategory = Category::where('name', $request->name)
-            ->where('branch_id', $branchId)
-            ->first();
-
-        if ($existingCategory) {
-            return redirect()->back()->with('success', 'Category already exists.');
-        }
+        $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('categories')->where(function ($query) use ($branchId) {
+                    return $query->where('branch_id', $branchId);
+                }),
+            ],
+            'status' => 'required|in:Active,Inactive',
+        ], [
+            'name.unique' => 'A category with this name already exists in your branch.',
+        ]);
 
         Category::create([
             'name' => $request->name,
@@ -109,6 +109,7 @@ class CategoryController extends Controller
         }
 
         $categories = $query->where('name', 'like', "%{$search}%")
+            ->orWhereRaw('LOWER(name) LIKE ?', ["%" . strtolower($search) . "%"])
             ->latest()
             ->take(10)
             ->get(['id', 'name']);
