@@ -181,8 +181,23 @@ class GoogleSheetsService
         try {
             $this->createBranchSheet($sheetName);
 
+            // Super Clean: Force every row to be a pure sequential array of primitives
+            $cleanRows = [];
+            foreach ($rows as $row) {
+                $cleanRow = [];
+                foreach (array_values((array)$row) as $value) {
+                    // Convert objects/arrays to strings, handle nulls
+                    if (is_array($value) || is_object($value)) {
+                        $cleanRow[] = json_encode($value);
+                    } else {
+                        $cleanRow[] = $value === null ? '' : $value;
+                    }
+                }
+                $cleanRows[] = $cleanRow;
+            }
+
             $body = new ValueRange([
-                'values' => array_values($rows)
+                'values' => $cleanRows
             ]);
             $params = ['valueInputOption' => 'RAW'];
 
