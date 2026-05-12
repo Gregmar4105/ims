@@ -14,6 +14,7 @@ class GoogleSheetsService
     protected $client;
     protected $service;
     protected $spreadsheetId;
+    protected $existingSheets = null;
 
     public function __construct()
     {
@@ -34,19 +35,35 @@ class GoogleSheetsService
     }
 
     /**
+     * Refresh the list of existing sheets in the spreadsheet.
+     * Fetches metadata once to avoid multiple API calls.
+     */
+    protected function loadExistingSheets($force = false)
+    {
+        if ($this->existingSheets === null || $force) {
+            try {
+                $spreadsheet = $this->service->spreadsheets->get($this->spreadsheetId);
+                $this->existingSheets = [];
+                foreach ($spreadsheet->getSheets() as $sheet) {
+                    $this->existingSheets[$sheet->getProperties()->getTitle()] = $sheet->getProperties()->getSheetId();
+                }
+            } catch (\Exception $e) {
+                Log::error('Google Sheets Load Sheets Error: ' . $e->getMessage());
+                $this->existingSheets = [];
+            }
+        }
+    }
+
+    /**
      * Create a new sheet (tab) with headers.
      */
     public function createBranchSheet(string $branchName)
     {
         try {
-            $spreadsheet = $this->service->spreadsheets->get($this->spreadsheetId);
-            $sheets = $spreadsheet->getSheets();
+            $this->loadExistingSheets();
             
-            // Check if exists
-            foreach ($sheets as $sheet) {
-                if ($sheet->getProperties()->getTitle() === $branchName) {
-                    return true;
-                }
+            if (isset($this->existingSheets[$branchName])) {
+                return true;
             }
 
             // Create new sheet
@@ -61,6 +78,9 @@ class GoogleSheetsService
             ]);
 
             $this->service->spreadsheets->batchUpdate($this->spreadsheetId, $body);
+            
+            // Refresh local list
+            $this->loadExistingSheets(true);
 
             // Set Headers
             $headers = [
@@ -99,31 +119,56 @@ class GoogleSheetsService
     public function deleteBranchSheet(string $branchName)
     {
         try {
-            $spreadsheet = $this->service->spreadsheets->get($this->spreadsheetId);
-            $sheets = $spreadsheet->getSheets();
+            $this->loadExistingSheets();
             
-            $sheetId = null;
-            foreach ($sheets as $sheet) {
-                if ($sheet->getProperties()->getTitle() === $branchName) {
-                    $sheetId = $sheet->getProperties()->getSheetId();
-                    break;
-                }
+            if (!isset($this->existingSheets[$branchName])) {
+                return true;
             }
 
-            if ($sheetId !== null) {
-                $body = new BatchUpdateSpreadsheetRequest([
-                    'requests' => [
-                        'deleteSheet' => [
-                            'sheetId' => $sheetId
-                        ]
+            $sheetId = $this->existingSheets[$branchName];
+
+            $body = new BatchUpdateSpreadsheetRequest([
+                'requests' => [
+                    'deleteSheet' => [
+                        'sheetId' => $sheetId
                     ]
-                ]);
-                $this->service->spreadsheets->batchUpdate($this->spreadsheetId, $body);
-            }
+                ]
+            ]);
+            $this->service->spreadsheets->batchUpdate($this->spreadsheetId, $body);
+            
+            $this->loadExistingSheets(true);
 
             return true;
         } catch (\Exception $e) {
             Log::error('Google Sheets Delete Sheet Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Update the entire content of a sheet (tab) at once.
+     */
+    public function updateSheetContent(string $sheetName, array $rows)
+    {
+        try {
+            $this->createBranchSheet($sheetName);
+
+            $body = new ValueRange([
+                'values' => $rows
+            ]);
+            $params = ['valueInputOption' => 'RAW'];
+
+            // Clear existing content
+            $this->service->spreadsheets_values->clear($this->spreadsheetId, $sheetName . '!A:Z', new \Google\Service\Sheets\ClearValuesRequest());
+
+            return $this->service->spreadsheets_values->update(
+                $this->spreadsheetId,
+                $sheetName . '!A1',
+                $body,
+                $params
+            );
+        } catch (\Exception $e) {
+            Log::error('Google Sheets Update Sheet Content Error: ' . $e->getMessage());
             return false;
         }
     }
@@ -134,7 +179,6 @@ class GoogleSheetsService
     public function upsertProductInBranch(string $branchName, array $data, $productId)
     {
         try {
-            // Ensure sheet exists
             $this->createBranchSheet($branchName);
 
             // Find row index
@@ -158,7 +202,6 @@ class GoogleSheetsService
             $params = ['valueInputOption' => 'RAW'];
 
             if ($rowIndex !== -1) {
-                // Update
                 $updateRange = $branchName . '!A' . $rowIndex;
                 return $this->service->spreadsheets_values->update(
                     $this->spreadsheetId,
@@ -167,7 +210,6 @@ class GoogleSheetsService
                     $params
                 );
             } else {
-                // Append
                 return $this->service->spreadsheets_values->append(
                     $this->spreadsheetId,
                     $branchName . '!A1',
@@ -177,35 +219,6 @@ class GoogleSheetsService
             }
         } catch (\Exception $e) {
             Log::error('Google Sheets Branch Upsert Error: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Update the entire content of a sheet (tab) at once.
-     * Useful for full syncs to avoid hitting API rate limits.
-     */
-    public function updateSheetContent(string $sheetName, array $rows)
-    {
-        try {
-            $this->createBranchSheet($sheetName);
-
-            $body = new ValueRange([
-                'values' => $rows
-            ]);
-            $params = ['valueInputOption' => 'RAW'];
-
-            // Clear existing content first to avoid leaving old data
-            $this->service->spreadsheets_values->clear($this->spreadsheetId, $sheetName . '!A:Z', new \Google\Service\Sheets\ClearValuesRequest());
-
-            return $this->service->spreadsheets_values->update(
-                $this->spreadsheetId,
-                $sheetName . '!A1',
-                $body,
-                $params
-            );
-        } catch (\Exception $e) {
-            Log::error('Google Sheets Update Sheet Content Error: ' . $e->getMessage());
             return false;
         }
     }
@@ -231,8 +244,7 @@ class GoogleSheetsService
             }
 
             if ($rowIndex !== -1) {
-                // Just mark as deleted in the quantity column or similar
-                $updateRange = $branchName . '!P' . $rowIndex; // Column P is Quantity
+                $updateRange = $branchName . '!P' . $rowIndex; 
                 $body = new ValueRange([
                     'values' => [['REMOVED']]
                 ]);
