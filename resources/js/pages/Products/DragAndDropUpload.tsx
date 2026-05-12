@@ -14,6 +14,11 @@ import { toast } from 'sonner';
 import { AutocompleteInput } from '@/components/AutocompleteInput';
 import { Badge } from '@/components/ui/badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
+import {
+    Dialog,
+    DialogContent,
+} from "@/components/ui/dialog";
+import { Eye } from 'lucide-react';
 
 interface Variation {
     name: string;
@@ -84,6 +89,9 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
 
     const [isLocalProcessing, setIsLocalProcessing] = useState(false);
     const [localProgress, setLocalProgress] = useState(0);
+
+    const [selectedItem, setSelectedItem] = useState<UploadItem | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const fetchProductDetails = async (id: string, name: string) => {
         try {
@@ -510,18 +518,44 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
                         
                         <div className="grid grid-cols-1 gap-8 mt-4">
                             {uploadItems.map((item) => (
-                                <ProductUploadCard
+                        <ProductUploadCard
                                     key={item.id}
                                     item={item}
                                     onRemove={() => removeUpload(item.id)}
                                     onUpdate={(field, value) => updateItem(item.id, field, value)}
                                     onValidate={(field, value) => validateField(item.id, field, value)}
+                                    onPhotoClick={() => {
+                                        setSelectedItem(item);
+                                        setIsModalOpen(true);
+                                    }}
                                 />
                             ))}
                         </div>
                     </div>
                 )}
             </div>
+
+            {/* Photo Viewer Modal */}
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogContent className="max-w-4xl p-0 overflow-hidden border-none bg-transparent shadow-none">
+                    <div className="relative group">
+                        {selectedItem && (
+                            <>
+                                <div className="absolute top-4 left-4 z-10">
+                                    <Badge className="bg-black/60 text-white backdrop-blur-md border-none px-4 py-1.5 text-sm font-medium">
+                                        {selectedItem.file?.name || selectedItem.name}
+                                    </Badge>
+                                </div>
+                                <img 
+                                    src={selectedItem.preview} 
+                                    alt={selectedItem.name} 
+                                    className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                                />
+                            </>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
@@ -531,11 +565,13 @@ function ProductUploadCard({
     onRemove,
     onUpdate,
     onValidate,
+    onPhotoClick,
 }: {
     item: UploadItem;
     onRemove: () => void;
     onUpdate: (field: keyof UploadItem, value: any) => void;
     onValidate: (field: string, value: string) => void;
+    onPhotoClick: () => void;
 }) {
     const addVariation = () => {
         onUpdate('variations', [...item.variations, { name: '', options: '' }]);
@@ -611,11 +647,18 @@ function ProductUploadCard({
             
             <div className="flex flex-col xl:flex-row">
                 {/* Photo Section */}
-                <div className="xl:w-1/4 relative group bg-muted/20 min-h-[300px]">
-                    <img src={item.preview} alt="Upload preview" className="w-full h-full object-cover" />
-                    <div className="absolute top-2 left-2 flex flex-col gap-2">
+                <div className="xl:w-1/4 relative group bg-muted/20 min-h-[300px] cursor-pointer overflow-hidden" onClick={onPhotoClick}>
+                    <img src={item.preview} alt="Upload preview" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                        <Eye className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                    </div>
+                    
+                    <div className="absolute top-2 left-2 flex flex-col gap-2 z-10">
                         <button
-                            onClick={onRemove}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onRemove();
+                            }}
                             className="p-2 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
                         >
                             <Trash2 className="w-5 h-5" />

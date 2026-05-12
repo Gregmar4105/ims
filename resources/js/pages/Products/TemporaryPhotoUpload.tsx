@@ -6,10 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Upload, X, Check, Loader2, Image as ImageIcon, AlertCircle, FolderOpen } from 'lucide-react';
+import { Search, Upload, X, Check, Loader2, Image as ImageIcon, AlertCircle, FolderOpen, Eye, Info } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { ProgressBar } from '@/components/ui/ProgressBar';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Product {
     id: number;
@@ -45,6 +51,11 @@ export default function TemporaryPhotoUpload({ productsMissingImages: initialPro
 
     const [isLocalProcessing, setIsLocalProcessing] = useState(false);
     const [localProgress, setLocalProgress] = useState(0);
+
+    const [selectedItem, setSelectedItem] = useState<UploadItem | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const unmappedCount = uploadItems.filter(i => !i.productId).length;
 
     useEffect(() => {
         const interval = setInterval(async () => {
@@ -334,6 +345,28 @@ export default function TemporaryPhotoUpload({ productsMissingImages: initialPro
                     </div>
                 </div>
 
+                {/* Unmapped Notification */}
+                {uploadItems.length > 0 && unmappedCount > 0 && (
+                    <div className="sticky top-4 z-30 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 shadow-lg flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-amber-100 rounded-full">
+                                    <Info className="w-4 h-4 text-amber-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-amber-900">
+                                        {unmappedCount} {unmappedCount === 1 ? 'photo' : 'photos'} cannot be mapped
+                                    </p>
+                                    <p className="text-[10px] text-amber-700">Please search and assign a product for each photo.</p>
+                                </div>
+                            </div>
+                            <Badge variant="outline" className="bg-amber-100/50 text-amber-700 border-amber-200">
+                                Needs Attention
+                            </Badge>
+                        </div>
+                    </div>
+                )}
+
                 {/* Local Progress Indicator */}
                 {isLocalProcessing && (
                     <Card className="bg-primary/5 border-primary/20 shadow-none overflow-hidden animate-in fade-in slide-in-from-top-4">
@@ -416,11 +449,48 @@ export default function TemporaryPhotoUpload({ productsMissingImages: initialPro
                                     item={item}
                                     onRemove={() => removeUpload(item.id)}
                                     onMap={(productId, productName) => updateMapping(item.id, productId, productName)}
+                                    onPhotoClick={() => {
+                                        setSelectedItem(item);
+                                        setIsModalOpen(true);
+                                    }}
                                 />
                             ))}
                         </div>
                     </div>
                 )}
+
+                {/* Photo Viewer Modal */}
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                    <DialogContent className="max-w-4xl p-0 overflow-hidden border-none bg-transparent shadow-none">
+                        <div className="relative group">
+                            {selectedItem && (
+                                <>
+                                    <div className="absolute top-4 left-4 z-10">
+                                        <Badge className="bg-black/60 text-white backdrop-blur-md border-none px-4 py-1.5 text-sm font-medium">
+                                            {selectedItem.file.name}
+                                        </Badge>
+                                    </div>
+                                    <img 
+                                        src={selectedItem.preview} 
+                                        alt={selectedItem.file.name} 
+                                        className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                                    />
+                                    <div className="absolute bottom-4 right-4 z-10 flex gap-2">
+                                        {selectedItem.productName ? (
+                                            <Badge className="bg-primary text-white backdrop-blur-md border-none px-4 py-1.5 text-sm">
+                                                Mapped to: {selectedItem.productName}
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="bg-red-500/80 text-white backdrop-blur-md border-none px-4 py-1.5 text-sm">
+                                                Unmapped
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </DialogContent>
+                </Dialog>
 
                 {/* Failed Photos / Remaining Products */}
                 <Card className="border-red-100 dark:border-red-900/30 overflow-hidden shadow-sm">
@@ -480,10 +550,12 @@ function UploadCard({
     item,
     onRemove,
     onMap,
+    onPhotoClick,
 }: {
     item: UploadItem;
     onRemove: () => void;
     onMap: (id: number, name: string) => void;
+    onPhotoClick: () => void;
 }) {
     const [search, setSearch] = useState('');
     const [results, setResults] = useState<Product[]>([]);
@@ -518,16 +590,23 @@ function UploadCard({
         <Card className="overflow-hidden border-2 border-muted hover:border-primary/30 transition-all duration-300 shadow-sm">
             <div className="flex h-48">
                 {/* Photo Section */}
-                <div className="w-1/3 relative group">
-                    <img src={item.preview} alt="Upload preview" className="w-full h-full object-cover" />
+                <div className="w-1/3 relative group cursor-pointer overflow-hidden" onClick={onPhotoClick}>
+                    <img src={item.preview} alt="Upload preview" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                        <Eye className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                    </div>
+                    
                     <button
-                        onClick={onRemove}
-                        className="absolute top-2 left-2 p-1.5 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRemove();
+                        }}
+                        className="absolute top-2 left-2 p-1.5 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 z-10"
                     >
                         <X className="w-4 h-4" />
                     </button>
                     {item.productId && item.status === 'pending' && (
-                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center backdrop-blur-[1px]">
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center backdrop-blur-[1px] pointer-events-none">
                             <Badge className="bg-primary text-white scale-110 shadow-lg border-none px-3">Mapped</Badge>
                         </div>
                     )}
