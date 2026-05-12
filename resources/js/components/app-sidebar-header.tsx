@@ -273,37 +273,30 @@ export function AppSidebarHeader({
                                 <div className="grid grid-cols-2 gap-2 mt-2">
                                     <Button 
                                         variant="outline" 
-                                        className={`h-10 gap-2 font-bold transition-all ${hasCopied ? 'border-green-500 text-green-600 bg-green-50' : ''}`}
+                                        className={`h-12 gap-2 font-bold transition-all border-2 ${hasCopied ? 'border-green-500 text-green-600 bg-green-50' : 'hover:border-blue-500 hover:text-blue-600'}`}
                                         onClick={handleCopyLink}
                                     >
-                                        {hasCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                                        {hasCopied ? 'Link Copied' : 'Copy Link'}
+                                        {hasCopied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                                        {hasCopied ? 'Copied' : 'Copy Link'}
                                     </Button>
                                     <Button 
                                         asChild
-                                        variant="outline"
-                                        className="h-10 gap-2 font-bold border-blue-500 text-blue-600 hover:bg-blue-50"
+                                        className="h-12 gap-2 font-bold bg-[#0F9D58] hover:bg-[#0B8043] text-white border-2 border-transparent"
                                     >
                                         <a href={SHEET_URL} target="_blank" rel="noopener noreferrer">
-                                            <ExternalLink className="h-4 w-4" />
-                                            Visit Sheet
+                                            {/* Google Sheets Logo SVG */}
+                                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M14 2H6C4.89 2 4 2.9 4 4V20C4 21.1 4.89 22 6 22H18C19.11 22 20 21.1 20 20V8L14 2Z" fill="#0F9D58"/>
+                                                <path d="M14 8V2L20 8H14Z" fill="#81C784"/>
+                                                <path d="M16 12H8V14H16V12ZM16 16H8V18H16V16ZM12 8H8V10H12V8Z" fill="white"/>
+                                            </svg>
+                                            Visit Google Sheets
                                         </a>
                                     </Button>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <DialogFooter className="sm:justify-center border-t pt-4">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            className="w-full sm:w-32 font-bold"
-                            onClick={() => setIsModalOpen(false)}
-                        >
-                            Close
-                        </Button>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </header>
