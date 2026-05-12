@@ -14,6 +14,7 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { usePage, router, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
