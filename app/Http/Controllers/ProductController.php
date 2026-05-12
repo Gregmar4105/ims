@@ -852,7 +852,7 @@ class ProductController extends Controller
             }
         });
 
-        return redirect()->route('products.index')->with('success', 'Selected products deleted successfully.');
+        return back()->with('success', 'Selected products deleted successfully.');
     }
     public function bulkClearanceSale(Request $request)
     {
@@ -872,6 +872,6 @@ class ProductController extends Controller
             }
         });
 
-        return redirect()->route('products.index')->with('success', 'Clearance sales updated successfully.');
+        return back()->with('success', 'Clearance sales updated successfully.');
     }
 }
