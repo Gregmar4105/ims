@@ -32,6 +32,7 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/1joMus-vAb-acTV8Jo6UiB1plPsoFfpA6MXQs5SwsvkE/edit?usp=sharing";
 
@@ -226,58 +227,81 @@ export function AppSidebarHeader({
             </div>
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            {isSyncing ? 'Syncing to Google Sheets' : 'Google Sheets Sync'}
+                <DialogContent className="sm:max-w-md overflow-hidden">
+                    <DialogHeader className="flex flex-col items-center text-center">
+                        <DialogTitle className="text-xl font-bold tracking-tight">
+                            {isSyncing ? 'Synchronizing Data' : 'Cloud Sync Complete'}
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="text-sm">
                             {isSyncing 
-                                ? 'Please wait while we reconcile your inventory with the cloud backup.' 
-                                : 'Your inventory is currently being backed up in real-time.'}
+                                ? 'Updating your Google Sheets with the latest inventory changes.' 
+                                : 'Your inventory is fully reconciled with the cloud backup.'}
                         </DialogDescription>
                     </DialogHeader>
                     
-                    <div className="flex flex-col items-center justify-center py-8 gap-6">
-                        <div className="relative h-24 w-24">
-                            <Cloud className={`h-full w-full ${isSyncing ? 'text-blue-500 animate-pulse' : 'text-green-500'}`} />
-                            <div className="absolute inset-0 flex items-center justify-center pt-2">
-                                {isSyncing ? (
-                                    <RefreshCw className="h-10 w-10 text-blue-600 animate-spin" />
-                                ) : (
-                                    <Check className="h-10 w-10 text-white bg-green-500 rounded-full p-1" />
-                                )}
+                    <div className="flex flex-col items-center justify-center py-6 gap-8">
+                        {/* Centered Code-style Animation */}
+                        <div className="p-6 bg-white dark:bg-black/10 border rounded-2xl shadow-sm relative group">
+                            <div className="relative h-24 w-24">
+                                <Cloud className={`h-full w-full transition-all duration-500 ${isSyncing ? 'text-blue-500 scale-110 pulse' : 'text-green-500'}`} />
+                                <div className="absolute inset-0 flex items-center justify-center pt-2">
+                                    {isSyncing ? (
+                                        <RefreshCw className="h-10 w-10 text-blue-600 animate-spin" />
+                                    ) : (
+                                        <CloudCheck className="h-12 w-12 text-green-600" />
+                                    )}
+                                </div>
                             </div>
+                            {isSyncing && (
+                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-tighter">
+                                    Live Sync
+                                </div>
+                            )}
                         </div>
 
-                        <div className="w-full space-y-4">
-                            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg border border-border/50">
-                                <div className="flex-1 truncate text-xs text-muted-foreground font-mono">
-                                    {SHEET_URL}
+                        {/* URL Section - Product Codes Style */}
+                        <div className="w-full space-y-3">
+                            <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest text-center block">
+                                Google Sheets Spreadsheet URL
+                            </Label>
+                            <div className="flex flex-col gap-2">
+                                <div className="p-3 bg-muted/50 rounded-lg border border-border/50 text-center">
+                                    <span className="text-[11px] text-muted-foreground font-mono break-all line-clamp-2 leading-relaxed">
+                                        {SHEET_URL}
+                                    </span>
                                 </div>
-                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleCopyLink}>
-                                    {hasCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                                </Button>
+                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                    <Button 
+                                        variant="outline" 
+                                        className={`h-10 gap-2 font-bold transition-all ${hasCopied ? 'border-green-500 text-green-600 bg-green-50' : ''}`}
+                                        onClick={handleCopyLink}
+                                    >
+                                        {hasCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                        {hasCopied ? 'Link Copied' : 'Copy Link'}
+                                    </Button>
+                                    <Button 
+                                        asChild
+                                        variant="outline"
+                                        className="h-10 gap-2 font-bold border-blue-500 text-blue-600 hover:bg-blue-50"
+                                    >
+                                        <a href={SHEET_URL} target="_blank" rel="noopener noreferrer">
+                                            <ExternalLink className="h-4 w-4" />
+                                            Visit Sheet
+                                        </a>
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <DialogFooter className="sm:justify-between gap-2">
+                    <DialogFooter className="sm:justify-center border-t pt-4">
                         <Button
                             type="button"
                             variant="secondary"
+                            className="w-full sm:w-32 font-bold"
                             onClick={() => setIsModalOpen(false)}
                         >
                             Close
-                        </Button>
-                        <Button 
-                            asChild
-                            className="bg-green-600 hover:bg-green-700 text-white gap-2"
-                        >
-                            <a href={SHEET_URL} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="h-4 w-4" />
-                                Open Spreadsheet
-                            </a>
                         </Button>
                     </DialogFooter>
                 </DialogContent>
