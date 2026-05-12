@@ -299,10 +299,37 @@ class GoogleSheetsService
         $cleanRow = [];
         foreach (array_values($row) as $value) {
             if (is_array($value) || is_object($value)) {
-                $cleanRow[] = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $value = (array)$value;
+                if (empty($value)) {
+                    $cleanRow[] = 'null';
+                    continue;
+                }
+                
+                // Format as human-readable string (e.g. Name: Value) instead of JSON
+                $formatted = [];
+                foreach ($value as $item) {
+                    $item = (array)$item;
+                    $name = $item['name'] ?? null;
+                    $options = $item['options'] ?? $item['value'] ?? null;
+                    
+                    if ($name && $options) {
+                        $formatted[] = "$name: $options";
+                    } elseif ($name) {
+                        $formatted[] = $name;
+                    } elseif ($options) {
+                        $formatted[] = $options;
+                    } elseif (is_scalar($item)) {
+                        $formatted[] = (string)$item;
+                    }
+                }
+                
+                if (!empty($formatted)) {
+                    $cleanRow[] = implode(', ', $formatted);
+                } else {
+                    $cleanRow[] = 'null';
+                }
             } else {
-                // If it's a string that is already "null" or "[]", we keep it.
-                // If the value is strictly null or an empty string, we show 'null' per user request.
+                // If the value is strictly null or an empty string, we show 'null'
                 if ($value === null || $value === '') {
                     $cleanRow[] = 'null';
                 } else {
