@@ -31,6 +31,9 @@ class GoogleSheetsService
             }
             
             $this->client->setAuthConfig($config);
+            
+            // Compensation for clock drift (80 seconds)
+            $this->client->setCacheConfig(['skew' => 80]);
         } else {
             Log::error('Google Sheets Auth File Not Found: ' . $jsonPath);
         }
