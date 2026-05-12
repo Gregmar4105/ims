@@ -260,6 +260,11 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         const currentUrl = new URL(window.location.href);
         const params = new URLSearchParams(currentUrl.search);
 
+        // Reset page to 1 when any filter is changed, unless explicitly setting the page
+        if (!newParams.page) {
+            params.delete('page');
+        }
+
         Object.keys(newParams).forEach(key => {
             // Keep 'all' only for branch to override session defaults; 
             // for others, 'all' means the parameter can be removed for a cleaner URL.
@@ -774,7 +779,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         if (subs.length === 1) {
                                             updateParams({ category: subs[0] });
                                         } else {
-                                            // Don't update params yet, wait for sub-category if there are multiple
+                                            updateParams({ category: val });
                                         }
                                     }
                                 }} 

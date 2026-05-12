@@ -95,24 +95,37 @@ class ProductController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
+                // Priority 1: Exact matches on identifiers (highest priority in the OR group)
+                $q->where('barcode', $search)
+                  ->orWhere('qr_code', $search)
+                  ->orWhere('sku', $search)
+                  ->orWhere('code', $search)
+                  ->orWhere('code_2', $search)
+                  
+                  // Priority 2: Standard partial matches on name, description and identifiers
+                  ->orWhere('name', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%")
                   ->orWhere('barcode', 'like', "%{$search}%")
                   ->orWhere('qr_code', 'like', "%{$search}%")
                   ->orWhere('code', 'like', "%{$search}%")
                   ->orWhere('code_2', 'like', "%{$search}%")
                   ->orWhere('sku', 'like', "%{$search}%")
-                  // Exact matches for codes are prioritized by being part of the same OR group
-                  ->orWhere('barcode', $search)
-                  ->orWhere('qr_code', $search)
-                  ->orWhere('code', $search)
-                  ->orWhere('sku', $search)
                   ->orWhereHas('brand', function ($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%");
                   })
                   ->orWhereHas('category', function ($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%");
                   });
+
+                // Priority 3: Intelligent word-splitting: match all words in the name (order independent)
+                $words = array_filter(explode(' ', $search));
+                if (count($words) > 1) {
+                    $q->orWhere(function ($sq) use ($words) {
+                        foreach ($words as $word) {
+                            $sq->where('name', 'like', "%{$word}%");
+                        }
+                    });
+                }
             });
         }
 
