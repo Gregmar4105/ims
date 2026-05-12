@@ -19,7 +19,15 @@ class GoogleSheetsService
     public function __construct()
     {
         $this->client = new Client();
-        $this->client->setAuthConfig(config('google.sheets.service_account_json'));
+        
+        $jsonPath = config('google.sheets.service_account_json');
+        if (file_exists($jsonPath)) {
+            $config = json_decode(file_get_contents($jsonPath), true);
+            $this->client->setAuthConfig($config);
+        } else {
+            Log::error('Google Sheets Auth File Not Found: ' . $jsonPath);
+        }
+
         $this->client->addScope(Sheets::SPREADSHEETS);
         
         $this->service = new Sheets($this->client);
