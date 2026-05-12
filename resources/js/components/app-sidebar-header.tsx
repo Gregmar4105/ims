@@ -18,10 +18,19 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Link } from '@inertiajs/react';
-import { Download, CloudSync, CloudCheck } from 'lucide-react';
+import { Download, Cloud, RefreshCw, CloudCheck } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import axios from 'axios';
+
+const CloudSync = ({ className, isSyncing }: { className?: string, isSyncing?: boolean }) => (
+    <div className={`relative ${className} flex items-center justify-center`}>
+        <Cloud className="h-full w-full" />
+        <div className="absolute inset-0 flex items-center justify-center pt-1">
+            <RefreshCw className={`h-[45%] w-[45%] ${isSyncing ? 'animate-spin-slow' : ''}`} />
+        </div>
+    </div>
+);
 
 export function AppSidebarHeader({
     breadcrumbs = [],
@@ -79,7 +88,7 @@ export function AppSidebarHeader({
                                                         {showCheck ? (
                                                             <CloudCheck className="h-5 w-5" />
                                                         ) : (
-                                                            <CloudSync className={`h-5 w-5 ${isSyncing ? 'animate-spin-slow' : ''}`} />
+                                                            <CloudSync className="h-5 w-5" isSyncing={isSyncing} />
                                                         )}
                                                     </button>
                                                 </TooltipTrigger>
@@ -133,7 +142,7 @@ export function AppSidebarHeader({
                                                 {showCheck ? (
                                                     <CloudCheck className="h-5 w-5" />
                                                 ) : (
-                                                    <CloudSync className={`h-5 w-5 ${isSyncing ? 'animate-spin-slow' : ''}`} />
+                                                    <CloudSync className="h-5 w-5" isSyncing={isSyncing} />
                                                 )}
                                             </button>
                                         </TooltipTrigger>
