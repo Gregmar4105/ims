@@ -22,7 +22,14 @@ class GoogleSheetsService
         
         $jsonPath = config('google.sheets.service_account_json');
         if (file_exists($jsonPath)) {
-            $config = json_decode(file_get_contents($jsonPath), true);
+            $jsonContent = file_get_contents($jsonPath);
+            $config = json_decode($jsonContent, true);
+            
+            // Clean private key just in case of copy-paste issues
+            if (isset($config['private_key'])) {
+                $config['private_key'] = str_replace("\\n", "\n", $config['private_key']);
+            }
+            
             $this->client->setAuthConfig($config);
         } else {
             Log::error('Google Sheets Auth File Not Found: ' . $jsonPath);
