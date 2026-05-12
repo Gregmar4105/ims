@@ -23,7 +23,16 @@ class GoogleSheetsService
         $jsonPath = config('google.sheets.service_account_json');
         if (file_exists($jsonPath)) {
             $jsonContent = file_get_contents($jsonPath);
+            file_put_contents(base_path('sync_debug.txt'), 'JSON File Read Success. Size: ' . strlen($jsonContent) . " bytes\n", FILE_APPEND);
+            
             $config = json_decode($jsonContent, true);
+            if (!$config) {
+                file_put_contents(base_path('sync_debug.txt'), "JSON Decode FAILED\n", FILE_APPEND);
+            } else {
+                $pk = $config['private_key'] ?? 'MISSING';
+                file_put_contents(base_path('sync_debug.txt'), 'Private Key Length: ' . strlen($pk) . "\n", FILE_APPEND);
+                file_put_contents(base_path('sync_debug.txt'), 'Private Key Start: ' . substr($pk, 0, 30) . "...\n", FILE_APPEND);
+            }
             
             // Clean private key just in case of copy-paste issues
             if (isset($config['private_key'])) {
@@ -32,8 +41,8 @@ class GoogleSheetsService
             
             $this->client->setAuthConfig($config);
             
-            // Compensation for clock drift (80 seconds)
-            $this->client->setCacheConfig(['skew' => 80]);
+            // Compensation for clock drift
+            $this->client->setCacheConfig(['skew' => 120]);
         } else {
             Log::error('Google Sheets Auth File Not Found: ' . $jsonPath);
         }
