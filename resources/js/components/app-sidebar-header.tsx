@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { usePage, router, Link } from '@inertiajs/react';
 import { Download, Cloud, RefreshCw, CloudCheck } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 const CloudSync = ({ className, isSyncing }: { className?: string, isSyncing?: boolean }) => (
@@ -40,6 +40,28 @@ export function AppSidebarHeader({
 
     const [isSyncing, setIsSyncing] = useState(false);
     const [showCheck, setShowCheck] = useState(false);
+    const [isSystemSyncing, setIsSystemSyncing] = useState(false);
+
+    // Listen for global Inertia events to show "Live" sync status
+    useEffect(() => {
+        const startListener = () => setIsSystemSyncing(true);
+        const finishListener = () => {
+            setIsSystemSyncing(false);
+            // Show check briefly after any system action
+            setShowCheck(true);
+            setTimeout(() => setShowCheck(false), 2000);
+        };
+
+        const unregisterStart = router.on('start', startListener);
+        const unregisterFinish = router.on('finish', finishListener);
+
+        return () => {
+            unregisterStart();
+            unregisterFinish();
+        };
+    }, []);
+
+    const activeSyncing = isSyncing || isSystemSyncing;
 
     const handleSync = () => {
         if (isSyncing) return;
@@ -83,20 +105,23 @@ export function AppSidebarHeader({
                                                 <TooltipTrigger asChild>
                                                     <button 
                                                         onClick={handleSync}
-                                                        disabled={isSyncing}
+                                                        disabled={activeSyncing}
                                                         className={`flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted transition-all duration-300 ${
-                                                            isSyncing ? 'text-blue-500' : showCheck ? 'text-green-500' : 'text-muted-foreground hover:text-blue-600'
+                                                            activeSyncing ? 'text-blue-500' : showCheck ? 'text-green-500' : 'text-muted-foreground hover:text-blue-600'
                                                         }`}
                                                     >
-                                                        {showCheck ? (
+                                                        {showCheck && !activeSyncing ? (
                                                             <CloudCheck className="h-5 w-5" />
                                                         ) : (
-                                                            <CloudSync className="h-5 w-5" isSyncing={isSyncing} />
+                                                            <CloudSync className="h-5 w-5" isSyncing={activeSyncing} />
                                                         )}
                                                     </button>
                                                 </TooltipTrigger>
-                                                <TooltipContent>{isSyncing ? 'Syncing to Google Sheets...' : 'Sync to Google Sheets'}</TooltipContent>
+                                                <TooltipContent>{activeSyncing ? 'Syncing to Google Sheets...' : 'Sync to Google Sheets'}</TooltipContent>
                                             </Tooltip>
+                                            <div className={`text-[10px] font-bold text-blue-500 transition-all duration-500 overflow-hidden whitespace-nowrap ${activeSyncing ? 'max-w-[100px] opacity-100 animate-pulse px-1' : 'max-w-0 opacity-0'}`}>
+                                                SYNCING...
+                                            </div>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <Link href="/downloads" className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-blue-600">
@@ -137,20 +162,23 @@ export function AppSidebarHeader({
                                         <TooltipTrigger asChild>
                                             <button 
                                                 onClick={handleSync}
-                                                disabled={isSyncing}
+                                                disabled={activeSyncing}
                                                 className={`flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted transition-all duration-300 ${
-                                                    isSyncing ? 'text-blue-500' : showCheck ? 'text-green-500' : 'text-muted-foreground hover:text-blue-600'
+                                                    activeSyncing ? 'text-blue-500' : showCheck ? 'text-green-500' : 'text-muted-foreground hover:text-blue-600'
                                                 }`}
                                             >
-                                                {showCheck ? (
+                                                {showCheck && !activeSyncing ? (
                                                     <CloudCheck className="h-5 w-5" />
                                                 ) : (
-                                                    <CloudSync className="h-5 w-5" isSyncing={isSyncing} />
+                                                    <CloudSync className="h-5 w-5" isSyncing={activeSyncing} />
                                                 )}
                                             </button>
                                         </TooltipTrigger>
-                                        <TooltipContent>{isSyncing ? 'Syncing to Google Sheets...' : 'Sync to Google Sheets'}</TooltipContent>
+                                        <TooltipContent>{activeSyncing ? 'Syncing to Google Sheets...' : 'Sync to Google Sheets'}</TooltipContent>
                                     </Tooltip>
+                                    <div className={`text-[10px] font-bold text-blue-500 transition-all duration-500 overflow-hidden whitespace-nowrap ${activeSyncing ? 'max-w-[100px] opacity-100 animate-pulse px-1' : 'max-w-0 opacity-0'}`}>
+                                        SYNCING...
+                                    </div>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Link href="/downloads" className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-blue-600">
