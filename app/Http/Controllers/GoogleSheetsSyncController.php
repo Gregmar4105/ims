@@ -81,11 +81,11 @@ class GoogleSheetsSyncController extends Controller
             }
 
             Log::info('Manual Full Sync Completed Successfully');
-            return response()->json(['success' => true, 'message' => 'Full sync completed successfully.']);
+            return back()->with('success', 'Full sync completed successfully.');
         } catch (\Exception $e) {
             Log::error('Full Google Sheets Sync Error: ' . $e->getMessage());
             Log::error($e->getTraceAsString());
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 }
