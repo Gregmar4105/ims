@@ -22,8 +22,14 @@ class GoogleSheetsSyncController extends Controller
      */
     public function syncAll()
     {
+        // Increase execution time for large syncs
+        set_time_limit(300);
+        
+        Log::info('Manual Full Sync Started');
+
         try {
             $branches = Branch::all();
+            Log::info('Syncing ' . $branches->count() . ' branches');
             
             $headers = [
                 'ID', 'Product Name', 'Brand', 'Category', 'Supplier', 
@@ -33,6 +39,8 @@ class GoogleSheetsSyncController extends Controller
             ];
 
             foreach ($branches as $branch) {
+                Log::info('Syncing Branch: ' . $branch->branch_name);
+                
                 // Collect all rows for this branch starting with headers
                 $rows = [$headers];
                 
@@ -41,6 +49,8 @@ class GoogleSheetsSyncController extends Controller
                     ->with(['product.brand', 'product.category', 'product.supplier'])
                     ->get();
                 
+                Log::info('Found ' . $branchProducts->count() . ' products for branch ' . $branch->branch_name);
+
                 foreach ($branchProducts as $bp) {
                     $product = $bp->product;
                     if (!$product) continue;
@@ -65,13 +75,16 @@ class GoogleSheetsSyncController extends Controller
                     ];
                 }
 
-                // Batch update the entire sheet for this branch (1 API call per branch instead of 1 per product)
+                // Batch update the entire sheet for this branch
                 $this->sheetsService->updateSheetContent($branch->branch_name, $rows);
+                Log::info('Branch ' . $branch->branch_name . ' sync finished');
             }
 
+            Log::info('Manual Full Sync Completed Successfully');
             return response()->json(['success' => true, 'message' => 'Full sync completed successfully.']);
         } catch (\Exception $e) {
             Log::error('Full Google Sheets Sync Error: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }

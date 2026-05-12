@@ -1,7 +1,6 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
-import { usePage, router } from '@inertiajs/react';
 import { SharedData } from '@/types';
 import { Store, ChevronDown } from 'lucide-react';
 import { NotificationBell } from './notification-bell';
@@ -17,11 +16,10 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Link } from '@inertiajs/react';
+import { usePage, router, Link } from '@inertiajs/react';
 import { Download, Cloud, RefreshCw, CloudCheck } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import axios from 'axios';
 
 const CloudSync = ({ className, isSyncing }: { className?: string, isSyncing?: boolean }) => (
     <div className={`relative ${className} flex items-center justify-center`}>
@@ -43,23 +41,28 @@ export function AppSidebarHeader({
     const [isSyncing, setIsSyncing] = useState(false);
     const [showCheck, setShowCheck] = useState(false);
 
-    const handleSync = async () => {
+    const handleSync = () => {
         if (isSyncing) return;
         
         setIsSyncing(true);
         setShowCheck(false);
 
-        try {
-            await axios.post('/google-sheets/sync-all');
-            toast.success('Google Sheets sync completed!');
-            setShowCheck(true);
-            setTimeout(() => setShowCheck(false), 3000);
-        } catch (error) {
-            console.error('Sync failed:', error);
-            toast.error('Failed to sync Google Sheets');
-        } finally {
-            setIsSyncing(false);
-        }
+        router.post('/google-sheets/sync-all', {}, {
+            onSuccess: () => {
+                toast.success('Google Sheets sync completed!');
+                setShowCheck(true);
+                setTimeout(() => setShowCheck(false), 3000);
+            },
+            onError: (errors) => {
+                console.error('Sync failed:', errors);
+                toast.error('Failed to sync Google Sheets');
+            },
+            onFinish: () => {
+                setIsSyncing(false);
+            },
+            preserveScroll: true,
+            preserveState: true,
+        });
     };
 
     return (
