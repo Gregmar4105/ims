@@ -182,6 +182,35 @@ class GoogleSheetsService
     }
 
     /**
+     * Update the entire content of a sheet (tab) at once.
+     * Useful for full syncs to avoid hitting API rate limits.
+     */
+    public function updateSheetContent(string $sheetName, array $rows)
+    {
+        try {
+            $this->createBranchSheet($sheetName);
+
+            $body = new ValueRange([
+                'values' => $rows
+            ]);
+            $params = ['valueInputOption' => 'RAW'];
+
+            // Clear existing content first to avoid leaving old data
+            $this->service->spreadsheets_values->clear($this->spreadsheetId, $sheetName . '!A:Z', new \Google\Service\Sheets\ClearValuesRequest());
+
+            return $this->service->spreadsheets_values->update(
+                $this->spreadsheetId,
+                $sheetName . '!A1',
+                $body,
+                $params
+            );
+        } catch (\Exception $e) {
+            Log::error('Google Sheets Update Sheet Content Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Remove product from a branch sheet (mark as deleted or clear row).
      */
     public function removeProductFromBranch(string $branchName, $productId)

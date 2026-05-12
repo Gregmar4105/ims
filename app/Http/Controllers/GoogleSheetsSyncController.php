@@ -25,9 +25,16 @@ class GoogleSheetsSyncController extends Controller
         try {
             $branches = Branch::all();
             
+            $headers = [
+                'ID', 'Product Name', 'Brand', 'Category', 'Supplier', 
+                'Barcode', 'QR Code', 'Code', '2code', 'SKU', 
+                'Variations', 'Physical Location', 'Description', 
+                'Reorder Level', 'Price', 'Quantity'
+            ];
+
             foreach ($branches as $branch) {
-                // Ensure sheet exists and has headers
-                $this->sheetsService->createBranchSheet($branch->branch_name);
+                // Collect all rows for this branch starting with headers
+                $rows = [$headers];
                 
                 // Get all products for this branch
                 $branchProducts = BranchProduct::where('branch_id', $branch->id)
@@ -38,7 +45,7 @@ class GoogleSheetsSyncController extends Controller
                     $product = $bp->product;
                     if (!$product) continue;
 
-                    $data = [
+                    $rows[] = [
                         $product->id,
                         $product->name,
                         $product->brand?->brand_name ?? 'N/A',
@@ -56,9 +63,10 @@ class GoogleSheetsSyncController extends Controller
                         $product->price,
                         $bp->quantity,
                     ];
-
-                    $this->sheetsService->upsertProductInBranch($branch->branch_name, $data, $product->id);
                 }
+
+                // Batch update the entire sheet for this branch (1 API call per branch instead of 1 per product)
+                $this->sheetsService->updateSheetContent($branch->branch_name, $rows);
             }
 
             return response()->json(['success' => true, 'message' => 'Full sync completed successfully.']);
