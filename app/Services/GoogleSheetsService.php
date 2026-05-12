@@ -173,19 +173,10 @@ class GoogleSheetsService
         try {
             $this->createBranchSheet($sheetName);
 
-            // Super Clean: Force every row to be a pure sequential array of primitives
+            // Use cleanRow helper to ensure proper formatting (nulls as 'null', clean JSON for arrays)
             $cleanRows = [];
             foreach ($rows as $row) {
-                $cleanRow = [];
-                foreach (array_values((array)$row) as $value) {
-                    // Convert objects/arrays to strings, handle nulls
-                    if (is_array($value) || is_object($value)) {
-                        $cleanRow[] = json_encode($value);
-                    } else {
-                        $cleanRow[] = $value === null ? '' : $value;
-                    }
-                }
-                $cleanRows[] = $cleanRow;
+                $cleanRows[] = $this->cleanRow((array)$row);
             }
 
             $body = new ValueRange([
@@ -233,7 +224,7 @@ class GoogleSheetsService
             }
 
             $body = new ValueRange([
-                'values' => [$data]
+                'values' => [$this->cleanRow($data)]
             ]);
             $params = ['valueInputOption' => 'RAW'];
 
@@ -297,5 +288,28 @@ class GoogleSheetsService
             Log::error('Google Sheets Branch Product Remove Error: ' . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Clean a row of data for Google Sheets.
+     * Converts null/empty to 'null' and formats arrays as clean JSON.
+     */
+    protected function cleanRow(array $row): array
+    {
+        $cleanRow = [];
+        foreach (array_values($row) as $value) {
+            if (is_array($value) || is_object($value)) {
+                $cleanRow[] = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            } else {
+                // If it's a string that is already "null" or "[]", we keep it.
+                // If the value is strictly null or an empty string, we show 'null' per user request.
+                if ($value === null || $value === '') {
+                    $cleanRow[] = 'null';
+                } else {
+                    $cleanRow[] = $value;
+                }
+            }
+        }
+        return $cleanRow;
     }
 }
