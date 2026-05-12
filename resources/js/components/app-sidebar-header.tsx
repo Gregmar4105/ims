@@ -14,12 +14,25 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { usePage, router, Link } from '@inertiajs/react';
-import { Download, Cloud, RefreshCw, CloudCheck } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { 
+    Download, Cloud, RefreshCw, CloudCheck, 
+    ExternalLink, Copy, Check 
+} from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/1joMus-vAb-acTV8Jo6UiB1plPsoFfpA6MXQs5SwsvkE/edit?usp=sharing";
 
 const CloudSync = ({ className, isSyncing }: { className?: string, isSyncing?: boolean }) => (
     <div className={`relative ${className} flex items-center justify-center`}>
@@ -41,6 +54,8 @@ export function AppSidebarHeader({
     const [isSyncing, setIsSyncing] = useState(false);
     const [showCheck, setShowCheck] = useState(false);
     const [isSystemSyncing, setIsSystemSyncing] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [hasCopied, setHasCopied] = useState(false);
 
     // Listen for global Inertia events to show "Live" sync status
     useEffect(() => {
@@ -63,11 +78,19 @@ export function AppSidebarHeader({
 
     const activeSyncing = isSyncing || isSystemSyncing;
 
+    const handleCopyLink = () => {
+        navigator.clipboard.writeText(SHEET_URL);
+        setHasCopied(true);
+        toast.success('Link copied to clipboard!');
+        setTimeout(() => setHasCopied(false), 2000);
+    };
+
     const handleSync = () => {
         if (isSyncing) return;
         
         setIsSyncing(true);
         setShowCheck(false);
+        setIsModalOpen(true);
 
         router.post('/google-sheets/sync-all', {}, {
             onSuccess: () => {
@@ -200,6 +223,64 @@ export function AppSidebarHeader({
                 )}
                 <NotificationBell />
             </div>
+
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            {isSyncing ? 'Syncing to Google Sheets' : 'Google Sheets Sync'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {isSyncing 
+                                ? 'Please wait while we reconcile your inventory with the cloud backup.' 
+                                : 'Your inventory is currently being backed up in real-time.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="flex flex-col items-center justify-center py-8 gap-6">
+                        <div className="relative h-24 w-24">
+                            <Cloud className={`h-full w-full ${isSyncing ? 'text-blue-500 animate-pulse' : 'text-green-500'}`} />
+                            <div className="absolute inset-0 flex items-center justify-center pt-2">
+                                {isSyncing ? (
+                                    <RefreshCw className="h-10 w-10 text-blue-600 animate-spin" />
+                                ) : (
+                                    <Check className="h-10 w-10 text-white bg-green-500 rounded-full p-1" />
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="w-full space-y-4">
+                            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg border border-border/50">
+                                <div className="flex-1 truncate text-xs text-muted-foreground font-mono">
+                                    {SHEET_URL}
+                                </div>
+                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleCopyLink}>
+                                    {hasCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="sm:justify-between gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => setIsModalOpen(false)}
+                        >
+                            Close
+                        </Button>
+                        <Button 
+                            asChild
+                            className="bg-green-600 hover:bg-green-700 text-white gap-2"
+                        >
+                            <a href={SHEET_URL} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="h-4 w-4" />
+                                Open Spreadsheet
+                            </a>
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </header>
     );
 }
