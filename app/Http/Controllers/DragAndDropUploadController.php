@@ -127,6 +127,17 @@ class DragAndDropUploadController extends Controller
             return back()->withErrors(['error' => 'You must be assigned to a branch to add products.']);
         }
 
+        // Pre-process variations: If sent as a JSON string via FormData, decode it
+        $data = $request->all();
+        if (isset($data['products']) && is_array($data['products'])) {
+            foreach ($data['products'] as $key => $product) {
+                if (isset($product['variations']) && is_string($product['variations'])) {
+                    $data['products'][$key]['variations'] = json_decode($product['variations'], true);
+                }
+            }
+            $request->merge($data);
+        }
+
         $validated = $request->validate([
             'products' => 'required|array',
             'products.*.name' => 'required|string|max:255',

@@ -352,7 +352,12 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
             if (item.active_until_zero_days) formData.append(`products[0][active_until_zero_days]`, item.active_until_zero_days);
             if (item.physical_location) formData.append(`products[0][physical_location]`, item.physical_location);
             if (item.description) formData.append(`products[0][description]`, item.description);
-            if (item.variations.length > 0) formData.append(`products[0][variations]`, JSON.stringify(item.variations));
+            if (item.variations && item.variations.length > 0) {
+                item.variations.forEach((v, vIndex) => {
+                    formData.append(`products[0][variations][${vIndex}][name]`, v.name);
+                    formData.append(`products[0][variations][${vIndex}][options]`, v.options);
+                });
+            }
             if (item.file) formData.append(`products[0][photo]`, item.file);
 
             try {
