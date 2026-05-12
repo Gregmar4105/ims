@@ -10,6 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "google/apiclient": "*",
         "inertiajs/inertia-laravel": "^2.0",
         "kreait/laravel-firebase": "*",
         "laravel-notification-channels/onesignal": "*",

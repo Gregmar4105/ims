@@ -8,6 +8,17 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+  --animate-spin-slow: spin 3s linear infinite;
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}
     --font-sans:
         'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',

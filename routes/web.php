@@ -167,6 +167,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
     
     Route::get('/reorders', [ReorderController::class, 'index'])->name('reorders.index');
+    
+    // Google Sheets Sync
+    Route::post('/google-sheets/sync-all', [\App\Http\Controllers\GoogleSheetsSyncController::class, 'syncAll'])->name('google-sheets.sync-all');
 });
 
 require __DIR__.'/settings.php';

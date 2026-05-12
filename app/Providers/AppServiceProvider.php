@@ -5,6 +5,13 @@ namespace App\Providers;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
+use App\Models\Product;
+use App\Models\Sale;
+use App\Models\Branch;
+use App\Models\BranchProduct;
+use App\Observers\GoogleSheetSyncObserver;
+use App\Observers\BranchObserver;
+use App\Observers\BranchProductObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -60,5 +67,10 @@ class AppServiceProvider extends ServiceProvider
                 }
             });
         }
+
+        // Register Google Sheets Sync Observers
+        Product::observe(GoogleSheetSyncObserver::class);
+        Branch::observe(BranchObserver::class);
+        BranchProduct::observe(BranchProductObserver::class);
     }
 }
