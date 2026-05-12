@@ -264,7 +264,7 @@ class ProductController extends Controller
 
         // Apply clearance filter
         if ($filterClearance === 'on_clearance') {
-            $query->whereNotNull('clearance_price')
+            $query->where('clearance_price', '>', 0)
                   ->where(function($q) {
                       $q->whereNull('clearance_until')
                         ->orWhere('clearance_until', '>', now());
@@ -272,6 +272,7 @@ class ProductController extends Controller
         } elseif ($filterClearance === 'no_clearance') {
             $query->where(function($q) {
                 $q->whereNull('clearance_price')
+                  ->orWhere('clearance_price', '<=', 0)
                   ->orWhere('clearance_until', '<=', now());
             });
         }

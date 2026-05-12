@@ -314,7 +314,13 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     };
 
 
-    const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all' || statusFilter !== 'all';
+    const hasActiveFilters = search || branch !== 'all' || brand !== 'all' || category !== 'all' || stock !== 'all' || statusFilter !== 'all' || clearance !== 'all';
+
+    const isOnClearance = (product: Product) => {
+        if (!product.clearance_price || Number(product.clearance_price) <= 0) return false;
+        if (!product.clearance_until) return true;
+        return new Date(product.clearance_until) > new Date();
+    };
 
     const handleBulkClearance = () => {
         const updates = Object.entries(clearanceUpdates).map(([id, data]) => ({
@@ -990,7 +996,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         <div className="flex justify-between items-start gap-2">
                                             {isSelectionMode || isClearanceMode ? (
                                                 <div className="flex-1">
-                                                    {product.clearance_price && (
+                                                    {isOnClearance(product) && (
                                                         <div className="bg-yellow-400 text-black text-[9px] font-bold px-1.5 py-0.5 self-start uppercase mb-1 inline-block">
                                                             Clearance Sale
                                                         </div>
@@ -1001,7 +1007,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                 </div>
                                             ) : (
                                                 <Link href={`/products/${product.id}`} className="hover:underline flex-1">
-                                                    {product.clearance_price && (
+                                                    {isOnClearance(product) && (
                                                         <div className="bg-yellow-400 text-black text-[9px] font-bold px-1.5 py-0.5 self-start uppercase mb-1 inline-block">
                                                             Clearance Sale
                                                         </div>
@@ -1012,7 +1018,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                 </Link>
                                             )}
                                             <div className="flex flex-col items-end">
-                                                {product.clearance_price ? (
+                                                {isOnClearance(product) ? (
                                                     <>
                                                         <span className="text-base font-extrabold text-yellow-600 whitespace-nowrap">
                                                             ₱{Number(product.clearance_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}

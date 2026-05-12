@@ -31,6 +31,8 @@ interface Product {
     code_2: string | null;
     sku: string | null;
     reorder_level: number;
+    clearance_price: number | null;
+    clearance_until: string | null;
     branches?: { branch_name: string }[];
     brand?: { name: string };
     category?: { name: string };
@@ -45,6 +47,12 @@ export default function Show({ product }: Props) {
     const { auth } = usePage<SharedData>().props;
     const isSystemAdmin = auth.roles.includes('System Administrator');
     const isEmployee = auth.roles.includes('Employee') && !isSystemAdmin && !auth.roles.includes('Branch Administrator');
+    const isOnClearance = (product: Product) => {
+        if (!product.clearance_price || Number(product.clearance_price) <= 0) return false;
+        if (!product.clearance_until) return true;
+        return new Date(product.clearance_until) > new Date();
+    };
+
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Products',
@@ -106,9 +114,25 @@ export default function Show({ product }: Props) {
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border shadow-sm space-y-4">
                         <div className="flex justify-between items-center border-b pb-4">
                             <span className="text-gray-500">Price</span>
-                            <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                                ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
-                            </span>
+                            <div className="text-right">
+                                {isOnClearance(product) ? (
+                                    <>
+                                        <span className="text-2xl font-bold text-yellow-600 block leading-none">
+                                            ₱{Number(product.clearance_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                        </span>
+                                        <span className="text-sm text-gray-400 line-through">
+                                            ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                                        </span>
+                                        <div className="bg-yellow-400 text-black text-[10px] font-bold px-2 py-0.5 mt-1 rounded uppercase inline-block">
+                                            Clearance Sale
+                                        </div>
+                                    </>
+                                ) : (
+                                    <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                                        ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                         <div className="flex justify-between items-center border-b pb-4">
                             <span className="text-gray-500">Stock Status</span>

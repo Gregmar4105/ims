@@ -18,7 +18,8 @@ interface Product {
     price: number | null;
     code: string | null;
     code_2: string | null;
-    sku: string | null;
+    clearance_price: number | null;
+    clearance_until: string | null;
     brand?: { name: string };
     category?: { name: string };
     supplier?: { name: string };
@@ -47,6 +48,12 @@ export default function Print({ products, branchName, isSystemAdmin }: Props) {
         if (!nativeTriggerेड) {
             window.print();
         }
+    };
+
+    const isOnClearance = (product: Product) => {
+        if (!product.clearance_price || Number(product.clearance_price) <= 0) return false;
+        if (!product.clearance_until) return true;
+        return new Date(product.clearance_until) > new Date();
     };
 
     return (
@@ -123,7 +130,20 @@ export default function Print({ products, branchName, isSystemAdmin }: Props) {
                                         </div>
                                     </td>
                                     <td className="py-3 px-2 text-right font-medium">
-                                        ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                                        {isOnClearance(product) ? (
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-yellow-600 font-bold">
+                                                    ₱{Number(product.clearance_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                </span>
+                                                <span className="text-[10px] text-gray-400 line-through">
+                                                    ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <span>
+                                                ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="py-3 pl-2 text-right">
                                         <span className={`font-bold py-0.5 px-2 rounded-full ${product.quantity <= 0 ? 'bg-red-100 text-red-800' :
