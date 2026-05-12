@@ -39,9 +39,9 @@ class BranchProductObserver
         $data = [
             $product->id,
             $product->name,
-            $product->brand?->brand_name ?? 'N/A',
-            $product->category?->category_name ?? 'N/A',
-            $product->supplier?->supplier_name ?? 'N/A',
+            $product->brand?->name ?? 'N/A',
+            $product->category?->name ?? 'N/A',
+            $product->supplier?->name ?? 'N/A',
             $product->barcode,
             $product->qr_code,
             $product->code,
