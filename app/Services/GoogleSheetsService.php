@@ -182,7 +182,7 @@ class GoogleSheetsService
             $this->createBranchSheet($sheetName);
 
             $body = new ValueRange([
-                'values' => $rows
+                'values' => array_values($rows)
             ]);
             $params = ['valueInputOption' => 'RAW'];
 

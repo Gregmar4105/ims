@@ -61,7 +61,7 @@ class GoogleSheetsSyncController extends Controller
                     $product = $bp->product;
                     if (!$product) continue;
 
-                    $rows[] = [
+                    $rows[] = array_values([
                         $product->id,
                         $product->name,
                         $product->brand?->brand_name ?? 'N/A',
@@ -78,11 +78,11 @@ class GoogleSheetsSyncController extends Controller
                         $bp->reorder_level,
                         $product->price,
                         $bp->quantity,
-                    ];
+                    ]);
                 }
 
                 // Batch update the entire sheet for this branch
-                $result = $this->sheetsService->updateSheetContent($branch->branch_name, $rows);
+                $result = $this->sheetsService->updateSheetContent($branch->branch_name, array_values($rows));
                 
                 file_put_contents(base_path('sync_debug.txt'), 'Sheet Update Result: ' . ($result ? 'SUCCESS' : 'FAILED') . "\n", FILE_APPEND);
                 Log::info('Branch ' . $branch->branch_name . ' sync finished');
