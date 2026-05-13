@@ -12,6 +12,9 @@ use App\Models\BranchProduct;
 use App\Observers\GoogleSheetSyncObserver;
 use App\Observers\BranchObserver;
 use App\Observers\BranchProductObserver;
+use App\Observers\SaleObserver;
+use App\Observers\TransferObserver;
+use App\Models\Transfer;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -72,5 +75,7 @@ class AppServiceProvider extends ServiceProvider
         Product::observe(GoogleSheetSyncObserver::class);
         Branch::observe(BranchObserver::class);
         BranchProduct::observe(BranchProductObserver::class);
+        Sale::observe(SaleObserver::class);
+        Transfer::observe(TransferObserver::class);
     }
 }

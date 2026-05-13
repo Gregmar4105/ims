@@ -421,6 +421,260 @@ class GoogleSheetsService
     }
 
     /**
+     * Ensure the Sales sheet exists with correct headers.
+     */
+    public function ensureSalesSheet()
+    {
+        try {
+            $sheetName = 'Sales';
+            $this->loadExistingSheets();
+            
+            if (!isset($this->existingSheets[$sheetName])) {
+                $body = new BatchUpdateSpreadsheetRequest([
+                    'requests' => [
+                        'addSheet' => [
+                            'properties' => ['title' => $sheetName]
+                        ]
+                    ]
+                ]);
+                $this->service->spreadsheets->batchUpdate($this->spreadsheetId, $body);
+                $this->loadExistingSheets(true);
+            }
+
+            $headers = ['Sale ID', 'Branch', 'Status', 'Date', 'Readied By', 'Approved By', 'Items', 'Total Price', 'Notes'];
+            $this->updateHeaders($sheetName, $headers);
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Google Sheets Ensure Sales Sheet Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Upsert a sale in the Sales sheet.
+     */
+    public function upsertSaleInSheets($sale)
+    {
+        try {
+            $sheetName = 'Sales';
+            $this->ensureSalesSheet();
+
+            // Find row index
+            $range = $sheetName . '!A:A';
+            $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
+            $values = $response->getValues();
+            
+            $rowIndex = -1;
+            if ($values) {
+                foreach ($values as $index => $row) {
+                    if (isset($row[0]) && $row[0] == $sale->id) {
+                        $rowIndex = $index + 1;
+                        break;
+                    }
+                }
+            }
+
+            // Build items summary
+            $items = $sale->items->map(function($item) {
+                return ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity . ' @ ' . $item->price;
+            })->implode(', ');
+
+            // Calculate total
+            $total = $sale->items->sum(function($item) {
+                return $item->price * $item->quantity;
+            });
+
+            // Build data row
+            $data = [
+                $sale->id,
+                $sale->branch?->branch_name,
+                $sale->status,
+                $sale->created_at->format('Y-m-d H:i'),
+                $sale->readiedBy?->name,
+                $sale->approvedBy?->name,
+                $items,
+                $total,
+                $sale->notes,
+            ];
+
+            $body = new ValueRange([
+                'values' => [$this->cleanRow($data)]
+            ]);
+            $params = ['valueInputOption' => 'RAW'];
+
+            if ($rowIndex !== -1) {
+                $updateRange = $sheetName . '!A' . $rowIndex;
+                return $this->service->spreadsheets_values->update($this->spreadsheetId, $updateRange, $body, $params);
+            } else {
+                return $this->service->spreadsheets_values->append($this->spreadsheetId, $sheetName . '!A1', $body, $params);
+            }
+        } catch (\Exception $e) {
+            Log::error('Google Sheets Sales Upsert Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function removeSaleFromSheets($saleId)
+    {
+        try {
+            $sheetName = 'Sales';
+            $this->loadExistingSheets();
+            if (!isset($this->existingSheets[$sheetName])) return true;
+
+            $range = $sheetName . '!A:A';
+            $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
+            $values = $response->getValues();
+            
+            $rowIndex = -1;
+            if ($values) {
+                foreach ($values as $index => $row) {
+                    if (isset($row[0]) && $row[0] == $saleId) {
+                        $rowIndex = $index + 1;
+                        break;
+                    }
+                }
+            }
+
+            if ($rowIndex !== -1) {
+                $updateRange = $sheetName . '!A' . $rowIndex . ':I' . $rowIndex;
+                $this->service->spreadsheets_values->clear($this->spreadsheetId, $updateRange, new \Google\Service\Sheets\ClearValuesRequest());
+            }
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Google Sheets Sales Remove Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Ensure the Transfers sheet exists with correct headers.
+     */
+    public function ensureTransfersSheet()
+    {
+        try {
+            $sheetName = 'Transfers';
+            $this->loadExistingSheets();
+            
+            if (!isset($this->existingSheets[$sheetName])) {
+                $body = new BatchUpdateSpreadsheetRequest([
+                    'requests' => [
+                        'addSheet' => [
+                            'properties' => ['title' => $sheetName]
+                        ]
+                    ]
+                ]);
+                $this->service->spreadsheets->batchUpdate($this->spreadsheetId, $body);
+                $this->loadExistingSheets(true);
+            }
+
+            $headers = ['Transfer ID', 'Source Branch', 'Destination', 'Status', 'Date', 'Readied By', 'Approved By', 'Received By', 'Items', 'Notes'];
+            $this->updateHeaders($sheetName, $headers);
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Google Sheets Ensure Transfers Sheet Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Upsert a transfer in the Transfers sheet.
+     */
+    public function upsertTransferInSheets($transfer)
+    {
+        try {
+            $sheetName = 'Transfers';
+            $this->ensureTransfersSheet();
+
+            // Find row index
+            $range = $sheetName . '!A:A';
+            $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
+            $values = $response->getValues();
+            
+            $rowIndex = -1;
+            if ($values) {
+                foreach ($values as $index => $row) {
+                    if (isset($row[0]) && $row[0] == $transfer->id) {
+                        $rowIndex = $index + 1;
+                        break;
+                    }
+                }
+            }
+
+            // Build items summary
+            $items = $transfer->items->map(function($item) {
+                $summary = ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
+                if ($item->received_quantity !== null) {
+                    $summary .= " [Rec: {$item->received_quantity}]";
+                }
+                return $summary;
+            })->implode(', ');
+
+            $destination = $transfer->destinationBranch?->branch_name ?? $transfer->supplier?->name ?? 'Unknown';
+
+            // Build data row
+            $data = [
+                $transfer->id,
+                $transfer->sourceBranch?->branch_name,
+                $destination,
+                $transfer->status,
+                $transfer->created_at->format('Y-m-d H:i'),
+                $transfer->readiedBy?->name,
+                $transfer->approvedBy?->name,
+                $transfer->receivedBy?->name,
+                $items,
+                $transfer->notes,
+            ];
+
+            $body = new ValueRange([
+                'values' => [$this->cleanRow($data)]
+            ]);
+            $params = ['valueInputOption' => 'RAW'];
+
+            if ($rowIndex !== -1) {
+                $updateRange = $sheetName . '!A' . $rowIndex;
+                return $this->service->spreadsheets_values->update($this->spreadsheetId, $updateRange, $body, $params);
+            } else {
+                return $this->service->spreadsheets_values->append($this->spreadsheetId, $sheetName . '!A1', $body, $params);
+            }
+        } catch (\Exception $e) {
+            Log::error('Google Sheets Transfers Upsert Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function removeTransferFromSheets($transferId)
+    {
+        try {
+            $sheetName = 'Transfers';
+            $this->loadExistingSheets();
+            if (!isset($this->existingSheets[$sheetName])) return true;
+
+            $range = $sheetName . '!A:A';
+            $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
+            $values = $response->getValues();
+            
+            $rowIndex = -1;
+            if ($values) {
+                foreach ($values as $index => $row) {
+                    if (isset($row[0]) && $row[0] == $transferId) {
+                        $rowIndex = $index + 1;
+                        break;
+                    }
+                }
+            }
+
+            if ($rowIndex !== -1) {
+                $updateRange = $sheetName . '!A' . $rowIndex . ':J' . $rowIndex;
+                $this->service->spreadsheets_values->clear($this->spreadsheetId, $updateRange, new \Google\Service\Sheets\ClearValuesRequest());
+            }
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Google Sheets Transfers Remove Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Clean a row of data for Google Sheets.
      * Converts null/empty to 'null' and formats arrays as clean JSON.
      */
