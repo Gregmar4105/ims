@@ -291,6 +291,136 @@ class GoogleSheetsService
     }
 
     /**
+     * Ensure the Reorders sheet exists with correct headers.
+     */
+    public function ensureReordersSheet(array $branches)
+    {
+        try {
+            $sheetName = 'Reorders';
+            $this->loadExistingSheets();
+            
+            if (!isset($this->existingSheets[$sheetName])) {
+                // Create new sheet
+                $body = new BatchUpdateSpreadsheetRequest([
+                    'requests' => [
+                        'addSheet' => [
+                            'properties' => [
+                                'title' => $sheetName
+                            ]
+                        ]
+                    ]
+                ]);
+                $this->service->spreadsheets->batchUpdate($this->spreadsheetId, $body);
+                $this->loadExistingSheets(true);
+            }
+
+            // Prepare Headers
+            $headers = ['ID', 'Product Name', 'Brand', 'Category', 'Supplier'];
+            foreach ($branches as $branch) {
+                $headers[] = $branch->branch_name . ' Stock';
+                $headers[] = $branch->branch_name . ' Reorder';
+            }
+
+            $this->updateHeaders($sheetName, $headers);
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Google Sheets Ensure Reorders Sheet Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Upsert a product in the Reorders sheet.
+     */
+    public function upsertProductInReorders($product, array $branches)
+    {
+        try {
+            $sheetName = 'Reorders';
+            $this->ensureReordersSheet($branches);
+
+            // Find row index
+            $range = $sheetName . '!A:A';
+            $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
+            $values = $response->getValues();
+            
+            $rowIndex = -1;
+            if ($values) {
+                foreach ($values as $index => $row) {
+                    if (isset($row[0]) && $row[0] == $product->id) {
+                        $rowIndex = $index + 1;
+                        break;
+                    }
+                }
+            }
+
+            // Build data row
+            $data = [
+                $product->id,
+                $product->name,
+                $product->brand?->name,
+                $product->category?->name,
+                $product->supplier?->name,
+            ];
+
+            foreach ($branches as $branch) {
+                $bp = $product->branches->where('id', $branch->id)->first();
+                $data[] = $bp ? $bp->pivot->quantity : 'null';
+                $data[] = $bp ? $bp->pivot->reorder_level : 'null';
+            }
+
+            $body = new ValueRange([
+                'values' => [$this->cleanRow($data)]
+            ]);
+            $params = ['valueInputOption' => 'RAW'];
+
+            if ($rowIndex !== -1) {
+                $updateRange = $sheetName . '!A' . $rowIndex;
+                return $this->service->spreadsheets_values->update($this->spreadsheetId, $updateRange, $body, $params);
+            } else {
+                return $this->service->spreadsheets_values->append($this->spreadsheetId, $sheetName . '!A1', $body, $params);
+            }
+        } catch (\Exception $e) {
+            Log::error('Google Sheets Reorders Upsert Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Remove a product from the Reorders sheet.
+     */
+    public function removeProductFromReorders($productId)
+    {
+        try {
+            $sheetName = 'Reorders';
+            $this->loadExistingSheets();
+            if (!isset($this->existingSheets[$sheetName])) return true;
+
+            $range = $sheetName . '!A:A';
+            $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
+            $values = $response->getValues();
+            
+            $rowIndex = -1;
+            if ($values) {
+                foreach ($values as $index => $row) {
+                    if (isset($row[0]) && $row[0] == $productId) {
+                        $rowIndex = $index + 1;
+                        break;
+                    }
+                }
+            }
+
+            if ($rowIndex !== -1) {
+                $updateRange = $sheetName . '!A' . $rowIndex . ':Z' . $rowIndex;
+                $this->service->spreadsheets_values->clear($this->spreadsheetId, $updateRange, new \Google\Service\Sheets\ClearValuesRequest());
+            }
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Google Sheets Reorders Remove Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Clean a row of data for Google Sheets.
      * Converts null/empty to 'null' and formats arrays as clean JSON.
      */

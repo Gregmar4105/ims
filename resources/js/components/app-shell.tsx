@@ -16,7 +16,6 @@ export function AppShell({ children, variant = 'header' }: AppShellProps) {
         return (
             <div className="flex min-h-screen w-full flex-col">
                 <ServerStatusMonitor />
-                <Toaster position="top-right" closeButton />
                 {children}
             </div>
         );
@@ -25,7 +24,6 @@ export function AppShell({ children, variant = 'header' }: AppShellProps) {
     return (
         <SidebarProvider defaultOpen={isOpen}>
             <ServerStatusMonitor />
-            <Toaster position="top-right" closeButton />
             {children}
         </SidebarProvider>
     );

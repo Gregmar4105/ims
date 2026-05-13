@@ -22,8 +22,27 @@ class BranchProductObserver
     public function deleted(BranchProduct $branchProduct): void
     {
         $branch = $branchProduct->branch;
+        $product = $branchProduct->product;
+
         if ($branch) {
             $this->sheetsService->removeProductFromBranch($branch->branch_name, $branchProduct->product_id);
+        }
+
+        if ($product) {
+            $allBranches = \App\Models\Branch::all();
+            $product->load(['brand', 'category', 'supplier', 'branches']);
+
+            $needsReorder = $product->branches->contains(function ($b) {
+                return !is_null($b->pivot->reorder_level) && 
+                       $b->pivot->reorder_level > 0 && 
+                       $b->pivot->quantity <= $b->pivot->reorder_level;
+            });
+
+            if ($needsReorder) {
+                $this->sheetsService->upsertProductInReorders($product, $allBranches->all());
+            } else {
+                $this->sheetsService->removeProductFromReorders($product->id);
+            }
         }
     }
 
@@ -36,6 +55,7 @@ class BranchProductObserver
             return;
         }
 
+        // 1. Sync to the specific branch sheet
         $data = [
             $product->id,
             $product->name,
@@ -56,5 +76,21 @@ class BranchProductObserver
         ];
 
         $this->sheetsService->upsertProductInBranch($branch->branch_name, $data, $product->id);
+
+        // 2. Sync to the "Reorders" tab
+        $allBranches = \App\Models\Branch::all();
+        $product->load(['brand', 'category', 'supplier', 'branches']);
+
+        $needsReorder = $product->branches->contains(function ($b) {
+            return !is_null($b->pivot->reorder_level) && 
+                   $b->pivot->reorder_level > 0 && 
+                   $b->pivot->quantity <= $b->pivot->reorder_level;
+        });
+
+        if ($needsReorder) {
+            $this->sheetsService->upsertProductInReorders($product, $allBranches->all());
+        } else {
+            $this->sheetsService->removeProductFromReorders($product->id);
+        }
     }
 }
