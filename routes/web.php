@@ -172,4 +172,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/google-sheets/sync-all', [\App\Http\Controllers\GoogleSheetsSyncController::class, 'syncAll'])->name('google-sheets.sync-all');
 });
 
+// Public Status Endpoint (used for health monitoring)
+Route::get('/api/server-status', function () {
+    return response()->json([
+        'status' => 'online',
+        'timestamp' => now()->toIso8601String(),
+        'signature' => 'LM2-LIVE-SERVER-' . config('app.key'),
+    ])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
+});
+
 require __DIR__.'/settings.php';
