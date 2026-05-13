@@ -1,2 +1,8 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /system-dashboard
+Disallow: /branch-dashboard
+Disallow: /employee-dashboard
+Disallow: /api/
+
+Sitemap: https://lm2bicycletrading.larable.dev/sitemap.xml

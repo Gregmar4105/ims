@@ -159,6 +159,10 @@ class HandleInertiaRequests extends Middleware
                 'id' => $currentBranch->id,
                 'branch_name' => $currentBranch->branch_name,
             ] : null,
+            'seo'               => [
+                'description' => 'LM2 Bicycle Trading - Inventory Management and Shop.',
+                'keywords'    => 'bicycle, inventory, shop, trading, lm2',
+            ],
         ];
 
     }

@@ -5,6 +5,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="canonical" href="{{ url()->current() }}">
+    <meta name="description" content="LM2 Bicycle Trading - Inventory Management and Shop. Download our mobile and desktop applications.">
+    <meta name="robots" content="index, follow">
 
     {{-- Inline script to detect system dark mode preference and apply it immediately --}}
     <script>
