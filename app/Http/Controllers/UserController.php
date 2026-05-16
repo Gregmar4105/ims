@@ -76,7 +76,8 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)],
             'password' => 'required|string|min:8',
             'branch_name' => 'nullable|exists:branches,id',
-            'role' => 'required|exists:roles,id',
+            'roles' => 'required|array',
+            'roles.*' => 'exists:roles,id',
         ]);
 
         $user = User::create([
@@ -86,9 +87,8 @@ class UserController extends Controller
             'branch_id' => $validated['branch_name'] ?? null,
         ]);
 
-        if (isset($validated['role'])) {
-            $role = Role::find($validated['role']);
-            $user->assignRole($role);
+        if (isset($validated['roles'])) {
+            $user->syncRoles($validated['roles']);
         }
 
         return redirect()->route('users.index')->with('success', 'User created successfully.');
@@ -101,8 +101,8 @@ class UserController extends Controller
     {
         // Load the user's current role to pass to the view
         $user->load('roles');
-        // We'll attach a 'role' attribute to the user object for the frontend to use easily
-        $user->role = $user->roles->first()?->id;
+        // We'll attach a 'roles' attribute as an array of IDs for the frontend to use easily
+        $user->assigned_roles = $user->roles->pluck('id')->map(fn($id) => (string) $id)->toArray();
 
         return Inertia::render('Users/Edit', [
             'users' => $user,
@@ -121,7 +121,8 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
             'password' => 'nullable|string|min:8',
             'branch_id' => 'nullable|exists:branches,id',
-            'role' => 'required|exists:roles,id',
+            'roles' => 'required|array',
+            'roles.*' => 'exists:roles,id',
         ]);
 
         $user->name = $validated['name'];
@@ -134,9 +135,8 @@ class UserController extends Controller
 
         $user->save();
 
-        if (isset($validated['role'])) {
-            $role = Role::findById($validated['role']);
-            $user->syncRoles($role);
+        if (isset($validated['roles'])) {
+            $user->syncRoles($validated['roles']);
         }
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');

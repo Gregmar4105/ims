@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Head, useForm, Link } from '@inertiajs/react';
 import { UserCog, Save, X, UserPen } from 'lucide-react'; // Swapped UserPlus for UserCog (Edit Icon)
 import { toast } from 'sonner';
@@ -29,7 +30,7 @@ interface EditProps {
         name: string;
         email: string;
         branch_id: string | number;
-        role: string;
+        assigned_roles: string[];
     };
     branches: any[];
     roles: any[];
@@ -43,7 +44,7 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
         email: users.email || '',
         password: '', // Leave empty. Only send if changing it.
         branch_id: users.branch_id ? String(users.branch_id) : '',
-        role: users.role || '',
+        roles: users.assigned_roles || [],
     });
 
     const submit = (e: React.FormEvent) => {
@@ -148,33 +149,35 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
                                 {errors.branch_id && <p className="text-sm text-destructive">{errors.branch_id}</p>}
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Role</Label>
-                                <Select
-                                    // FIX 1: Ensure you are binding the value to your state
-                                    value={data.role ? String(data.role) : undefined}
-                                    onValueChange={(value) => {
-                                        // If you want "deselect" capability in a single select, you check if it's already selected
-                                        const newValue = value === data.role ? "" : value;
-                                        setData('role', newValue);
-                                    }}
-                                >
-                                    <SelectTrigger>
-                                        {/* FIX 2: Pass the placeholder directly to SelectValue */}
-                                        <SelectValue placeholder="Select a role" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {/* Add this item manually */}
-                                        <SelectItem value="null_value"></SelectItem>
-
-                                        {roles.map((role) => (
-                                            <SelectItem key={role.id} value={String(role.id)}>
+                            {/* Role Selection (Multiple) */}
+                            <div className="space-y-3 col-span-1 md:col-span-2">
+                                <Label className="text-base">Assign Roles</Label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 border rounded-lg bg-muted/30">
+                                    {roles.map((role) => (
+                                        <div key={role.id} className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id={`role-${role.id}`}
+                                                checked={data.roles.includes(String(role.id))}
+                                                onCheckedChange={(checked) => {
+                                                    const roleId = String(role.id);
+                                                    if (checked) {
+                                                        setData('roles', [...data.roles, roleId]);
+                                                    } else {
+                                                        setData('roles', data.roles.filter(id => id !== roleId));
+                                                    }
+                                                }}
+                                            />
+                                            <Label 
+                                                htmlFor={`role-${role.id}`}
+                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                            >
                                                 {role.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.role && <p className="text-sm text-destructive">{errors.role}</p>}
+                                            </Label>
+                                        </div>
+                                    ))}
+                                </div>
+                                {errors.roles && <p className="text-sm text-destructive">{errors.roles}</p>}
+                                {errors['roles.*'] && <p className="text-sm text-destructive">{errors['roles.*']}</p>}
                             </div>
 
 

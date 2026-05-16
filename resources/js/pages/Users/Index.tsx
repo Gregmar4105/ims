@@ -47,7 +47,7 @@ export default function Index({ users, branches, roles }: any) {
             (email_verified_at || "").includes(q) ||
             (created_at || "").includes(q) ||
             (branch?.branch_name || "").toLowerCase().includes(q) ||
-            (roles?.[0]?.name || "").toLowerCase().includes(q) ||
+            (roles?.some((r: any) => (r.name || "").toLowerCase().includes(q))) ||
             (onesignal_player_id || "").toLowerCase().includes(q) ||
             // Also match users whose branch was archived
             (!branch && raw_branch_id && 'archived'.includes(q))
@@ -272,10 +272,10 @@ export default function Index({ users, branches, roles }: any) {
                                         <TableCell>
                                             {/* Check if roles exist (Array or Object) */}
                                             {roles && roles.length > 0 ? (
-                                                <div className="flex flex-col">
+                                                <div className="flex flex-wrap gap-1 max-w-[200px]">
                                                     {/* Assuming Spatie/Many-to-Many returns an array */}
                                                     {roles.map((role: any, index: number) => (
-                                                        <Badge key={index} variant="secondary" className="text-sm">
+                                                        <Badge key={index} variant="secondary" className="text-xs py-0 px-1.5 whitespace-nowrap">
                                                             {role.name}
                                                         </Badge>
                                                     ))}
