@@ -124,32 +124,6 @@ export default function Show({ product }: Props) {
                         ) : (
                             <Package className="h-32 w-32 text-gray-300" />
                         )}
-
-                        {/* Branch Avatars Overlay */}
-                        <div className="absolute bottom-4 left-4 z-10 flex items-center pointer-events-auto">
-                            <TooltipProvider>
-                                <AvatarGroup>
-                                    {product.branches?.map((b) => (
-                                        <Tooltip key={b.id}>
-                                            <TooltipTrigger asChild>
-                                                <Avatar size="default" className="border-2 border-white dark:border-gray-800 shadow-md ring-0">
-                                                    {b.profile_photo_path ? (
-                                                        <AvatarImage src={`/storage/${b.profile_photo_path}`} alt={b.branch_name} />
-                                                    ) : (
-                                                        <AvatarFallback className="text-xs bg-blue-600 text-white font-bold">
-                                                            {b.branch_name.substring(0, 2).toUpperCase()}
-                                                        </AvatarFallback>
-                                                    )}
-                                                </Avatar>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="top" className="bg-black text-white border-none text-xs py-1 px-2">
-                                                <p>{b.branch_name}</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    ))}
-                                </AvatarGroup>
-                            </TooltipProvider>
-                        </div>
                     </div>
 
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border shadow-sm space-y-4">
@@ -304,25 +278,33 @@ export default function Show({ product }: Props) {
                                     </dd>
                                 </div>
 
-                                {isSystemAdmin && (
-                                    <div className="flex flex-col">
-                                        <dt className="text-gray-500">Branch(es)</dt>
-                                        <dd className="col-span-1 pt-1 space-y-1">
-                                            {product.branches && product.branches.length > 0 ? (
-                                                product.branches.map((branch, i) => (
-                                                    <Badge key={i} variant="outline" className="mr-1">
-                                                        <Layers className="h-3 w-3 mr-1" />
-                                                        {branch.branch_name}
-                                                    </Badge>
-                                                ))
-                                            ) : (
-                                                <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
-                                                    <Layers className="h-4 w-4 text-gray-400" /> Global / All Branches
-                                                </span>
-                                            )}
-                                        </dd>
-                                    </div>
-                                )}
+                                <div className="flex flex-col">
+                                    <dt className="text-gray-500">Branch Availability</dt>
+                                    <dd className="mt-2 space-y-2">
+                                        {product.branches && product.branches.length > 0 ? (
+                                            <div className="flex flex-col gap-2">
+                                                {product.branches.map((b) => (
+                                                    <div key={b.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-900/50 p-2 rounded-lg border border-gray-100 dark:border-gray-800">
+                                                        <Avatar size="sm" className="border shadow-sm ring-0">
+                                                            {b.profile_photo_path ? (
+                                                                <AvatarImage src={`/storage/${b.profile_photo_path}`} alt={b.branch_name} />
+                                                            ) : (
+                                                                <AvatarFallback className="text-[10px] bg-blue-600 text-white font-bold">
+                                                                    {b.branch_name.substring(0, 2).toUpperCase()}
+                                                                </AvatarFallback>
+                                                            )}
+                                                        </Avatar>
+                                                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{b.branch_name}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span className="text-muted-foreground flex items-center gap-1.5 font-medium italic text-xs">
+                                                <Layers className="h-4 w-4 text-gray-400" /> Global / All Branches
+                                            </span>
+                                        )}
+                                    </dd>
+                                </div>
                             </dl>
                         </div>
 
