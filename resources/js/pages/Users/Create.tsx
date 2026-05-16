@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Head, useForm, Link } from '@inertiajs/react'; // Changed usePage/router to useForm for better form handling
 import { UserPlus, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -154,32 +155,31 @@ export default function Create({ branches = [], roles = [] }: { branches: any[],
                             {/* Role Selection (Multiple) */}
                             <div className="space-y-3 col-span-1 md:col-span-2">
                                 <Label className="text-base">Assign Roles</Label>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 border rounded-lg bg-muted/30">
+                                <ToggleGroup 
+                                    type="multiple" 
+                                    variant="outline"
+                                    className="flex flex-wrap justify-start gap-2"
+                                    value={data.roles}
+                                    onValueChange={(values) => {
+                                        // Ensure we always have an array of strings
+                                        if (values) setData('roles', values);
+                                    }}
+                                >
                                     {roles.map((role) => (
-                                        <div key={role.id} className="flex items-center space-x-2">
-                                            <Checkbox 
-                                                id={`role-${role.id}`}
-                                                checked={data.roles.includes(String(role.id))}
-                                                onCheckedChange={(checked) => {
-                                                    const roleId = String(role.id);
-                                                    if (checked) {
-                                                        setData('roles', [...data.roles, roleId]);
-                                                    } else {
-                                                        setData('roles', data.roles.filter(id => id !== roleId));
-                                                    }
-                                                }}
-                                            />
-                                            <Label 
-                                                htmlFor={`role-${role.id}`}
-                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                                            >
-                                                {role.name}
-                                            </Label>
-                                        </div>
+                                        <ToggleGroupItem 
+                                            key={role.id} 
+                                            value={String(role.id)}
+                                            className="px-4 py-2 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border-black/20"
+                                        >
+                                            {role.name}
+                                        </ToggleGroupItem>
                                     ))}
-                                </div>
+                                </ToggleGroup>
                                 {errors.roles && <p className="text-sm text-destructive">{errors.roles}</p>}
                                 {errors['roles.*'] && <p className="text-sm text-destructive">{errors['roles.*']}</p>}
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Click multiple roles to assign them. The selected roles will be highlighted.
+                                </p>
                             </div>
 
                             {/* Default Password */}
