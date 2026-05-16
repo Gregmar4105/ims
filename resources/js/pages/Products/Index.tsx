@@ -967,6 +967,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         )}
                                     </div>
 
+
                                     {/* Branch Avatars Overlay */}
                                     <div className="absolute bottom-2 left-2 z-10 flex items-center pointer-events-auto">
                                         <TooltipProvider>
@@ -992,36 +993,37 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             </AvatarGroup>
                                         </TooltipProvider>
                                     </div>
+
+                                    {/* Hover Overlay for Quick Actions - Now inside Image Section */}
+                                    {!isSelectionMode && !isClearanceMode && (
+                                        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none z-20">
+                                            <div className="pointer-events-auto flex flex-col gap-2">
+                                                <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white text-gray-900 font-bold border-0">
+                                                    <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
+                                                </Button>
+                                                {!isEmployee && (
+                                                    <Link href={`/products/${product.id}/edit`}>
+                                                        <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white font-bold border-0">
+                                                            Edit Product
+                                                        </Button>
+                                                    </Link>
+                                                )}
+                                                {!isEmployee && (
+                                                    <Button 
+                                                        variant={product.status === 'active' ? 'destructive' : 'default'} 
+                                                        size="sm" 
+                                                        onClick={(e) => { e.preventDefault(); handleToggleStatus(product); }}
+                                                        className={`w-32 shadow-lg font-bold border-0 ${product.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}
+                                                    >
+                                                        {product.status === 'active' ? <PowerOff className="w-4 h-4 mr-2" /> : <Power className="w-4 h-4 mr-2" />}
+                                                        {product.status === 'active' ? 'Deactivate' : 'Activate'}
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Hover Overlay for Quick Actions */}
-                                {!isSelectionMode && !isClearanceMode && (
-                                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none">
-                                        <div className="pointer-events-auto flex flex-col gap-2">
-                                            <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white">
-                                                <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
-                                            </Button>
-                                            {!isEmployee && (
-                                                <Link href={`/products/${product.id}/edit`}>
-                                                    <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
-                                                        Edit Product
-                                                    </Button>
-                                                </Link>
-                                            )}
-                                            {!isEmployee && (
-                                                <Button 
-                                                    variant={product.status === 'active' ? 'destructive' : 'default'} 
-                                                    size="sm" 
-                                                    onClick={(e) => { e.preventDefault(); handleToggleStatus(product); }}
-                                                    className={`w-32 shadow-lg ${product.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
-                                                >
-                                                    {product.status === 'active' ? <PowerOff className="w-4 h-4 mr-2" /> : <Power className="w-4 h-4 mr-2" />}
-                                                    {product.status === 'active' ? 'Deactivate' : 'Activate'}
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
 
                                 {/* Content Section */}
                                 <div className="flex flex-1 flex-col justify-between gap-3 p-3">
