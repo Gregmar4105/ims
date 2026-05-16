@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { MultiSelect } from "@/components/MultiSelect";
 import { Head, useForm, Link } from '@inertiajs/react'; // Changed usePage/router to useForm for better form handling
 import { UserPlus, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -152,34 +152,17 @@ export default function Create({ branches = [], roles = [] }: { branches: any[],
                                 {errors.branch_name && <p className="text-sm text-destructive">{errors.branch_name}</p>}
                             </div>
 
-                            {/* Role Selection (Multiple) */}
-                            <div className="space-y-3 col-span-1 md:col-span-2">
+                            {/* Role Selection (Multiple Dropdown) */}
+                            <div className="space-y-2 col-span-1 md:col-span-2">
                                 <Label className="text-base">Assign Roles</Label>
-                                <ToggleGroup 
-                                    type="multiple" 
-                                    variant="outline"
-                                    className="flex flex-wrap justify-start gap-2"
-                                    value={data.roles}
-                                    onValueChange={(values) => {
-                                        // Ensure we always have an array of strings
-                                        if (values) setData('roles', values);
-                                    }}
-                                >
-                                    {roles.map((role) => (
-                                        <ToggleGroupItem 
-                                            key={role.id} 
-                                            value={String(role.id)}
-                                            className="px-4 py-2 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground border-black/20"
-                                        >
-                                            {role.name}
-                                        </ToggleGroupItem>
-                                    ))}
-                                </ToggleGroup>
+                                <MultiSelect 
+                                    options={roles}
+                                    selected={data.roles}
+                                    onChange={(values) => setData('roles', values)}
+                                    placeholder="Select one or more roles"
+                                />
                                 {errors.roles && <p className="text-sm text-destructive">{errors.roles}</p>}
                                 {errors['roles.*'] && <p className="text-sm text-destructive">{errors['roles.*']}</p>}
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Click multiple roles to assign them. The selected roles will be highlighted.
-                                </p>
                             </div>
 
                             {/* Default Password */}

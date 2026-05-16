@@ -88,7 +88,7 @@ class UserController extends Controller
         ]);
 
         if (isset($validated['roles'])) {
-            $user->syncRoles($validated['roles']);
+            $user->syncRoles(array_map('intval', $validated['roles']));
         }
 
         return redirect()->route('users.index')->with('success', 'User created successfully.');
@@ -136,7 +136,7 @@ class UserController extends Controller
         $user->save();
 
         if (isset($validated['roles'])) {
-            $user->syncRoles($validated['roles']);
+            $user->syncRoles(array_map('intval', $validated['roles']));
         }
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
