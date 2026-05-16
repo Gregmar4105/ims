@@ -158,40 +158,6 @@ export default function Show({ product }: Props) {
                                 Qty: {product.quantity}
                             </Badge>
                         </div>
-                        
-                        {isSystemAdmin ? (
-                            product.branches?.some(b => b.pivot?.physical_location) && (
-                                <div className="space-y-3 border-t pt-4">
-                                    <div className="flex items-center gap-2 text-gray-500 mb-2">
-                                        <MapPin className="h-4 w-4" />
-                                        <span className="text-sm font-semibold uppercase tracking-wider">Branch Locations</span>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {product.branches.map((b, i) => b.pivot?.physical_location && (
-                                            <div key={i} className="flex justify-between items-start gap-4 p-2 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-100 dark:border-gray-800">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[10px] text-gray-400 font-bold uppercase">{b.branch_name}</span>
-                                                    <span className="text-sm text-blue-600 font-medium">{b.pivot.physical_location}</span>
-                                                </div>
-                                                <Badge variant="outline" className="text-[10px] h-5">
-                                                    Stock: {b.pivot.quantity}
-                                                </Badge>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )
-                        ) : (
-                            product.physical_location && (
-                                <div className="flex justify-between items-center border-t pt-4">
-                                    <span className="text-gray-500">Location</span>
-                                    <div className="flex items-center gap-1.5 text-blue-600 font-medium">
-                                        <MapPin className="h-4 w-4" />
-                                        <span>{product.physical_location}</span>
-                                    </div>
-                                </div>
-                            )
-                        )}
                     </div>
                 </div>
 
@@ -279,22 +245,34 @@ export default function Show({ product }: Props) {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <dt className="text-gray-500">Branch Availability</dt>
+                                    <dt className="text-gray-500">Branch & Location</dt>
                                     <dd className="mt-2 space-y-2">
                                         {product.branches && product.branches.length > 0 ? (
                                             <div className="flex flex-col gap-2">
                                                 {product.branches.map((b) => (
-                                                    <div key={b.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-900/50 p-2 rounded-lg border border-gray-100 dark:border-gray-800">
-                                                        <Avatar size="sm" className="border shadow-sm ring-0">
-                                                            {b.profile_photo_path ? (
-                                                                <AvatarImage src={`/storage/${b.profile_photo_path}`} alt={b.branch_name} />
-                                                            ) : (
-                                                                <AvatarFallback className="text-[10px] bg-blue-600 text-white font-bold">
-                                                                    {b.branch_name.substring(0, 2).toUpperCase()}
-                                                                </AvatarFallback>
-                                                            )}
-                                                        </Avatar>
-                                                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{b.branch_name}</span>
+                                                    <div key={b.id} className="flex items-center justify-between gap-2 bg-gray-50 dark:bg-gray-900/50 p-2 rounded-lg border border-gray-100 dark:border-gray-800">
+                                                        <div className="flex items-center gap-2">
+                                                            <Avatar size="sm" className="border shadow-sm ring-0">
+                                                                {b.profile_photo_path ? (
+                                                                    <AvatarImage src={`/storage/${b.profile_photo_path}`} alt={b.branch_name} />
+                                                                ) : (
+                                                                    <AvatarFallback className="text-[10px] bg-blue-600 text-white font-bold">
+                                                                        {b.branch_name.substring(0, 2).toUpperCase()}
+                                                                    </AvatarFallback>
+                                                                )}
+                                                            </Avatar>
+                                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{b.branch_name}</span>
+                                                        </div>
+                                                        
+                                                        {b.pivot?.physical_location && (
+                                                            <div className="flex items-center gap-1.5 text-blue-600 font-medium text-xs bg-white dark:bg-gray-800 px-2 py-1 rounded shadow-sm border">
+                                                                <MapPin className="h-3.5 w-3.5" />
+                                                                <span>{b.pivot.physical_location}</span>
+                                                                {isSystemAdmin && (
+                                                                    <span className="ml-1 text-[10px] text-gray-400 border-l pl-1.5">Qty: {b.pivot.quantity}</span>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
