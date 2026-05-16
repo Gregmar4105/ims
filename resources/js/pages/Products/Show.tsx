@@ -4,7 +4,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Layers, Package, Tag, ScanBarcode, Truck, Edit, Info, ArrowLeft } from 'lucide-react';
+import { MapPinned, Layers, Package, Tag, ScanBarcode, Truck, Edit, Info, ArrowLeft } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 import Barcode from 'react-barcode';
 import QRCode from 'react-qr-code';
@@ -244,42 +244,61 @@ export default function Show({ product }: Props) {
                                     </dd>
                                 </div>
 
-                                <div className="flex flex-col">
-                                    <dt className="text-gray-500">Branch & Location</dt>
-                                    <dd className="mt-2 space-y-2">
+                                <div className="flex flex-col col-span-1 sm:col-span-2 mt-4">
+                                    <dt className="text-gray-500 font-semibold mb-3 flex items-center gap-2">
+                                        <MapPinned className="h-4 w-4" />
+                                        Branch & Physical Locations
+                                    </dt>
+                                    <dd className="space-y-3">
                                         {product.branches && product.branches.length > 0 ? (
-                                            <div className="flex flex-col gap-2">
+                                            <div className="grid grid-cols-1 gap-3">
                                                 {product.branches.map((b) => (
-                                                    <div key={b.id} className="flex items-center justify-between gap-2 bg-gray-50 dark:bg-gray-900/50 p-2 rounded-lg border border-gray-100 dark:border-gray-800">
-                                                        <div className="flex items-center gap-2">
-                                                            <Avatar size="sm" className="border shadow-sm ring-0">
+                                                    <div key={b.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                                        <div className="flex items-center gap-3">
+                                                            <Avatar size="default" className="border-2 border-white dark:border-gray-800 shadow-sm ring-0">
                                                                 {b.profile_photo_path ? (
                                                                     <AvatarImage src={`/storage/${b.profile_photo_path}`} alt={b.branch_name} />
                                                                 ) : (
-                                                                    <AvatarFallback className="text-[10px] bg-blue-600 text-white font-bold">
+                                                                    <AvatarFallback className="text-xs bg-blue-600 text-white font-bold">
                                                                         {b.branch_name.substring(0, 2).toUpperCase()}
                                                                     </AvatarFallback>
                                                                 )}
                                                             </Avatar>
-                                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{b.branch_name}</span>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Branch</span>
+                                                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{b.branch_name}</span>
+                                                            </div>
                                                         </div>
                                                         
-                                                        {b.pivot?.physical_location && (
-                                                            <div className="flex items-center gap-1.5 text-blue-600 font-medium text-xs bg-white dark:bg-gray-800 px-2 py-1 rounded shadow-sm border">
-                                                                <MapPin className="h-3.5 w-3.5" />
-                                                                <span>{b.pivot.physical_location}</span>
-                                                                {isSystemAdmin && (
-                                                                    <span className="ml-1 text-[10px] text-gray-400 border-l pl-1.5">Qty: {b.pivot.quantity}</span>
-                                                                )}
-                                                            </div>
-                                                        )}
+                                                        <div className="flex items-center gap-6">
+                                                            {b.pivot?.physical_location && (
+                                                                <div className="flex flex-col sm:items-end">
+                                                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Physical Location</span>
+                                                                    <div className="flex items-center gap-1.5 text-blue-600 font-semibold text-sm">
+                                                                        <MapPinned className="h-3.5 w-3.5" />
+                                                                        <span>{b.pivot.physical_location}</span>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {isSystemAdmin && (
+                                                                <div className="flex flex-col sm:items-end border-l pl-6 dark:border-gray-700">
+                                                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Stock</span>
+                                                                    <Badge variant="secondary" className="text-xs font-bold px-2 py-0">
+                                                                        {b.pivot?.quantity || 0}
+                                                                    </Badge>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <span className="text-muted-foreground flex items-center gap-1.5 font-medium italic text-xs">
-                                                <Layers className="h-4 w-4 text-gray-400" /> Global / All Branches
-                                            </span>
+                                            <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-800 text-center">
+                                                <span className="text-muted-foreground flex items-center justify-center gap-2 font-medium italic text-sm">
+                                                    <Layers className="h-4 w-4 text-gray-400" /> Global / All Branches
+                                                </span>
+                                            </div>
                                         )}
                                     </dd>
                                 </div>
