@@ -85,13 +85,10 @@ class ProductController extends Controller
                 $query->whereHas('branches', function ($q) use ($user) {
                     $q->where('branches.id', $user->branch_id);
                 });
-                $query->with(['branches' => function ($q) use ($user) {
-                    $q->where('branches.id', $user->branch_id);
-                }]);
             }
-        } else {
-            $query->with('branches');
         }
+
+        $query->with('branches');
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -214,7 +211,7 @@ class ProductController extends Controller
 
     protected function transformProductForView($product, $isSystemAdmin, $user, $filterBranch) {
         if (!$isSystemAdmin && $user->branch_id) {
-            $branchData = $product->branches->first();
+            $branchData = $product->branches->firstWhere('id', $user->branch_id);
             $product->quantity = $branchData ? $branchData->pivot->quantity : 0;
             $product->physical_location = $branchData ? $branchData->pivot->physical_location : null;
             if ($branchData) {

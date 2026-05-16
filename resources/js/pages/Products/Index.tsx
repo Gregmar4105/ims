@@ -13,6 +13,13 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SearchableSelect } from '@/components/SearchableSelect';
+import { Avatar, AvatarFallback, AvatarImage, AvatarGroup } from "@/components/ui/avatar";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import {
     Select,
@@ -60,6 +67,7 @@ interface Product {
     status: string;
     active_until_zero_days: number | null;
     out_of_stock_since: string | null;
+    branches?: { id: number; branch_name: string; profile_photo_path: string | null }[];
     branch?: { branch_name: string };
     brand?: { name: string };
     category?: { name: string };
@@ -959,35 +967,61 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                         )}
                                     </div>
 
-                                    {/* Hover Overlay for Quick Actions */}
-                                    {!isSelectionMode && !isClearanceMode && (
-                                        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none">
-                                            <div className="pointer-events-auto flex flex-col gap-2">
-                                                <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white">
-                                                    <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
-                                                </Button>
-                                                {!isEmployee && (
-                                                    <Link href={`/products/${product.id}/edit`}>
-                                                        <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
-                                                            Edit Product
-                                                        </Button>
-                                                    </Link>
-                                                )}
-                                                {!isEmployee && (
-                                                    <Button 
-                                                        variant={product.status === 'active' ? 'destructive' : 'default'} 
-                                                        size="sm" 
-                                                        onClick={(e) => { e.preventDefault(); handleToggleStatus(product); }}
-                                                        className={`w-32 shadow-lg ${product.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
-                                                    >
-                                                        {product.status === 'active' ? <PowerOff className="w-4 h-4 mr-2" /> : <Power className="w-4 h-4 mr-2" />}
-                                                        {product.status === 'active' ? 'Deactivate' : 'Activate'}
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
+                                    {/* Branch Avatars Overlay */}
+                                    <div className="absolute bottom-2 left-2 z-10 flex items-center pointer-events-auto">
+                                        <TooltipProvider>
+                                            <AvatarGroup>
+                                                {product.branches?.map((b) => (
+                                                    <Tooltip key={b.id}>
+                                                        <TooltipTrigger asChild>
+                                                            <Avatar size="sm" className="border-2 border-white dark:border-gray-800 shadow-sm ring-0">
+                                                                {b.profile_photo_path ? (
+                                                                    <AvatarImage src={`/storage/${b.profile_photo_path}`} alt={b.branch_name} />
+                                                                ) : (
+                                                                    <AvatarFallback className="text-[8px] bg-blue-600 text-white font-bold">
+                                                                        {b.branch_name.substring(0, 2).toUpperCase()}
+                                                                    </AvatarFallback>
+                                                                )}
+                                                            </Avatar>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="top" className="bg-black text-white border-none text-[10px] py-1 px-2">
+                                                            <p>{b.branch_name}</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                ))}
+                                            </AvatarGroup>
+                                        </TooltipProvider>
+                                    </div>
                                 </div>
+
+                                {/* Hover Overlay for Quick Actions */}
+                                {!isSelectionMode && !isClearanceMode && (
+                                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none">
+                                        <div className="pointer-events-auto flex flex-col gap-2">
+                                            <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white">
+                                                <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
+                                            </Button>
+                                            {!isEmployee && (
+                                                <Link href={`/products/${product.id}/edit`}>
+                                                    <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
+                                                        Edit Product
+                                                    </Button>
+                                                </Link>
+                                            )}
+                                            {!isEmployee && (
+                                                <Button 
+                                                    variant={product.status === 'active' ? 'destructive' : 'default'} 
+                                                    size="sm" 
+                                                    onClick={(e) => { e.preventDefault(); handleToggleStatus(product); }}
+                                                    className={`w-32 shadow-lg ${product.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+                                                >
+                                                    {product.status === 'active' ? <PowerOff className="w-4 h-4 mr-2" /> : <Power className="w-4 h-4 mr-2" />}
+                                                    {product.status === 'active' ? 'Deactivate' : 'Activate'}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Content Section */}
                                 <div className="flex flex-1 flex-col justify-between gap-3 p-3">
