@@ -363,9 +363,11 @@ class ProductController extends Controller
         
         $product->load(['brand', 'category', 'supplier', 'creator', 'branches']);
 
-        // Transform for specific view logic if needed (similar to index)
-        if (!$isSystemAdmin && $user->branch_id) {
-            $branchData = $product->branches->firstWhere('id', $user->branch_id);
+        // Resolve target branch for primary data (quantity, location, etc.)
+        $targetBranchId = $this->resolveTargetBranchId($user, $isSystemAdmin);
+
+        if ($targetBranchId) {
+            $branchData = $product->branches->firstWhere('id', $targetBranchId);
             $product->quantity = $branchData ? $branchData->pivot->quantity : 0;
             $product->physical_location = $branchData ? $branchData->pivot->physical_location : null;
             if ($branchData) {
@@ -376,7 +378,7 @@ class ProductController extends Controller
                 $product->reorder_level = 0;
             }
         } else {
-             // Admin sees aggregate or raw
+             // Admin sees aggregate if no branch is resolved
              $product->quantity = $product->branches->sum('pivot.quantity');
              $product->reorder_level = $product->branches->sum('pivot.reorder_level');
         }
