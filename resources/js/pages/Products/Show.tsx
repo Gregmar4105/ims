@@ -8,6 +8,13 @@ import { MapPin, Layers, Package, Tag, ScanBarcode, Truck, Edit, Info, ArrowLeft
 import { Separator } from "@/components/ui/separator";
 import Barcode from 'react-barcode';
 import QRCode from 'react-qr-code';
+import { Avatar, AvatarFallback, AvatarImage, AvatarGroup } from "@/components/ui/avatar";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Variation {
     name: string;
@@ -33,7 +40,15 @@ interface Product {
     reorder_level: number;
     clearance_price: number | null;
     clearance_until: string | null;
-    branches?: { branch_name: string }[];
+    branches?: { 
+        id: number;
+        branch_name: string; 
+        profile_photo_path: string | null;
+        pivot?: {
+            physical_location: string | null;
+            quantity: number;
+        }
+    }[];
     brand?: { name: string };
     category?: { name: string };
     supplier?: { name: string };
@@ -99,7 +114,7 @@ export default function Show({ product }: Props) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Left Column - Image & Quick Status */}
                 <div className="space-y-6">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border shadow-sm aspect-square flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+                    <div className="relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden border shadow-sm aspect-square flex items-center justify-center bg-gray-50 dark:bg-gray-900">
                         {product.image_path ? (
                             <img
                                 src={`/storage/${product.image_path}`}
@@ -109,6 +124,32 @@ export default function Show({ product }: Props) {
                         ) : (
                             <Package className="h-32 w-32 text-gray-300" />
                         )}
+
+                        {/* Branch Avatars Overlay */}
+                        <div className="absolute bottom-4 left-4 z-10 flex items-center pointer-events-auto">
+                            <TooltipProvider>
+                                <AvatarGroup>
+                                    {product.branches?.map((b) => (
+                                        <Tooltip key={b.id}>
+                                            <TooltipTrigger asChild>
+                                                <Avatar size="default" className="border-2 border-white dark:border-gray-800 shadow-md ring-0">
+                                                    {b.profile_photo_path ? (
+                                                        <AvatarImage src={`/storage/${b.profile_photo_path}`} alt={b.branch_name} />
+                                                    ) : (
+                                                        <AvatarFallback className="text-xs bg-blue-600 text-white font-bold">
+                                                            {b.branch_name.substring(0, 2).toUpperCase()}
+                                                        </AvatarFallback>
+                                                    )}
+                                                </Avatar>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" className="bg-black text-white border-none text-xs py-1 px-2">
+                                                <p>{b.branch_name}</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    ))}
+                                </AvatarGroup>
+                            </TooltipProvider>
+                        </div>
                     </div>
 
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border shadow-sm space-y-4">
@@ -143,14 +184,39 @@ export default function Show({ product }: Props) {
                                 Qty: {product.quantity}
                             </Badge>
                         </div>
-                        {product.physical_location && (
-                            <div className="flex justify-between items-center">
-                                <span className="text-gray-500">Location</span>
-                                <div className="flex items-center gap-1.5 text-blue-600 font-medium">
-                                    <MapPin className="h-4 w-4" />
-                                    <span>{product.physical_location}</span>
+                        
+                        {isSystemAdmin ? (
+                            product.branches?.some(b => b.pivot?.physical_location) && (
+                                <div className="space-y-3 border-t pt-4">
+                                    <div className="flex items-center gap-2 text-gray-500 mb-2">
+                                        <MapPin className="h-4 w-4" />
+                                        <span className="text-sm font-semibold uppercase tracking-wider">Branch Locations</span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {product.branches.map((b, i) => b.pivot?.physical_location && (
+                                            <div key={i} className="flex justify-between items-start gap-4 p-2 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-100 dark:border-gray-800">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] text-gray-400 font-bold uppercase">{b.branch_name}</span>
+                                                    <span className="text-sm text-blue-600 font-medium">{b.pivot.physical_location}</span>
+                                                </div>
+                                                <Badge variant="outline" className="text-[10px] h-5">
+                                                    Stock: {b.pivot.quantity}
+                                                </Badge>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )
+                        ) : (
+                            product.physical_location && (
+                                <div className="flex justify-between items-center border-t pt-4">
+                                    <span className="text-gray-500">Location</span>
+                                    <div className="flex items-center gap-1.5 text-blue-600 font-medium">
+                                        <MapPin className="h-4 w-4" />
+                                        <span>{product.physical_location}</span>
+                                    </div>
+                                </div>
+                            )
                         )}
                     </div>
                 </div>

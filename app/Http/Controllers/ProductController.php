@@ -361,15 +361,11 @@ class ProductController extends Controller
         $user = auth()->user();
         $isSystemAdmin = $user->hasRole('System Administrator');
         
-        $product->load(['brand', 'category', 'supplier', 'creator', 'branches' => function($q) use ($user, $isSystemAdmin) {
-            if (!$isSystemAdmin && $user->branch_id) {
-                $q->where('branches.id', $user->branch_id);
-            }
-        }]);
+        $product->load(['brand', 'category', 'supplier', 'creator', 'branches']);
 
         // Transform for specific view logic if needed (similar to index)
         if (!$isSystemAdmin && $user->branch_id) {
-            $branchData = $product->branches->first();
+            $branchData = $product->branches->firstWhere('id', $user->branch_id);
             $product->quantity = $branchData ? $branchData->pivot->quantity : 0;
             $product->physical_location = $branchData ? $branchData->pivot->physical_location : null;
             if ($branchData) {
