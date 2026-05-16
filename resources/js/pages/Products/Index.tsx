@@ -163,9 +163,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const [statusToggleProduct, setStatusToggleProduct] = useState<Product | null>(null);
 
     const toggleSelection = (productId: number) => {
-        setSelectedProductIds(prev => 
-            prev.includes(productId) 
-                ? prev.filter(id => id !== productId) 
+        setSelectedProductIds(prev =>
+            prev.includes(productId)
+                ? prev.filter(id => id !== productId)
                 : [...prev, productId]
         );
     };
@@ -217,7 +217,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         lastScanRef.current = now;
                         playBeep();
                         if (navigator.vibrate) navigator.vibrate(200);
-                        
+
                         setSearch(decodedText);
                         updateParams({ search: decodedText });
                         setIsScanning(false);
@@ -366,7 +366,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
 
     const executeToggleStatus = () => {
         if (!statusToggleProduct) return;
-        
+
         router.post(`/products/${statusToggleProduct.id}/toggle-status`, {}, {
             preserveScroll: true,
             onSuccess: () => {
@@ -414,7 +414,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         const supplierSize = getDynamicSize(viewCodeProduct.supplier?.name || '', 7, 10, 3.5, 0.6);
 
         // Barcode is strictly 13 characters maximum, we can assign a solid fixed readable size.
-        const barcodeSize = '6.5pt';
+        const barcodeSize = '6pt';
 
         // CSS-based main window print hack
         // Mobile webviews block window.print() if called in an iframe.
@@ -613,9 +613,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 )}
 
                                 {!isEmployee && (
-                                    <Button 
+                                    <Button
                                         variant="outline"
-                                        size="sm" 
+                                        size="sm"
                                         className={`hidden md:flex border-yellow-500 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700 transition-all ${isClearanceMode ? 'bg-yellow-500 text-black hover:bg-yellow-600 border-yellow-600' : ''} ${selectedProductIds.length > 0 && isClearanceMode ? 'animate-pulse ring-2 ring-yellow-400 ring-offset-2' : ''}`}
                                         onClick={() => {
                                             if (isClearanceMode) {
@@ -646,9 +646,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 )}
 
                                 {!isEmployee && (
-                                    <Button 
+                                    <Button
                                         variant={isSelectionMode ? (selectedProductIds.length > 0 ? "destructive" : "outline") : "outline"}
-                                        size="sm" 
+                                        size="sm"
                                         className={`hidden md:flex ${!isSelectionMode ? 'border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700' : ''}`}
                                         onClick={() => {
                                             if (!isSelectionMode) {
@@ -690,9 +690,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 </Button>
                             </a>
                             {!isEmployee && (
-                                <Button 
+                                <Button
                                     variant={isSelectionMode ? (selectedProductIds.length > 0 ? "destructive" : "outline") : "outline"}
-                                    size="icon" 
+                                    size="icon"
                                     className={`h-10 w-10 shrink-0 ${isSelectionMode && selectedProductIds.length > 0 ? 'animate-pulse ring-2 ring-red-500 ring-offset-2' : ''} ${!isSelectionMode ? 'border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700' : ''}`}
                                     onClick={() => {
                                         if (!isSelectionMode) {
@@ -764,28 +764,28 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         {/* Filter Group - wrapped for mobile Layout */}
                         <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
                             {isSystemAdmin && (
-                                <SearchableSelect 
-                                    options={options.branches} 
-                                    value={branch} 
-                                    onValueChange={(val) => { setBranch(val); updateParams({ branch: val }); }} 
-                                    placeholder="Branch" 
+                                <SearchableSelect
+                                    options={options.branches}
+                                    value={branch}
+                                    onValueChange={(val) => { setBranch(val); updateParams({ branch: val }); }}
+                                    placeholder="Branch"
                                     allLabel="All Branches"
                                 />
                             )}
 
-                            <SearchableSelect 
-                                options={options.brands} 
-                                value={brand} 
-                                onValueChange={(val) => { setBrand(val); updateParams({ brand: val }); }} 
-                                placeholder="Brand" 
+                            <SearchableSelect
+                                options={options.brands}
+                                value={brand}
+                                onValueChange={(val) => { setBrand(val); updateParams({ brand: val }); }}
+                                placeholder="Brand"
                                 allLabel="All Brands"
                             />
 
-                            <SearchableSelect 
-                                options={baseCategories} 
-                                value={baseCategory} 
-                                onValueChange={(val) => { 
-                                    setBaseCategory(val); 
+                            <SearchableSelect
+                                options={baseCategories}
+                                value={baseCategory}
+                                onValueChange={(val) => {
+                                    setBaseCategory(val);
                                     if (val === 'all') {
                                         updateParams({ category: 'all' });
                                     } else {
@@ -796,17 +796,17 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             updateParams({ category: val });
                                         }
                                     }
-                                }} 
-                                placeholder="Category" 
+                                }}
+                                placeholder="Category"
                                 allLabel="All Categories"
                             />
 
                             {baseCategory !== 'all' && subCategories.length > 1 && (
-                                <SearchableSelect 
-                                    options={subCategories} 
-                                    value={subCategory} 
-                                    onValueChange={(val) => { setSubCategory(val); updateParams({ category: val }); }} 
-                                    placeholder="Sub-Category" 
+                                <SearchableSelect
+                                    options={subCategories}
+                                    value={subCategory}
+                                    onValueChange={(val) => { setSubCategory(val); updateParams({ category: val }); }}
+                                    placeholder="Sub-Category"
                                     allLabel="All Sub-Categories"
                                     getLabel={(opt) => opt === 'all' ? 'All' : opt.replace(new RegExp(`^${baseCategory}\\s*`), '') || opt}
                                 />
@@ -837,8 +837,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 </SelectContent>
                             </Select>
 
-                            <Select value={clearance} onValueChange={(val) => { 
-                                setClearance(val); 
+                            <Select value={clearance} onValueChange={(val) => {
+                                setClearance(val);
                                 if (val === 'all') {
                                     // Disregard the rest of the filters except for branch when clicking All Products
                                     setSearch("");
@@ -848,7 +848,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     setSubCategory("all");
                                     setStock("all");
                                     setStatusFilter("all");
-                                    updateParams({ 
+                                    updateParams({
                                         clearance: 'all',
                                         search: '',
                                         brand: 'all',
@@ -879,290 +879,288 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     </div>
                 </div>
 
-            <div className="p-4 flex-1 overflow-y-auto min-h-0">
-                {productList.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed">
-                        <PackageOpen className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-2 text-sm font-semibold text-gray-900">No products found</h3>
-                        <p className="mt-1 text-sm text-gray-500">
-                            Get started by adding a new product.
-                        </p>
-                        <Link href="/products/create">
-                            <Button variant="link" className="mt-2">
-                                Add Product
-                            </Button>
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                        {productList.map((product: Product) => {
-                            const isSelected = selectedProductIds.includes(product.id);
-                            return (
-                                <div 
-                                    key={product.id} 
-                                    onClick={() => (isSelectionMode || isClearanceMode) && toggleSelection(product.id)}
-                                    className={`group relative flex w-full flex-col overflow-hidden rounded-xl border transition-all duration-300 hover:shadow-lg dark:bg-transparent ${
-                                        (isSelectionMode || isClearanceMode) ? 'cursor-pointer' : ''
-                                    } ${
-                                        isSelectionMode && isSelected 
-                                            ? 'border-red-500 ring-2 ring-red-500 bg-red-50/30 dark:bg-red-900/10 shadow-red-100 dark:shadow-none' 
-                                            : isClearanceMode && isSelected
-                                                ? 'border-yellow-500 ring-2 ring-yellow-500 bg-yellow-50/30 dark:bg-yellow-900/10 shadow-yellow-100 dark:shadow-none'
-                                                : product.status === 'inactive'
-                                                    ? 'border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50 opacity-60'
-                                                    : 'border-black/10 bg-white dark:border-sidebar-border'
-                                    }`}
-                                >
-                                    {/* Image Section */}
-                                    <div className="relative aspect-square overflow-hidden bg-neutral-50 dark:bg-white/5">
-                                        {(isSelectionMode || isClearanceMode) ? (
-                                            <div className="block h-full w-full">
-                                                {product.image_path ? (
-                                                    <img
-                                                        className={`absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 ${isSelected ? 'scale-90' : 'group-hover:scale-110'}`}
-                                                        src={`/storage/${product.image_path}`}
-                                                        alt={product.name}
-                                                    />
-                                                ) : (
-                                                    <div className="flex h-full w-full items-center justify-center">
-                                                        <PackageOpen className="h-20 w-20 text-gray-300" />
-                                                    </div>
-                                                )}
-                                                {isSelected && (
-                                                    <div className={`absolute inset-0 ${isSelectionMode ? 'bg-red-500/10' : 'bg-yellow-500/10'} flex items-center justify-center backdrop-blur-[1px]`}>
-                                                        <div className={`${isSelectionMode ? 'bg-red-600' : 'bg-yellow-500'} text-white rounded-full p-3 shadow-xl animate-in zoom-in duration-200`}>
-                                                            {isSelectionMode ? <Trash2 className="h-6 w-6" /> : <Tag className="h-6 w-6 text-black" />}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <Link href={`/products/${product.id}`} className="block h-full w-full">
-                                                {product.image_path ? (
-                                                    <img
-                                                        className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
-                                                        src={`/storage/${product.image_path}`}
-                                                        alt={product.name}
-                                                    />
-                                                ) : (
-                                                    <div className="flex h-full w-full items-center justify-center">
-                                                        <PackageOpen className="h-20 w-20 text-gray-300" />
-                                                    </div>
-                                                )}
-                                            </Link>
-                                        )}
-
-                                    {/* Vibrant Quantity Badge */}
-                                    <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
-                                        <Badge className={`shadow-sm border-0 font-bold ${product.quantity === 0 ? 'bg-red-600 hover:bg-red-700 text-white' :
-                                            product.quantity <= 5 ? 'bg-amber-500 hover:bg-amber-600 text-white' :
-                                                'bg-emerald-500 hover:bg-emerald-600 text-white'
-                                            }`}>
-                                            Qty: {product.quantity}
-                                        </Badge>
-                                        {product.status === 'inactive' && (
-                                            <Badge className="shadow-sm border-0 font-bold bg-gray-500 hover:bg-gray-600 text-white text-[10px]">
-                                                Inactive
-                                            </Badge>
-                                        )}
-                                    </div>
-
-
-                                    {/* Branch Avatars Overlay */}
-                                    <div className="absolute bottom-2 left-2 z-10 flex items-center pointer-events-auto">
-                                        <TooltipProvider>
-                                            <AvatarGroup>
-                                                {product.branches?.map((b) => (
-                                                    <Tooltip key={b.id}>
-                                                        <TooltipTrigger asChild>
-                                                            <Avatar size="sm" className="border-2 border-white dark:border-gray-800 shadow-sm ring-0">
-                                                                {b.profile_photo_path ? (
-                                                                    <AvatarImage src={`/storage/${b.profile_photo_path}`} alt={b.branch_name} />
-                                                                ) : (
-                                                                    <AvatarFallback className="text-[8px] bg-blue-600 text-white font-bold">
-                                                                        {b.branch_name.substring(0, 2).toUpperCase()}
-                                                                    </AvatarFallback>
-                                                                )}
-                                                            </Avatar>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="top" className="bg-black text-white border-none text-[10px] py-1 px-2">
-                                                            <p>{b.branch_name}</p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                ))}
-                                            </AvatarGroup>
-                                        </TooltipProvider>
-                                    </div>
-
-                                    {/* Hover Overlay for Quick Actions - Now inside Image Section */}
-                                    {!isSelectionMode && !isClearanceMode && (
-                                        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none z-20">
-                                            <div className="pointer-events-auto flex flex-col gap-2">
-                                                <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white text-gray-900 font-bold border-0">
-                                                    <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
-                                                </Button>
-                                                {!isEmployee && (
-                                                    <Link href={`/products/${product.id}/edit`}>
-                                                        <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white font-bold border-0">
-                                                            Edit Product
-                                                        </Button>
-                                                    </Link>
-                                                )}
-                                                {!isEmployee && (
-                                                    <Button 
-                                                        variant={product.status === 'active' ? 'destructive' : 'default'} 
-                                                        size="sm" 
-                                                        onClick={(e) => { e.preventDefault(); handleToggleStatus(product); }}
-                                                        className={`w-32 shadow-lg font-bold border-0 ${product.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}
-                                                    >
-                                                        {product.status === 'active' ? <PowerOff className="w-4 h-4 mr-2" /> : <Power className="w-4 h-4 mr-2" />}
-                                                        {product.status === 'active' ? 'Deactivate' : 'Activate'}
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-
-                                {/* Content Section */}
-                                <div className="flex flex-1 flex-col justify-between gap-3 p-3">
-                                    {/* Header & Price */}
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between items-start gap-2">
-                                            {isSelectionMode || isClearanceMode ? (
-                                                <div className="flex-1">
-                                                    {isOnClearance(product) && (
-                                                        <div className="bg-yellow-400 text-black text-[9px] font-bold px-1.5 py-0.5 self-start uppercase mb-1 inline-block">
-                                                            Clearance Sale
+                <div className="p-4 flex-1 overflow-y-auto min-h-0">
+                    {productList.length === 0 ? (
+                        <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed">
+                            <PackageOpen className="mx-auto h-12 w-12 text-gray-400" />
+                            <h3 className="mt-2 text-sm font-semibold text-gray-900">No products found</h3>
+                            <p className="mt-1 text-sm text-gray-500">
+                                Get started by adding a new product.
+                            </p>
+                            <Link href="/products/create">
+                                <Button variant="link" className="mt-2">
+                                    Add Product
+                                </Button>
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            {productList.map((product: Product) => {
+                                const isSelected = selectedProductIds.includes(product.id);
+                                return (
+                                    <div
+                                        key={product.id}
+                                        onClick={() => (isSelectionMode || isClearanceMode) && toggleSelection(product.id)}
+                                        className={`group relative flex w-full flex-col overflow-hidden rounded-xl border transition-all duration-300 hover:shadow-lg dark:bg-transparent ${(isSelectionMode || isClearanceMode) ? 'cursor-pointer' : ''
+                                            } ${isSelectionMode && isSelected
+                                                ? 'border-red-500 ring-2 ring-red-500 bg-red-50/30 dark:bg-red-900/10 shadow-red-100 dark:shadow-none'
+                                                : isClearanceMode && isSelected
+                                                    ? 'border-yellow-500 ring-2 ring-yellow-500 bg-yellow-50/30 dark:bg-yellow-900/10 shadow-yellow-100 dark:shadow-none'
+                                                    : product.status === 'inactive'
+                                                        ? 'border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50 opacity-60'
+                                                        : 'border-black/10 bg-white dark:border-sidebar-border'
+                                            }`}
+                                    >
+                                        {/* Image Section */}
+                                        <div className="relative aspect-square overflow-hidden bg-neutral-50 dark:bg-white/5">
+                                            {(isSelectionMode || isClearanceMode) ? (
+                                                <div className="block h-full w-full">
+                                                    {product.image_path ? (
+                                                        <img
+                                                            className={`absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 ${isSelected ? 'scale-90' : 'group-hover:scale-110'}`}
+                                                            src={`/storage/${product.image_path}`}
+                                                            alt={product.name}
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-full w-full items-center justify-center">
+                                                            <PackageOpen className="h-20 w-20 text-gray-300" />
                                                         </div>
                                                     )}
-                                                    <h3 className={`font-bold line-clamp-1 text-base transition-colors ${isSelected ? (isSelectionMode ? 'text-red-600' : 'text-yellow-600') : 'text-gray-900 dark:text-white'}`} title={product.name}>
-                                                        {product.name}
-                                                    </h3>
+                                                    {isSelected && (
+                                                        <div className={`absolute inset-0 ${isSelectionMode ? 'bg-red-500/10' : 'bg-yellow-500/10'} flex items-center justify-center backdrop-blur-[1px]`}>
+                                                            <div className={`${isSelectionMode ? 'bg-red-600' : 'bg-yellow-500'} text-white rounded-full p-3 shadow-xl animate-in zoom-in duration-200`}>
+                                                                {isSelectionMode ? <Trash2 className="h-6 w-6" /> : <Tag className="h-6 w-6 text-black" />}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ) : (
-                                                <Link href={`/products/${product.id}`} className="hover:underline flex-1">
-                                                    {isOnClearance(product) && (
-                                                        <div className="bg-yellow-400 text-black text-[9px] font-bold px-1.5 py-0.5 self-start uppercase mb-1 inline-block">
-                                                            Clearance Sale
+                                                <Link href={`/products/${product.id}`} className="block h-full w-full">
+                                                    {product.image_path ? (
+                                                        <img
+                                                            className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
+                                                            src={`/storage/${product.image_path}`}
+                                                            alt={product.name}
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-full w-full items-center justify-center">
+                                                            <PackageOpen className="h-20 w-20 text-gray-300" />
                                                         </div>
                                                     )}
-                                                    <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1 text-base group-hover:text-blue-600 transition-colors" title={product.name}>
-                                                        {product.name}
-                                                    </h3>
                                                 </Link>
                                             )}
-                                            <div className="flex flex-col items-end">
-                                                {isOnClearance(product) ? (
-                                                    <>
-                                                        <span className="text-base font-extrabold text-yellow-600 whitespace-nowrap">
-                                                            ₱{Number(product.clearance_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                                        </span>
-                                                        <span className="text-[10px] text-gray-400 line-through">
-                                                            ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
-                                                        </span>
-                                                    </>
+
+                                            {/* Vibrant Quantity Badge */}
+                                            <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                                                <Badge className={`shadow-sm border-0 font-bold ${product.quantity === 0 ? 'bg-red-600 hover:bg-red-700 text-white' :
+                                                    product.quantity <= 5 ? 'bg-amber-500 hover:bg-amber-600 text-white' :
+                                                        'bg-emerald-500 hover:bg-emerald-600 text-white'
+                                                    }`}>
+                                                    Qty: {product.quantity}
+                                                </Badge>
+                                                {product.status === 'inactive' && (
+                                                    <Badge className="shadow-sm border-0 font-bold bg-gray-500 hover:bg-gray-600 text-white text-[10px]">
+                                                        Inactive
+                                                    </Badge>
+                                                )}
+                                            </div>
+
+
+                                            {/* Branch Avatars Overlay */}
+                                            <div className="absolute bottom-2 left-2 z-10 flex items-center pointer-events-auto">
+                                                <TooltipProvider>
+                                                    <AvatarGroup>
+                                                        {product.branches?.map((b) => (
+                                                            <Tooltip key={b.id}>
+                                                                <TooltipTrigger asChild>
+                                                                    <Avatar size="sm" className="border-2 border-white dark:border-gray-800 shadow-sm ring-0">
+                                                                        {b.profile_photo_path ? (
+                                                                            <AvatarImage src={`/storage/${b.profile_photo_path}`} alt={b.branch_name} />
+                                                                        ) : (
+                                                                            <AvatarFallback className="text-[8px] bg-blue-600 text-white font-bold">
+                                                                                {b.branch_name.substring(0, 2).toUpperCase()}
+                                                                            </AvatarFallback>
+                                                                        )}
+                                                                    </Avatar>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent side="top" className="bg-black text-white border-none text-[10px] py-1 px-2">
+                                                                    <p>{b.branch_name}</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        ))}
+                                                    </AvatarGroup>
+                                                </TooltipProvider>
+                                            </div>
+
+                                            {/* Hover Overlay for Quick Actions - Now inside Image Section */}
+                                            {!isSelectionMode && !isClearanceMode && (
+                                                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none z-20">
+                                                    <div className="pointer-events-auto flex flex-col gap-2">
+                                                        <Button variant="secondary" size="sm" onClick={(e) => { e.preventDefault(); setViewCodeProduct(product); }} className="w-32 shadow-lg backdrop-blur-md bg-white/90 hover:bg-white text-gray-900 font-bold border-0">
+                                                            <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
+                                                        </Button>
+                                                        {!isEmployee && (
+                                                            <Link href={`/products/${product.id}/edit`}>
+                                                                <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white font-bold border-0">
+                                                                    Edit Product
+                                                                </Button>
+                                                            </Link>
+                                                        )}
+                                                        {!isEmployee && (
+                                                            <Button
+                                                                variant={product.status === 'active' ? 'destructive' : 'default'}
+                                                                size="sm"
+                                                                onClick={(e) => { e.preventDefault(); handleToggleStatus(product); }}
+                                                                className={`w-32 shadow-lg font-bold border-0 ${product.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}
+                                                            >
+                                                                {product.status === 'active' ? <PowerOff className="w-4 h-4 mr-2" /> : <Power className="w-4 h-4 mr-2" />}
+                                                                {product.status === 'active' ? 'Deactivate' : 'Activate'}
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+
+                                        {/* Content Section */}
+                                        <div className="flex flex-1 flex-col justify-between gap-3 p-3">
+                                            {/* Header & Price */}
+                                            <div className="space-y-1">
+                                                <div className="flex justify-between items-start gap-2">
+                                                    {isSelectionMode || isClearanceMode ? (
+                                                        <div className="flex-1">
+                                                            {isOnClearance(product) && (
+                                                                <div className="bg-yellow-400 text-black text-[9px] font-bold px-1.5 py-0.5 self-start uppercase mb-1 inline-block">
+                                                                    Clearance Sale
+                                                                </div>
+                                                            )}
+                                                            <h3 className={`font-bold line-clamp-1 text-base transition-colors ${isSelected ? (isSelectionMode ? 'text-red-600' : 'text-yellow-600') : 'text-gray-900 dark:text-white'}`} title={product.name}>
+                                                                {product.name}
+                                                            </h3>
+                                                        </div>
+                                                    ) : (
+                                                        <Link href={`/products/${product.id}`} className="hover:underline flex-1">
+                                                            {isOnClearance(product) && (
+                                                                <div className="bg-yellow-400 text-black text-[9px] font-bold px-1.5 py-0.5 self-start uppercase mb-1 inline-block">
+                                                                    Clearance Sale
+                                                                </div>
+                                                            )}
+                                                            <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1 text-base group-hover:text-blue-600 transition-colors" title={product.name}>
+                                                                {product.name}
+                                                            </h3>
+                                                        </Link>
+                                                    )}
+                                                    <div className="flex flex-col items-end">
+                                                        {isOnClearance(product) ? (
+                                                            <>
+                                                                <span className="text-base font-extrabold text-yellow-600 whitespace-nowrap">
+                                                                    ₱{Number(product.clearance_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                                </span>
+                                                                <span className="text-[10px] text-gray-400 line-through">
+                                                                    ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-base font-extrabold text-black dark:text-white whitespace-nowrap">
+                                                                ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Brand Pop */}
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    {product.brand && (
+                                                        <Badge variant="outline" className="rounded text-[10px] font-bold uppercase tracking-wider bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600">
+                                                            {product.brand.name}
+                                                        </Badge>
+                                                    )}
+                                                    {product.category && (
+                                                        <span className="text-[10px] text-gray-500">{product.category.name}</span>
+                                                    )}
+                                                </div>
+
+                                                {/* Codes Grid (Expanded Font & Added 2Code) */}
+                                                <div className="grid grid-cols-3 gap-2 text-[10px] bg-gray-50 dark:bg-gray-900/50 p-2 rounded border border-gray-100 dark:border-gray-800">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-gray-400 uppercase text-[9px]">SKU</span>
+                                                        <span className="font-mono font-bold text-xs truncate" title={product.sku || ''}>{product.sku || '-'}</span>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-gray-400 uppercase text-[9px]">Code</span>
+                                                        <span className="font-mono font-bold text-xs truncate" title={product.code || ''}>{product.code || '-'}</span>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-gray-400 uppercase text-[9px]">2Code</span>
+                                                        <span className="font-mono font-bold text-xs truncate" title={product.code_2 || ''}>{product.code_2 || '-'}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Description - Below Codes */}
+                                                {product.description ? (
+                                                    <p className="line-clamp-2 text-xs text-gray-700 dark:text-gray-300 mt-2">
+                                                        {product.description}
+                                                    </p>
                                                 ) : (
-                                                    <span className="text-base font-extrabold text-black dark:text-white whitespace-nowrap">
-                                                        ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
-                                                    </span>
+                                                    <p className="line-clamp-2 text-xs text-gray-400 mt-2">No description.</p>
+                                                )}
+                                            </div>
+
+                                            {/* Footer: Variations & Details CTA */}
+                                            <div className="flex items-end justify-between pt-1 border-t border-gray-100 dark:border-gray-800 mt-1 min-h-[30px]">
+                                                {/* Variations on Left */}
+                                                <div className="flex flex-col gap-1 flex-1 min-w-0 mr-2">
+                                                    {product.variations && product.variations.length > 0 && (
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {product.variations.slice(0, 2).map((v, i) => (
+                                                                <span key={i} className="text-[10px] inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-medium whitespace-nowrap overflow-hidden max-w-full">
+                                                                    <span className="font-bold mr-1">{v.name}:</span> <span className="truncate">{v.options}</span>
+                                                                </span>
+                                                            ))}
+                                                            {product.variations.length > 2 && (
+                                                                <span className="text-[9px] text-gray-400">+{product.variations.length - 2}</span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    {!product.variations?.length && product.branch && (
+                                                        <span className="text-[10px] text-orange-600 dark:text-orange-400 truncate flex items-center gap-1 font-medium">
+                                                            <Layers className="h-3 w-3" />
+                                                            {product.branch.branch_name}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {isSelectionMode || isClearanceMode ? (
+                                                    <div className={`shrink-0 flex items-center gap-1 text-xs font-bold whitespace-nowrap ${isSelectionMode ? 'text-red-600' : 'text-yellow-600'}`}>
+                                                        {isSelected ? 'Selected' : 'Select'}
+                                                    </div>
+                                                ) : (
+                                                    <Link href={`/products/${product.id}`} className="shrink-0">
+                                                        <button className="group/btn flex items-center gap-1 text-xs font-bold text-gray-900 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400 whitespace-nowrap">
+                                                            View Details
+                                                            <ArrowRight className="h-3 w-3 -translate-x-1 transition-transform group-hover/btn:translate-x-0" />
+                                                        </button>
+                                                    </Link>
                                                 )}
                                             </div>
                                         </div>
-
-                                        {/* Brand Pop */}
-                                        <div className="flex items-center gap-2 mb-2">
-                                            {product.brand && (
-                                                <Badge variant="outline" className="rounded text-[10px] font-bold uppercase tracking-wider bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600">
-                                                    {product.brand.name}
-                                                </Badge>
-                                            )}
-                                            {product.category && (
-                                                <span className="text-[10px] text-gray-500">{product.category.name}</span>
-                                            )}
-                                        </div>
-
-                                        {/* Codes Grid (Expanded Font & Added 2Code) */}
-                                        <div className="grid grid-cols-3 gap-2 text-[10px] bg-gray-50 dark:bg-gray-900/50 p-2 rounded border border-gray-100 dark:border-gray-800">
-                                            <div className="flex flex-col">
-                                                <span className="text-gray-400 uppercase text-[9px]">SKU</span>
-                                                <span className="font-mono font-bold text-xs truncate" title={product.sku || ''}>{product.sku || '-'}</span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-gray-400 uppercase text-[9px]">Code</span>
-                                                <span className="font-mono font-bold text-xs truncate" title={product.code || ''}>{product.code || '-'}</span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-gray-400 uppercase text-[9px]">2Code</span>
-                                                <span className="font-mono font-bold text-xs truncate" title={product.code_2 || ''}>{product.code_2 || '-'}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Description - Below Codes */}
-                                        {product.description ? (
-                                            <p className="line-clamp-2 text-xs text-gray-700 dark:text-gray-300 mt-2">
-                                                {product.description}
-                                            </p>
-                                        ) : (
-                                            <p className="line-clamp-2 text-xs text-gray-400 mt-2">No description.</p>
-                                        )}
                                     </div>
+                                );
+                            })}
+                        </div>
+                    )}
 
-                                    {/* Footer: Variations & Details CTA */}
-                                    <div className="flex items-end justify-between pt-1 border-t border-gray-100 dark:border-gray-800 mt-1 min-h-[30px]">
-                                        {/* Variations on Left */}
-                                        <div className="flex flex-col gap-1 flex-1 min-w-0 mr-2">
-                                            {product.variations && product.variations.length > 0 && (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {product.variations.slice(0, 2).map((v, i) => (
-                                                        <span key={i} className="text-[10px] inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-medium whitespace-nowrap overflow-hidden max-w-full">
-                                                            <span className="font-bold mr-1">{v.name}:</span> <span className="truncate">{v.options}</span>
-                                                        </span>
-                                                    ))}
-                                                    {product.variations.length > 2 && (
-                                                        <span className="text-[9px] text-gray-400">+{product.variations.length - 2}</span>
-                                                    )}
-                                                </div>
-                                            )}
-                                            {!product.variations?.length && product.branch && (
-                                                <span className="text-[10px] text-orange-600 dark:text-orange-400 truncate flex items-center gap-1 font-medium">
-                                                    <Layers className="h-3 w-3" />
-                                                    {product.branch.branch_name}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {isSelectionMode || isClearanceMode ? (
-                                            <div className={`shrink-0 flex items-center gap-1 text-xs font-bold whitespace-nowrap ${isSelectionMode ? 'text-red-600' : 'text-yellow-600'}`}>
-                                                {isSelected ? 'Selected' : 'Select'}
-                                            </div>
-                                        ) : (
-                                            <Link href={`/products/${product.id}`} className="shrink-0">
-                                                <button className="group/btn flex items-center gap-1 text-xs font-bold text-gray-900 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400 whitespace-nowrap">
-                                                    View Details
-                                                    <ArrowRight className="h-3 w-3 -translate-x-1 transition-transform group-hover/btn:translate-x-0" />
-                                                </button>
-                                            </Link>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-
-            <div className="mt-8 flex justify-between items-center">
-                    <p className="text-sm text-muted-foreground">
-                        Showing <strong>{productList.length}</strong> of <strong>{products.total}</strong> results
-                    </p>
-                    <Pagination links={links} />
+                    <div className="mt-8 flex justify-between items-center">
+                        <p className="text-sm text-muted-foreground">
+                            Showing <strong>{productList.length}</strong> of <strong>{products.total}</strong> results
+                        </p>
+                        <Pagination links={links} />
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <Dialog open={!!viewCodeProduct} onOpenChange={(open) => !open && setViewCodeProduct(null)}>
+            <Dialog open={!!viewCodeProduct} onOpenChange={(open) => !open && setViewCodeProduct(null)}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Product Codes: {viewCodeProduct?.name}</DialogTitle>
@@ -1302,7 +1300,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                 <span className="text-sm font-bold text-yellow-600">₱{p.clearance_price ? Number(p.clearance_price).toLocaleString() : '---'}</span>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-1.5">
                                                 <Label htmlFor={`price-${p.id}`} className="text-[10px] font-bold uppercase">New Price (₱)</Label>
@@ -1343,8 +1341,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         <Button variant="outline" onClick={() => setIsClearanceModalOpen(false)} disabled={isUpdating}>
                             Cancel
                         </Button>
-                        <Button 
-                            className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold" 
+                        <Button
+                            className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold"
                             onClick={handleBulkClearance}
                             disabled={isUpdating}
                         >
@@ -1410,8 +1408,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                             You are about to {statusToggleProduct?.status === 'active' ? 'deactivate' : 'activate'} <strong>{statusToggleProduct?.name}</strong>.
                         </p>
                         <p className="mt-2 text-xs text-muted-foreground">
-                            {statusToggleProduct?.status === 'active' 
-                                ? "Deactivated products won't be visible in the public catalog but will remain in your inventory records." 
+                            {statusToggleProduct?.status === 'active'
+                                ? "Deactivated products won't be visible in the public catalog but will remain in your inventory records."
                                 : "Activated products will be visible in the catalog and available for transactions."}
                         </p>
                     </div>
@@ -1419,9 +1417,9 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         <Button variant="outline" onClick={() => setIsStatusModalOpen(false)} className="flex-1">
                             Cancel
                         </Button>
-                        <Button 
-                            variant={statusToggleProduct?.status === 'active' ? 'destructive' : 'default'} 
-                            onClick={executeToggleStatus} 
+                        <Button
+                            variant={statusToggleProduct?.status === 'active' ? 'destructive' : 'default'}
+                            onClick={executeToggleStatus}
                             className={`flex-1 ${statusToggleProduct?.status === 'inactive' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
                         >
                             Confirm {statusToggleProduct?.status === 'active' ? 'Deactivate' : 'Activate'}
@@ -1434,14 +1432,14 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     <DialogHeader className="p-4 absolute top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-sm text-white border-none">
                         <DialogTitle className="text-white">Scan Barcode / QR Code</DialogTitle>
                     </DialogHeader>
-                    
+
                     <div className="relative min-h-[400px] flex items-center justify-center bg-black">
                         <div id="search-scanner-reader" className="w-full h-full [&>video]:object-cover [&>video]:h-[400px]"></div>
-                        
+
                         {/* Scan Line Animation */}
                         <div className="absolute inset-x-0 mx-auto w-[80%] h-0.5 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-[scan_2s_ease-in-out_infinite] top-0 pointer-events-none z-10"></div>
                         <div className="absolute inset-0 border-[60px] border-black/50 pointer-events-none z-0"></div>
-                        
+
                         <style>{`
                             @keyframes scan {
                                 0%, 100% { top: 20%; opacity: 0; }
