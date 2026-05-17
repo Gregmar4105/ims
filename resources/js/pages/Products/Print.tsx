@@ -18,6 +18,7 @@ interface Product {
     price: number | null;
     code: string | null;
     code_2: string | null;
+    sku: string | null;
     clearance_price: number | null;
     clearance_until: string | null;
     brand?: { name: string };

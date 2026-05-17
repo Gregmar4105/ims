@@ -472,6 +472,7 @@ export default function TemporaryPhotoUpload({
                                     item={item}
                                     onRemove={() => removeUpload(item.id)}
                                     onMap={(productId, productName) => updateMapping(item.id, productId, productName)}
+                                    onRetry={() => updateItemStatus(item.id, 'pending')}
                                     onPhotoClick={() => {
                                         setSelectedItem(item);
                                         setIsModalOpen(true);
@@ -573,11 +574,13 @@ function UploadCard({
     item,
     onRemove,
     onMap,
+    onRetry,
     onPhotoClick,
 }: {
     item: UploadItem;
     onRemove: () => void;
     onMap: (id: number, name: string) => void;
+    onRetry: () => void;
     onPhotoClick: () => void;
 }) {
     const [search, setSearch] = useState('');
@@ -664,7 +667,7 @@ function UploadCard({
                                 variant="outline" 
                                 size="sm" 
                                 className="h-6 text-[10px] bg-white border-red-200 text-red-600 hover:bg-red-50"
-                                onClick={() => updateItemStatus(item.id, 'pending')}
+                                onClick={() => onRetry()}
                             >
                                 Retry
                             </Button>

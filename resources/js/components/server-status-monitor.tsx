@@ -51,7 +51,6 @@ export default function ServerStatusMonitor() {
                                 </div>
                             </div>
                         ),
-                        important: true,
                     });
                 }
             }

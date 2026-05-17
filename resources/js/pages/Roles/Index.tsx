@@ -22,7 +22,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Index({ roles }: any) {
     const roleList = roles?.data || roles || [];
     const links = roles?.meta?.links || roles?.links || [];
-    const { filters } = usePage().props;
+    const { filters } = usePage().props as any;
     const [search, setSearch] = useState<string>(filters?.search || "");
 
     // Delete State
@@ -70,7 +70,7 @@ export default function Index({ roles }: any) {
                     preserveScroll: true,
                     replace: true,
                     only: ["roles"],
-                    onSuccess: (page: { props: { roles: any; }; }) => {
+                    onSuccess: (page: any) => {
                         setLoading(false);
                         const updatedRoles = (page.props.roles as any)?.data || [];
                         if (updatedRoles.length > 0) {

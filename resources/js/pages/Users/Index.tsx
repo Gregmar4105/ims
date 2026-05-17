@@ -27,7 +27,7 @@ export default function Index({ users, branches, roles }: any) {
     // Robustly extract links: check users.meta.links (API Resources) first, then users.links (Standard Pagination)
     const links = users?.meta?.links || users?.links || [];
 
-    const { filters } = usePage().props;
+    const { filters } = usePage().props as any;
     const [search, setSearch] = useState<string>(filters?.search || "");
 
     // Delete State
@@ -93,7 +93,7 @@ export default function Index({ users, branches, roles }: any) {
                     only: ["users"],
 
                     // onSuccess receives the page props as argument
-                    onSuccess: (page: { props: { users: any; }; }) => {
+                    onSuccess: (page: any) => {
                         setLoading(false);
 
                         // Get updated airlines from the returned page props

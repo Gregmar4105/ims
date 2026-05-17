@@ -1,7 +1,13 @@
 import { Link } from "@inertiajs/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function Pagination({ links }) {
+interface PaginationLink {
+    label: string;
+    url: string | null;
+    active: boolean;
+}
+
+export default function Pagination({ links }: { links: PaginationLink[] }) {
     const totalLinks = links.length;
 
     // --- LOGIC (UNTOUCHED) ---
@@ -9,7 +15,7 @@ export default function Pagination({ links }) {
     const nextLink = links[totalLinks - 1];
     const pageLinks = links.slice(1, totalLinks - 1);
     const totalPages = pageLinks.length;
-    const activePageIndex = pageLinks.findIndex(l => l.active);
+    const activePageIndex = pageLinks.findIndex((l: PaginationLink) => l.active);
     const maxIntermediateLinks = 5;
 
     let start = 0;
@@ -52,17 +58,17 @@ export default function Pagination({ links }) {
 
     const limitedLinks = [
         prevLink,
-        ...visiblePageLinks.filter((link, index, self) =>
+        ...visiblePageLinks.filter((link: PaginationLink, index: number, self: PaginationLink[]) =>
             !(link.label === '...' && index > 0 && self[index - 1].label === '...')
         ),
         nextLink
-    ].filter((link, index, self) =>
+    ].filter((link: PaginationLink, index: number, self: PaginationLink[]) =>
         !(link.label === '...' && index > 0 && self[index - 1].label === '...')
     );
     // --- END LOGIC ---
 
     // Helper to render label (Handles "Previous/Next" text vs Icons)
-    const renderLabel = (label) => {
+    const renderLabel = (label: string) => {
         if (label.includes('Previous')) {
             return <span className="sr-only">Previous</span>;
         }
@@ -73,7 +79,7 @@ export default function Pagination({ links }) {
     };
 
     // Helper to pick Icon based on label
-    const getIcon = (label) => {
+    const getIcon = (label: string) => {
         if (label.includes('Previous')) return <ChevronLeft className="w-4 h-4" />; 
         if (label.includes('Next')) return <ChevronRight className="w-4 h-4" />;
         return null;

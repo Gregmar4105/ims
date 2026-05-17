@@ -162,7 +162,7 @@ export default function Create({ branches = [], roles = [] }: { branches: any[],
                                     placeholder="Select one or more roles"
                                 />
                                 {errors.roles && <p className="text-sm text-destructive">{errors.roles}</p>}
-                                {errors['roles.*'] && <p className="text-sm text-destructive">{errors['roles.*']}</p>}
+                                {(errors as any)['roles.*'] && <p className="text-sm text-destructive">{(errors as any)['roles.*']}</p>}
                             </div>
 
                             {/* Default Password */}

@@ -21,7 +21,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Index({ branches }: any) {
     const branchList = branches?.data || branches || [];
     const links = branches?.meta?.links || branches?.links || [];
-    const { filters } = usePage().props;
+    const { filters } = usePage().props as any;
     const [search, setSearch] = useState<string>(filters?.search || "");
 
     // Delete State
@@ -71,7 +71,7 @@ export default function Index({ branches }: any) {
                     preserveScroll: true,
                     replace: true,
                     only: ["branches"],
-                    onSuccess: (page: { props: { branches: any; }; }) => {
+                    onSuccess: (page: any) => {
                         setLoading(false);
                         const updatedBranches = (page.props.branches as any)?.data || [];
                         if (updatedBranches.length > 0) {

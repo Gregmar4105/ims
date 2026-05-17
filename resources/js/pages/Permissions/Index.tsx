@@ -21,7 +21,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Index({ permissions }: any) {
     const permissionList = permissions?.data || permissions || [];
     const links = permissions?.meta?.links || permissions?.links || [];
-    const { filters } = usePage().props;
+    const { filters } = usePage().props as any;
     const [search, setSearch] = useState<string>(filters?.search || "");
 
     // Delete State
@@ -69,7 +69,7 @@ export default function Index({ permissions }: any) {
                     preserveScroll: true,
                     replace: true,
                     only: ["permissions"],
-                    onSuccess: (page: { props: { permissions: any; }; }) => {
+                    onSuccess: (page: any) => {
                         setLoading(false);
                         const updatedPermissions = (page.props.permissions as any)?.data || [];
                         if (updatedPermissions.length > 0) {

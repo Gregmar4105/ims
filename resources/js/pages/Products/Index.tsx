@@ -83,6 +83,7 @@ interface Props {
         category?: string;
         stock?: string;
         status?: string;
+        clearance?: string;
     };
     options: {
         branches: string[];
@@ -622,7 +623,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                 if (selectedProductIds.length > 0) {
                                                     // Initialize individual updates with current values
                                                     const initialUpdates: Record<number, { price: string, until: string }> = {};
-                                                    productList.filter(p => selectedProductIds.includes(p.id)).forEach(p => {
+                                                    productList.filter((p: any) => selectedProductIds.includes(p.id)).forEach((p: any) => {
                                                         initialUpdates[p.id] = {
                                                             price: p.clearance_price ? String(p.clearance_price) : '',
                                                             until: p.clearance_until ? new Date(p.clearance_until).toISOString().split('T')[0] : ''
@@ -1281,7 +1282,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 Selected Products ({selectedProductIds.length}):
                             </p>
                             <div className="space-y-4">
-                                {productList.filter(p => selectedProductIds.includes(p.id)).map(p => (
+                                {productList.filter((p: any) => selectedProductIds.includes(p.id)).map((p: any) => (
                                     <div key={p.id} className="bg-white dark:bg-black/20 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
                                         <div className="flex justify-between items-start mb-3">
                                             <div className="flex-1 min-w-0">
@@ -1307,7 +1308,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                 <Input
                                                     id={`price-${p.id}`}
                                                     type="number"
-                                                    size="sm"
+                                                    size={10}
                                                     placeholder="0.00"
                                                     value={clearanceUpdates[p.id]?.price || ''}
                                                     onChange={(e) => setClearanceUpdates(prev => ({
@@ -1322,7 +1323,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                 <Input
                                                     id={`date-${p.id}`}
                                                     type="date"
-                                                    size="sm"
+                                                    size={10}
                                                     value={clearanceUpdates[p.id]?.until || ''}
                                                     onChange={(e) => setClearanceUpdates(prev => ({
                                                         ...prev,

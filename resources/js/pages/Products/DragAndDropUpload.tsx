@@ -642,7 +642,7 @@ function ProductUploadCard({
                             variant="outline" 
                             size="sm" 
                             className="mt-2 bg-background border-red-200 text-red-600 hover:bg-red-50"
-                            onClick={() => updateItem(item.id, 'status', 'pending')}
+                            onClick={() => onUpdate('status', 'pending')}
                         >
                             Retry
                         </Button>

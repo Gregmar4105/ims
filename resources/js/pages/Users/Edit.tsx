@@ -37,7 +37,7 @@ interface EditProps {
     roles: any[];
 }
 
-export default function Edit({ users, branches = [], roles = [] }: EditProps) {
+export default function Edit({ users, branches = [], roles = [] }: any) {
 
     // Initialize form with EXISTING user data
     const { data, setData, put, processing, errors } = useForm({
@@ -140,7 +140,7 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
                                         <SelectValue placeholder="Select a branch" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {branches.map((branch) => (
+                                        {branches.map((branch: any) => (
                                             <SelectItem key={branch.id} value={String(branch.id)}>
                                                 {branch.branch_name}
                                             </SelectItem>
@@ -160,7 +160,7 @@ export default function Edit({ users, branches = [], roles = [] }: EditProps) {
                                     placeholder="Select one or more roles"
                                 />
                                 {errors.roles && <p className="text-sm text-destructive">{errors.roles}</p>}
-                                {errors['roles.*'] && <p className="text-sm text-destructive">{errors['roles.*']}</p>}
+                                {(errors as any)['roles.*'] && <p className="text-sm text-destructive">{(errors as any)['roles.*']}</p>}
                             </div>
 
 
