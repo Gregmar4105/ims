@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2, ArrowLeft, Save } from 'lucide-react';
+import { ProductSearchSelect } from '@/components/ProductSearchSelect';
 
 interface Branch {
     id: number;
@@ -118,21 +119,12 @@ export default function Create({ products, branches }: { products: Product[], br
                                         <div key={index} className="flex items-end gap-3 p-3 border rounded-lg bg-muted/20">
                                             <div className="flex-1 space-y-1">
                                                 <Label className="text-xs text-muted-foreground">Product</Label>
-                                                <Select
-                                                    value={item.product_id}
+                                                <ProductSearchSelect
+                                                    value={item.product_id ? item.product_id.toString() : ''}
                                                     onValueChange={(val) => updateItem(index, 'product_id', val)}
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select product" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {products.map((product) => (
-                                                            <SelectItem key={product.id} value={product.id.toString()}>
-                                                                {product.name} (Qty: {product.quantity})
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                                    products={products}
+                                                    placeholder="Search product..."
+                                                />
                                             </div>
                                             <div className="w-24 space-y-1">
                                                 <Label className="text-xs text-muted-foreground">Quantity</Label>
