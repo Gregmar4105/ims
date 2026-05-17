@@ -2,7 +2,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Bike, AlertTriangle, Printer } from 'lucide-react';
+import { Plus, Search, Bike, AlertTriangle, Printer, X } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import {
     Table,
@@ -12,7 +12,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -41,20 +42,78 @@ interface ReorderProduct {
 
 interface Props {
     reorders: ReorderProduct[];
+    options: {
+        brands: string[];
+        categories: string[];
+    };
 }
 
-export default function Index({ reorders }: Props) {
+export default function Index({ reorders, options }: Props) {
     const { auth } = usePage<SharedData>().props;
     const branchName = auth.user?.branch?.branch_name;
     const [searchQuery, setSearchQuery] = useState('');
+    const [brand, setBrand] = useState('all');
+    const [baseCategory, setBaseCategory] = useState('all');
+    const [subCategory, setSubCategory] = useState('all');
 
-    const filteredReorders = reorders.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.brand?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category?.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Intelligent Category Grouping
+    const categoryGroups = useMemo(() => {
+        const groups: Record<string, string[]> = {};
+        options.categories.forEach(cat => {
+            const firstWord = cat.split(' ')[0];
+            if (!groups[firstWord]) groups[firstWord] = [];
+            groups[firstWord].push(cat);
+        });
+        return groups;
+    }, [options.categories]);
+
+    const baseCategories = useMemo(() => Object.keys(categoryGroups).sort(), [categoryGroups]);
+
+    const subCategories = useMemo(() => {
+        if (baseCategory === 'all') return [];
+        return categoryGroups[baseCategory] || [];
+    }, [baseCategory, categoryGroups]);
+
+    const handleBaseCategoryChange = (val: string) => {
+        setBaseCategory(val);
+        if (val === 'all') {
+            setSubCategory('all');
+        } else {
+            const subs = categoryGroups[val] || [];
+            if (subs.length === 1) {
+                setSubCategory(subs[0]);
+            } else {
+                setSubCategory('all');
+            }
+        }
+    };
+
+    const filteredReorders = useMemo(() => {
+        return reorders.filter(product => {
+            // 1. Search Query Filter
+            const matchesSearch = searchQuery === '' || 
+                product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                product.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                product.brand?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                product.category?.name.toLowerCase().includes(searchQuery.toLowerCase());
+
+            // 2. Brand Filter
+            const matchesBrand = brand === 'all' || product.brand?.name === brand;
+
+            // 3. Category & Subcategory Filter
+            let matchesCategory = true;
+            if (baseCategory !== 'all') {
+                if (subCategory !== 'all') {
+                    matchesCategory = product.category?.name === subCategory;
+                } else {
+                    matchesCategory = product.category?.name ? product.category.name.split(' ')[0] === baseCategory : false;
+                }
+            }
+
+            return matchesSearch && matchesBrand && matchesCategory;
+        });
+    }, [reorders, searchQuery, brand, baseCategory, subCategory]);
 
     const isSystemAdmin = auth.roles.includes('System Administrator');
 
@@ -83,8 +142,8 @@ export default function Index({ reorders }: Props) {
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-xl border shadow-sm flex flex-col">
-                    <div className="p-4 border-b flex flex-col sm:flex-row gap-4 items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
-                        <div className="relative w-full sm:max-w-xs">
+                    <div className="p-4 border-b flex flex-col md:flex-row gap-4 items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
+                        <div className="relative w-full md:max-w-xs">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <Input
                                 placeholder="Search products..."
@@ -92,6 +151,51 @@ export default function Index({ reorders }: Props) {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-9"
                             />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center w-full md:w-auto">
+                            <SearchableSelect
+                                options={options.brands}
+                                value={brand}
+                                onValueChange={setBrand}
+                                placeholder="Brand"
+                                allLabel="All Brands"
+                            />
+
+                            <SearchableSelect
+                                options={baseCategories}
+                                value={baseCategory}
+                                onValueChange={handleBaseCategoryChange}
+                                placeholder="Category"
+                                allLabel="All Categories"
+                            />
+
+                            {baseCategory !== 'all' && subCategories.length > 1 && (
+                                <SearchableSelect
+                                    options={subCategories}
+                                    value={subCategory}
+                                    onValueChange={setSubCategory}
+                                    placeholder="Sub-Category"
+                                    allLabel="All Sub-Categories"
+                                    getLabel={(opt) => opt === 'all' ? 'All' : opt.replace(new RegExp(`^${baseCategory}\\s*`), '') || opt}
+                                />
+                            )}
+
+                            {(brand !== 'all' || baseCategory !== 'all' || searchQuery !== '') && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                        setSearchQuery('');
+                                        setBrand('all');
+                                        setBaseCategory('all');
+                                        setSubCategory('all');
+                                    }}
+                                    className="h-9 px-2 text-red-500 hover:text-red-700 hover:bg-red-50 col-span-2 md:col-span-1"
+                                >
+                                    <X className="h-4 w-4 mr-1 inline" /> Clear
+                                </Button>
+                            )}
                         </div>
                     </div>
 

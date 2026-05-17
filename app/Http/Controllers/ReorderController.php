@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Models\Product;
 use App\Models\BranchProduct;
+use App\Models\Brand;
+use App\Models\Category;
 
 class ReorderController extends Controller
 {
@@ -86,8 +88,24 @@ class ReorderController extends Controller
             }
         }
 
+        // Fetch brands/categories based on visibility rules
+        $brandsQuery = Brand::where('status', 'Active');
+        $categoriesQuery = Category::where('status', 'Active');
+
+        if (!$isSystemAdmin && $user->branch_id) {
+            $brandsQuery->where('branch_id', $user->branch_id);
+            $categoriesQuery->where('branch_id', $user->branch_id);
+        }
+
+        $brands = $brandsQuery->pluck('name')->unique()->values();
+        $categories = $categoriesQuery->pluck('name')->unique()->values();
+
         return Inertia::render('Reorders/Index', [
             'reorders' => $reorders->values()->all(),
+            'options' => [
+                'brands' => $brands,
+                'categories' => $categories,
+            ],
         ]);
     }
 }
