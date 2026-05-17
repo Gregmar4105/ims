@@ -139,7 +139,7 @@ class TransferController extends Controller
         ]);
     }
 
-    public function initiate(Transfer $transfer, \App\Services\OneSignalService $oneSignal)
+    public function initiate(Request $request, Transfer $transfer, \App\Services\OneSignalService $oneSignal)
     {
         $user = auth()->user();
 
@@ -151,29 +151,50 @@ class TransferController extends Controller
             return back()->with('error', 'Transfer cannot be initiated.');
         }
 
-        DB::transaction(function () use ($transfer, $user) {
-            foreach ($transfer->items as $item) {
-                // Find the branch product entry
-                $branchProduct = DB::table('branch_products')
-                    ->where('branch_id', $transfer->source_branch_id)
-                    ->where('product_id', $item->product_id)
-                    ->first();
+        $request->validate([
+            'items' => 'nullable|array',
+            'items.*.id' => 'required|exists:transfer_items,id',
+            'items.*.quantity' => 'required|integer|min:1',
+        ]);
 
-                if (!$branchProduct || $branchProduct->quantity < $item->quantity) {
-                    throw new \Exception("Insufficient stock for product ID: {$item->product_id}");
+        try {
+            DB::transaction(function () use ($request, $transfer, $user) {
+                if ($request->has('items')) {
+                    foreach ($request->items as $adjItem) {
+                        $item = $transfer->items()->where('id', $adjItem['id'])->first();
+                        if ($item) {
+                            $item->update(['quantity' => $adjItem['quantity']]);
+                        }
+                    }
+                    // Refresh transfer items to reflect adjusted quantities
+                    $transfer->load('items');
                 }
 
-                // Decrement stock
-                DB::table('branch_products')
-                    ->where('id', $branchProduct->id)
-                    ->decrement('quantity', $item->quantity);
-            }
+                foreach ($transfer->items as $item) {
+                    // Find the branch product entry
+                    $branchProduct = DB::table('branch_products')
+                        ->where('branch_id', $transfer->source_branch_id)
+                        ->where('product_id', $item->product_id)
+                        ->first();
 
-            $transfer->update([
-                'status' => 'outgoing',
-                'approved_by' => $user->id,
-            ]);
-        });
+                    if (!$branchProduct || $branchProduct->quantity < $item->quantity) {
+                        throw new \Exception("Insufficient stock for product ID: {$item->product_id}");
+                    }
+
+                    // Decrement stock
+                    DB::table('branch_products')
+                        ->where('id', $branchProduct->id)
+                        ->decrement('quantity', $item->quantity);
+                }
+
+                $transfer->update([
+                    'status' => 'outgoing',
+                    'approved_by' => $user->id,
+                ]);
+            });
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         // Notify Branch Administrators (Destination) - Moved from store
         try {

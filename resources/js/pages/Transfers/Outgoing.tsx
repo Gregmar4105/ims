@@ -1,4 +1,14 @@
-import { Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
+import { Link, useForm, router } from '@inertiajs/react';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+    DialogDescription,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -54,6 +64,50 @@ const breadcrumbs = [
 
 export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
     const { post } = useForm();
+    const [initiatingTransfer, setInitiatingTransfer] = useState<Transfer | null>(null);
+    const [adjustedItems, setAdjustedItems] = useState<{ id: number; product: Product; quantity: number }[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleInitiateClick = (transfer: Transfer) => {
+        setInitiatingTransfer(transfer);
+        setAdjustedItems(transfer.items.map(item => ({
+            id: item.id,
+            product: item.product,
+            quantity: item.quantity
+        })));
+    };
+
+    const handleConfirmInitiate = () => {
+        if (!initiatingTransfer) return;
+
+        if (adjustedItems.some(item => item.quantity < 1)) {
+            alert('Please ensure all items have a quantity of at least 1.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        router.post(`/transfers/${initiatingTransfer.id}/initiate`, {
+            items: adjustedItems.map(item => ({
+                id: item.id,
+                quantity: item.quantity
+            }))
+        }, {
+            onSuccess: () => {
+                setInitiatingTransfer(null);
+                setIsSubmitting(false);
+            },
+            onError: () => {
+                setIsSubmitting(false);
+            }
+        });
+    };
+
+    const updateAdjustedItemQty = (itemId: number, qty: number) => {
+        if (qty < 1) return;
+        setAdjustedItems(prev => prev.map(item =>
+            item.id === itemId ? { ...item, quantity: qty } : item
+        ));
+    };
 
     const formatDate = (dateString: string) => {
         return new Intl.DateTimeFormat('en-US', {
@@ -144,7 +198,7 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                                                 </Button>
                                                 <Button
                                                     size="sm"
-                                                    onClick={() => handleInitiate(transfer.id)}
+                                                    onClick={() => handleInitiateClick(transfer)}
                                                     className="flex-1 sm:flex-none gap-2 bg-green-600 hover:bg-green-700 text-white"
                                                 >
                                                     <Send className="w-4 h-4" />
@@ -227,6 +281,112 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                     </div>
                 )}
             </div>
+
+            {/* Initiate/Approve Transfer Modal */}
+            <Dialog open={initiatingTransfer !== null} onOpenChange={(open) => !open && setInitiatingTransfer(null)}>
+                <DialogContent className="sm:max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+                            <Send className="w-5 h-5 text-green-600" />
+                            Verify and Initiate Transfer #{initiatingTransfer?.id}
+                        </DialogTitle>
+                        <DialogDescription className="text-muted-foreground mt-1">
+                            Verify prepared quantities for items being shipped to <span className="font-semibold text-gray-900 dark:text-gray-100">{initiatingTransfer?.destination_branch?.branch_name}</span>. You can adjust the quantity counts if they were prepared incorrectly.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="py-4 space-y-4">
+                        <div className="max-h-[300px] overflow-y-auto border rounded-lg divide-y bg-muted/5">
+                            {adjustedItems.map((item) => (
+                                <div key={item.id} className="flex items-center justify-between p-4 hover:bg-muted/10 transition-colors">
+                                    <div className="flex-1 min-w-0 pr-4">
+                                        <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
+                                            {item.product?.name}
+                                        </h4>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                            {item.product?.barcode && (
+                                                <span className="flex items-center gap-1 font-mono">
+                                                    <Barcode className="w-3.5 h-3.5" />
+                                                    {item.product.barcode}
+                                                </span>
+                                            )}
+                                            {item.product?.qr_code && (
+                                                <span className="flex items-center gap-1 font-mono">
+                                                    <QrCode className="w-3.5 h-3.5" />
+                                                    {item.product.qr_code}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 shrink-0">
+                                        <span className="text-xs text-muted-foreground">Qty:</span>
+                                        <div className="flex items-center gap-1">
+                                            <Button 
+                                                type="button" 
+                                                variant="outline" 
+                                                size="icon" 
+                                                className="h-8 w-8 rounded-full"
+                                                onClick={() => updateAdjustedItemQty(item.id, item.quantity - 1)}
+                                                disabled={item.quantity <= 1}
+                                            >
+                                                -
+                                            </Button>
+                                            <Input
+                                                type="number"
+                                                min="1"
+                                                value={item.quantity}
+                                                onChange={(e) => {
+                                                    const val = parseInt(e.target.value);
+                                                    if (!isNaN(val)) {
+                                                        updateAdjustedItemQty(item.id, val);
+                                                    }
+                                                }}
+                                                className="w-16 h-8 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none px-1"
+                                            />
+                                            <Button 
+                                                type="button" 
+                                                variant="outline" 
+                                                size="icon" 
+                                                className="h-8 w-8 rounded-full"
+                                                onClick={() => updateAdjustedItemQty(item.id, item.quantity + 1)}
+                                            >
+                                                +
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {initiatingTransfer?.notes && (
+                            <div className="p-3 bg-yellow-50 dark:bg-yellow-900/10 rounded-lg text-sm text-yellow-800 dark:text-yellow-200 border border-yellow-100 dark:border-yellow-900/20">
+                                <span className="font-semibold">Prepared Notes: </span>
+                                {initiatingTransfer.notes}
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter className="bg-muted/10 p-4 border-t flex justify-end gap-2 -mx-6 -mb-6">
+                        <Button 
+                            type="button" 
+                            variant="ghost" 
+                            onClick={() => setInitiatingTransfer(null)}
+                            disabled={isSubmitting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            type="button" 
+                            onClick={handleConfirmInitiate}
+                            disabled={isSubmitting}
+                            className="bg-green-600 hover:bg-green-700 text-white gap-2 font-medium"
+                        >
+                            <CheckCircle className="w-4 h-4" />
+                            {isSubmitting ? 'Initiating...' : 'Confirm & Initiate'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
