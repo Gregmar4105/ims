@@ -130,7 +130,7 @@ class TransferController extends Controller
 
         $transfers = Transfer::with(['items.product', 'sourceBranch', 'readiedBy', 'approvedBy'])
             ->where('destination_branch_id', $user->branch_id)
-            ->where('status', 'outgoing')
+            ->whereIn('status', ['outgoing', 'incomplete'])
             ->latest()
             ->get();
 
@@ -221,7 +221,7 @@ class TransferController extends Controller
         return back()->with('success', 'Transfer initiated successfully.');
     }
 
-    public function confirmReceipt(Transfer $transfer)
+    public function confirmReceipt(Request $request, Transfer $transfer)
     {
         $user = auth()->user();
 
@@ -229,49 +229,139 @@ class TransferController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        if ($transfer->status !== 'outgoing') {
+        if (!in_array($transfer->status, ['outgoing', 'incomplete'])) {
             return back()->with('error', 'Transfer cannot be confirmed.');
         }
 
-        DB::transaction(function () use ($transfer, $user) {
-            foreach ($transfer->items as $item) {
-                // Update or create branch product entry for destination
-                $branchProduct = DB::table('branch_products')
-                    ->where('branch_id', $transfer->destination_branch_id)
-                    ->where('product_id', $item->product_id)
-                    ->first();
+        $request->validate([
+            'status' => 'required|string|in:completed,incomplete,rejected,outgoing',
+            'items' => 'required|array',
+            'items.*.id' => 'required|exists:transfer_items,id',
+            'items.*.received_quantity' => 'required|integer|min:0',
+        ]);
 
-                if ($branchProduct) {
-                    DB::table('branch_products')
-                        ->where('id', $branchProduct->id)
-                        ->increment('quantity', $item->quantity);
+        $newStatus = $request->status;
+
+        try {
+            DB::transaction(function () use ($transfer, $user, $newStatus, $request) {
+                if ($newStatus === 'rejected') {
+                    // Rejection logic: return stock to source branch and decrement destination branch by whatever was received so far
+                    foreach ($transfer->items as $item) {
+                        // 1. Return sent quantity to source branch
+                        $sourceBranchProduct = DB::table('branch_products')
+                            ->where('branch_id', $transfer->source_branch_id)
+                            ->where('product_id', $item->product_id)
+                            ->first();
+
+                        if ($sourceBranchProduct) {
+                            DB::table('branch_products')
+                                ->where('id', $sourceBranchProduct->id)
+                                ->increment('quantity', $item->quantity);
+                        } else {
+                            DB::table('branch_products')->insert([
+                                'branch_id' => $transfer->source_branch_id,
+                                'product_id' => $item->product_id,
+                                'quantity' => $item->quantity,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+
+                        // 2. Remove previously received quantity from destination branch
+                        if ($item->received_quantity > 0) {
+                            $destBranchProduct = DB::table('branch_products')
+                                ->where('branch_id', $transfer->destination_branch_id)
+                                ->where('product_id', $item->product_id)
+                                ->first();
+
+                            if ($destBranchProduct) {
+                                DB::table('branch_products')
+                                    ->where('id', $destBranchProduct->id)
+                                    ->decrement('quantity', $item->received_quantity);
+                            }
+                        }
+
+                        // Update item status and received quantity
+                        $item->update([
+                            'received_quantity' => 0,
+                            'status' => 'missing',
+                        ]);
+                    }
+
+                    $transfer->update([
+                        'status' => 'rejected',
+                        'received_by' => $user->id,
+                    ]);
                 } else {
-                    // Create new entry if it doesn't exist (using global product info)
-                    // We need to get the physical location from somewhere, or leave null.
-                    // For now, we'll leave it null or copy from source if that was tracked (it's not in transfer item).
-                    DB::table('branch_products')->insert([
-                        'branch_id' => $transfer->destination_branch_id,
-                        'product_id' => $item->product_id,
-                        'quantity' => $item->quantity,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                    // Update received quantities and destination stock
+                    $itemsInput = collect($request->items)->keyBy('id');
+
+                    foreach ($transfer->items as $item) {
+                        $itemData = $itemsInput->get($item->id);
+                        if (!$itemData) {
+                            continue;
+                        }
+
+                        $newReceivedQty = (int)$itemData['received_quantity'];
+                        $oldReceivedQty = (int)$item->received_quantity;
+
+                        // Difference to add/remove from destination branch
+                        $delta = $newReceivedQty - $oldReceivedQty;
+
+                        if ($delta !== 0) {
+                            $destBranchProduct = DB::table('branch_products')
+                                ->where('branch_id', $transfer->destination_branch_id)
+                                ->where('product_id', $item->product_id)
+                                ->first();
+
+                            if ($destBranchProduct) {
+                                DB::table('branch_products')
+                                    ->where('id', $destBranchProduct->id)
+                                    ->increment('quantity', $delta);
+                            } else {
+                                DB::table('branch_products')->insert([
+                                    'branch_id' => $transfer->destination_branch_id,
+                                    'product_id' => $item->product_id,
+                                    'quantity' => $newReceivedQty,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                            }
+                        }
+
+                        // Determine item status
+                        $itemStatus = 'ok';
+                        if ($newReceivedQty === 0) {
+                            $itemStatus = 'missing';
+                        } elseif ($newReceivedQty < $item->quantity) {
+                            $itemStatus = 'incomplete';
+                        }
+
+                        $item->update([
+                            'received_quantity' => $newReceivedQty,
+                            'status' => $itemStatus,
+                        ]);
+                    }
+
+                    $transfer->update([
+                        'status' => $newStatus,
+                        'received_by' => $user->id,
                     ]);
                 }
+            });
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error processing transfer receipt: ' . $e->getMessage());
+        }
 
-                // Update item status
-                $item->update([
-                    'received_quantity' => $item->quantity, // Assuming full receipt for now
-                    'status' => 'received',
-                ]);
-            }
+        $statusText = match ($newStatus) {
+            'completed' => 'fully confirmed and completed',
+            'incomplete' => 'marked as incomplete (partially received)',
+            'rejected' => 'rejected and stock returned to sender',
+            'outgoing' => 'receipt updated as pending',
+            default => 'updated',
+        };
 
-            $transfer->update([
-                'status' => 'completed',
-                'received_by' => $user->id,
-            ]);
-        });
-
-        return back()->with('success', 'Transfer receipt confirmed.');
+        return back()->with('success', "Transfer receipt {$statusText}.");
     }
 
     public function reject(Transfer $transfer)
@@ -317,7 +407,7 @@ class TransferController extends Controller
         if ($statusFilter !== 'all') {
             $query->where('status', $statusFilter);
         } else {
-            $query->whereIn('status', ['completed', 'rejected']);
+            $query->whereIn('status', ['completed', 'rejected', 'incomplete']);
         }
             
         // Date Filters
@@ -411,7 +501,7 @@ class TransferController extends Controller
         if ($statusFilter !== 'all') {
             $query->where('status', $statusFilter);
         } else {
-            $query->whereIn('status', ['completed', 'rejected']);
+            $query->whereIn('status', ['completed', 'rejected', 'incomplete']);
         }
             
         $dateFrom = $request->query('date_from');

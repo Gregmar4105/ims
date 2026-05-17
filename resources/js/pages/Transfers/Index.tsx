@@ -274,6 +274,7 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="completed">Completed</SelectItem>
+                                <SelectItem value="incomplete">Incomplete</SelectItem>
                                 <SelectItem value="rejected">Rejected</SelectItem>
                             </SelectContent>
                         </Select>
@@ -296,13 +297,22 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                                             <div className="flex items-center gap-3">
                                                 <Badge
                                                     variant="default"
-                                                    className={`px-2.5 py-0.5 text-sm font-medium ${transfer.status === 'completed'
-                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800'
-                                                        : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800'
-                                                        }`}
+                                                    className={`px-2.5 py-0.5 text-sm font-medium ${
+                                                        transfer.status === 'completed'
+                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800'
+                                                            : transfer.status === 'incomplete'
+                                                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800'
+                                                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800'
+                                                    }`}
                                                 >
                                                     <span className="flex items-center gap-1.5">
-                                                        {transfer.status === 'completed' ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                                                        {transfer.status === 'completed' ? (
+                                                            <CheckCircle className="w-3.5 h-3.5" />
+                                                        ) : transfer.status === 'incomplete' ? (
+                                                            <Clock className="w-3.5 h-3.5" />
+                                                        ) : (
+                                                            <XCircle className="w-3.5 h-3.5" />
+                                                        )}
                                                         {transfer.status.charAt(0).toUpperCase() + transfer.status.slice(1)}
                                                     </span>
                                                 </Badge>

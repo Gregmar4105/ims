@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
@@ -5,7 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, Truck, CheckCircle, Clock, User, Barcode, QrCode } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, User, Barcode, QrCode, AlertTriangle, XCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 interface Branch {
     id: number;
@@ -53,7 +59,14 @@ const breadcrumbs = [
 ];
 
 export default function Incoming({ transfers }: { transfers: Transfer[] }) {
-    const { post } = useForm();
+    const [selectedTransfer, setSelectedTransfer] = useState<Transfer | null>(null);
+    const [isOpen, setIsOpen] = useState(false);
+    const [verifiedProducts, setVerifiedProducts] = useState<Record<number, boolean>>({});
+
+    const { data, setData, post, processing, reset } = useForm({
+        status: 'completed',
+        items: [] as Array<{ id: number; received_quantity: number }>,
+    });
 
     const formatDate = (dateString: string) => {
         return new Intl.DateTimeFormat('en-US', {
@@ -65,10 +78,61 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
         }).format(new Date(dateString));
     };
 
-    const handleConfirm = (id: number) => {
-        if (confirm('Are you sure you want to confirm receipt of this transfer? Stock will be added to your branch.')) {
-            post(`/transfers/${id}/confirm`);
+    const handleOpenConfirmModal = (transfer: Transfer) => {
+        setSelectedTransfer(transfer);
+        setData({
+            status: 'completed',
+            items: transfer.items.map(item => ({
+                id: item.id,
+                received_quantity: item.received_quantity > 0 ? item.received_quantity : item.quantity
+            }))
+        });
+
+        const initialVerified: Record<number, boolean> = {};
+        transfer.items.forEach(item => {
+            initialVerified[item.id] = true;
+        });
+        setVerifiedProducts(initialVerified);
+        setIsOpen(true);
+    };
+
+    const handleToggleVerify = (itemId: number, checked: boolean) => {
+        setVerifiedProducts(prev => ({ ...prev, [itemId]: checked }));
+
+        if (!checked) {
+            setData('items', data.items.map(item =>
+                item.id === itemId ? { ...item, received_quantity: 0 } : item
+            ));
+        } else {
+            const originalItem = selectedTransfer?.items.find(i => i.id === itemId);
+            if (originalItem) {
+                setData('items', data.items.map(item =>
+                    item.id === itemId ? { ...item, received_quantity: originalItem.quantity } : item
+                ));
+            }
         }
+    };
+
+    const handleQuantityChange = (itemId: number, val: number) => {
+        const originalItem = selectedTransfer?.items.find(i => i.id === itemId);
+        const maxQty = originalItem ? originalItem.quantity : 999999;
+        const clampedVal = Math.max(0, Math.min(maxQty, val));
+
+        setData('items', data.items.map(item =>
+            item.id === itemId ? { ...item, received_quantity: clampedVal } : item
+        ));
+    };
+
+    const handleSubmitConfirm = () => {
+        if (!selectedTransfer) return;
+
+        post(`/transfers/${selectedTransfer.id}/confirm`, {
+            onSuccess: () => {
+                setIsOpen(false);
+                setSelectedTransfer(null);
+                reset();
+            }
+        });
     };
 
     return (
@@ -96,12 +160,21 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-3">
-                                                <Badge
-                                                    variant="default"
-                                                    className="px-2.5 py-0.5 text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800"
-                                                >
-                                                    <span className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" /> Incoming</span>
-                                                </Badge>
+                                                {transfer.status === 'incomplete' ? (
+                                                    <Badge
+                                                        variant="default"
+                                                        className="px-2.5 py-0.5 text-sm font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                                                    >
+                                                        <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Incomplete</span>
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge
+                                                        variant="default"
+                                                        className="px-2.5 py-0.5 text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                                                    >
+                                                        <span className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" /> Incoming</span>
+                                                    </Badge>
+                                                )}
                                                 <span className="text-sm text-muted-foreground font-mono">
                                                     #{transfer.id}
                                                 </span>
@@ -115,7 +188,7 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                                         <Button
                                             size="sm"
                                             className="gap-2 bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
-                                            onClick={() => handleConfirm(transfer.id)}
+                                            onClick={() => handleOpenConfirmModal(transfer)}
                                         >
                                             <CheckCircle className="w-4 h-4" />
                                             Confirm Receipt
@@ -195,6 +268,180 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                     </div>
                 )}
             </div>
+
+            <Dialog open={isOpen} onOpenChange={(open) => {
+                if (!open) {
+                    setIsOpen(false);
+                    setSelectedTransfer(null);
+                    reset();
+                }
+            }}>
+                <DialogContent className="max-w-2xl overflow-hidden p-0 rounded-xl border shadow-2xl bg-white dark:bg-zinc-950">
+                    <DialogHeader className="p-6 pb-4 border-b bg-muted/20">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
+                            <Truck className="w-6 h-6 text-primary animate-pulse" />
+                            Confirm Receipt
+                        </DialogTitle>
+                        <DialogDescription className="text-sm text-muted-foreground mt-1">
+                            Verify if the delivered products match the sent items from <span className="font-semibold text-zinc-900 dark:text-zinc-50">{selectedTransfer?.source_branch?.branch_name}</span>. Adjust quantities and transfer status as needed.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="p-6 max-h-[60vh] overflow-y-auto space-y-6">
+                        {/* Status Selection */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Overall Transfer Status</Label>
+                            <Select 
+                                value={data.status} 
+                                onValueChange={(val) => setData('status', val)}
+                            >
+                                <SelectTrigger className="w-full h-11">
+                                    <SelectValue placeholder="Select Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="completed">
+                                        <span className="font-medium text-emerald-600 dark:text-emerald-400">Complete</span>
+                                    </SelectItem>
+                                    <SelectItem value="incomplete">
+                                        <span className="font-medium text-amber-500">Incomplete (Split Delivery)</span>
+                                    </SelectItem>
+                                    <SelectItem value="rejected">
+                                        <span className="font-medium text-rose-600 dark:text-rose-400">Reject Entire Transfer</span>
+                                    </SelectItem>
+                                    <SelectItem value="outgoing">
+                                        <span className="font-medium text-blue-500">Pending (Keep Active)</span>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground mt-1.5">
+                                {data.status === 'completed' && "✓ All products received and verified. Stock will be fully updated."}
+                                {data.status === 'incomplete' && "⚠ Some items are still missing/on the way. This transfer will remain in incoming for future updates."}
+                                {data.status === 'rejected' && "✖ Decline receipt. Stock will be completely returned to the sender."}
+                                {data.status === 'outgoing' && "⏳ Keep the transfer as pending (outgoing) for verification later."}
+                            </p>
+                        </div>
+
+                        {data.status !== 'rejected' && (
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center pb-2 border-b">
+                                    <Label className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Product Checklist</Label>
+                                    <span className="text-xs text-muted-foreground font-medium">Verify each product and adjust quantities</span>
+                                </div>
+                                <div className="space-y-3">
+                                    {selectedTransfer?.items.map((item) => {
+                                        const formItem = data.items.find(i => i.id === item.id);
+                                        const isVerified = verifiedProducts[item.id] ?? true;
+                                        const currentQty = formItem?.received_quantity ?? 0;
+
+                                        return (
+                                            <div 
+                                                key={item.id} 
+                                                className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 rounded-lg border transition-all duration-200 gap-4 bg-muted/10 ${
+                                                    !isVerified 
+                                                        ? 'border-rose-200 dark:border-rose-950/30 bg-rose-50/20 dark:bg-rose-950/10 opacity-75' 
+                                                        : 'hover:bg-muted/30 border-zinc-100 dark:border-zinc-800'
+                                                }`}
+                                            >
+                                                <div className="flex items-start gap-3 w-full sm:w-[60%]">
+                                                    <div className="pt-0.5">
+                                                        <Checkbox 
+                                                            id={`verify-${item.id}`}
+                                                            checked={isVerified}
+                                                            onCheckedChange={(checked) => handleToggleVerify(item.id, !!checked)}
+                                                            className="h-5 w-5 rounded border-zinc-300 dark:border-zinc-700"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <Label 
+                                                            htmlFor={`verify-${item.id}`}
+                                                            className={`font-semibold text-sm cursor-pointer select-none text-zinc-900 dark:text-zinc-50 ${!isVerified ? 'line-through text-muted-foreground' : ''}`}
+                                                        >
+                                                            {item.product?.name}
+                                                        </Label>
+                                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                                                            {item.product?.barcode && (
+                                                                <span className="font-mono flex items-center gap-1"><Barcode className="w-3.5 h-3.5" />{item.product.barcode}</span>
+                                                            )}
+                                                            {item.product?.qr_code && (
+                                                                <span className="font-mono flex items-center gap-1"><QrCode className="w-3.5 h-3.5" />{item.product.qr_code}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-[40%]">
+                                                    <div className="text-right">
+                                                        <span className="text-xs text-muted-foreground block font-medium">Sent Qty</span>
+                                                        <span className="font-bold text-sm text-zinc-700 dark:text-zinc-300">{item.quantity}</span>
+                                                    </div>
+
+                                                    <div className="flex flex-col items-end gap-1 min-w-[120px]">
+                                                        <span className="text-xs text-muted-foreground font-medium block">Received Qty</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <Input 
+                                                                type="number"
+                                                                min={0}
+                                                                max={item.quantity}
+                                                                disabled={!isVerified}
+                                                                value={currentQty}
+                                                                onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
+                                                                className="w-20 text-center font-semibold h-9 focus-visible:ring-primary"
+                                                            />
+                                                        </div>
+                                                        {!isVerified && (
+                                                            <span className="text-[10px] text-rose-500 font-semibold mt-0.5">Product Mismatch</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {data.status === 'rejected' && (
+                            <div className="flex items-start gap-3 p-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-200">
+                                <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+                                <div>
+                                    <h4 className="font-semibold text-sm">Warning: Decline Receipt</h4>
+                                    <p className="text-xs mt-1">This action will reject the entire transfer manifest. All products sent will be immediately returned to the sender's stock and the transfer's status will be marked as Rejected.</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter className="p-6 bg-muted/20 border-t flex items-center justify-between sm:justify-end gap-3">
+                        <DialogClose asChild>
+                            <Button 
+                                variant="outline" 
+                                className="w-full sm:w-auto h-11"
+                                disabled={processing}
+                            >
+                                Cancel
+                            </Button>
+                        </DialogClose>
+                        <Button 
+                            onClick={handleSubmitConfirm}
+                            disabled={processing}
+                            className={`w-full sm:w-auto h-11 px-6 font-semibold gap-2 ${
+                                data.status === 'rejected' 
+                                    ? 'bg-rose-600 hover:bg-rose-700 text-white' 
+                                    : 'bg-green-600 hover:bg-green-700 text-white'
+                            }`}
+                        >
+                            {processing ? (
+                                <span className="animate-spin mr-1">⌛</span>
+                            ) : data.status === 'rejected' ? (
+                                <XCircle className="w-4 h-4" />
+                            ) : (
+                                <CheckCircle className="w-4 h-4" />
+                            )}
+                            Submit Receipt
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
