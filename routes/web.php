@@ -160,6 +160,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/chats/{branch}', [App\Http\Controllers\ChatController::class, 'show'])->name('chats.show');
     Route::post('/chats/{branch}', [App\Http\Controllers\ChatController::class, 'store'])->name('chats.store');
     Route::post('/user/onesignal-id', [App\Http\Controllers\ChatController::class, 'storeOneSignalId'])->name('user.onesignal.store');
+
+    // Push Notification Test (sends via OneSignal to current user's device)
+    Route::post('/push-notification/test', function (\Illuminate\Http\Request $request) {
+        $user = auth()->user();
+        $playerId = $user->onesignal_player_id;
+
+        if (!$playerId) {
+            return response()->json(['error' => 'No OneSignal Player ID registered for your account.'], 400);
+        }
+
+        try {
+            $oneSignal = app(\App\Services\OneSignalService::class);
+            $response = $oneSignal->sendNotification(
+                'This is a test push notification from LM2!',
+                [$playerId],
+                '🔔 Test Notification',
+                ['type' => 'push_test']
+            );
+            return response()->json(['message' => 'Test notification sent!', 'response' => $response]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Push test failed: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to send: ' . $e->getMessage()], 500);
+        }
+    })->name('push-notification.test');
     
     // Notification Route
     Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
