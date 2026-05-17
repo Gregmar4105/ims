@@ -36,7 +36,19 @@ interface UploadItem {
     errorMessage?: string;
 }
 
-export default function TemporaryPhotoUpload({ productsMissingImages: initialProductsMissingImages, missingCount: initialMissingCount }: { productsMissingImages: Product[], missingCount: number }) {
+interface Props {
+    productsMissingImages: Product[];
+    missingCount: number;
+    isSystemAdmin: boolean;
+    currentBranch: { id: number; branch_name: string } | null;
+}
+
+export default function TemporaryPhotoUpload({
+    productsMissingImages: initialProductsMissingImages,
+    missingCount: initialMissingCount,
+    isSystemAdmin,
+    currentBranch,
+}: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Products', href: '/products' },
         { title: 'Temporary Photo Upload', href: '/temporary-photo-product-upload' },
@@ -331,6 +343,17 @@ export default function TemporaryPhotoUpload({ productsMissingImages: initialPro
                         <p className="text-muted-foreground mt-1">Bulk upload and anchor photos to products.</p>
                     </div>
                     <div className="flex items-center gap-4">
+                        {currentBranch && (
+                            <Card className="bg-primary/5 border-primary/20 shadow-none">
+                                <CardContent className="flex items-center gap-3 py-2 px-4">
+                                    <ImageIcon className="w-4 h-4 text-primary" />
+                                    <div>
+                                        <p className="text-[10px] font-medium text-muted-foreground leading-none">Branch</p>
+                                        <p className="text-xs font-bold text-primary">{currentBranch.branch_name}</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
                         <Card className="bg-primary/5 border-primary/20 shadow-none">
                             <CardContent className="flex items-center gap-4 py-2 px-4">
                                 <div className="p-1.5 bg-primary/10 rounded-full">
