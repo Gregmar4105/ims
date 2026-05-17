@@ -23,16 +23,13 @@ class OneSignalService
 
         $payload = [
             'app_id' => $this->appId,
-            'include_aliases' => [
-                'onesignal_id' => array_map('strval', $playerIds)
-            ],
+            'include_subscription_ids' => array_map('strval', $playerIds),
             'contents' => ['en' => $message],
             'data' => $data,
             'target_channel' => 'push',
             'priority' => 10,
-            'android_visibility' => 1, // Public visibility
-            // 'android_channel_id' => '...', // Add if you have a specific channel UUID
-            'android_group' => 'chat_messages', 
+            'android_visibility' => 1,
+            'android_group' => 'chat_messages',
             'ios_badgeType' => 'Increase',
             'ios_badgeCount' => 1,
         ];
@@ -43,10 +40,11 @@ class OneSignalService
 
         \Illuminate\Support\Facades\Log::info('OneSignal Payload:', $payload);
 
+        // Use v2 API endpoint with the REST API Key (os_v2_app_...)
         $response = Http::withHeaders([
-            'Authorization' => 'Basic ' . $this->restApiKey,
+            'Authorization' => 'Key ' . $this->restApiKey,
             'Content-Type' => 'application/json',
-        ])->post('https://onesignal.com/api/v1/notifications', $payload);
+        ])->post('https://api.onesignal.com/notifications', $payload);
 
         \Illuminate\Support\Facades\Log::info('OneSignal Response Status: ' . $response->status());
         \Illuminate\Support\Facades\Log::info('OneSignal Response Body: ' . $response->body());
