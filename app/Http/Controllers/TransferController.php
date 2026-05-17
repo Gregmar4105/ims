@@ -221,7 +221,7 @@ class TransferController extends Controller
         return back()->with('success', 'Transfer initiated successfully.');
     }
 
-    public function confirmReceipt(Request $request, Transfer $transfer)
+    public function confirmReceipt(Request $request, Transfer $transfer, \App\Services\OneSignalService $oneSignal)
     {
         $user = auth()->user();
 
@@ -361,10 +361,32 @@ class TransferController extends Controller
             default => 'updated',
         };
 
+        // Notify Source Branch Administrators
+        try {
+            $sourceAdminPlayerIds = \App\Models\User::role('Branch Administrator')
+                ->where('branch_id', $transfer->source_branch_id)
+                ->whereNotNull('onesignal_player_id')
+                ->pluck('onesignal_player_id')
+                ->toArray();
+
+            if (!empty($sourceAdminPlayerIds)) {
+                $destBranch = \App\Models\Branch::find($transfer->destination_branch_id);
+                $destBranchName = $destBranch ? $destBranch->branch_name : 'Unknown Branch';
+                
+                $oneSignal->sendNotification(
+                    "Transfer #{$transfer->id} to {$destBranchName} was {$statusText}.",
+                    $sourceAdminPlayerIds,
+                    "Transfer Update"
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send transfer receipt notification: " . $e->getMessage());
+        }
+
         return back()->with('success', "Transfer receipt {$statusText}.");
     }
 
-    public function reject(Transfer $transfer)
+    public function reject(Transfer $transfer, \App\Services\OneSignalService $oneSignal)
     {
         $user = auth()->user();
 
@@ -391,6 +413,28 @@ class TransferController extends Controller
         $transfer->update([
             'status' => 'rejected',
         ]);
+
+        // Notify Destination Branch Administrators
+        try {
+            $destAdminPlayerIds = \App\Models\User::role('Branch Administrator')
+                ->where('branch_id', $transfer->destination_branch_id)
+                ->whereNotNull('onesignal_player_id')
+                ->pluck('onesignal_player_id')
+                ->toArray();
+
+            if (!empty($destAdminPlayerIds)) {
+                $sourceBranch = \App\Models\Branch::find($user->branch_id);
+                $sourceBranchName = $sourceBranch ? $sourceBranch->branch_name : 'Unknown Branch';
+                
+                $oneSignal->sendNotification(
+                    "Incoming Transfer #{$transfer->id} from {$sourceBranchName} was cancelled/rejected by the sender.",
+                    $destAdminPlayerIds,
+                    "Transfer Cancelled"
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send transfer rejection notification: " . $e->getMessage());
+        }
 
         return back()->with('success', 'Transfer rejected.');
     }

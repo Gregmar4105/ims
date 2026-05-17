@@ -353,7 +353,7 @@ class SaleController extends Controller
     /**
      * Approve a sale - deduct inventory
      */
-    public function approve(Sale $sale)
+    public function approve(Sale $sale, \App\Services\OneSignalService $oneSignal)
     {
         $user = auth()->user();
         
@@ -381,13 +381,27 @@ class SaleController extends Controller
             ]);
         });
         
+        // Notify the user who readied the sale
+        try {
+            $readiedBy = \App\Models\User::find($sale->readied_by);
+            if ($readiedBy && $readiedBy->onesignal_player_id && $readiedBy->id !== $user->id) {
+                $oneSignal->sendNotification(
+                    "Sale #{$sale->id} was approved by {$user->name}.",
+                    [$readiedBy->onesignal_player_id],
+                    "Sale Approved"
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send sale approval notification: " . $e->getMessage());
+        }
+
         return redirect()->back()->with('success', 'Sale approved and inventory updated.');
     }
 
     /**
      * Cancel a readied sale
      */
-    public function cancel(Sale $sale)
+    public function cancel(Sale $sale, \App\Services\OneSignalService $oneSignal)
     {
         if ($sale->status !== 'readied') {
             return redirect()->back()->with('error', 'Only readied sales can be cancelled');
@@ -395,6 +409,21 @@ class SaleController extends Controller
         
         $sale->update(['status' => 'cancelled']);
         
+        // Notify the user who readied the sale
+        try {
+            $user = auth()->user();
+            $readiedBy = \App\Models\User::find($sale->readied_by);
+            if ($readiedBy && $readiedBy->onesignal_player_id && $readiedBy->id !== $user->id) {
+                $oneSignal->sendNotification(
+                    "Sale #{$sale->id} was cancelled by {$user->name}.",
+                    [$readiedBy->onesignal_player_id],
+                    "Sale Cancelled"
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send sale cancellation notification: " . $e->getMessage());
+        }
+
         return redirect()->back()->with('success', 'Sale cancelled.');
     }
 
@@ -451,7 +480,7 @@ class SaleController extends Controller
     /**
      * Process a return - restore inventory
      */
-    public function storeReturn(Request $request)
+    public function storeReturn(Request $request, \App\Services\OneSignalService $oneSignal)
     {
         $request->validate([
             'sale_id' => 'required|exists:sales,id',
@@ -498,6 +527,29 @@ class SaleController extends Controller
                 ->increment('quantity', $request->quantity);
         });
         
+        // Notify Branch Administrators about the return
+        try {
+            $adminPlayerIds = \App\Models\User::role('Branch Administrator')
+                ->where('branch_id', $sale->branch_id)
+                ->whereNotNull('onesignal_player_id')
+                ->where('id', '!=', $user->id)
+                ->pluck('onesignal_player_id')
+                ->toArray();
+
+            if (!empty($adminPlayerIds)) {
+                $product = \App\Models\Product::find($request->product_id);
+                $productName = $product ? $product->name : 'A product';
+                
+                $oneSignal->sendNotification(
+                    "Return processed for Sale #{$sale->id}: {$request->quantity}x {$productName} by {$user->name}.",
+                    $adminPlayerIds,
+                    "Return Processed"
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send return notification: " . $e->getMessage());
+        }
+
         return redirect()->back()->with('success', 'Return processed and inventory restored.');
     }
 }

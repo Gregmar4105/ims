@@ -115,37 +115,6 @@ export default function AppLayout({ children, breadcrumbs, ...props }: AppLayout
         <AppLayoutTemplate breadcrumbs={breadcrumbs} {...props}>
             {children}
             <Toaster position="top-center" richColors closeButton duration={3000} visibleToasts={5} />
-
-            {/* Floating Test Notification Button — only in Capacitor wrapper */}
-            {isCapacitorWrapper && (
-                <button
-                    onClick={handleTestNotification}
-                    disabled={testingNotification}
-                    title="Send test push notification"
-                    style={{
-                        position: 'fixed',
-                        bottom: '24px',
-                        right: '24px',
-                        zIndex: 9999,
-                        width: '56px',
-                        height: '56px',
-                        borderRadius: '50%',
-                        border: 'none',
-                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                        color: '#fff',
-                        fontSize: '24px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)',
-                        cursor: testingNotification ? 'wait' : 'pointer',
-                        opacity: testingNotification ? 0.7 : 1,
-                        transition: 'all 0.2s ease',
-                    }}
-                >
-                    {testingNotification ? '⏳' : '🔔'}
-                </button>
-            )}
         </AppLayoutTemplate>
     );
 }
