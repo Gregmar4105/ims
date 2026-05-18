@@ -200,7 +200,7 @@ export function AppHeader() {
         const roles = (auth as any)?.roles || [];
 
         if (roles.includes('System Administrator')) {
-            return '/system-dashboard';
+            return '/branch-dashboard';
         }
         if (roles.includes('Branch Manager') || roles.includes('Branch')) {
             return '/branch-dashboard';

@@ -46,7 +46,13 @@ type NotificationItem = {
     isAvatar?: boolean;
 };
 
-export function NotificationBell() {
+export function NotificationBell({
+    className,
+    iconClassName,
+}: {
+    className?: string;
+    iconClassName?: string;
+} = {}) {
     const [data, setData] = useState<NotificationData>({
         total: 0,
         counts: { chats: 0, sales: 0, transfers: 0 },
@@ -481,11 +487,12 @@ export function NotificationBell() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative group">
+                <Button variant="ghost" size="icon" className={cn("relative group", className)}>
                     <Bell
                         className={cn(
                             "h-5 w-5 text-muted-foreground transition-all duration-300 group-hover:text-foreground",
-                            hasNotifications && "animate-bell-ring text-foreground"
+                            hasNotifications && "animate-bell-ring text-foreground",
+                            iconClassName
                         )}
                     />
                     {hasNotifications && (

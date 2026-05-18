@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import { handleNativePrintFallback } from '@/lib/utils';
 import Pagination from '@/components/Pagination';
+import axios from 'axios';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -94,11 +95,68 @@ interface Props {
 }
 
 export default function Index({ products, filters, options, isSystemAdmin }: Props) {
-    const { auth } = usePage<SharedData>().props;
+    const page = usePage<SharedData>();
+    const { auth } = page.props;
+    const version = page.version;
     const isEmployee = auth.roles.includes('Employee') && !auth.roles.includes('System Administrator') && !auth.roles.includes('Branch Administrator');
 
-    const productList = products?.data || [];
+    const initialProductList = products?.data || [];
     const links = products?.links || [];
+
+    // Infinite scroll state variables
+    const [loadedProducts, setLoadedProducts] = useState(initialProductList);
+    const [currentNextPageUrl, setCurrentNextPageUrl] = useState(products?.next_page_url || null);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+    useEffect(() => {
+        setLoadedProducts(initialProductList);
+        setCurrentNextPageUrl(products?.next_page_url || null);
+    }, [initialProductList, products?.next_page_url]);
+
+    const productList = loadedProducts;
+
+    const loadMore = async () => {
+        if (isLoadingMore || !currentNextPageUrl) return;
+        setIsLoadingMore(true);
+        try {
+            const response = await axios.get(currentNextPageUrl, {
+                headers: {
+                    'X-Inertia': 'true',
+                    'X-Inertia-Partial-Component': 'Products/Index',
+                    'X-Inertia-Partial-Data': 'products',
+                    'X-Inertia-Version': version || ''
+                }
+            });
+            const nextProducts = response.data?.props?.products?.data || [];
+            setLoadedProducts(prev => [...prev, ...nextProducts]);
+            setCurrentNextPageUrl(response.data?.props?.products?.next_page_url || null);
+        } catch (error) {
+            console.error('Failed to load more products:', error);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
+
+    const observerTargetRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && currentNextPageUrl && !isLoadingMore) {
+                    loadMore();
+                }
+            },
+            { threshold: 0.1, rootMargin: '150px' }
+        );
+
+        if (observerTargetRef.current) {
+            observer.observe(observerTargetRef.current);
+        }
+
+        return () => {
+            observer.disconnect();
+        };
+    }, [currentNextPageUrl, isLoadingMore]);
 
     const [search, setSearch] = useState<string>(filters?.search || "");
     const [branch, setBranch] = useState<string>(filters?.branch || "all");
@@ -237,6 +295,16 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
             };
         }
     }, [isScanning]);
+
+    useEffect(() => {
+        const handleTriggerScan = () => {
+            setIsScanning(true);
+        };
+        window.addEventListener('trigger-product-scan', handleTriggerScan);
+        return () => {
+            window.removeEventListener('trigger-product-scan', handleTriggerScan);
+        };
+    }, []);
 
     const stopScanner = async () => {
         if (scannerRef.current) {
@@ -578,8 +646,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
             <Head title="Products" />
 
             <div className="flex flex-col gap-4">
-                {/* Mobile Header (Sticky-ish feel) */}
-                <div className="sticky top-0 z-30 bg-gray-50/95 dark:bg-black/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 px-4 py-3 md:static md:bg-transparent md:border-0 md:p-0">
+                {/* Desktop Header Component (Hidden on Mobile) */}
+                <div className="hidden md:block md:sticky md:top-0 z-30 bg-gray-50/95 dark:bg-black/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 px-4 py-3 md:static md:bg-transparent md:border-0 md:p-0">
                     <div className="flex flex-col gap-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -678,69 +746,11 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 )}
                             </div>
                         </div>
-
-                        {/* Mobile Main Controls */}
-                        <div className="flex items-center gap-2 md:hidden">
-                            <a
-                                href={`/products/print${window.location.search}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0">
-                                    <FileText className="h-4 w-4" />
-                                </Button>
-                            </a>
-                            {!isEmployee && (
-                                <Button
-                                    variant={isSelectionMode ? (selectedProductIds.length > 0 ? "destructive" : "outline") : "outline"}
-                                    size="icon"
-                                    className={`h-10 w-10 shrink-0 ${isSelectionMode && selectedProductIds.length > 0 ? 'animate-pulse ring-2 ring-red-500 ring-offset-2' : ''} ${!isSelectionMode ? 'border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700' : ''}`}
-                                    onClick={() => {
-                                        if (!isSelectionMode) {
-                                            setIsSelectionMode(true);
-                                        } else if (selectedProductIds.length > 0) {
-                                            setIsConfirmModalOpen(true);
-                                        } else {
-                                            setIsSelectionMode(false);
-                                            setSelectedProductIds([]);
-                                        }
-                                    }}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            )}
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-                                <Input
-                                    type="text"
-                                    placeholder="Search..."
-                                    value={search}
-                                    onChange={handleSearchChange}
-                                    className="pl-9 pr-10 h-10 bg-white dark:bg-gray-800"
-                                />
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute right-0 top-0 h-10 w-10 text-gray-400 hover:text-black dark:hover:text-white"
-                                    onClick={() => setIsScanning(true)}
-                                >
-                                    <Scan className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <Button
-                                variant={showFilters || hasActiveFilters ? "default" : "outline"}
-                                size="icon"
-                                onClick={() => setShowFilters(!showFilters)}
-                                className={`h-10 w-10 shrink-0 ${hasActiveFilters ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900 dark:text-blue-100" : ""}`}
-                            >
-                                <Filter className="h-4 w-4" />
-                            </Button>
-                        </div>
                     </div>
                 </div>
 
-                {/* Filters Section (Collapsible on Mobile, Visible on Desktop) */}
-                <div className={`mx-4 md:mx-0 bg-white dark:bg-gray-800 p-4 rounded-lg border shadow-sm transition-all duration-300 ease-in-out ${showFilters ? 'block' : 'hidden md:block'}`}>
+                {/* Filters Section (Desktop only) */}
+                <div className="hidden md:block bg-white dark:bg-gray-800 p-4 rounded-lg border shadow-sm">
                     <div className="flex flex-col md:flex-row gap-3 flex-wrap">
                         {/* Desktop Search (Hidden on Mobile) */}
                         <div className="hidden md:block flex-1 relative min-w-[200px]">
@@ -881,6 +891,244 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                 </div>
 
                 <div className="p-4 flex-1 overflow-y-auto min-h-0">
+                    {/* Mobile Action Buttons Row Wrapper (Block element to ensure perfect alignment with other cards and zero horizontal overflow) */}
+                    <div className="w-full mb-4 md:hidden">
+                        <div className="flex items-center justify-end gap-2">
+                            {!isEmployee && (
+                                <Link href="/drag-and-drop-product-upload" className="shrink-0">
+                                    <Button variant="outline" size="icon" className="h-10 w-10 border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700">
+                                        <Upload className="h-4 w-4" />
+                                    </Button>
+                                </Link>
+                            )}
+
+                            {!isEmployee && (
+                                <Button
+                                    variant={isClearanceMode ? "default" : "outline"}
+                                    size={isClearanceMode ? "sm" : "icon"}
+                                    className={`h-10 shrink-0 border-yellow-500 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700 transition-all duration-300 ${
+                                        isClearanceMode ? 'px-3 gap-1.5 bg-yellow-500 text-black hover:bg-yellow-600 border-yellow-600' : 'w-10 p-0'
+                                    } ${selectedProductIds.length > 0 && isClearanceMode ? 'animate-pulse ring-2 ring-yellow-400 ring-offset-2' : ''}`}
+                                    onClick={() => {
+                                        if (isClearanceMode) {
+                                            if (selectedProductIds.length > 0) {
+                                                const initialUpdates: Record<number, { price: string, until: string }> = {};
+                                                productList.filter((p: any) => selectedProductIds.includes(p.id)).forEach((p: any) => {
+                                                    initialUpdates[p.id] = {
+                                                        price: p.clearance_price ? String(p.clearance_price) : '',
+                                                        until: p.clearance_until ? new Date(p.clearance_until).toISOString().split('T')[0] : ''
+                                                    };
+                                                });
+                                                setClearanceUpdates(initialUpdates);
+                                                setIsClearanceModalOpen(true);
+                                            } else {
+                                                setIsClearanceMode(false);
+                                            }
+                                        } else {
+                                            setIsClearanceMode(true);
+                                            setIsSelectionMode(false);
+                                            setSelectedProductIds([]);
+                                        }
+                                    }}
+                                >
+                                    <Tag className="h-4 w-4 shrink-0" />
+                                    {isClearanceMode && (
+                                        <span className="text-xs font-semibold whitespace-nowrap animate-[fadeIn_0.2s_ease-out]">
+                                            {selectedProductIds.length > 0 ? `Set Price (${selectedProductIds.length})` : 'Clearance'}
+                                        </span>
+                                    )}
+                                </Button>
+                            )}
+
+                            {!isEmployee && (
+                                <Button
+                                    variant={isSelectionMode ? (selectedProductIds.length > 0 ? "destructive" : "default") : "outline"}
+                                    size={isSelectionMode ? "sm" : "icon"}
+                                    className={`h-10 shrink-0 transition-all duration-300 ${
+                                        isSelectionMode ? 'px-3 gap-1.5 bg-red-600 text-white hover:bg-red-700 border-red-600' : 'border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 w-10 p-0'
+                                    } ${isSelectionMode && selectedProductIds.length > 0 ? 'animate-pulse ring-2 ring-red-500 ring-offset-2' : ''}`}
+                                    onClick={() => {
+                                        if (!isSelectionMode) {
+                                            setIsSelectionMode(true);
+                                            setIsClearanceMode(false);
+                                            setSelectedProductIds([]);
+                                        } else if (selectedProductIds.length > 0) {
+                                            setIsConfirmModalOpen(true);
+                                        } else {
+                                            setIsSelectionMode(false);
+                                            setSelectedProductIds([]);
+                                        }
+                                    }}
+                                >
+                                    <Trash2 className="h-4 w-4 shrink-0" />
+                                    {isSelectionMode && (
+                                        <span className="text-xs font-semibold whitespace-nowrap animate-[fadeIn_0.2s_ease-out]">
+                                            {selectedProductIds.length > 0 ? `Confirm (${selectedProductIds.length})` : 'Cancel'}
+                                        </span>
+                                    )}
+                                </Button>
+                            )}
+
+                            <Button
+                                variant="outline"
+                                size={showFilters ? "sm" : "icon"}
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`h-10 shrink-0 transition-all duration-300 ${
+                                    showFilters ? 'px-3 gap-1.5' : 'w-10 p-0'
+                                } ${
+                                    showFilters || hasActiveFilters
+                                        ? "bg-blue-50 dark:bg-blue-950/40 border-blue-500 dark:border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-950/60 hover:text-blue-700 dark:hover:text-blue-300"
+                                        : "border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900"
+                                }`}
+                            >
+                                <Filter className="h-4 w-4 shrink-0" />
+                                {showFilters && (
+                                    <span className="text-xs font-semibold whitespace-nowrap animate-[fadeIn_0.2s_ease-out]">
+                                        Filters
+                                    </span>
+                                )}
+                            </Button>
+
+                            {!isEmployee && (
+                                <Link href="/products/create" className="shrink-0">
+                                    <Button size="sm" className="h-10 px-4 bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black flex items-center justify-center">
+                                        <Plus className="mr-2 h-4 w-4 shrink-0" /> Add Product
+                                    </Button>
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Mobile Collapsible Filters Section (sits directly below the mobile buttons row) */}
+                    {showFilters && (() => {
+                        const singleFiltersCount = (isSystemAdmin ? 1 : 0) + 1 + 1 + ((baseCategory !== 'all' && subCategories.length > 1) ? 1 : 0) + 1 + 1;
+                        const clearanceColSpanClass = singleFiltersCount % 2 === 0 ? "col-span-2 w-full" : "col-span-1 w-full";
+                        
+                        return (
+                            <div className="block md:hidden bg-white dark:bg-gray-800/40 p-4 rounded-xl border border-border/50 shadow-sm mb-4 w-full">
+                                <div className="grid grid-cols-2 gap-2 w-full">
+                                    {isSystemAdmin && (
+                                        <SearchableSelect
+                                            options={options.branches}
+                                            value={branch}
+                                            onValueChange={(val) => { setBranch(val); updateParams({ branch: val }); }}
+                                            placeholder="Branch"
+                                            allLabel="All Branches"
+                                            triggerClassName="w-full"
+                                        />
+                                    )}
+
+                                    <SearchableSelect
+                                        options={options.brands}
+                                        value={brand}
+                                        onValueChange={(val) => { setBrand(val); updateParams({ brand: val }); }}
+                                        placeholder="Brand"
+                                        allLabel="All Brands"
+                                        triggerClassName="w-full"
+                                    />
+
+                                    <SearchableSelect
+                                        options={baseCategories}
+                                        value={baseCategory}
+                                        onValueChange={(val) => {
+                                            setBaseCategory(val);
+                                            if (val === 'all') {
+                                                updateParams({ category: 'all' });
+                                            } else {
+                                                const subs = categoryGroups[val];
+                                                if (subs.length === 1) {
+                                                    updateParams({ category: subs[0] });
+                                                } else {
+                                                    updateParams({ category: val });
+                                                }
+                                            }
+                                        }}
+                                        placeholder="Category"
+                                        allLabel="All Categories"
+                                        triggerClassName="w-full"
+                                    />
+
+                                    {baseCategory !== 'all' && subCategories.length > 1 && (
+                                        <SearchableSelect
+                                            options={subCategories}
+                                            value={subCategory}
+                                            onValueChange={(val) => { setSubCategory(val); updateParams({ category: val }); }}
+                                            placeholder="Sub-Category"
+                                            allLabel="All Sub-Categories"
+                                            getLabel={(opt) => opt === 'all' ? 'All' : opt.replace(new RegExp(`^${baseCategory}\\s*`), '') || opt}
+                                            triggerClassName="w-full"
+                                        />
+                                    )}
+
+                                    <Select value={stock} onValueChange={(val) => { setStock(val); updateParams({ stock: val }); }}>
+                                        <SelectTrigger className="w-full h-9 text-xs">
+                                            <SelectValue placeholder="Stock" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Stock</SelectItem>
+                                            <SelectItem value="in_stock">In Stock</SelectItem>
+                                            <SelectItem value="low_stock">Low Stock</SelectItem>
+                                            <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); updateParams({ status: val }); }}>
+                                        <SelectTrigger className="w-full h-9 text-xs">
+                                            <SelectValue placeholder="Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Status</SelectItem>
+                                            <SelectItem value="active">Active</SelectItem>
+                                            <SelectItem value="inactive">Inactive</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    <div className={clearanceColSpanClass}>
+                                        <Select value={clearance} onValueChange={(val) => {
+                                            setClearance(val);
+                                            if (val === 'all') {
+                                                setSearch("");
+                                                setBrand("all");
+                                                setCategory("all");
+                                                setBaseCategory("all");
+                                                setSubCategory("all");
+                                                setStock("all");
+                                                setStatusFilter("all");
+                                                updateParams({
+                                                    clearance: 'all',
+                                                    search: '',
+                                                    brand: 'all',
+                                                    category: 'all',
+                                                    stock: 'all',
+                                                    status: 'all'
+                                                });
+                                            } else {
+                                                updateParams({ clearance: val });
+                                            }
+                                        }}>
+                                            <SelectTrigger className="w-full h-9 text-xs">
+                                                <SelectValue placeholder="Clearance Sale" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Products</SelectItem>
+                                                <SelectItem value="on_clearance">On Clearance</SelectItem>
+                                                <SelectItem value="no_clearance">Not on Clearance</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                {hasActiveFilters && (
+                                    <div className="mt-3 flex justify-end w-full">
+                                        <Button variant="ghost" size="sm" onClick={clearFilters} title="Clear Filters" className="h-9 px-3 text-red-500 hover:text-red-700 hover:bg-red-50 text-xs flex items-center gap-1">
+                                            <X className="h-4 w-4" /> Clear Filters
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
+
                     {productList.length === 0 ? (
                         <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed">
                             <PackageOpen className="mx-auto h-12 w-12 text-gray-400" />
@@ -1152,11 +1400,29 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         </div>
                     )}
 
-                    <div className="mt-8 flex justify-between items-center">
-                        <p className="text-sm text-muted-foreground">
+                    {/* Infinite Scroll Trigger & Loading Indicator (Mobile only) */}
+                    <div ref={observerTargetRef} className="block md:hidden py-6 text-center w-full">
+                        {isLoadingMore ? (
+                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin text-blue-600 animate-[spin_1s_linear_infinite]" />
+                                Loading more products...
+                            </div>
+                        ) : currentNextPageUrl ? (
+                            <span className="text-xs text-muted-foreground">Scroll down to load more</span>
+                        ) : (
+                            productList.length > 0 && (
+                                <span className="text-xs text-muted-foreground">You've reached the end of the list</span>
+                            )
+                        )}
+                    </div>
+
+                    <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <p className="text-sm text-muted-foreground text-center md:text-left">
                             Showing <strong>{productList.length}</strong> of <strong>{products.total}</strong> results
                         </p>
-                        <Pagination links={links} />
+                        <div className="hidden md:block">
+                            <Pagination links={links} />
+                        </div>
                     </div>
                 </div>
             </div>

@@ -8,9 +8,7 @@ export function BottomNav() {
 
     const roles = auth?.roles || [];
     let homeHref = '/';
-    if (roles.includes('System Administrator')) {
-        homeHref = '/system-dashboard';
-    } else if (roles.includes('Branch Administrator')) {
+    if (roles.includes('System Administrator') || roles.includes('Branch Administrator')) {
         homeHref = '/branch-dashboard';
     } else if (roles.includes('Employee')) {
         homeHref = '/employee-dashboard';

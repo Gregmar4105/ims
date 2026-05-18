@@ -17,15 +17,15 @@ class LoginResponse implements LoginResponseContract
 
         // 2. Check Roles (using Spatie's syntax)
         if ($user->hasRole('System Administrator')) {
-            return redirect()->intended('/branch-dashboard');
+            return redirect('/branch-dashboard');
         }
 
         if ($user->hasRole('Branch Administrator')) {
-            return redirect()->intended('/branch-dashboard');
+            return redirect('/branch-dashboard');
         }
 
         if ($user->hasRole('Employee')) {
-            return redirect()->intended('/employee-dashboard');
+            return redirect('/employee-dashboard');
         }
 
         abort(403, 'User does not have the right permissions.');

@@ -17,6 +17,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { NotificationBell } from '@/components/notification-bell';
+import { UserMenuContent } from '@/components/user-menu-content';
+import { useInitials } from '@/hooks/use-initials';
+import { getRoleGradient } from '@/lib/role-utils';
 
 // Add global declarations
 declare global {
@@ -115,6 +119,8 @@ const compressImage = async (file: File): Promise<File> => {
 export default function ChatsIndex({ branches, activeTransfers = [], initialBranch }: { branches: Branch[], activeTransfers?: Transfer[], initialBranch?: Branch }) {
     const { auth } = usePage().props as any;
     const user = auth.user as User;
+    const roles = auth?.roles || [];
+    const getInitials = useInitials();
     const [selectedBranch, setSelectedBranch] = useState<Branch | null>(initialBranch || null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
@@ -401,15 +407,59 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                         branches.length === 1 ? "hidden md:hidden" : ""
                     )}>
                         <div className="p-4 border-b">
-                            <h2 className="text-xl font-bold mb-4">Chats</h2>
-                            <div className="relative">
-                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search branches..."
-                                    className="pl-8 bg-background"
-                                    value={searchQuery}
-                                    onChange={e => setSearchQuery(e.target.value)}
-                                />
+                            {/* Mobile View: Chats Title, Bell, Avatar on same line, Search below */}
+                            <div className="md:hidden flex flex-col gap-3.5">
+                                <div className="flex items-center justify-between pt-1">
+                                    <h2 className="text-3xl font-bold tracking-tight text-foreground pr-2">
+                                        Chats
+                                    </h2>
+                                    <div className="flex items-center gap-3 shrink-0">
+                                        <div className="relative text-muted-foreground hover:text-foreground">
+                                            <NotificationBell className="h-9 w-9" iconClassName="size-5" />
+                                        </div>
+
+                                        {user && (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <div className={cn("rounded-full p-[2px] cursor-pointer shrink-0 flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95", getRoleGradient(roles))}>
+                                                        <Avatar className="h-9 w-9 overflow-hidden rounded-full border-[1.5px] border-background bg-background shadow-inner">
+                                                            <AvatarImage src={user.profile_photo_url || user.avatar} alt={user.name} />
+                                                            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+                                                                {getInitials(user.name)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                    </div>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent className="w-56 rounded-xl shadow-lg border border-border/50" align="end" side="bottom" sideOffset={8}>
+                                                    <UserMenuContent user={user} />
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="relative">
+                                    <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search branches..."
+                                        className="pl-10 pr-4 bg-secondary/40 border-none h-10 rounded-full text-sm focus:bg-secondary/60 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/80"
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Desktop View (md: and up): Original Sidebar layout */}
+                            <div className="hidden md:block">
+                                <h2 className="text-xl font-bold mb-4">Chats</h2>
+                                <div className="relative">
+                                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search branches..."
+                                        className="pl-8 bg-background"
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                    />
+                                </div>
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto">
