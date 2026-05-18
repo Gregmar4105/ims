@@ -111,8 +111,8 @@ export default function Login({
                 </div>
             )}
 
-            {/* Larable Copyright Footer - Fixed to Bottom */}
-            <div className="fixed bottom-6 left-0 w-full text-center text-sm">
+            {/* Larable Copyright Footer - Absolute positioned at the bottom of relative layout */}
+            <div className="absolute bottom-6 left-0 w-full text-center text-sm">
                 &copy; {currentYear} Powered by <a href="https://larable.dev" target="_blank" className="text-amber-600">Larable™</a> . All rights reserved.
             </div>
         </AuthLayout>

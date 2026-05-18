@@ -11,6 +11,9 @@ use Laravel\Fortify\Features;
 // On NativePHP Android: redirect to the mobile API settings page.
 // On the web server: show the normal public welcome/shop page.
 Route::get('/', function (\Illuminate\Http\Request $request) {
+    if (preg_match('/Mobi|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i', $request->userAgent())) {
+        return redirect()->route('login');
+    }
     return app(\App\Http\Controllers\WelcomeController::class)->index($request);
 })->name('home');
 Route::get('/shop', [\App\Http\Controllers\ShopController::class, 'index'])->name('shop.index'); // Search/Index route
