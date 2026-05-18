@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, router } from '@inertiajs/react';
 import { useEffect, useState, useRef } from 'react';
-import { Send, Search, MessageSquare, MoreVertical, ArrowLeft, Truck, Clock, FileText, Paperclip, X, Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Send, Search, MessageSquare, MoreVertical, ArrowLeft, ChevronLeft, Truck, Clock, FileText, Paperclip, X, Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -437,7 +437,15 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
         <AppLayout breadcrumbs={[{ title: 'Chats', href: '/chats' }]}>
             <Head title="Chats" />
 
-            <div className="flex flex-col h-[calc(100vh-theme(spacing.16))] bg-background border-t">
+            {selectedBranch && (
+                <style>{`
+                    nav.fixed.bottom-0 {
+                        display: none !important;
+                    }
+                `}</style>
+            )}
+
+            <div className="flex flex-col h-full md:h-[calc(100vh-theme(spacing.16))] bg-background border-t">
 
                 <div className="flex flex-1 overflow-hidden">
                     {/* Sidebar */}
@@ -567,15 +575,24 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                         {selectedBranch ? (
                             <>
                                 {/* Header */}
-                                <div className="p-4 border-b flex items-center justify-between shadow-sm z-10">
+                                <div className="p-4 pt-7 md:pt-4 border-b flex items-center justify-between shadow-sm z-10">
                                     <div className="flex items-center gap-3">
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className={cn("md:hidden -ml-2", branches.length === 1 && "hidden")}
-                                            onClick={() => setSelectedBranch(null)}
+                                            className="md:hidden -ml-2"
+                                            onClick={() => {
+                                                if (branches.length === 1) {
+                                                    const homeHref = (roles.includes('System Administrator') || roles.includes('Branch Administrator'))
+                                                        ? '/branch-dashboard'
+                                                        : '/employee-dashboard';
+                                                    router.visit(homeHref);
+                                                } else {
+                                                    setSelectedBranch(null);
+                                                }
+                                            }}
                                         >
-                                            <ArrowLeft className="w-5 h-5" />
+                                            <ChevronLeft className="w-6 h-6" />
                                         </Button>
                                         <Avatar>
                                             <AvatarImage src={selectedBranch.profile_photo_path ? `/storage/${selectedBranch.profile_photo_path}` : undefined} />

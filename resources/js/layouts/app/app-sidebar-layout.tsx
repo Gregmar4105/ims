@@ -59,8 +59,10 @@ export default function AppSidebarLayout({
             <AppContent 
                 variant="sidebar" 
                 className={cn(
-                    "overflow-x-hidden h-svh overflow-y-auto overscroll-behavior-y-contain md:h-auto md:overflow-visible pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] md:pb-0",
-                    url.includes('chat') ? "pt-0 md:pt-0" : "pt-16 md:pt-0"
+                    "overflow-x-hidden h-svh overflow-y-auto overscroll-behavior-y-contain md:h-auto md:overflow-visible md:pb-0",
+                    url.includes('chat') 
+                        ? "pt-0 md:pt-0 pb-[env(safe-area-inset-bottom,0px)]" 
+                        : "pt-16 md:pt-0 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)]"
                 )}
             >
                 <div className="hidden md:block">

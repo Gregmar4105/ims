@@ -17,7 +17,7 @@ export function BottomNav() {
     }
     
     let chatHref = '/chats';
-    if (roles.includes('Employee')) {
+    if (roles.includes('Employee') && !roles.includes('System Administrator') && !roles.includes('Branch Administrator')) {
         chatHref = '/branch-chats';
     }
     
