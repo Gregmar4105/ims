@@ -43,7 +43,7 @@ Route::get('/api/local/sync-config', function (\Illuminate\Http\Request $request
 
 // ── Web App — Authenticated routes ─────────────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', function () {
+    Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
         $user = auth()->user();
         if ($user->hasRole('System Administrator') || $user->hasRole('Branch Administrator')) {
             return redirect('/branch-dashboard');
@@ -51,7 +51,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         if ($user->hasRole('Employee')) {
             return redirect('/employee-dashboard');
         }
-        abort(403, 'User does not have the right permissions.');
+
+        // If the user does not have any of the required roles, log them out
+        // to prevent getting stuck in a 403 session redirection loop.
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login')->withErrors([
+            'email' => 'Your account does not have any roles assigned. Please contact your system administrator.',
+        ]);
     })->name('dashboard');
 
     Route::get('system-dashboard', [\App\Http\Controllers\SystemDashboardController::class, 'index'])

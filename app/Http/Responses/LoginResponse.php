@@ -28,6 +28,14 @@ class LoginResponse implements LoginResponseContract
             return redirect('/employee-dashboard');
         }
 
-        abort(403, 'User does not have the right permissions.');
+        // If the user does not have any of the required roles, log them out
+        // to prevent getting stuck in a 403 session redirection loop.
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login')->withErrors([
+            'email' => 'Your account does not have any roles assigned. Please contact your system administrator.',
+        ]);
     }
 }
