@@ -1,6 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
 import { Home, MessageCircle, QrCode, Package, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 export function BottomNav() {
     const { url, component } = usePage() as any;
@@ -14,15 +16,36 @@ export function BottomNav() {
         homeHref = '/employee-dashboard';
     }
     
+    let chatHref = '/chats';
+    if (roles.includes('Employee')) {
+        chatHref = '/branch-chats';
+    }
+    
     const isHomeActive = url === '/system-dashboard' || url === '/branch-dashboard' || url === '/employee-dashboard';
     const isChatActive = url.startsWith('/chats') || url.startsWith('/branch-chats');
     const isQrActive = url.startsWith('/qr-and-barcode-scanner');
     const isProductsActive = url.startsWith('/products') || url.startsWith('/categories') || url.startsWith('/brands') || url.startsWith('/reorders');
     const isMoreActive = url.startsWith('/settings') || url === '#';
 
+    const [unreadChats, setUnreadChats] = useState(0);
+
+    useEffect(() => {
+        if (!auth?.user) return;
+        const fetchUnread = () => {
+            axios.get('/chats/total-unread')
+                .then(res => {
+                    setUnreadChats(res.data.unread_count || 0);
+                })
+                .catch(err => console.error(err));
+        };
+        fetchUnread();
+        const interval = setInterval(fetchUnread, 5000); // poll every 5 seconds
+        return () => clearInterval(interval);
+    }, [auth?.user]);
+
     const navItems = [
         { icon: Home, label: 'Home', href: homeHref, active: isHomeActive },
-        { icon: MessageCircle, label: 'Chats', href: '/chats', active: isChatActive },
+        { icon: MessageCircle, label: 'Chats', href: chatHref, active: isChatActive },
         { icon: QrCode, label: 'QR', href: '/qr-and-barcode-scanner', isCenter: true, active: isQrActive },
         { icon: Package, label: 'Products', href: '/products', active: isProductsActive },
         { icon: MoreHorizontal, label: 'More', href: '#', active: isMoreActive },
@@ -75,7 +98,14 @@ export function BottomNav() {
                                         : "text-muted-foreground/80 hover:text-foreground active:scale-90"
                                 )}
                             >
-                                <Icon className={cn("size-5.5 transition-transform duration-300", item.active ? "scale-110" : "")} />
+                                <div className="relative">
+                                    <Icon className={cn("size-5.5 transition-transform duration-300", item.active ? "scale-110" : "")} />
+                                    {item.label === 'Chats' && unreadChats > 0 && (
+                                        <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[8px] font-bold px-1 min-w-[16px] h-4 flex items-center justify-center rounded-full border border-background shadow-[0_1px_3px_rgba(0,0,0,0.15)]">
+                                            {unreadChats > 999 ? '+999' : unreadChats}
+                                        </span>
+                                    )}
+                                </div>
                                 <span className={cn(
                                     "text-[10px] font-medium tracking-tight transition-colors",
                                     item.active ? "font-bold" : ""

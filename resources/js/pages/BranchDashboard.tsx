@@ -10,7 +10,7 @@ import {
     ArrowUpRight,
     CloudSun,
     CreditCard,
-    DollarSign,
+    PhilippinePeso,
     Users,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -47,6 +47,10 @@ interface DashboardProps {
         weekly: number;
         monthly: number;
         ytd: number;
+        dailyTrend?: { name: string; sales: number }[];
+        weeklyTrend?: { name: string; sales: number }[];
+        monthlyTrend?: { name: string; sales: number }[];
+        ytdTrend?: { name: string; sales: number }[];
     };
     chartData: { name: string; sales: number }[];
     pieData: { name: string; value: number }[];
@@ -83,6 +87,61 @@ const formatCurrency = (amount: number) => {
         currency: 'PHP',
         minimumFractionDigits: 2,
     }).format(amount);
+};
+
+interface SparklineProps {
+    data: { name: string; sales: number }[];
+    color: string;
+    gradientId: string;
+}
+
+const MiniSparkline = ({ data, color, gradientId }: SparklineProps) => {
+    if (!data || data.length === 0) return null;
+    
+    return (
+        <div className="h-[45px] w-full mt-3 overflow-hidden rounded-b-lg select-none">
+            <ResponsiveContainer width="100%" height="100%">
+                <AreaChart 
+                    data={data} 
+                    margin={{ top: 2, right: 2, left: 2, bottom: 2 }}
+                >
+                    <defs>
+                        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={color} stopOpacity={0.25} />
+                            <stop offset="100%" stopColor={color} stopOpacity={0} />
+                        </linearGradient>
+                    </defs>
+                    <Tooltip
+                        content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                                return (
+                                    <div className="bg-background/95 border border-border px-2 py-1 rounded shadow-sm text-[10px] font-medium z-50">
+                                        <span className="text-muted-foreground mr-1">
+                                            {payload[0].payload.name}:
+                                        </span>
+                                        <span className="font-semibold" style={{ color }}>
+                                            {formatCurrency(payload[0].value as number)}
+                                        </span>
+                                    </div>
+                                );
+                            }
+                            return null;
+                        }}
+                    />
+                    <Area 
+                        type="monotone" 
+                        dataKey="sales" 
+                        stroke={color} 
+                        strokeWidth={1.5} 
+                        fillOpacity={1} 
+                        fill={`url(#${gradientId})`} 
+                        dot={false}
+                        activeDot={{ r: 3, strokeWidth: 0, fill: color }}
+                    />
+                </AreaChart>
+            </ResponsiveContainer>
+        </div>
+    );
 };
 
 const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueType = 'currency', headerExtra }: { title: string; subtitle: string; data: { name: string; value: number }[]; totalLabel?: string; valueType?: 'currency' | 'number'; headerExtra?: React.ReactNode }) => {
@@ -304,9 +363,9 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Branch Dashboard" />
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4 md:p-6">
+            <div className="flex h-full flex-1 flex-col gap-4 md:gap-6 overflow-x-auto p-4 md:p-6">
 
-                <div className="mb-4">
+                <div className="mb-0">
                     <h1 className="text-3xl font-bold tracking-tight">{greeting}, {firstName}!</h1>
                     <p className="text-muted-foreground mt-1 flex items-center gap-2">
                         <CloudSun className="w-4 h-4" />
@@ -315,48 +374,92 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Daily Revenue</CardTitle>
-                            <DollarSign className="text-muted-foreground h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.daily)}</div>
-                            <p className="text-muted-foreground text-xs">Revenue today</p>
-                        </CardContent>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                    <Card className={`overflow-hidden flex flex-col justify-between h-full ${!isSystemAdmin ? 'col-span-2 lg:col-span-1' : ''}`}>
+                        <div>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Daily Revenue</CardTitle>
+                                <PhilippinePeso className="text-muted-foreground h-4 w-4" />
+                            </CardHeader>
+                            <CardContent className="pb-0">
+                                <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.daily)}>
+                                    {formatCurrency(stats.daily)}
+                                </div>
+                                <p className="text-muted-foreground text-[10px] sm:text-xs">Revenue today</p>
+                            </CardContent>
+                        </div>
+                        {stats.dailyTrend && (
+                            <MiniSparkline 
+                                data={stats.dailyTrend} 
+                                color="#10b981" 
+                                gradientId="sparklineDaily" 
+                            />
+                        )}
                     </Card>
                     {isSystemAdmin && (
                         <>
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Weekly Revenue</CardTitle>
-                                    <Users className="text-muted-foreground h-4 w-4" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{formatCurrency(stats.weekly)}</div>
-                                    <p className="text-muted-foreground text-xs">Revenue this week</p>
-                                </CardContent>
+                            <Card className="overflow-hidden flex flex-col justify-between h-full">
+                                <div>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Weekly Revenue</CardTitle>
+                                        <Users className="text-muted-foreground h-4 w-4" />
+                                    </CardHeader>
+                                    <CardContent className="pb-0">
+                                        <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.weekly)}>
+                                            {formatCurrency(stats.weekly)}
+                                        </div>
+                                        <p className="text-muted-foreground text-[10px] sm:text-xs">Revenue this week</p>
+                                    </CardContent>
+                                </div>
+                                {stats.weeklyTrend && (
+                                    <MiniSparkline 
+                                        data={stats.weeklyTrend} 
+                                        color="#3b82f6" 
+                                        gradientId="sparklineWeekly" 
+                                    />
+                                )}
                             </Card>
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-                                    <CreditCard className="text-muted-foreground h-4 w-4" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{formatCurrency(stats.monthly)}</div>
-                                    <p className="text-muted-foreground text-xs">Revenue this month</p>
-                                </CardContent>
+                            <Card className="overflow-hidden flex flex-col justify-between h-full">
+                                <div>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+                                        <CreditCard className="text-muted-foreground h-4 w-4" />
+                                    </CardHeader>
+                                    <CardContent className="pb-0">
+                                        <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.monthly)}>
+                                            {formatCurrency(stats.monthly)}
+                                        </div>
+                                        <p className="text-muted-foreground text-[10px] sm:text-xs">Revenue this month</p>
+                                    </CardContent>
+                                </div>
+                                {stats.monthlyTrend && (
+                                    <MiniSparkline 
+                                        data={stats.monthlyTrend} 
+                                        color="#8b5cf6" 
+                                        gradientId="sparklineMonthly" 
+                                    />
+                                )}
                             </Card>
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">YTD Revenue</CardTitle>
-                                    <Activity className="text-muted-foreground h-4 w-4" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{formatCurrency(stats.ytd)}</div>
-                                    <p className="text-muted-foreground text-xs">Total revenue this year</p>
-                                </CardContent>
+                            <Card className="overflow-hidden flex flex-col justify-between h-full">
+                                <div>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">YTD Revenue</CardTitle>
+                                        <Activity className="text-muted-foreground h-4 w-4" />
+                                    </CardHeader>
+                                    <CardContent className="pb-0">
+                                        <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.ytd)}>
+                                            {formatCurrency(stats.ytd)}
+                                        </div>
+                                        <p className="text-muted-foreground text-[10px] sm:text-xs">Total revenue this year</p>
+                                    </CardContent>
+                                </div>
+                                {stats.ytdTrend && (
+                                    <MiniSparkline 
+                                        data={stats.ytdTrend} 
+                                        color="#ec4899" 
+                                        gradientId="sparklineYtd" 
+                                    />
+                                )}
                             </Card>
                         </>
                     )}
@@ -370,7 +473,7 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                             <CardTitle>Daily Sales Trend</CardTitle>
                             <p className="text-sm text-muted-foreground">Revenue generated per day in the selected period</p>
                         </CardHeader>
-                        <CardContent className="pl-2 flex-1 min-h-[400px]">
+                        <CardContent className="pl-2 flex-1 min-h-[220px] sm:min-h-[300px] md:min-h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={chartData} margin={{ top: 20, right: 30, left: 10, bottom: 10 }}>
                                     <CartesianGrid 

@@ -82,6 +82,38 @@ class BranchDashboardController extends Controller
             $salesTrend[] = ['name' => $day->format('M d'), 'sales' => (float)$revenue];
         }
 
+        // Weekly Trend (Last 4 Weeks)
+        $weeklyTrend = [];
+        for ($i = 3; $i >= 0; $i--) {
+            $start = Carbon::now()->subWeeks($i)->startOfWeek();
+            $end = Carbon::now()->subWeeks($i)->endOfWeek();
+            $revenue = $salesQuery(SaleItem::query())
+                ->whereHas('sale', fn($q) => $q->whereBetween('created_at', [$start, $end]))
+                ->sum(DB::raw('quantity * price'));
+            $weeklyTrend[] = ['name' => 'Wk ' . (4 - $i), 'sales' => (float)$revenue];
+        }
+
+        // Monthly Trend (Last 6 Months)
+        $monthlyTrend = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $revenue = $salesQuery(SaleItem::query())
+                ->whereHas('sale', fn($q) => $q->whereMonth('created_at', $month->month)->whereYear('created_at', $month->year))
+                ->sum(DB::raw('quantity * price'));
+            $monthlyTrend[] = ['name' => $month->format('M'), 'sales' => (float)$revenue];
+        }
+
+        // YTD Trend (Monthly Sales of current year)
+        $ytdTrend = [];
+        $currentMonth = Carbon::now()->month;
+        for ($i = 1; $i <= $currentMonth; $i++) {
+            $month = Carbon::create(Carbon::now()->year, $i, 1);
+            $revenue = $salesQuery(SaleItem::query())
+                ->whereHas('sale', fn($q) => $q->whereMonth('created_at', $i)->whereYear('created_at', Carbon::now()->year))
+                ->sum(DB::raw('quantity * price'));
+            $ytdTrend[] = ['name' => $month->format('M'), 'sales' => (float)$revenue];
+        }
+
         // Sales Distribution (By Category) - Eloquent Collection approaches for reliability
         // Only select what we need to avoid memory issues, though usually acceptable for small datasets
         $salesDistribution = SaleItem::with(['product.category'])
@@ -168,6 +200,10 @@ class BranchDashboardController extends Controller
                 'weekly' => (float)$weeklySales,
                 'monthly' => (float)$monthlySales,
                 'ytd' => (float)$ytdSales,
+                'dailyTrend' => $salesTrend,
+                'weeklyTrend' => $weeklyTrend,
+                'monthlyTrend' => $monthlyTrend,
+                'ytdTrend' => $ytdTrend,
             ],
             'chartData' => $salesTrend,
             'pieData' => $salesDistribution,

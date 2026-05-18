@@ -178,6 +178,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('sale-returns', [\App\Http\Controllers\SaleController::class, 'storeReturn'])->name('sales.storeReturn');
 
     // Chat Routes
+    Route::get('/chats/total-unread', [App\Http\Controllers\ChatController::class, 'totalUnreadCount'])->name('chats.total-unread');
+    Route::get('/chats/branches/status', [App\Http\Controllers\ChatController::class, 'branchesStatus'])->name('chats.branches-status');
     Route::get('/chats', [App\Http\Controllers\ChatController::class, 'index'])->name('chats.index');
     Route::get('/chats/{branch}/media', [App\Http\Controllers\ChatController::class, 'media'])->name('chats.media'); // Specific route first
     Route::get('/chats/{branch}', [App\Http\Controllers\ChatController::class, 'show'])->name('chats.show');

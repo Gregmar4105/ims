@@ -146,6 +146,33 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
 
+    const [branchesStatus, setBranchesStatus] = useState<Record<number, {
+        latest_message: {
+            content: string;
+            attachment_path: string | null;
+            created_at: string;
+            sender: {
+                id: number;
+                name: string;
+                profile_photo_url: string;
+            };
+        } | null;
+        unread_count: number;
+    }>>({});
+
+    useEffect(() => {
+        const fetchStatus = () => {
+            axios.get('/chats/branches/status')
+                .then(res => {
+                    setBranchesStatus(res.data || {});
+                })
+                .catch(err => console.error(err));
+        };
+        fetchStatus();
+        const statusInterval = setInterval(fetchStatus, 3000); // Poll every 3 seconds
+        return () => clearInterval(statusInterval);
+    }, []);
+
     // Contextual transfers for selected branch
     const branchTransfers = selectedBranch ? activeTransfers.filter(t => {
         const isSourceMe = t.source_branch_id == user.branch_id;
@@ -275,6 +302,19 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
             setSearchMode(false);
             setMessageSearchQuery('');
             setHasMoreMessages(true);
+
+            // Optimistically clear the unread count in state
+            setBranchesStatus(prev => {
+                if (!prev[selectedBranch.id]) return prev;
+                return {
+                    ...prev,
+                    [selectedBranch.id]: {
+                        ...prev[selectedBranch.id],
+                        unread_count: 0
+                    }
+                };
+            });
+
             axios.get(`/chats/${selectedBranch.id}`)
                 .then(response => {
                     const sorted = response.data.sort((a: Message, b: Message) => a.id - b.id);
@@ -464,29 +504,57 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                         </div>
                         <div className="flex-1 overflow-y-auto">
                             <div className="p-2 space-y-1">
-                                {filteredBranches.map(branch => (
-                                    <button
-                                        key={branch.id}
-                                        onClick={() => setSelectedBranch(branch)}
-                                        className={cn(
-                                            "w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left",
-                                            selectedBranch?.id === branch.id
-                                                ? "bg-primary/10 text-primary"
-                                                : "hover:bg-muted"
-                                        )}
-                                    >
-                                        <Avatar>
-                                            <AvatarImage src={branch.profile_photo_path ? `/storage/${branch.profile_photo_path}` : undefined} />
-                                            <AvatarFallback>{branch.branch_name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1 overflow-hidden">
-                                            <h3 className="font-medium truncate">{branch.branch_name}</h3>
-                                            <p className="text-xs text-muted-foreground truncate">
-                                                Click to start chatting
-                                            </p>
-                                        </div>
-                                    </button>
-                                ))}
+                                {filteredBranches.map(branch => {
+                                    const status = branchesStatus[branch.id];
+                                    const latestChat = status?.latest_message;
+                                    const unreadCount = status?.unread_count || 0;
+
+                                    return (
+                                        <button
+                                            key={branch.id}
+                                            onClick={() => setSelectedBranch(branch)}
+                                            className={cn(
+                                                "w-full flex items-center justify-between gap-3 p-3 rounded-lg transition-colors text-left",
+                                                selectedBranch?.id === branch.id
+                                                    ? "bg-primary/10 text-primary"
+                                                    : "hover:bg-muted"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                                                <Avatar className="size-10">
+                                                    <AvatarImage src={branch.profile_photo_path ? `/storage/${branch.profile_photo_path}` : undefined} />
+                                                    <AvatarFallback>{branch.branch_name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 overflow-hidden">
+                                                    <h3 className="font-medium truncate text-foreground">{branch.branch_name}</h3>
+                                                    {latestChat ? (
+                                                        <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground overflow-hidden">
+                                                            <Avatar className="size-4 shrink-0">
+                                                                <AvatarImage src={latestChat.sender?.profile_photo_url} />
+                                                                <AvatarFallback className="text-[8px] bg-muted">{latestChat.sender?.name?.substring(0, 1).toUpperCase()}</AvatarFallback>
+                                                            </Avatar>
+                                                            <span className="font-semibold text-foreground/85 truncate shrink-0 max-w-[80px]">
+                                                                {latestChat.sender?.name}:
+                                                            </span>
+                                                            <span className="truncate flex-1">
+                                                                {latestChat.content || "Sent an attachment"}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-xs text-muted-foreground truncate mt-1">
+                                                            Click to start chatting
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {unreadCount > 0 && (
+                                                <span className="shrink-0 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 min-w-[20px] h-5 flex items-center justify-center rounded-full border border-background shadow-inner">
+                                                    {unreadCount > 99 ? '+99' : unreadCount}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

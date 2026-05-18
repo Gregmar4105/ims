@@ -246,6 +246,107 @@ class ChatController extends Controller
 
 
 
+    public function totalUnreadCount()
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json(['unread_count' => 0]);
+        }
+        
+        $currentBranchId = $user->branch_id;
+        $currentUserId = $user->id;
+        $isEmployee = $user->hasRole('Employee');
+        
+        $query = \App\Models\Message::where('receiver_branch_id', $currentBranchId)
+            ->where('sender_id', '!=', $currentUserId);
+            
+        if ($isEmployee) {
+            $query->whereHas('sender', function($q) use ($currentBranchId) {
+                $q->where('branch_id', $currentBranchId);
+            });
+        }
+        
+        $query->whereNotIn('id', function($sub) use ($currentUserId) {
+            $sub->select('viewable_id')
+                ->from('user_notification_views')
+                ->where('viewable_type', 'chat')
+                ->where('user_id', $currentUserId);
+        });
+        
+        $count = $query->count();
+        
+        return response()->json(['unread_count' => $count]);
+    }
+
+    public function branchesStatus(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json([]);
+        }
+        
+        $currentBranchId = $user->branch_id;
+        $currentUserId = $user->id;
+        
+        $branches = \App\Models\Branch::all();
+        
+        $status = [];
+        foreach ($branches as $branch) {
+            // Find latest message between current user/branch and this target branch
+            $latestMessage = \App\Models\Message::with(['sender.branch'])
+                ->where(function($query) use ($currentBranchId, $branch, $currentUserId) {
+                    $query->where(function($q) use ($currentBranchId, $branch) {
+                        $q->where('receiver_branch_id', $currentBranchId)
+                          ->whereHas('sender', function($q) use ($branch) {
+                              $q->where('branch_id', $branch->id);
+                          });
+                    })
+                    ->orWhere(function($q) use ($branch, $currentBranchId, $currentUserId) {
+                        $q->where('receiver_branch_id', $branch->id);
+                        if ($currentBranchId) {
+                            $q->whereHas('sender', function($sq) use ($currentBranchId) {
+                                $sq->where('branch_id', $currentBranchId);
+                            });
+                        } else {
+                            $q->where('sender_id', $currentUserId);
+                        }
+                    });
+                })
+                ->latest('id')
+                ->first();
+                
+            // Unread count from this target branch to us
+            $unreadCount = \App\Models\Message::where('receiver_branch_id', $currentBranchId)
+                ->whereHas('sender', function($q) use ($branch) {
+                    $q->where('branch_id', $branch->id);
+                })
+                ->where('sender_id', '!=', $currentUserId)
+                ->whereNotIn('id', function($query) use ($currentUserId) {
+                    $query->select('viewable_id')
+                          ->from('user_notification_views')
+                          ->where('viewable_type', 'chat')
+                          ->where('user_id', $currentUserId);
+                })
+                ->count();
+                
+            $status[$branch->id] = [
+                'latest_message' => $latestMessage ? [
+                    'content' => $latestMessage->content,
+                    'attachment_path' => $latestMessage->attachment_path,
+                    'created_at' => $latestMessage->created_at->toIso8601String(),
+                    'sender' => [
+                        'id' => $latestMessage->sender->id,
+                        'name' => $latestMessage->sender->name,
+                        'profile_photo_url' => $latestMessage->sender->profile_photo_url,
+                    ]
+                ] : null,
+                'unread_count' => $unreadCount
+            ];
+        }
+        
+        return response()->json($status);
+    }
+
     public function storeOneSignalId(Request $request)
     {
         $request->validate([
