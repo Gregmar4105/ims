@@ -214,6 +214,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.markRead');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
+    Route::get('/notifications-view', [\App\Http\Controllers\NotificationController::class, 'view'])->name('notifications.view');
     
     Route::get('/reorders', [ReorderController::class, 'index'])->name('reorders.index');
     

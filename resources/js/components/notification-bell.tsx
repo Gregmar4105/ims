@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check, Bell, MessageSquare, ArrowRightLeft, ShoppingBag } from 'lucide-react';
 import { SharedData } from '@/types';
 import { usePermission } from '@/hooks/usePermission';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface NotificationCounts {
     chats: number;
@@ -53,6 +54,7 @@ export function NotificationBell({
     className?: string;
     iconClassName?: string;
 } = {}) {
+    const isMobile = useIsMobile();
     const [data, setData] = useState<NotificationData>({
         total: 0,
         counts: { chats: 0, sales: 0, transfers: 0 },
@@ -60,6 +62,15 @@ export function NotificationBell({
         sales: [],
         transfers: [],
     });
+
+    const total = useMemo(() => {
+        if (isMobile) {
+            return (data.counts.sales || 0) + (data.counts.transfers || 0);
+        }
+        return data.total;
+    }, [data.total, data.counts, isMobile]);
+
+    const hasNotifications = total > 0;
 
     const [activeTab, setActiveTab] = useState<'today' | 'all'>('today');
     const [isMarkingAll, setIsMarkingAll] = useState(false);
@@ -149,7 +160,7 @@ export function NotificationBell({
     };
 
     const markAllAsRead = async () => {
-        if (data.total === 0) return;
+        if (total === 0) return;
         setIsMarkingAll(true);
         try {
             // Optimistic clear - Mark all as read but keep them
@@ -211,7 +222,7 @@ export function NotificationBell({
 
         audio.addEventListener('ended', handleEnded);
 
-        if (data.total > 0) {
+        if (total > 0) {
             if (audio.paused) {
                 playAudio();
             }
@@ -224,7 +235,7 @@ export function NotificationBell({
             audio.removeEventListener('ended', handleEnded);
             try { clearTimeout(timeoutId!); } catch (e) { }
             // Only pause if we are truly stopping (handled by dependency change to false?)
-            // If data.total changes from 1 to 2, we don't want to stop.
+            // If total changes from 1 to 2, we don't want to stop.
             // But we can't easily distinguish why we are cleaning up without refs.
             // Simplified: If total > 0, we want it playing.
 
@@ -233,7 +244,7 @@ export function NotificationBell({
             audio.pause();
             audio.currentTime = 0;
         };
-    }, [data.total > 0]); // Only re-run when "has notifications" status changes
+    }, [total > 0]); // Only re-run when "has notifications" status changes
 
     useEffect(() => {
         fetchNotifications();
@@ -249,8 +260,8 @@ export function NotificationBell({
     // Unified and Sorted Feed
     const allNotifications = useMemo(() => {
 
-        // Process Chats
-        const chats = (data.chats || []).map((item: any) => {
+        // Process Chats (only on web, empty on mobile)
+        const chats = isMobile ? [] : (data.chats || []).map((item: any) => {
             const date = new Date(item.created_at);
             const backendIsRead = item.is_read || !!item.read_at; // Support both structures
 
@@ -482,7 +493,32 @@ export function NotificationBell({
         }
     };
 
-    const hasNotifications = data.total > 0;
+    if (isMobile) {
+        return (
+            <Link href="/notifications-view" className="pointer-events-auto">
+                <Button variant="ghost" size="icon" className={cn("relative group", className)}>
+                    <Bell
+                        className={cn(
+                            "h-5 w-5 text-muted-foreground transition-all duration-300 group-hover:text-foreground",
+                            hasNotifications && "animate-bell-ring text-foreground",
+                            iconClassName
+                        )}
+                    />
+                    {hasNotifications && (
+                        <>
+                            <span className="absolute -top-1 -right-1 h-4 w-4 min-w-[1rem] rounded-full bg-destructive animate-ping opacity-75"></span>
+                            <Badge
+                                variant="destructive"
+                                className="absolute -top-1 -right-1 h-4 w-4 min-w-[1rem] flex items-center justify-center p-0 text-[10px] rounded-full ring-2 ring-background pointer-events-none z-10"
+                            >
+                                {total > 99 ? '99+' : total}
+                            </Badge>
+                        </>
+                    )}
+                </Button>
+            </Link>
+        );
+    }
 
     return (
         <DropdownMenu>
@@ -502,7 +538,7 @@ export function NotificationBell({
                                 variant="destructive"
                                 className="absolute -top-1 -right-1 h-4 w-4 min-w-[1rem] flex items-center justify-center p-0 text-[10px] rounded-full ring-2 ring-background pointer-events-none z-10"
                             >
-                                {data.total > 99 ? '99+' : data.total}
+                                {total > 99 ? '99+' : total}
                             </Badge>
                         </>
                     )}

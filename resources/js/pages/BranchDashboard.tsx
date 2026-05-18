@@ -12,6 +12,10 @@ import {
     CreditCard,
     PhilippinePeso,
     Users,
+    ShoppingBag,
+    ArrowRightLeft,
+    Layers,
+    Router,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import {
@@ -99,7 +103,7 @@ const MiniSparkline = ({ data, color, gradientId }: SparklineProps) => {
     if (!data || data.length === 0) return null;
     
     return (
-        <div className="h-[45px] w-full mt-3 overflow-hidden rounded-b-lg select-none">
+        <div className="h-[25px] md:h-[45px] w-full mt-1 md:mt-3 overflow-hidden rounded-b-lg select-none">
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart 
                     data={data} 
@@ -236,6 +240,7 @@ const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueTy
 export default function BranchDashboard({ branchLocation, stats, chartData, pieData, productData, leaderboard, filters }: DashboardProps) {
     const { auth } = usePage().props as any;
     const isSystemAdmin = auth.roles.includes('System Administrator');
+    const isBranchAdmin = auth.roles.includes('Branch Administrator') && !isSystemAdmin;
     
     // --- Dynamic Stock Distribution State ---
     const [searchQuery, setSearchQuery] = useState('');
@@ -375,13 +380,13 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                    <Card className={`overflow-hidden flex flex-col justify-between h-full ${!isSystemAdmin ? 'col-span-2 lg:col-span-1' : ''}`}>
+                    <Card className={`overflow-hidden flex flex-col justify-between ${isBranchAdmin ? 'h-full' : 'h-auto md:h-full pt-3 pb-0 px-0 md:pt-6 md:pb-0 md:px-0 gap-1 md:gap-4'} ${!isSystemAdmin ? 'col-span-2 lg:col-span-1' : ''}`}>
                         <div>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardHeader className={`flex flex-row items-center justify-between space-y-0 ${isBranchAdmin ? 'p-6 pb-2' : 'p-3 px-4 pb-1 md:p-6 md:pb-2'}`}>
                                 <CardTitle className="text-sm font-medium">Daily Revenue</CardTitle>
                                 <PhilippinePeso className="text-muted-foreground h-4 w-4" />
                             </CardHeader>
-                            <CardContent className="pb-0">
+                            <CardContent className={isBranchAdmin ? 'pb-0' : 'p-4 pt-0 pb-0 md:p-6 md:pt-0 md:pb-0'}>
                                 <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.daily)}>
                                     {formatCurrency(stats.daily)}
                                 </div>
@@ -389,22 +394,24 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                             </CardContent>
                         </div>
                         {stats.dailyTrend && (
-                            <MiniSparkline 
-                                data={stats.dailyTrend} 
-                                color="#10b981" 
-                                gradientId="sparklineDaily" 
-                            />
+                            <div className="block">
+                                <MiniSparkline 
+                                    data={stats.dailyTrend} 
+                                    color="#10b981" 
+                                    gradientId="sparklineDaily" 
+                                />
+                            </div>
                         )}
                     </Card>
                     {isSystemAdmin && (
                         <>
-                            <Card className="overflow-hidden flex flex-col justify-between h-full">
+                            <Card className="overflow-hidden flex flex-col justify-between h-auto md:h-full pt-3 pb-0 px-0 md:pt-6 md:pb-0 md:px-0 gap-1 md:gap-4">
                                 <div>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 px-4 pb-1 md:p-6 md:pb-2">
                                         <CardTitle className="text-sm font-medium">Weekly Revenue</CardTitle>
                                         <Users className="text-muted-foreground h-4 w-4" />
                                     </CardHeader>
-                                    <CardContent className="pb-0">
+                                    <CardContent className="p-4 pt-0 pb-0 md:p-6 md:pt-0 md:pb-0">
                                         <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.weekly)}>
                                             {formatCurrency(stats.weekly)}
                                         </div>
@@ -412,20 +419,22 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                                     </CardContent>
                                 </div>
                                 {stats.weeklyTrend && (
-                                    <MiniSparkline 
-                                        data={stats.weeklyTrend} 
-                                        color="#3b82f6" 
-                                        gradientId="sparklineWeekly" 
-                                    />
+                                    <div className="block">
+                                        <MiniSparkline 
+                                            data={stats.weeklyTrend} 
+                                            color="#3b82f6" 
+                                            gradientId="sparklineWeekly" 
+                                        />
+                                    </div>
                                 )}
                             </Card>
-                            <Card className="overflow-hidden flex flex-col justify-between h-full">
+                            <Card className="overflow-hidden flex flex-col justify-between h-auto md:h-full pt-3 pb-0 px-0 md:pt-6 md:pb-0 md:px-0 gap-1 md:gap-4">
                                 <div>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 px-4 pb-1 md:p-6 md:pb-2">
                                         <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
                                         <CreditCard className="text-muted-foreground h-4 w-4" />
                                     </CardHeader>
-                                    <CardContent className="pb-0">
+                                    <CardContent className="p-4 pt-0 pb-0 md:p-6 md:pt-0 md:pb-0">
                                         <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.monthly)}>
                                             {formatCurrency(stats.monthly)}
                                         </div>
@@ -433,20 +442,22 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                                     </CardContent>
                                 </div>
                                 {stats.monthlyTrend && (
-                                    <MiniSparkline 
-                                        data={stats.monthlyTrend} 
-                                        color="#8b5cf6" 
-                                        gradientId="sparklineMonthly" 
-                                    />
+                                    <div className="block">
+                                        <MiniSparkline 
+                                            data={stats.monthlyTrend} 
+                                            color="#8b5cf6" 
+                                            gradientId="sparklineMonthly" 
+                                        />
+                                    </div>
                                 )}
                             </Card>
-                            <Card className="overflow-hidden flex flex-col justify-between h-full">
+                            <Card className="overflow-hidden flex flex-col justify-between h-auto md:h-full pt-3 pb-0 px-0 md:pt-6 md:pb-0 md:px-0 gap-1 md:gap-4">
                                 <div>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 px-4 pb-1 md:p-6 md:pb-2">
                                         <CardTitle className="text-sm font-medium">YTD Revenue</CardTitle>
                                         <Activity className="text-muted-foreground h-4 w-4" />
                                     </CardHeader>
-                                    <CardContent className="pb-0">
+                                    <CardContent className="p-4 pt-0 pb-0 md:p-6 md:pt-0 md:pb-0">
                                         <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.ytd)}>
                                             {formatCurrency(stats.ytd)}
                                         </div>
@@ -454,15 +465,64 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                                     </CardContent>
                                 </div>
                                 {stats.ytdTrend && (
-                                    <MiniSparkline 
-                                        data={stats.ytdTrend} 
-                                        color="#ec4899" 
-                                        gradientId="sparklineYtd" 
-                                    />
+                                    <div className="block">
+                                        <MiniSparkline 
+                                            data={stats.ytdTrend} 
+                                            color="#ec4899" 
+                                            gradientId="sparklineYtd" 
+                                        />
+                                    </div>
                                 )}
                             </Card>
                         </>
                     )}
+                </div>
+
+                {/* Mobile Quick Action Buttons - Single Row */}
+                <div className="grid grid-cols-4 gap-2 md:hidden mt-1 mb-2">
+                    <button
+                        id="btn-quick-sales"
+                        onClick={() => router.visit('/sales-list')}
+                        className="flex flex-col items-center justify-center py-2.5 px-1 bg-background dark:bg-zinc-900 border border-border/80 rounded-xl shadow-sm hover:bg-accent/50 dark:hover:bg-zinc-800 transition-all active:scale-95 text-center group cursor-pointer animate-in fade-in slide-in-from-bottom-2"
+                    >
+                        <div className="p-2 bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg mb-1 group-hover:scale-110 transition-transform duration-200 shadow-[0_0_10px_rgba(59,130,246,0.05)]">
+                            <ShoppingBag className="w-4 h-4" />
+                        </div>
+                        <span className="font-semibold text-[11px] text-foreground tracking-tight">Sales</span>
+                    </button>
+                    
+                    <button
+                        id="btn-quick-transfers"
+                        onClick={() => router.visit('/transfer-list')}
+                        className="flex flex-col items-center justify-center py-2.5 px-1 bg-background dark:bg-zinc-900 border border-border/80 rounded-xl shadow-sm hover:bg-accent/50 dark:hover:bg-zinc-800 transition-all active:scale-95 text-center group cursor-pointer animate-in fade-in slide-in-from-bottom-2 [animation-delay:40ms]"
+                    >
+                        <div className="p-2 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg mb-1 group-hover:scale-110 transition-transform duration-200 shadow-[0_0_10px_rgba(245,158,11,0.05)]">
+                            <ArrowRightLeft className="w-4 h-4" />
+                        </div>
+                        <span className="font-semibold text-[11px] text-foreground tracking-tight">Transfers</span>
+                    </button>
+                    
+                    <button
+                        id="btn-quick-reorders"
+                        onClick={() => router.visit('/reorders')}
+                        className="flex flex-col items-center justify-center py-2.5 px-1 bg-background dark:bg-zinc-900 border border-border/80 rounded-xl shadow-sm hover:bg-accent/50 dark:hover:bg-zinc-800 transition-all active:scale-95 text-center group cursor-pointer animate-in fade-in slide-in-from-bottom-2 [animation-delay:80ms]"
+                    >
+                        <div className="p-2 bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-lg mb-1 group-hover:scale-110 transition-transform duration-200 shadow-[0_0_10px_rgba(139,92,246,0.05)]">
+                            <Layers className="w-4 h-4" />
+                        </div>
+                        <span className="font-semibold text-[11px] text-foreground tracking-tight">Reorders</span>
+                    </button>
+                    
+                    <button
+                        id="btn-quick-ai-import"
+                        onClick={() => router.visit('/import-transfer')}
+                        className="flex flex-col items-center justify-center py-2.5 px-1 bg-background dark:bg-zinc-900 border border-border/80 rounded-xl shadow-sm hover:bg-accent/50 dark:hover:bg-zinc-800 transition-all active:scale-95 text-center group cursor-pointer animate-in fade-in slide-in-from-bottom-2 [animation-delay:120ms]"
+                    >
+                        <div className="p-2 bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg mb-1 group-hover:scale-110 transition-transform duration-200 shadow-[0_0_10px_rgba(16,185,129,0.05)]">
+                            <Router className="w-4 h-4" />
+                        </div>
+                        <span className="font-semibold text-[11px] text-foreground tracking-tight whitespace-nowrap">AI Import</span>
+                    </button>
                 </div>
 
                 {/* Graphs Layout */}

@@ -9,9 +9,15 @@ use App\Models\Transfer;
 use App\Models\UserNotificationView;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class NotificationController extends Controller
 {
+    public function view()
+    {
+        return Inertia::render('Notifications/Index');
+    }
+
     public function index()
     {
         $user = auth()->user();

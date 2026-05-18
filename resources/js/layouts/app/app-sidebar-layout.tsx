@@ -9,12 +9,15 @@ import { type BreadcrumbItem } from '@/types';
 import { useEffect, type PropsWithChildren } from 'react';
 import { usePage } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function AppSidebarLayout({
     children,
     breadcrumbs = [],
 }: PropsWithChildren<{ breadcrumbs?: BreadcrumbItem[] }>) {
     const { url } = usePage();
+    const isMobile = useIsMobile();
+
     useEffect(() => {
         const checkAndApplyMobileStyles = () => {
             const isMobileViewport = window.innerWidth < 768; // md breakpoint is 768px
@@ -60,17 +63,20 @@ export default function AppSidebarLayout({
                 variant="sidebar" 
                 className={cn(
                     "overflow-x-hidden h-svh overflow-y-auto overscroll-behavior-y-contain md:h-auto md:overflow-visible md:pb-0",
-                    url.includes('chat') 
+                    url.includes('chat') || url.includes('notifications-view')
                         ? "pt-0 md:pt-0 pb-[env(safe-area-inset-bottom,0px)]" 
                         : "pt-16 md:pt-0 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)]"
                 )}
             >
-                <div className="hidden md:block">
-                    <AppSidebarHeader breadcrumbs={breadcrumbs} />
-                </div>
-                <div className="block md:hidden">
-                    <AppMobileHeader />
-                </div>
+                {!isMobile ? (
+                    <div className="hidden md:block">
+                        <AppSidebarHeader breadcrumbs={breadcrumbs} />
+                    </div>
+                ) : (
+                    <div className="block md:hidden">
+                        <AppMobileHeader />
+                    </div>
+                )}
                 {children}
             </AppContent>
             <BottomNav />
