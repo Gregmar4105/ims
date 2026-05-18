@@ -445,7 +445,7 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                 `}</style>
             )}
 
-            <div className="flex flex-col h-full md:h-[calc(100vh-theme(spacing.16))] bg-background border-t">
+            <div className="flex flex-col h-full md:h-[calc(100vh-theme(spacing.16))] bg-background md:border-t">
 
                 <div className="flex flex-1 overflow-hidden">
                     {/* Sidebar */}
@@ -454,10 +454,10 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                         selectedBranch ? "hidden md:flex" : "flex",
                         branches.length === 1 ? "hidden md:hidden" : ""
                     )}>
-                        <div className="p-4 border-b">
+                        <div className="p-0 pb-3 md:p-4 border-b">
                             {/* Mobile View: Chats Title, Bell, Avatar on same line, Search below */}
-                            <div className="md:hidden flex flex-col gap-3.5">
-                                <div className="flex items-center justify-between pt-1">
+                            <div className="md:hidden flex flex-col gap-3">
+                                <div className="h-16 px-4 flex items-center justify-between">
                                     <h2 className="text-3xl font-bold tracking-tight text-foreground pr-2">
                                         Chats
                                     </h2>
@@ -485,14 +485,16 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                                         )}
                                     </div>
                                 </div>
-                                <div className="relative">
-                                    <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search branches..."
-                                        className="pl-10 pr-4 bg-secondary/40 border-none h-10 rounded-full text-sm focus:bg-secondary/60 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/80"
-                                        value={searchQuery}
-                                        onChange={e => setSearchQuery(e.target.value)}
-                                    />
+                                <div className="px-4">
+                                    <div className="relative">
+                                        <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Search branches..."
+                                            className="pl-10 pr-4 bg-secondary/40 border-none h-10 rounded-full text-sm focus:bg-secondary/60 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/80"
+                                            value={searchQuery}
+                                            onChange={e => setSearchQuery(e.target.value)}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
@@ -575,7 +577,7 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                         {selectedBranch ? (
                             <>
                                 {/* Header */}
-                                <div className="p-4 pt-7 md:pt-4 border-b flex items-center justify-between shadow-sm z-10">
+                                <div className="h-16 px-4 flex items-center justify-between border-b shadow-sm z-10 bg-background md:h-auto md:p-4">
                                     <div className="flex items-center gap-3">
                                         <Button
                                             variant="ghost"

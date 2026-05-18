@@ -400,7 +400,7 @@ export default function BranchChatIndex({ branch }: { branch: Branch }) {
                 }
             `}</style>
 
-            <div className="flex flex-col h-full md:h-[calc(100vh-theme(spacing.16))] bg-background border-t">
+            <div className="flex flex-col h-full md:h-[calc(100vh-theme(spacing.16))] bg-background md:border-t">
 
                 <div className="flex flex-1 overflow-hidden">
                     {/* Chat Area */}
@@ -410,7 +410,7 @@ export default function BranchChatIndex({ branch }: { branch: Branch }) {
                         {selectedBranch ? (
                             <>
                                 {/* Header */}
-                                <div className="p-4 pt-7 md:pt-4 border-b flex items-center justify-between shadow-sm z-10">
+                                <div className="h-16 px-4 flex items-center justify-between border-b shadow-sm z-10 bg-background md:h-auto md:p-4">
                                     <div className="flex items-center gap-3">
                                         <Button
                                             variant="ghost"
