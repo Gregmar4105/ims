@@ -12,6 +12,15 @@ use Laravel\Fortify\Features;
 // On the web server: show the normal public welcome/shop page.
 Route::get('/', function (\Illuminate\Http\Request $request) {
     if (preg_match('/Mobi|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i', $request->userAgent())) {
+        if (auth()->check()) {
+            $user = auth()->user();
+            if ($user->hasRole('System Administrator') || $user->hasRole('Branch Administrator')) {
+                return redirect()->intended('/branch-dashboard');
+            }
+            if ($user->hasRole('Employee')) {
+                return redirect()->intended('/employee-dashboard');
+            }
+        }
         return redirect()->route('login');
     }
     return app(\App\Http\Controllers\WelcomeController::class)->index($request);
@@ -43,6 +52,17 @@ Route::get('/api/local/sync-config', function (\Illuminate\Http\Request $request
 
 // ── Web App — Authenticated routes ─────────────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', function () {
+        $user = auth()->user();
+        if ($user->hasRole('System Administrator') || $user->hasRole('Branch Administrator')) {
+            return redirect('/branch-dashboard');
+        }
+        if ($user->hasRole('Employee')) {
+            return redirect('/employee-dashboard');
+        }
+        abort(403, 'User does not have the right permissions.');
+    })->name('dashboard');
+
     Route::get('system-dashboard', [\App\Http\Controllers\SystemDashboardController::class, 'index'])
         ->name('system.dashboard')->middleware('role:System Administrator');
 
