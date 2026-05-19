@@ -393,49 +393,62 @@ export default function Show({ product }: Props) {
 
                 {/* Codes Grid & Barcodes/QR Row */}
                 <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border shadow-sm space-y-5">
-                    {/* Small text codes */}
-                    <div>
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-3">Product Codes</span>
-                        <div className="grid grid-cols-3 gap-2.5">
-                            <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col justify-center min-w-0">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight truncate">SKU</span>
-                                <span className="font-mono text-xs font-bold text-gray-900 dark:text-gray-100 truncate mt-0.5">{product.sku || '-'}</span>
+                    {/* Product Codes */}
+                    <div className="space-y-3">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Product Codes</span>
+                        
+                        {/* SKU - Full Width */}
+                        <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">SKU</span>
+                            <div className="font-mono text-sm font-bold flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                                <Package className="h-4 w-4 text-gray-400 shrink-0" />
+                                <span className="truncate">{product.sku || '-'}</span>
                             </div>
-                            <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col justify-center min-w-0">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight truncate">Code</span>
-                                <span className="font-mono text-xs font-bold text-gray-900 dark:text-gray-100 truncate mt-0.5">{product.code || '-'}</span>
+                        </div>
+                        
+                        {/* Code & 2Code - Side-by-Side */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm min-w-0">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Code</span>
+                                <div className="font-mono text-sm font-bold flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                                    <Tag className="h-4 w-4 text-gray-400 shrink-0" />
+                                    <span className="truncate">{product.code || '-'}</span>
+                                </div>
                             </div>
-                            <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col justify-center min-w-0">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight truncate">2Code</span>
-                                <span className="font-mono text-xs font-bold text-gray-900 dark:text-gray-100 truncate mt-0.5">{product.code_2 || '-'}</span>
+                            <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm min-w-0">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">2Code</span>
+                                <div className="font-mono text-sm font-bold flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                                    <ScanBarcode className="h-4 w-4 text-gray-400 shrink-0" />
+                                    <span className="truncate">{product.code_2 || '-'}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <Separator className="bg-gray-100 dark:bg-gray-800" />
 
-                    {/* Barcode & QR Code Side-by-side */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-between min-h-[120px]">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Barcode</span>
-                            <div className="flex-1 flex items-center justify-center bg-white p-1.5 rounded-lg w-full max-w-[140px]">
+                    {/* Barcode & QR Code Stacked */}
+                    <div className="grid grid-cols-1 gap-4">
+                        <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-center min-h-[140px]">
+                            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Barcode</span>
+                            <div className="flex items-center justify-center bg-white p-3 rounded-xl w-full max-w-[280px] shadow-sm">
                                 {product.barcode ? (
-                                    <div className="w-full flex justify-center scale-90">
-                                        <Barcode value={product.barcode} height={30} fontSize={10} width={1.2} background="transparent" />
+                                    <div className="w-full flex justify-center">
+                                        <Barcode value={product.barcode} height={45} fontSize={11} width={1.5} background="transparent" />
                                     </div>
                                 ) : (
-                                    <span className="text-xs text-gray-400 font-mono">-</span>
+                                    <span className="text-sm text-gray-400 font-mono">-</span>
                                 )}
                             </div>
                         </div>
 
-                        <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-between min-h-[120px]">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">QR Code</span>
-                            <div className="flex-1 flex items-center justify-center bg-white p-1.5 rounded-lg w-full max-w-[80px]">
+                        <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-center min-h-[160px]">
+                            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">QR Code</span>
+                            <div className="flex items-center justify-center bg-white p-3.5 rounded-xl w-full max-w-[140px] shadow-sm">
                                 {product.qr_code ? (
-                                    <QRCode value={product.qr_code} size={64} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
+                                    <QRCode value={product.qr_code} size={112} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
                                 ) : (
-                                    <span className="text-xs text-gray-400 font-mono">-</span>
+                                    <span className="text-sm text-gray-400 font-mono">-</span>
                                 )}
                             </div>
                         </div>

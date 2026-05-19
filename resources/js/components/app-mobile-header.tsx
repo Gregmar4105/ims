@@ -196,7 +196,7 @@ export function AppMobileHeader() {
                 <div className="flex flex-1 items-center gap-3">
                     <button 
                         onClick={() => window.history.back()}
-                        className="flex items-center justify-center h-10 w-10 rounded-xl hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-all shrink-0 active:scale-95 border border-border/20 bg-secondary/30"
+                        className="flex items-center justify-center h-10 w-10 rounded-xl hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-all shrink-0 active:scale-95 bg-transparent border-0"
                     >
                         <ChevronLeft className="size-6 stroke-[2.5]" />
                     </button>
