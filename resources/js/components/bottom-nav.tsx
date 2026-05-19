@@ -25,7 +25,7 @@ export function BottomNav() {
     const isChatActive = url.startsWith('/chats') || url.startsWith('/branch-chats');
     const isQrActive = url.startsWith('/qr-and-barcode-scanner');
     const isProductsActive = url.startsWith('/products') || url.startsWith('/categories') || url.startsWith('/brands') || url.startsWith('/reorders');
-    const isMoreActive = url.startsWith('/settings') || url === '#';
+    const isMoreActive = url.startsWith('/more') || url.startsWith('/settings');
 
     const [unreadChats, setUnreadChats] = useState(0);
 
@@ -48,7 +48,7 @@ export function BottomNav() {
         { icon: MessageCircle, label: 'Chats', href: chatHref, active: isChatActive },
         { icon: QrCode, label: 'QR', href: '/qr-and-barcode-scanner', isCenter: true, active: isQrActive },
         { icon: Package, label: 'Products', href: '/products', active: isProductsActive },
-        { icon: MoreHorizontal, label: 'More', href: '#', active: isMoreActive },
+        { icon: MoreHorizontal, label: 'More', href: '/more', active: isMoreActive },
     ];
 
     // Hide bottom nav on detail chat components or print/receipt views if applicable

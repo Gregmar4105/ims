@@ -220,6 +220,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Google Sheets Sync
     Route::post('/google-sheets/sync-all', [\App\Http\Controllers\GoogleSheetsSyncController::class, 'syncAll'])->name('google-sheets.sync-all');
+
+    // More actions page route
+    Route::get('/more', function () {
+        return Inertia::render('More');
+    })->name('more');
 });
 
 // Public Status Endpoint (used for health monitoring)
