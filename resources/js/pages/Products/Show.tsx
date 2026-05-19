@@ -425,8 +425,6 @@ export default function Show({ product }: Props) {
                         </div>
                     </div>
 
-                    <Separator className="bg-gray-100 dark:bg-gray-800" />
-
                     {/* Barcode & QR Code Stacked */}
                     <div className="grid grid-cols-1 gap-4">
                         <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-center min-h-[140px]">
