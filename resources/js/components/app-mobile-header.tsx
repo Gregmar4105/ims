@@ -134,9 +134,11 @@ export function AppMobileHeader() {
         }, 500);
     };
 
+    const { product } = usePage().props as any;
     const isProductsPage = url.startsWith('/products');
     const isHomePage = url === '/system-dashboard' || url === '/branch-dashboard' || url === '/employee-dashboard' || url === '/';
     const isScannerPage = url.startsWith('/qr-and-barcode-scanner');
+    const isProductDetailPage = /^\/products\/\d+$/.test(url.split('?')[0]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && filteredSuggestions.length > 0) {
@@ -187,6 +189,23 @@ export function AppMobileHeader() {
                         </span>
                         <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
                             Mobile Scanner
+                        </span>
+                    </div>
+                </div>
+            ) : isProductDetailPage ? (
+                <div className="flex flex-1 items-center gap-3">
+                    <button 
+                        onClick={() => window.history.back()}
+                        className="flex items-center justify-center h-10 w-10 rounded-xl hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-all shrink-0 active:scale-95 border border-border/20 bg-secondary/30"
+                    >
+                        <ChevronLeft className="size-6 stroke-[2.5]" />
+                    </button>
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-[11px] font-bold text-primary dark:text-blue-400 uppercase tracking-wider truncate leading-tight">
+                            {product?.brand?.name || 'No Brand'}
+                        </span>
+                        <span className="text-[12px] font-semibold text-muted-foreground uppercase tracking-tight truncate leading-tight mt-0.5">
+                            {product?.category?.name || 'No Category'}
                         </span>
                     </div>
                 </div>

@@ -83,7 +83,8 @@ export default function Show({ product }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Product - ${product.name}`} />
 
-            <div className="p-4 md:p-8 space-y-6">
+            {/* Desktop Header */}
+            <div className="hidden md:block p-4 md:p-8 space-y-6">
                 <div className="flex items-center justify-between gap-4 w-full">
                     <div className="flex items-center gap-4">
                         <Button variant="outline" size="sm" onClick={() => window.history.back()}>
@@ -111,7 +112,25 @@ export default function Show({ product }: Props) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Mobile Header */}
+            <div className="block md:hidden p-4 pb-2">
+                <div className="flex items-start justify-between gap-3 w-full">
+                    <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white text-left leading-tight tracking-tight flex-1">
+                        {product.name}
+                    </h1>
+                    {!isEmployee && (
+                        <Link href={`/products/${product.id}/edit`} className="shrink-0 mt-0.5">
+                            <Button variant="outline" size="sm" className="text-xs font-semibold flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-border bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <Edit className="h-3.5 w-3.5" />
+                                <span>Edit</span>
+                            </Button>
+                        </Link>
+                    )}
+                </div>
+            </div>
+
+            {/* Desktop View Content */}
+            <div className="hidden md:grid grid-cols-3 gap-6 p-4 md:p-8 pt-0">
                 {/* Left Column - Image & Quick Status */}
                 <div className="space-y-6">
                     <div className="relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden border shadow-sm aspect-square flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -320,6 +339,213 @@ export default function Show({ product }: Props) {
                                 </div>
                             </>
                         )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile View Content */}
+            <div className="flex md:hidden flex-col gap-5 p-4 pt-0 pb-10">
+                {/* Product Image Card */}
+                <div className="relative bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border shadow-sm aspect-square flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+                    {product.image_path ? (
+                        <img
+                            src={`/storage/${product.image_path}`}
+                            alt={product.name}
+                            className="w-full h-full object-contain p-4"
+                        />
+                    ) : (
+                        <Package className="h-24 w-24 text-gray-300" />
+                    )}
+                </div>
+
+                {/* Price & Stock Status Banner */}
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border shadow-sm flex items-center justify-between gap-4">
+                    <div className="flex flex-col">
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Price</span>
+                        <div className="mt-1">
+                            {isOnClearance(product) ? (
+                                <>
+                                    <span className="text-xl font-bold text-yellow-600 block leading-none">
+                                        ₱{Number(product.clearance_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                    </span>
+                                    <span className="text-xs text-gray-400 line-through">
+                                        ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="text-xl font-bold text-gray-900 dark:text-white">
+                                    ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col items-end">
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Stock Status</span>
+                        <Badge className={`${product.quantity === 0 ? 'bg-red-500' :
+                            product.quantity <= 5 ? 'bg-amber-500' :
+                                'bg-emerald-600'
+                            } text-xs font-bold px-2.5 py-0.5`}>
+                            Qty: {product.quantity}
+                        </Badge>
+                    </div>
+                </div>
+
+                {/* Codes Grid & Barcodes/QR Row */}
+                <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border shadow-sm space-y-5">
+                    {/* Small text codes */}
+                    <div>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-3">Product Codes</span>
+                        <div className="grid grid-cols-3 gap-2.5">
+                            <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col justify-center min-w-0">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight truncate">SKU</span>
+                                <span className="font-mono text-xs font-bold text-gray-900 dark:text-gray-100 truncate mt-0.5">{product.sku || '-'}</span>
+                            </div>
+                            <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col justify-center min-w-0">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight truncate">Code</span>
+                                <span className="font-mono text-xs font-bold text-gray-900 dark:text-gray-100 truncate mt-0.5">{product.code || '-'}</span>
+                            </div>
+                            <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col justify-center min-w-0">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight truncate">2Code</span>
+                                <span className="font-mono text-xs font-bold text-gray-900 dark:text-gray-100 truncate mt-0.5">{product.code_2 || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Separator className="bg-gray-100 dark:bg-gray-800" />
+
+                    {/* Barcode & QR Code Side-by-side */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-between min-h-[120px]">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Barcode</span>
+                            <div className="flex-1 flex items-center justify-center bg-white p-1.5 rounded-lg w-full max-w-[140px]">
+                                {product.barcode ? (
+                                    <div className="w-full flex justify-center scale-90">
+                                        <Barcode value={product.barcode} height={30} fontSize={10} width={1.2} background="transparent" />
+                                    </div>
+                                ) : (
+                                    <span className="text-xs text-gray-400 font-mono">-</span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-between min-h-[120px]">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">QR Code</span>
+                            <div className="flex-1 flex items-center justify-center bg-white p-1.5 rounded-lg w-full max-w-[80px]">
+                                {product.qr_code ? (
+                                    <QRCode value={product.qr_code} size={64} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
+                                ) : (
+                                    <span className="text-xs text-gray-400 font-mono">-</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Description Card */}
+                <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border shadow-sm space-y-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Description</span>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line pt-1">
+                        {product.description || <span className="italic text-gray-400">No description provided.</span>}
+                    </p>
+                </div>
+
+                {/* Details (Supplier, Reorder, Branch Locations, Variations) */}
+                <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border shadow-sm space-y-5">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Additional Details</span>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                        {product.supplier && (
+                            <div className="flex flex-col">
+                                <span className="text-[11px] font-semibold text-gray-400 uppercase">Supplier</span>
+                                <span className="font-bold text-gray-955 dark:text-gray-100 flex items-center gap-1.5 mt-1">
+                                    <Truck className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                    {product.supplier.name}
+                                </span>
+                            </div>
+                        )}
+                        <div className="flex flex-col">
+                            <span className="text-[11px] font-semibold text-gray-400 uppercase">Reorder Level</span>
+                            <span className="font-bold text-gray-955 dark:text-gray-100 flex items-center gap-1.5 mt-1">
+                                <Layers className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                {product.reorder_level}
+                            </span>
+                        </div>
+                    </div>
+
+                    {product.variations && product.variations.length > 0 && (
+                        <>
+                            <Separator className="bg-gray-100 dark:bg-gray-800" />
+                            <div className="space-y-2">
+                                <span className="text-[11px] font-semibold text-gray-400 uppercase">Variations</span>
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {product.variations.map((v, i) => (
+                                        <Badge key={i} variant="secondary" className="text-xs px-2 py-0.5 font-medium rounded-lg">
+                                            <span className="font-bold text-gray-500 mr-1">{v.name}:</span> {v.options}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    <Separator className="bg-gray-100 dark:bg-gray-800" />
+
+                    <div className="space-y-3">
+                        <span className="text-[11px] font-semibold text-gray-400 uppercase flex items-center gap-1.5">
+                            <MapPinned className="h-3.5 w-3.5 text-gray-400" />
+                            Branch & Physical Locations
+                        </span>
+                        <div className="space-y-2.5 pt-1">
+                            {product.branches && product.branches.length > 0 ? (
+                                product.branches.map((b) => (
+                                    <div key={b.id} className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-800/80 shadow-sm">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <Avatar className="h-8 w-8 border-2 border-white dark:border-gray-800 shadow-sm ring-0">
+                                                {b.profile_photo_path ? (
+                                                    <AvatarImage src={`/storage/${b.profile_photo_path}`} alt={b.branch_name} />
+                                                ) : (
+                                                    <AvatarFallback className="text-[10px] bg-blue-600 text-white font-bold">
+                                                        {b.branch_name.substring(0, 2).toUpperCase()}
+                                                    </AvatarFallback>
+                                                )}
+                                            </Avatar>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Branch</span>
+                                                <span className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">{b.branch_name}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-3 shrink-0">
+                                            {b.pivot?.physical_location && (
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">Location</span>
+                                                    <div className="flex items-center gap-1 text-blue-600 font-bold text-xs">
+                                                        <MapPinned className="h-3 w-3" />
+                                                        <span>{b.pivot.physical_location}</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            {isSystemAdmin && (
+                                                <div className="flex flex-col items-end border-l pl-3 dark:border-gray-700">
+                                                    <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">Stock</span>
+                                                    <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0 h-4 min-w-[20px] justify-center">
+                                                        {b.pivot?.quantity || 0}
+                                                    </Badge>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="p-3.5 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-800 text-center">
+                                    <span className="text-muted-foreground flex items-center justify-center gap-2 font-medium italic text-xs">
+                                        <Layers className="h-3.5 w-3.5 text-gray-400" /> Global / All Branches
+                                    </span>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
