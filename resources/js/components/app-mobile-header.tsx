@@ -136,6 +136,7 @@ export function AppMobileHeader() {
 
     const isProductsPage = url.startsWith('/products');
     const isHomePage = url === '/system-dashboard' || url === '/branch-dashboard' || url === '/employee-dashboard' || url === '/';
+    const isScannerPage = url.startsWith('/qr-and-barcode-scanner');
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && filteredSuggestions.length > 0) {
@@ -175,82 +176,98 @@ export function AppMobileHeader() {
     return (
         <header className="flex shrink-0 items-center justify-between gap-3 px-4 bg-background fixed top-0 left-0 right-0 z-40 pt-[env(safe-area-inset-top,0px)] h-[calc(4rem+env(safe-area-inset-top,0px))] border-b border-sidebar-border/50">
 
-            <div 
-                ref={containerRef}
-                className="relative flex flex-1 items-center rounded-full bg-secondary/50 px-4 shadow-sm h-11 border border-border/20 transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20"
-            >
-                <Search className="size-4 text-muted-foreground mr-2 shrink-0" />
-                <input 
-                    type="text" 
-                    placeholder={getPlaceholderText()}
-                    className={cn(
-                        "flex-1 w-full bg-transparent border-none text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0",
-                        isProductsPage ? "pr-8" : ""
-                    )}
-                    value={isProductsPage || isHomePage ? localSearch : ''}
-                    onChange={
-                        isProductsPage 
-                            ? handleSearchChange 
-                            : (isHomePage 
-                                ? (e) => { setLocalSearch(e.target.value); setIsDropdownOpen(true); } 
-                                : undefined)
-                    }
-                    onFocus={() => { if (isHomePage) setIsDropdownOpen(true); }}
-                    onKeyDown={isHomePage ? handleKeyDown : undefined}
-                    disabled={!isProductsPage && !isHomePage}
-                />
-                {isProductsPage && (
-                    <button
-                        onClick={() => window.dispatchEvent(new CustomEvent('trigger-product-scan'))}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground shrink-0 rounded-full hover:bg-secondary/80 transition-colors"
-                        title="Scan Barcode / QR Code"
-                    >
-                        <Scan className="size-4" />
-                    </button>
-                )}
-
-                {/* Dropdown Suggestions */}
-                {isHomePage && isDropdownOpen && localSearch.trim().length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-2 max-h-[320px] overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl z-50 animate-in fade-in-50 slide-in-from-top-2 duration-200 divide-y divide-border/40 backdrop-blur-md bg-opacity-95 dark:bg-opacity-95">
-                        {filteredSuggestions.length > 0 ? (
-                            <div className="p-1.5 flex flex-col gap-0.5">
-                                {filteredSuggestions.map((item, index) => {
-                                    const Icon = item.icon;
-                                    return (
-                                        <button
-                                            key={index}
-                                            onClick={() => {
-                                                setIsDropdownOpen(false);
-                                                setLocalSearch('');
-                                                router.get(item.url);
-                                            }}
-                                            className="flex items-center gap-3 w-full text-left px-3.5 py-3 rounded-xl hover:bg-accent/80 active:bg-accent hover:text-accent-foreground transition-all duration-200 group"
-                                        >
-                                            <div className="flex items-center justify-center p-2 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all duration-300 shadow-sm">
-                                                <Icon className="size-4.5 stroke-[2.2]" />
-                                            </div>
-                                            <div className="flex flex-col min-w-0 flex-1">
-                                                <span className="text-sm font-semibold text-foreground tracking-tight group-hover:translate-x-0.5 transition-transform duration-200">
-                                                    {item.title}
-                                                </span>
-                                                <span className="text-[11px] text-muted-foreground group-hover:text-muted-foreground/80 truncate pr-2">
-                                                    {item.description}
-                                                </span>
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-8 px-4 text-center text-muted-foreground gap-1.5">
-                                <Search className="size-6 text-muted-foreground/40 stroke-[1.5] mb-0.5 animate-pulse" />
-                                <span className="text-xs font-semibold">No matching pages found</span>
-                                <span className="text-[10px] text-muted-foreground/75">Try a different search query</span>
-                            </div>
-                        )}
+            {isScannerPage ? (
+                <div className="flex flex-1 items-center gap-3">
+                    <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20">
+                        <ScanQrCode className="size-5 stroke-[2.2] animate-pulse" />
                     </div>
-                )}
-            </div>
+                    <div className="flex flex-col">
+                        <span className="font-bold text-[15px] leading-tight text-foreground tracking-tight">
+                            QR & Barcode Scanner
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
+                            Mobile Scanner
+                        </span>
+                    </div>
+                </div>
+            ) : (
+                <div 
+                    ref={containerRef}
+                    className="relative flex flex-1 items-center rounded-full bg-secondary/50 px-4 shadow-sm h-11 border border-border/20 transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20"
+                >
+                    <Search className="size-4 text-muted-foreground mr-2 shrink-0" />
+                    <input 
+                        type="text" 
+                        placeholder={getPlaceholderText()}
+                        className={cn(
+                            "flex-1 w-full bg-transparent border-none text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0",
+                            isProductsPage ? "pr-8" : ""
+                        )}
+                        value={isProductsPage || isHomePage ? localSearch : ''}
+                        onChange={
+                            isProductsPage 
+                                ? handleSearchChange 
+                                : (isHomePage 
+                                    ? (e) => { setLocalSearch(e.target.value); setIsDropdownOpen(true); } 
+                                    : undefined)
+                        }
+                        onFocus={() => { if (isHomePage) setIsDropdownOpen(true); }}
+                        onKeyDown={isHomePage ? handleKeyDown : undefined}
+                        disabled={!isProductsPage && !isHomePage}
+                    />
+                    {isProductsPage && (
+                        <button
+                            onClick={() => window.dispatchEvent(new CustomEvent('trigger-product-scan'))}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground shrink-0 rounded-full hover:bg-secondary/80 transition-colors"
+                            title="Scan Barcode / QR Code"
+                        >
+                            <Scan className="size-4" />
+                        </button>
+                    )}
+
+                    {/* Dropdown Suggestions */}
+                    {isHomePage && isDropdownOpen && localSearch.trim().length > 0 && (
+                        <div className="absolute left-0 right-0 top-full mt-2 max-h-[320px] overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl z-50 animate-in fade-in-50 slide-in-from-top-2 duration-200 divide-y divide-border/40 backdrop-blur-md bg-opacity-95 dark:bg-opacity-95">
+                            {filteredSuggestions.length > 0 ? (
+                                <div className="p-1.5 flex flex-col gap-0.5">
+                                    {filteredSuggestions.map((item, index) => {
+                                        const Icon = item.icon;
+                                        return (
+                                            <button
+                                                key={index}
+                                                onClick={() => {
+                                                    setIsDropdownOpen(false);
+                                                    setLocalSearch('');
+                                                    router.get(item.url);
+                                                }}
+                                                className="flex items-center gap-3 w-full text-left px-3.5 py-3 rounded-xl hover:bg-accent/80 active:bg-accent hover:text-accent-foreground transition-all duration-200 group"
+                                            >
+                                                <div className="flex items-center justify-center p-2 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all duration-300 shadow-sm">
+                                                    <Icon className="size-4.5 stroke-[2.2]" />
+                                                </div>
+                                                <div className="flex flex-col min-w-0 flex-1">
+                                                    <span className="text-sm font-semibold text-foreground tracking-tight group-hover:translate-x-0.5 transition-transform duration-200">
+                                                        {item.title}
+                                                    </span>
+                                                    <span className="text-[11px] text-muted-foreground group-hover:text-muted-foreground/80 truncate pr-2">
+                                                        {item.description}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-8 px-4 text-center text-muted-foreground gap-1.5">
+                                    <Search className="size-6 text-muted-foreground/40 stroke-[1.5] mb-0.5 animate-pulse" />
+                                    <span className="text-xs font-semibold">No matching pages found</span>
+                                    <span className="text-[10px] text-muted-foreground/75">Try a different search query</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="flex items-center gap-2 shrink-0">
                 <div className="relative text-muted-foreground hover:text-foreground">

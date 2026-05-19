@@ -77,7 +77,7 @@ export default function QrScannerIndex({
 }) {
     // Mode State
     const [mode, setMode] = useState<'sale' | 'transfer'>('sale');
-    const [activeTab, setActiveTab] = useState<'scan' | 'pending'>('scan');
+    const [showPending, setShowPending] = useState(false);
 
     // Scanner State
     const [isScanning, setIsScanning] = useState(false);
@@ -257,7 +257,7 @@ export default function QrScannerIndex({
             onSuccess: () => {
                 toast.success("Sale Readied!");
                 clearCart();
-                setActiveTab('pending');
+                setShowPending(true);
             }
         });
     };
@@ -273,7 +273,7 @@ export default function QrScannerIndex({
             onSuccess: () => {
                 toast.success("Transfer Readied!");
                 clearCart();
-                setActiveTab('pending');
+                setShowPending(true);
             }
         });
     };
@@ -291,52 +291,96 @@ export default function QrScannerIndex({
 
             <div className="flex flex-col h-[calc(100vh-4rem)] max-w-md mx-auto w-full bg-background relative">
 
-                {/* --- Top Tabs (Scan / Pending) --- */}
-                <div className="p-4 bg-background border-b z-10">
-                    <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
+                {/* --- Top Tabs (Sale / Transfer) --- */}
+                <div className="px-4 py-3 bg-background border-b border-sidebar-border/40 z-10">
+                    <div className="grid grid-cols-2 gap-1.5 p-1 bg-secondary/50 border border-border/20 rounded-xl backdrop-blur-md">
                         <button
-                            onClick={() => setActiveTab('scan')}
-                            className={`py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'scan' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+                            onClick={() => {
+                                if (mode === 'sale') return;
+                                if (cart.length > 0) {
+                                    if (confirm("Switching to Sale Mode will clear your cart. Continue?")) {
+                                        clearCart();
+                                        setMode('sale');
+                                    }
+                                } else {
+                                    setMode('sale');
+                                }
+                            }}
+                            className={`py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2 ${mode === 'sale' ? 'bg-background text-primary shadow-sm font-extrabold ring-1 ring-border/10' : 'text-muted-foreground hover:text-foreground'}`}
                         >
-                            Scanner
+                            <ShoppingCart className="w-3.5 h-3.5" />
+                            Sale
                         </button>
                         <button
-                            onClick={() => setActiveTab('pending')}
-                            className={`py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'pending' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+                            onClick={() => {
+                                if (mode === 'transfer') return;
+                                if (cart.length > 0) {
+                                    if (confirm("Switching to Transfer Mode will clear your cart. Continue?")) {
+                                        clearCart();
+                                        setMode('transfer');
+                                    }
+                                } else {
+                                    setMode('transfer');
+                                }
+                            }}
+                            className={`py-2.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2 ${mode === 'transfer' ? 'bg-background text-orange-500 shadow-sm font-extrabold ring-1 ring-border/10' : 'text-muted-foreground hover:text-foreground'}`}
                         >
-                            Pending ({mode === 'sale' ? pendingSales.length : pendingTransfers.length})
+                            <ArrowRightLeft className="w-3.5 h-3.5" />
+                            Transfer
                         </button>
                     </div>
                 </div>
 
                 {/* --- Content Area --- */}
                 <div className="flex-1 overflow-y-auto">
-                    <div className="p-4 space-y-4 pb-24">
+                    <div className="p-4 space-y-4 pb-28">
 
-                        {activeTab === 'scan' && (
-                            <>
-                                {/* Mode Switcher */}
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-lg font-bold flex items-center gap-2">
-                                        {mode === 'sale' ? <ShoppingCart className="w-5 h-5 text-primary" /> : <ArrowRightLeft className="w-5 h-5 text-orange-500" />}
-                                        {mode === 'sale' ? 'New Sale' : 'New Transfer'}
-                                    </h2>
-
-                                    <DropdownModeSelector mode={mode} setMode={setMode} clearCart={clearCart} />
+                        {/* Session Header / Toggle Bar */}
+                        <div className="flex items-center justify-between mb-3 bg-secondary/20 p-2.5 rounded-xl border border-border/10">
+                            <h2 className="text-sm font-bold flex items-center gap-2.5 text-foreground">
+                                <div className={`p-1.5 rounded-lg ${mode === 'sale' ? 'bg-primary/10 text-primary' : 'bg-orange-500/10 text-orange-500'}`}>
+                                    {mode === 'sale' ? <ShoppingCart className="w-4 h-4 stroke-[2.2]" /> : <ArrowRightLeft className="w-4 h-4 stroke-[2.2]" />}
                                 </div>
+                                {showPending 
+                                    ? (mode === 'sale' ? 'Pending Sales' : 'Pending Transfers')
+                                    : (mode === 'sale' ? 'New Sale Session' : 'New Transfer Session')
+                                }
+                            </h2>
 
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowPending(!showPending)}
+                                className="h-8 rounded-lg text-xs font-semibold px-3 gap-1.5 transition-all active:scale-95 border-border/30 hover:bg-secondary"
+                            >
+                                {showPending ? (
+                                    <>
+                                        <Camera className="w-3.5 h-3.5 text-primary" />
+                                        Scanner
+                                    </>
+                                ) : (
+                                    <>
+                                        <History className="w-3.5 h-3.5 text-muted-foreground" />
+                                        Pending ({mode === 'sale' ? pendingSales.length : pendingTransfers.length})
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+
+                        {!showPending ? (
+                            <>
                                 {/* Transfer Destination Selector */}
                                 {mode === 'transfer' && (
-                                    <Card className="border-orange-200 bg-orange-50/50 mb-4">
+                                    <Card className="border-orange-500/20 bg-orange-500/5 mb-4 shadow-sm rounded-xl">
                                         <CardContent className="p-4">
-                                            <Label className="mb-2 block">Destination Branch</Label>
+                                            <Label className="mb-2 block text-xs font-semibold tracking-wide uppercase text-orange-600/90">Destination Branch</Label>
                                             <Select value={selectedBranchId} onValueChange={setSelectedBranchId}>
-                                                <SelectTrigger className="bg-white">
-                                                    <SelectValue placeholder="Select Destination" />
+                                                <SelectTrigger className="bg-background border-orange-500/20 rounded-xl h-11 shadow-sm">
+                                                    <SelectValue placeholder="Select Destination Branch" />
                                                 </SelectTrigger>
-                                                <SelectContent>
+                                                <SelectContent className="rounded-xl">
                                                     {branches.map(b => (
-                                                        <SelectItem key={b.id} value={String(b.id)}>{b.branch_name}</SelectItem>
+                                                        <SelectItem key={b.id} value={String(b.id)} className="rounded-lg text-sm">{b.branch_name}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
@@ -345,113 +389,153 @@ export default function QrScannerIndex({
                                 )}
 
                                 {/* Scanner View */}
-                                <Card className="overflow-hidden border-2 border-primary/20 shadow-lg relative">
-                                    <div className="bg-zinc-950 relative min-h-[300px] flex items-center justify-center">
+                                <Card className="overflow-hidden border border-border/30 rounded-2xl shadow-xl bg-zinc-950 relative">
+                                    <div className="bg-zinc-950 relative min-h-[300px] flex items-center justify-center overflow-hidden">
                                         {!isScanning ? (
                                             <button
                                                 onClick={startScanner}
-                                                className="group flex flex-col items-center gap-4 transition-all"
+                                                className="group flex flex-col items-center gap-4 transition-all duration-300"
                                             >
-                                                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300">
-                                                    <Camera className="w-10 h-10 text-primary" />
+                                                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-500 relative">
+                                                    <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping opacity-75"></div>
+                                                    <Camera className="w-9 h-9 text-primary relative z-10" />
                                                 </div>
                                                 <div className="text-center">
-                                                    <span className="text-lg font-semibold text-white block">Tap to Scan</span>
-                                                    <span className="text-xs text-white/50">Camera is currently off</span>
+                                                    <span className="text-[17px] font-bold text-white tracking-tight block group-hover:text-primary transition-colors">Tap to Scan</span>
+                                                    <span className="text-xs text-zinc-400 font-medium">Camera is currently inactive</span>
                                                 </div>
                                             </button>
                                         ) : (
                                             <>
-                                                <div id="reader" className="w-full h-full [&>video]:object-cover [&>video]:h-[300px]"></div>
-                                                {/* Scan Line Animation */}
-                                                <div className="absolute inset-x-0 mx-auto w-[80%] h-0.5 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-[scan_2s_ease-in-out_infinite] top-0 pointer-events-none z-10"></div>
-                                                <div className="absolute inset-0 border-[40px] border-black/50 pointer-events-none z-0"></div>
+                                                <div id="reader" className="w-full h-full [&>video]:object-cover [&>video]:h-[300px] z-0"></div>
+                                                {/* Glow corner brackets overlay for scanning */}
+                                                <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center">
+                                                    <div className="relative w-[250px] h-[250px]">
+                                                        {/* Neon Viewfinder corners */}
+                                                        <div className="absolute top-0 left-0 w-8 h-8 border-t-[3px] border-l-[3px] border-primary rounded-tl-xl shadow-[0_0_8px_rgba(var(--primary),0.5)]"></div>
+                                                        <div className="absolute top-0 right-0 w-8 h-8 border-t-[3px] border-r-[3px] border-primary rounded-tr-xl shadow-[0_0_8px_rgba(var(--primary),0.5)]"></div>
+                                                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-[3px] border-l-[3px] border-primary rounded-bl-xl shadow-[0_0_8px_rgba(var(--primary),0.5)]"></div>
+                                                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[3px] border-r-[3px] border-primary rounded-br-xl shadow-[0_0_8px_rgba(var(--primary),0.5)]"></div>
+
+                                                        {/* Scan Line Animation */}
+                                                        <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-[scan_2s_ease-in-out_infinite] pointer-events-none"></div>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Sleek Darkening overlay on outer area */}
+                                                <div className="absolute inset-0 bg-black/40 pointer-events-none z-0"></div>
                                             </>
                                         )}
 
                                         <style>{`
                                             @keyframes scan {
-                                                0%, 100% { top: 10%; opacity: 0; }
-                                                10% { opacity: 1; }
-                                                50% { top: 90%; }
-                                                90% { opacity: 1; }
+                                                0%, 100% { top: 0%; opacity: 0; }
+                                                10%, 90% { opacity: 1; }
+                                                50% { top: 100%; }
                                             }
                                         `}</style>
 
                                         {isScanning && (
                                             <Button
                                                 size="icon"
-                                                className="absolute bottom-6 right-6 rounded-full h-14 w-14 shadow-xl z-50 bg-red-600 hover:bg-red-700 text-white border-2 border-white/20"
+                                                className="absolute bottom-4 right-4 rounded-full h-11 w-11 shadow-2xl z-50 bg-destructive hover:bg-destructive/90 text-destructive-foreground border border-border/20 transition-all active:scale-95 duration-200"
                                                 onClick={stopScanner}
                                             >
-                                                <StopCircle className="w-6 h-6" />
+                                                <StopCircle className="w-5 h-5" />
                                             </Button>
                                         )}
                                     </div>
-                                    <CardContent className="p-4 bg-muted/30">
-                                        <form onSubmit={handleManualSubmit} className="flex gap-2 relative">
-                                            <Input
-                                                className="pl-10 h-12 bg-background shadow-sm"
-                                                placeholder="Or enter barcode manually..."
+                                </Card>
+
+                                {/* Manual Barcode Input Capsule */}
+                                <div className="mt-3">
+                                    <form onSubmit={handleManualSubmit} className="relative flex items-center bg-secondary/35 border border-border/40 rounded-2xl p-1.5 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 transition-all duration-300">
+                                        <div className="flex items-center pl-3 flex-1">
+                                            <Barcode className="w-5 h-5 text-muted-foreground/60 mr-2.5 shrink-0" />
+                                            <input
+                                                type="text"
+                                                className="w-full bg-transparent border-none text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0 text-foreground"
+                                                placeholder="Enter barcode manually..."
                                                 value={manualCode}
                                                 onChange={e => setManualCode(e.target.value)}
                                             />
-                                            <Barcode className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
-                                            <Button type="submit" size="icon" className="h-12 w-12 shrink-0 shadow-sm"><Scan className="w-5 h-5" /></Button>
-                                        </form>
-                                    </CardContent>
-                                </Card>
+                                        </div>
+                                        <Button 
+                                            type="submit" 
+                                            size="sm"
+                                            className="h-9 px-4 rounded-xl shadow-md bg-primary hover:bg-primary/95 text-primary-foreground font-semibold text-xs tracking-wider uppercase transition-all duration-200 active:scale-95 flex items-center gap-1.5 shrink-0"
+                                        >
+                                            <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                                            Add
+                                        </Button>
+                                    </form>
+                                </div>
 
                                 {/* Cart Items */}
-                                <div className="space-y-3 mt-6">
+                                <div className="space-y-3 mt-5">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="font-semibold text-muted-foreground">Items ({cart.length})</h3>
+                                        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Items ({cart.length})</h3>
                                         {cart.length > 0 && (
-                                            <Button variant="ghost" size="sm" onClick={clearCart} className="text-destructive h-8 text-xs">Clear</Button>
+                                            <Button variant="ghost" size="sm" onClick={clearCart} className="text-destructive hover:bg-destructive/5 h-8 text-xs font-semibold px-2.5 rounded-lg transition-colors">
+                                                Clear Cart
+                                            </Button>
                                         )}
                                     </div>
 
                                     {cart.length === 0 ? (
-                                        <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed rounded-lg">
-                                            Scan items to add them here
+                                        <div className="text-center py-10 text-muted-foreground text-sm border border-dashed border-border/40 bg-secondary/10 rounded-2xl flex flex-col items-center justify-center gap-2">
+                                            <Package className="w-8 h-8 text-muted-foreground/40 stroke-[1.5]" />
+                                            <span className="font-semibold text-muted-foreground/75 text-xs">Scan items to add them here</span>
                                         </div>
                                     ) : (
                                         cart.map(item => (
-                                            <div key={item.product_id} className="flex items-center gap-3 p-3 border rounded-lg bg-card">
-                                                <div className="h-10 w-10 bg-primary/10 rounded flex items-center justify-center text-primary">
-                                                    <Package className="w-5 h-5" />
+                                            <div key={item.product_id} className="flex items-center gap-3.5 p-3.5 border border-border/20 rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow">
+                                                <div className="h-11 w-11 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
+                                                    <Package className="w-5 h-5 stroke-[2]" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="font-medium truncate">{item.product.name}</div>
-                                                    <div className="text-xs text-muted-foreground">
-                                                        Stock: {item.product.available_quantity}
+                                                    <div className="font-bold text-sm text-foreground truncate pr-1">{item.product.name}</div>
+                                                    <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                                                        <span className="font-medium bg-secondary px-1.5 py-0.5 rounded text-[10px] uppercase font-mono tracking-wider">
+                                                            {item.product.barcode || 'NO BARCODE'}
+                                                        </span>
+                                                        <span className="h-1 w-1 rounded-full bg-muted-foreground/30"></span>
+                                                        <span>Stock: <strong className="text-foreground">{item.product.available_quantity}</strong></span>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQuantity(item.product_id, item.quantity - 1)}><Minus className="w-3 h-3" /></Button>
-                                                    <span className="w-6 text-center text-sm">{item.quantity}</span>
-                                                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQuantity(item.product_id, item.quantity + 1)}><Plus className="w-3 h-3" /></Button>
+                                                <div className="flex items-center gap-1.5 bg-secondary/50 p-1 rounded-lg border border-border/10 shrink-0">
+                                                    <Button 
+                                                        size="icon" 
+                                                        variant="ghost" 
+                                                        className="h-6 w-6 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-all" 
+                                                        onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                                                    >
+                                                        <Minus className="w-3 h-3 stroke-[2.5]" />
+                                                    </Button>
+                                                    <span className="w-6 text-center text-xs font-bold text-foreground">{item.quantity}</span>
+                                                    <Button 
+                                                        size="icon" 
+                                                        variant="ghost" 
+                                                        className="h-6 w-6 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-all" 
+                                                        onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                                                    >
+                                                        <Plus className="w-3 h-3 stroke-[2.5]" />
+                                                    </Button>
                                                 </div>
                                             </div>
                                         ))
                                     )}
                                 </div>
                             </>
-                        )}
-
-                        {activeTab === 'pending' && (
+                        ) : (
                             <div className="space-y-4">
-                                <h3 className="font-semibold px-1">
-                                    {mode === 'sale' ? 'Pending Sales' : 'Pending Transfers'}
-                                </h3>
-
                                 {mode === 'sale' ? (
-                                    pendingSales.length === 0 ? <EmptyState msg="No pending sales" /> :
+                                    pendingSales.length === 0 ? <EmptyState msg="No pending sales found" /> :
                                         pendingSales.map(sale => (
                                             <PendingCard key={sale.id} item={sale} type="sale" onCancel={() => handleCancelSale(sale.id)} />
                                         ))
                                 ) : (
-                                    pendingTransfers.length === 0 ? <EmptyState msg="No pending transfers" /> :
+                                    pendingTransfers.length === 0 ? <EmptyState msg="No pending transfers found" /> :
                                         pendingTransfers.map(transfer => (
                                             <PendingCard key={transfer.id} item={transfer} type="transfer" />
                                         ))
@@ -461,18 +545,19 @@ export default function QrScannerIndex({
                     </div>
                 </div>
 
-
-
                 {/* --- Bottom Action Bar (Only for Scan Tab) --- */}
-                {activeTab === 'scan' && cart.length > 0 && (
-                    <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                {!showPending && cart.length > 0 && (
+                    <div className="absolute bottom-2 inset-x-4 p-3 rounded-2xl border bg-background/95 backdrop-blur-md shadow-2xl z-20 flex items-center justify-between gap-3 animate-in fade-in-50 slide-in-from-bottom-5 duration-300">
+                        <div className="flex flex-col pl-1 shrink-0">
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Total Items</span>
+                            <span className="text-sm font-bold text-foreground">{cart.reduce((sum, item) => sum + item.quantity, 0)} Items</span>
+                        </div>
                         <Button
-                            className="w-full gap-2 text-lg h-12"
-                            size="lg"
+                            className="flex-1 gap-2 text-xs font-semibold h-10 rounded-xl shadow-md bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200"
                             onClick={mode === 'sale' ? handleReadySale : handleReadyTransfer}
                             disabled={mode === 'sale' ? processingSale : processingTransfer}
                         >
-                            <Check className="w-5 h-5" />
+                            <Check className="w-4 h-4 stroke-[2.5]" />
                             {mode === 'sale' ? 'Ready Sale' : 'Ready Transfer'}
                         </Button>
                     </div>
@@ -484,74 +569,67 @@ export default function QrScannerIndex({
 
 // Subcomponents
 
-function DropdownModeSelector({ mode, setMode, clearCart }: { mode: 'sale' | 'transfer', setMode: any, clearCart: any }) {
-    return (
-        <Select value={mode} onValueChange={(v) => {
-            if (confirm("Switching modes will clear your cart. Continue?")) {
-                clearCart();
-                setMode(v);
-            }
-        }}>
-            <SelectTrigger className="w-[110px] h-8 text-xs">
-                <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-                <SelectItem value="sale">Sale Mode</SelectItem>
-                <SelectItem value="transfer">Transfer</SelectItem>
-            </SelectContent>
-        </Select>
-    );
-}
 
 function EmptyState({ msg }: { msg: string }) {
     return (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground opacity-50">
-            <History className="w-12 h-12 mb-2" />
-            <p>{msg}</p>
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/60 bg-secondary/10 border border-dashed border-border/40 rounded-2xl gap-3">
+            <div className="p-3 bg-secondary/50 text-muted-foreground/45 rounded-2xl">
+                <History className="w-8 h-8 stroke-[1.5]" />
+            </div>
+            <p className="text-xs font-semibold">{msg}</p>
         </div>
     );
 }
 
 function PendingCard({ item, type, onCancel }: { item: PendingItem, type: 'sale' | 'transfer', onCancel?: () => void }) {
     return (
-        <Card>
-            <CardHeader className="p-4 pb-2">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle className="text-sm font-medium">#{item.id}</CardTitle>
-                        <CardDescription className="text-xs">
-                            {new Date(item.created_at).toLocaleString()}
+        <Card className="overflow-hidden border border-border/20 shadow-sm hover:shadow-md transition-shadow rounded-xl bg-card">
+            <CardHeader className="p-4 pb-3 bg-secondary/10 border-b border-border/5">
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-md">
+                            #{item.id}
+                        </span>
+                        <CardDescription className="text-[11px] font-medium">
+                            {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(item.created_at).toLocaleDateString()}
                         </CardDescription>
                     </div>
-                    <Badge variant="secondary" className={type === 'sale' ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
+                    <Badge className={type === 'sale' ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] font-bold" : "bg-orange-500/10 text-orange-600 border-orange-500/20 text-[10px] font-bold"} variant="outline">
                         Readied
                     </Badge>
                 </div>
             </CardHeader>
-            <CardContent className="p-4 pt-2">
+            <CardContent className="p-4 pt-3">
                 {type === 'transfer' && item.destination_branch && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 bg-muted p-2 rounded">
-                        <span>To:</span>
-                        <span className="font-semibold text-foreground">{item.destination_branch.branch_name}</span>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 bg-secondary/30 p-2.5 rounded-xl border border-border/10">
+                        <span className="font-semibold">Destination:</span>
+                        <span className="font-bold text-foreground">{item.destination_branch.branch_name}</span>
                     </div>
                 )}
 
-                <div className="space-y-1">
+                <div className="space-y-2">
                     {item.items.slice(0, 3).map((line, i) => (
-                        <div key={i} className="flex justify-between text-sm">
-                            <span className="truncate max-w-[200px]">{line.product.name}</span>
-                            <span className="font-mono text-xs">x{line.quantity}</span>
+                        <div key={i} className="flex justify-between items-center text-xs">
+                            <span className="truncate max-w-[220px] text-muted-foreground font-medium">{line.product.name}</span>
+                            <span className="font-bold font-mono text-foreground bg-secondary px-1.5 py-0.5 rounded text-[10px]">x{line.quantity}</span>
                         </div>
                     ))}
                     {item.items.length > 3 && (
-                        <p className="text-xs text-muted-foreground pt-1">+ {item.items.length - 3} more items</p>
+                        <p className="text-[10px] font-bold text-muted-foreground pt-1.5 border-t border-border/5 text-center">
+                            + {item.items.length - 3} more items
+                        </p>
                     )}
                 </div>
             </CardContent>
             {onCancel && (
-                <CardFooter className="p-2 border-t bg-muted/5">
-                    <Button variant="ghost" size="sm" className="w-full text-destructive h-8 text-xs hover:bg-destructive/10" onClick={onCancel}>
-                        Cancel
+                <CardFooter className="p-2 border-t border-border/10 bg-secondary/10">
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 h-8 text-[11px] font-bold transition-all rounded-lg" 
+                        onClick={onCancel}
+                    >
+                        <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Cancel Sale
                     </Button>
                 </CardFooter>
             )}
