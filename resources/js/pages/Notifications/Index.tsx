@@ -209,7 +209,7 @@ export default function NotificationsIndex() {
             <Head title="Notifications" />
             <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-background/95">
                 {/* Premium Mobile Header Bar */}
-                <div className="h-16 px-4 flex items-center justify-between border-b border-border/40 bg-card/60 backdrop-blur-md sticky top-0 z-10">
+                <div className="pt-[env(safe-area-inset-top,0px)] h-[calc(4rem+env(safe-area-inset-top,0px))] px-4 flex items-center justify-between border-b border-border/40 bg-card/60 backdrop-blur-md sticky top-0 z-10">
                     <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2 truncate">
                         Notifications
                         {unreadCount > 0 && (

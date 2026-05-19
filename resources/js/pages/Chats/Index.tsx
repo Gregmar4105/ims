@@ -456,7 +456,7 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                     )}>
                         <div className="p-0 pb-3 md:p-4 border-b">
                             {/* Mobile View: Chats Title, Bell, Avatar on same line, Search below */}
-                            <div className="md:hidden flex flex-col gap-3">
+                            <div className="md:hidden flex flex-col gap-3 pt-[env(safe-area-inset-top,0px)]">
                                 <div className="h-16 px-4 flex items-center justify-between">
                                     <h2 className="text-3xl font-bold tracking-tight text-foreground pr-2">
                                         Chats
@@ -577,7 +577,7 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                         {selectedBranch ? (
                             <>
                                 {/* Header */}
-                                <div className="h-16 px-4 flex items-center justify-between border-b shadow-sm z-10 bg-background md:h-auto md:p-4">
+                                <div className="pt-[env(safe-area-inset-top,0px)] h-[calc(4rem+env(safe-area-inset-top,0px))] px-4 flex items-center justify-between border-b shadow-sm z-10 bg-background md:h-auto md:p-4 md:pt-4">
                                     <div className="flex items-center gap-3">
                                         <Button
                                             variant="ghost"

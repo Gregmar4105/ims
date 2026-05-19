@@ -65,7 +65,7 @@ export default function AppSidebarLayout({
                     "overflow-x-hidden h-svh overflow-y-auto overscroll-behavior-y-contain md:h-auto md:overflow-visible md:pb-0",
                     url.includes('chat') || url.includes('notifications-view')
                         ? "pt-0 md:pt-0 pb-[env(safe-area-inset-bottom,0px)]" 
-                        : "pt-16 md:pt-0 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)]"
+                        : "pt-[calc(4rem+env(safe-area-inset-top,0px))] md:pt-0 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)]"
                 )}
             >
                 {!isMobile ? (

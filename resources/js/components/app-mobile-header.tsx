@@ -173,7 +173,7 @@ export function AppMobileHeader() {
     };
 
     return (
-        <header className="flex shrink-0 items-center justify-between gap-3 px-4 bg-background fixed top-0 left-0 right-0 z-40 h-16 border-b border-sidebar-border/50">
+        <header className="flex shrink-0 items-center justify-between gap-3 px-4 bg-background fixed top-0 left-0 right-0 z-40 pt-[env(safe-area-inset-top,0px)] h-[calc(4rem+env(safe-area-inset-top,0px))] border-b border-sidebar-border/50">
 
             <div 
                 ref={containerRef}
