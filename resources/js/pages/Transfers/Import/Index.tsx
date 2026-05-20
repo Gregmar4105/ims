@@ -12,6 +12,7 @@ import axios from 'axios';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
     Dialog,
     DialogContent,
@@ -49,6 +50,7 @@ interface InventoryItem {
     brand_name?: string;
     category_name?: string;
     supplier_name?: string;
+    attach_image?: boolean;
 }
 
 interface AnalysisResult {
@@ -63,15 +65,17 @@ interface IndexProps {
     suppliers: { id: number; name: string }[];
     importDailyUsage?: number;
     importMinuteUsage?: number;
+    scanned_image_path?: string;
 }
 
-export default function ImportTransferIndex({ brands = [], categories = [], suppliers = [], importDailyUsage = 0, importMinuteUsage = 0 }: IndexProps) {
+export default function ImportTransferIndex({ brands = [], categories = [], suppliers = [], importDailyUsage = 0, importMinuteUsage = 0, scanned_image_path }: IndexProps) {
     const { data, setData, post, processing, errors } = useForm({
         image: null as File | null,
     });
 
     // Props from controller
-    const { analysis_result, flash } = usePage().props as any;
+    const { analysis_result, flash, scanned_image_path: scannedImagePathProp } = usePage().props as any;
+    const activeScannedImagePath = scanned_image_path || scannedImagePathProp;
 
     // Local state
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -89,6 +93,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                 brand_name: item.brand_id ? brands.find(b => String(b.id) === String(item.brand_id))?.name : '',
                 category_name: item.category_id ? categories.find(c => String(c.id) === String(item.category_id))?.name : '',
                 supplier_name: item.supplier_id ? suppliers.find(s => String(s.id) === String(item.supplier_id))?.name : '',
+                attach_image: false,
             }));
             setItems(mappedItems);
         }
@@ -133,7 +138,9 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
         try {
             const response = await axios.post('/import-transfer/update-stock', {
                 product_id: item.product_id,
-                quantity_added: item.quantity
+                quantity_added: item.quantity,
+                image_path: item.attach_image ? activeScannedImagePath : null,
+                attach_image: !!item.attach_image
             });
 
             if (response.data.success) {
@@ -163,7 +170,10 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
     const submitAll = () => {
         setIsConfirmModalOpen(false);
         
-        const preparedItems = items.filter(i => !i.exists_in_branch);
+        const preparedItems = items.filter(i => !i.exists_in_branch).map(item => ({
+            ...item,
+            image_path: item.attach_image ? activeScannedImagePath : null
+        }));
 
         router.post('/import-transfer/bulk-store', { items: preparedItems } as any, {
             preserveScroll: true,
@@ -322,10 +332,12 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="p-4 overflow-hidden max-h-[1000px] overflow-y-auto space-y-4 bg-muted/20">
-                                    {items.map((item, idx) => (
-                                        <Card key={idx} className={`relative overflow-hidden ${item.exists_in_branch ? 'border-primary/50' : 'border-amber-500/50'}`}>
-                                            <div className={`absolute top-0 left-0 w-1.5 h-full ${item.exists_in_branch ? 'bg-primary' : 'bg-amber-500'}`} />
-                                            <CardContent className="p-4 sm:p-5">
+                                    {items.map((item, idx) => {
+                                        const thumbnailSrc = previewUrl || (activeScannedImagePath ? `/storage/${activeScannedImagePath}` : null);
+                                        return (
+                                            <Card key={idx} className={`relative overflow-hidden ${item.exists_in_branch ? 'border-primary/50' : 'border-amber-500/50'}`}>
+                                                <div className={`absolute top-0 left-0 w-1.5 h-full ${item.exists_in_branch ? 'bg-primary' : 'bg-amber-500'}`} />
+                                                <CardContent className="p-4 sm:p-5">
                                                 <div className="flex justify-between items-start mb-4">
                                                     <div className="flex items-center gap-2">
                                                         {item.exists_in_branch ? (
@@ -450,6 +462,44 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                                     </div>
                                                 </div>
 
+                                                {thumbnailSrc && (
+                                                    <div className="mt-5 pt-4 border-t border-dashed flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-muted/30 p-3 rounded-lg border">
+                                                        <div className="flex items-center gap-3">
+                                                            <Checkbox
+                                                                id={`attach-image-${idx}`}
+                                                                checked={item.attach_image || false}
+                                                                onCheckedChange={(checked) => updateItem(idx, 'attach_image', !!checked)}
+                                                                className="h-5 w-5 rounded border-muted-foreground/30 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 transition-all duration-200"
+                                                            />
+                                                            <div className="grid gap-0.5">
+                                                                <Label htmlFor={`attach-image-${idx}`} className="text-sm font-semibold flex items-center gap-1.5 cursor-pointer text-foreground">
+                                                                    <FileImage className="w-4 h-4 text-emerald-600" />
+                                                                    Attach Packing List Photo
+                                                                </Label>
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    Save the scanned image as this product's primary photo.
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        {item.attach_image && (
+                                                            <div className="relative group/thumb shrink-0 self-start sm:self-auto">
+                                                                <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-md blur opacity-30 group-hover/thumb:opacity-60 transition duration-300"></div>
+                                                                <div className="relative border bg-background rounded-md p-1 shadow-sm overflow-hidden flex items-center gap-2">
+                                                                    <img
+                                                                        src={thumbnailSrc}
+                                                                        alt="Thumbnail"
+                                                                        className="w-12 h-12 object-cover rounded"
+                                                                    />
+                                                                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 uppercase tracking-wider">
+                                                                        Ready
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
                                                 {item.exists_in_branch && (
                                                     <div className="mt-4 flex justify-end">
                                                         <Button
@@ -465,7 +515,8 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                                 )}
                                             </CardContent>
                                         </Card>
-                                    ))}
+                                        );
+                                    })}
                                 </CardContent>
                                 <CardFooter className="bg-green-50/50 p-4 border-t sticky bottom-0 z-10">
                                     <Button className="w-full bg-green-600 hover:bg-green-700 shadow-sm" onClick={confirmSubmitAll} disabled={processing}>

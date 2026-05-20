@@ -67,6 +67,9 @@ class ImportTransferController extends Controller
                     ?? $raw['inventory_items']
                     ?? [];
 
+                // Store the scanned image in the public imports folder
+                $storedPath = $image->store('imports', 'public');
+
                 $branchId = auth()->user()->branch_id;
                 
                 if (is_array($items)) {
@@ -110,6 +113,7 @@ class ImportTransferController extends Controller
 
                 return Inertia::render('Transfers/Import/Index', [
                     'analysis_result' => ['inventory_items' => $items],
+                    'scanned_image_path' => $storedPath,
                     'success' => 'Analysis complete. Found ' . count($items) . ' items.',
                     'brands' => Brand::orderBy('name')->get(),
                     'categories' => Category::orderBy('name')->get(),
@@ -131,6 +135,8 @@ class ImportTransferController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity_added' => 'required|integer|min:1',
+            'image_path' => 'nullable|string|max:255',
+            'attach_image' => 'nullable|boolean',
         ]);
 
         $branchId = auth()->user()->branch_id;
@@ -138,6 +144,36 @@ class ImportTransferController extends Controller
         $branchProduct = BranchProduct::where('product_id', $request->product_id)
             ->where('branch_id', $branchId)
             ->first();
+
+        if ($branchProduct) {
+            $branchProduct->quantity += $request->quantity_added;
+            $branchProduct->save();
+
+            // Handle attaching scanned image to existing product
+            if ($request->attach_image && !empty($request->image_path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($request->image_path)) {
+                $product = Product::find($request->product_id);
+                if ($product) {
+                    // Delete old image if it is not default and exists
+                    if ($product->image_path && $product->image_path !== 'new_product_import.png' && \Illuminate\Support\Facades\Storage::disk('public')->exists($product->image_path)) {
+                        \Illuminate\Support\Facades\Storage::disk('public')->delete($product->image_path);
+                    }
+
+                    // Copy the scanned image to a unique filename
+                    $extension = pathinfo($request->image_path, PATHINFO_EXTENSION);
+                    $newFilename = 'products/' . uniqid('prod_', true) . '.' . $extension;
+                    if (\Illuminate\Support\Facades\Storage::disk('public')->copy($request->image_path, $newFilename)) {
+                        $product->image_path = $newFilename;
+                        $product->save();
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Stock updated successfully.',
+                'new_stock' => $branchProduct->quantity
+            ]);
+        }
 
         return response()->json(['success' => false, 'message' => 'Product not found in this branch.'], 404);
     }
@@ -159,6 +195,7 @@ class ImportTransferController extends Controller
             'items.*.qr_code' => 'nullable|string|max:255',
             'items.*.physical_location' => 'nullable|string|max:255',
             'items.*.reorder_level' => 'nullable|integer|min:0',
+            'items.*.image_path' => 'nullable|string|max:255',
         ]);
 
         $branchId = auth()->user()->branch_id;
@@ -209,6 +246,16 @@ class ImportTransferController extends Controller
                 $supplierId = $supplier->id;
             }
 
+            // Copy file if image_path is provided and exists
+            $imagePath = 'new_product_import.png';
+            if (!empty($item['image_path']) && \Illuminate\Support\Facades\Storage::disk('public')->exists($item['image_path'])) {
+                $extension = pathinfo($item['image_path'], PATHINFO_EXTENSION);
+                $newFilename = 'products/' . uniqid('prod_', true) . '.' . $extension;
+                if (\Illuminate\Support\Facades\Storage::disk('public')->copy($item['image_path'], $newFilename)) {
+                    $imagePath = $newFilename;
+                }
+            }
+
             $product = Product::create([
                 'name' => $item['item_name'],
                 'category_id' => $category->id,
@@ -221,7 +268,7 @@ class ImportTransferController extends Controller
                 'barcode' => $item['barcode'] ?? null,
                 'qr_code' => $item['qr_code'] ?? null,
                 'created_by' => $userId,
-                'image_path' => 'new_product_import.png',
+                'image_path' => $imagePath,
                 'status' => 'active',
             ]);
 
