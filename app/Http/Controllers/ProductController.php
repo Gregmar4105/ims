@@ -548,7 +548,7 @@ class ProductController extends Controller
             $validated['image_path'] = $path;
         }
 
-        DB::transaction(function () use ($validated, $user, $targetBranchId, $brand, $category, $supplierId) {
+        $product = DB::transaction(function () use ($validated, $user, $targetBranchId, $brand, $category, $supplierId) {
             // Create Global Product
             $product = Product::create([
                 'brand_id' => $brand->id,
@@ -583,6 +583,8 @@ class ProductController extends Controller
                     'reorder_level' => $validated['reorder_level'] ?? 0,
                 ]);
             }
+
+            return $product;
         });
 
         return redirect()->route('products.show', $product->id)->with('success', 'Product added successfully.');
