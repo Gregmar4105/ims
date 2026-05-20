@@ -55,7 +55,7 @@ interface Product {
     quantity: number;
     physical_location: string | null;
     description: string | null;
-    variations: { name: string; options: string }[] | null;
+    variations: { name: string; options: string | { value: string; quantity: number }[] }[] | null;
     image_path: string | null;
     barcode: string | null;
     qr_code: string | null;
@@ -1362,11 +1362,18 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                 <div className="flex flex-col gap-1 flex-1 min-w-0 mr-2">
                                                     {product.variations && product.variations.length > 0 && (
                                                         <div className="flex flex-wrap gap-1">
-                                                            {product.variations.slice(0, 2).map((v, i) => (
-                                                                <span key={i} className="text-[10px] inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-medium whitespace-nowrap overflow-hidden max-w-full">
-                                                                    <span className="font-bold mr-1">{v.name}:</span> <span className="truncate">{v.options}</span>
-                                                                </span>
-                                                            ))}
+                                                            {product.variations.slice(0, 2).map((v, i) => {
+                                                                const optsStr = typeof v.options === 'string'
+                                                                    ? v.options
+                                                                    : Array.isArray(v.options)
+                                                                        ? v.options.map((opt: any) => `${opt.value} (${opt.quantity})`).join(', ')
+                                                                        : '';
+                                                                return (
+                                                                    <span key={i} className="text-[10px] inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-medium whitespace-nowrap overflow-hidden max-w-full">
+                                                                        <span className="font-bold mr-1">{v.name}:</span> <span className="truncate">{optsStr}</span>
+                                                                    </span>
+                                                                );
+                                                            })}
                                                             {product.variations.length > 2 && (
                                                                 <span className="text-[9px] text-gray-400">+{product.variations.length - 2}</span>
                                                             )}

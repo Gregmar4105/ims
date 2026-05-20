@@ -28,7 +28,7 @@ class Branch extends Model
     public function products()
     {
         return $this->belongsToMany(Product::class, 'branch_products')
-                    ->withPivot('quantity', 'physical_location')
+                    ->withPivot('quantity', 'physical_location', 'reorder_level', 'description', 'variations')
                     ->withTimestamps();
     }
 }

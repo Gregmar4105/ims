@@ -115,18 +115,23 @@ export default function Show({ product }: { product: Product }) {
                                     <div>
                                         <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Options</h3>
                                         <div className="space-y-3">
-                                            {product.variations.map((v: any, idx: number) => (
-                                                <div key={idx} className="flex flex-col gap-1">
-                                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{v.name}</span>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {v.options.split(',').map((opt: string, oIdx: number) => (
-                                                            <Badge key={oIdx} variant="outline" className="px-3 py-1 font-normal">
-                                                                {opt.trim()}
-                                                            </Badge>
-                                                        ))}
+                                            {product.variations.map((v: any, idx: number) => {
+                                                const optionsArray = Array.isArray(v.options)
+                                                    ? v.options.map((opt: any) => typeof opt === 'object' ? opt.value : String(opt))
+                                                    : typeof v.options === 'string' ? v.options.split(',') : [];
+                                                return (
+                                                    <div key={idx} className="flex flex-col gap-1">
+                                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{v.name}</span>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {optionsArray.map((opt: string, oIdx: number) => (
+                                                                <Badge key={oIdx} variant="outline" className="px-3 py-1 font-normal">
+                                                                    {opt.trim()}
+                                                                </Badge>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 </>

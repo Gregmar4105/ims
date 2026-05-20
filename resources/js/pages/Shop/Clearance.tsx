@@ -7,7 +7,7 @@ interface Product {
     id: number;
     name: string;
     description: string | null;
-    variations: { name: string; options: string }[] | null;
+    variations: { name: string; options: string | any[] }[] | null;
     image_path: string | null;
     created_at: string;
     brand?: {
@@ -89,11 +89,18 @@ export default function ClearancePage({ products }: Props) {
                                                 <div className="space-y-1">
                                                     <span className="text-xs font-semibold text-gray-900 dark:text-white">Variations:</span>
                                                     <div className="flex flex-wrap gap-1">
-                                                        {product.variations.map((v: any, idx: number) => (
-                                                            <span key={idx} className="text-xs text-gray-500 bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded">
-                                                                {v.name}: {v.options}
-                                                            </span>
-                                                        ))}
+                                                        {product.variations.map((v: any, idx: number) => {
+                                                            const displayOpts = typeof v.options === 'string'
+                                                                ? v.options
+                                                                : Array.isArray(v.options)
+                                                                    ? v.options.map((opt: any) => typeof opt === 'object' ? opt.value : String(opt)).join(', ')
+                                                                    : '';
+                                                            return (
+                                                                <span key={idx} className="text-xs text-gray-500 bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded">
+                                                                    {v.name}: {displayOpts}
+                                                                </span>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             )}

@@ -110,6 +110,28 @@ class ProductController extends Controller
             'reorder_level' => 'nullable|integer|min:0',
         ]);
 
+        $targetQty = (int)$validated['quantity'];
+        if (!empty($validated['variations'])) {
+            foreach ($validated['variations'] as $v) {
+                if (!isset($v['options']) || !isset($v['name'])) {
+                    continue;
+                }
+                $options = $v['options'];
+                if (is_array($options)) {
+                    $sumQty = 0;
+                    foreach ($options as $opt) {
+                        if (!is_array($opt) || !isset($opt['value']) || !isset($opt['quantity'])) {
+                            return response()->json(['message' => 'Each option must have a value and quantity.'], 422);
+                        }
+                        $sumQty += (int)$opt['quantity'];
+                    }
+                    if ($sumQty !== $targetQty) {
+                        return response()->json(['message' => "The sum of quantities for variation '{$v['name']}' ({$sumQty}) must equal the total product quantity ({$targetQty})."], 422);
+                    }
+                }
+            }
+        }
+
         if (!$user->branch && !$isSystemAdmin) {
             return response()->json(['message' => 'You must be assigned to a branch to add products.'], 403);
         }
@@ -195,6 +217,28 @@ class ProductController extends Controller
             'supplier_id' => 'nullable|exists:suppliers,id',
             'reorder_level' => 'nullable|integer|min:0',
         ]);
+
+        $targetQty = (int)$validated['quantity'];
+        if (!empty($validated['variations'])) {
+            foreach ($validated['variations'] as $v) {
+                if (!isset($v['options']) || !isset($v['name'])) {
+                    continue;
+                }
+                $options = $v['options'];
+                if (is_array($options)) {
+                    $sumQty = 0;
+                    foreach ($options as $opt) {
+                        if (!is_array($opt) || !isset($opt['value']) || !isset($opt['quantity'])) {
+                            return response()->json(['message' => 'Each option must have a value and quantity.'], 422);
+                        }
+                        $sumQty += (int)$opt['quantity'];
+                    }
+                    if ($sumQty !== $targetQty) {
+                        return response()->json(['message' => "The sum of quantities for variation '{$v['name']}' ({$sumQty}) must equal the total product quantity ({$targetQty})."], 422);
+                    }
+                }
+            }
+        }
 
         if ($request->hasFile('image')) {
             if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {

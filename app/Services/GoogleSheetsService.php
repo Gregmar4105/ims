@@ -697,11 +697,42 @@ class GoogleSheetsService
                     $options = $item['options'] ?? $item['value'] ?? null;
                     
                     if ($name && $options) {
-                        $formatted[] = "$name: $options";
+                        if (is_array($options)) {
+                            $optStrings = [];
+                            foreach ($options as $opt) {
+                                $opt = (array)$opt;
+                                if (isset($opt['value']) && isset($opt['quantity'])) {
+                                    $optStrings[] = "{$opt['value']} ({$opt['quantity']})";
+                                } elseif (isset($opt['value'])) {
+                                    $optStrings[] = $opt['value'];
+                                } else {
+                                    $optStrings[] = implode(':', $opt);
+                                }
+                            }
+                            $optStr = implode('/', $optStrings);
+                            $formatted[] = "$name: $optStr";
+                        } else {
+                            $formatted[] = "$name: $options";
+                        }
                     } elseif ($name) {
                         $formatted[] = $name;
                     } elseif ($options) {
-                        $formatted[] = $options;
+                        if (is_array($options)) {
+                            $optStrings = [];
+                            foreach ($options as $opt) {
+                                $opt = (array)$opt;
+                                if (isset($opt['value']) && isset($opt['quantity'])) {
+                                    $optStrings[] = "{$opt['value']} ({$opt['quantity']})";
+                                } elseif (isset($opt['value'])) {
+                                    $optStrings[] = $opt['value'];
+                                } else {
+                                    $optStrings[] = implode(':', $opt);
+                                }
+                            }
+                            $formatted[] = implode('/', $optStrings);
+                        } else {
+                            $formatted[] = $options;
+                        }
                     } elseif (is_scalar($item)) {
                         $formatted[] = (string)$item;
                     }

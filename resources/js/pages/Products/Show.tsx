@@ -16,9 +16,14 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+interface VariationOption {
+    value: string;
+    quantity: number;
+}
+
 interface Variation {
     name: string;
-    options: string;
+    options: string | VariationOption[];
 }
 
 interface Product {
@@ -328,12 +333,30 @@ export default function Show({ product }: Props) {
                             <>
                                 <Separator />
                                 <div>
-                                    <h3 className="text-lg font-semibold mb-2">Variations</h3>
-                                    <div className="flex flex-wrap gap-2">
+                                    <h3 className="text-lg font-semibold mb-3">Variations</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {product.variations.map((v, i) => (
-                                            <Badge key={i} variant="secondary" className="text-sm px-2 py-1">
-                                                <span className="font-semibold mr-1">{v.name}:</span> {v.options}
-                                            </Badge>
+                                            <div key={i} className="flex flex-col gap-1.5 p-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+                                                <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">{v.name}</span>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {typeof v.options === 'string' ? (
+                                                        v.options.split(',').map((opt, optIdx) => (
+                                                            <Badge key={optIdx} variant="secondary" className="text-xs px-2 py-0.5">
+                                                                {opt.trim()}
+                                                            </Badge>
+                                                        ))
+                                                    ) : Array.isArray(v.options) ? (
+                                                        v.options.map((opt, optIdx) => (
+                                                            <Badge key={optIdx} variant="secondary" className="text-xs flex items-center gap-1.5 px-2 py-0.5 font-medium">
+                                                                <span>{opt.value}</span>
+                                                                <span className="inline-flex items-center justify-center px-1.5 py-0.25 rounded-md text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                                                                    {opt.quantity}
+                                                                </span>
+                                                            </Badge>
+                                                        ))
+                                                    ) : null}
+                                                </div>
+                                            </div>
                                         ))}
                                     </div>
                                 </div>
@@ -487,13 +510,31 @@ export default function Show({ product }: Props) {
                     {product.variations && product.variations.length > 0 && (
                         <>
                             <Separator className="bg-gray-100 dark:bg-gray-800" />
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 <span className="text-[11px] font-semibold text-gray-400 uppercase">Variations</span>
-                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                <div className="grid grid-cols-1 gap-2.5 pt-1">
                                     {product.variations.map((v, i) => (
-                                        <Badge key={i} variant="secondary" className="text-xs px-2 py-0.5 font-medium rounded-lg">
-                                            <span className="font-bold text-gray-500 mr-1">{v.name}:</span> {v.options}
-                                        </Badge>
+                                        <div key={i} className="flex flex-col gap-1.5 p-3 rounded-xl border border-gray-100 dark:border-gray-800/80 bg-gray-50/50 dark:bg-gray-900/50 shadow-sm">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase">{v.name}</span>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {typeof v.options === 'string' ? (
+                                                    v.options.split(',').map((opt, optIdx) => (
+                                                        <Badge key={optIdx} variant="secondary" className="text-xs px-2 py-0.5 font-medium rounded-lg">
+                                                            {opt.trim()}
+                                                        </Badge>
+                                                    ))
+                                                ) : Array.isArray(v.options) ? (
+                                                    v.options.map((opt, optIdx) => (
+                                                        <Badge key={optIdx} variant="secondary" className="text-xs flex items-center gap-1.5 px-2 py-0.5 font-medium rounded-lg">
+                                                            <span>{opt.value}</span>
+                                                            <span className="inline-flex items-center justify-center px-1.5 py-0.25 rounded-md text-[9px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                                                                {opt.quantity}
+                                                            </span>
+                                                        </Badge>
+                                                    ))
+                                                ) : null}
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
                             </div>

@@ -29,9 +29,15 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+interface VariationOption {
+    value: string;
+    quantity: number;
+}
+
 interface Variation {
     name: string;
-    options: string;
+    options: string | VariationOption[];
+    is_quantified?: boolean;
 }
 
 interface Brand {
@@ -84,6 +90,30 @@ interface Props {
     notInBranch: boolean;
 }
 
+const normalizeVariations = (variations: any[] | null): Variation[] => {
+    if (!variations) return [];
+    return variations.map(v => {
+        let is_quantified = false;
+        let normalizedOptions: VariationOption[] | string = '';
+
+        if (typeof v.options === 'string') {
+            normalizedOptions = v.options;
+            is_quantified = false;
+        } else if (Array.isArray(v.options)) {
+            normalizedOptions = v.options.map((opt: any) => ({
+                value: opt.value || '',
+                quantity: opt.quantity !== undefined ? Number(opt.quantity) : 0
+            }));
+            is_quantified = true;
+        }
+        return { 
+            name: v.name || '', 
+            options: normalizedOptions,
+            is_quantified 
+        };
+    });
+};
+
 export default function Edit({ product, brands, categories, suppliers, isSystemAdmin, currentBranch, notInBranch }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
@@ -103,7 +133,7 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
         reorder_level: product.reorder_level !== null ? String(product.reorder_level) : '',
         active_until_zero_days: product.active_until_zero_days !== null ? String(product.active_until_zero_days) : '',
         status: product.status || 'active',
-        variations: product.variations || [] as Variation[],
+        variations: normalizeVariations(product.variations),
         clearance_price: product.clearance_price ? String(product.clearance_price) : '',
         clearance_until: product.clearance_until ? new Date(product.clearance_until).toISOString().split('T')[0] : '',
         image: null as File | null,
@@ -136,7 +166,7 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
     }
 
     function addVariation() {
-        setData('variations', [...data.variations, { name: '', options: '' }]);
+        setData('variations', [...data.variations, { name: '', options: '', is_quantified: false }]);
     }
 
     function removeVariation(index: number) {
@@ -145,10 +175,71 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
         setData('variations', newVariations);
     }
 
-    function updateVariation(index: number, field: keyof Variation, value: string) {
+    function updateVariation(index: number, field: keyof Variation, value: any) {
         const newVariations = [...data.variations];
         newVariations[index][field] = value;
         setData('variations', newVariations);
+    }
+
+    function toggleVariationQuantified(index: number) {
+        const newVariations = [...data.variations];
+        const v = newVariations[index];
+        const currentlyQuantified = v.is_quantified ?? false;
+
+        if (currentlyQuantified) {
+            const optArray = Array.isArray(v.options) ? v.options : [];
+            const optStr = optArray.map(o => o.value).join(', ');
+            v.options = optStr;
+            v.is_quantified = false;
+        } else {
+            const optStr = typeof v.options === 'string' ? v.options : '';
+            const optArray = optStr.split(',')
+                .map(o => o.trim())
+                .filter(o => o.length > 0)
+                .map(val => ({ value: val, quantity: 0 }));
+            
+            if (optArray.length === 0) {
+                optArray.push({ value: '', quantity: 0 });
+            }
+            v.options = optArray;
+            v.is_quantified = true;
+        }
+        setData('variations', newVariations);
+    }
+
+    function addOption(vIndex: number) {
+        const newVariations = [...data.variations];
+        const v = newVariations[vIndex];
+        if (Array.isArray(v.options)) {
+            v.options = [...v.options, { value: '', quantity: 0 }];
+            setData('variations', newVariations);
+        }
+    }
+
+    function removeOption(vIndex: number, oIndex: number) {
+        const newVariations = [...data.variations];
+        const v = newVariations[vIndex];
+        if (Array.isArray(v.options)) {
+            const newOpts = [...v.options];
+            newOpts.splice(oIndex, 1);
+            v.options = newOpts;
+            setData('variations', newVariations);
+        }
+    }
+
+    function updateOptionField(vIndex: number, oIndex: number, field: keyof VariationOption, value: any) {
+        const newVariations = [...data.variations];
+        const v = newVariations[vIndex];
+        if (Array.isArray(v.options)) {
+            const newOpts = [...v.options];
+            if (field === 'quantity') {
+                newOpts[oIndex][field] = Number(value);
+            } else {
+                newOpts[oIndex][field] = String(value);
+            }
+            v.options = newOpts;
+            setData('variations', newVariations);
+        }
     }
 
     function handleZeroStockChange(value: string) {
@@ -181,6 +272,19 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
+        
+        // Sum validation check on client side
+        const prodQty = Number(data.quantity) || 0;
+        for (const v of data.variations) {
+            if (v.is_quantified && Array.isArray(v.options)) {
+                const sum = v.options.reduce((acc, curr) => acc + (curr.quantity || 0), 0);
+                if (sum !== prodQty) {
+                    toast.error(`Variation "${v.name}" option quantities sum (${sum}) must equal the total product quantity (${prodQty}).`);
+                    return;
+                }
+            }
+        }
+
         post(`/products/${product.id}`);
     }
 
@@ -544,29 +648,140 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
                                     <Plus className="h-4 w-4 mr-2" /> Add Variation
                                 </Button>
                             </div>
-                            {data.variations.map((variation, index) => (
-                                <div key={index} className="flex gap-4 items-start p-4 border rounded-md bg-gray-50 dark:bg-gray-900">
-                                    <div className="flex-1 space-y-2">
-                                        <Input
-                                            placeholder="Name (e.g. Color)"
-                                            value={variation.name}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateVariation(index, 'name', e.target.value)}
-                                            required
-                                        />
+                            {data.variations.map((variation, index) => {
+                                const prodQty = Number(data.quantity) || 0;
+                                const optionsSum = variation.is_quantified && Array.isArray(variation.options)
+                                    ? variation.options.reduce((acc, curr) => acc + (curr.quantity || 0), 0)
+                                    : 0;
+                                const matchesProductQuantity = optionsSum === prodQty;
+
+                                return (
+                                    <div key={index} className="space-y-4 p-5 border rounded-xl bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 shadow-sm transition-all duration-300">
+                                        <div className="flex gap-4 items-center justify-between">
+                                            <div className="flex-1 max-w-[240px]">
+                                                <Label className="text-xs text-muted-foreground uppercase font-semibold">Variation Name</Label>
+                                                <Input
+                                                    className="mt-1 font-medium bg-white dark:bg-gray-800"
+                                                    placeholder="Name (e.g. Color)"
+                                                    value={variation.name}
+                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateVariation(index, 'name', e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-2 mt-5">
+                                                <Button
+                                                    type="button"
+                                                    variant={variation.is_quantified ? 'outline' : 'default'}
+                                                    size="sm"
+                                                    onClick={() => toggleVariationQuantified(index)}
+                                                    className="h-9 px-3 rounded-lg text-xs"
+                                                >
+                                                    Simple Text
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant={variation.is_quantified ? 'default' : 'outline'}
+                                                    size="sm"
+                                                    onClick={() => toggleVariationQuantified(index)}
+                                                    className="h-9 px-3 rounded-lg text-xs"
+                                                >
+                                                    Quantified Stock
+                                                </Button>
+                                            </div>
+
+                                            <Button 
+                                                type="button" 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                onClick={() => removeVariation(index)} 
+                                                className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 mt-5"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+
+                                        {!variation.is_quantified ? (
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs text-muted-foreground font-semibold">Options (Comma separated)</Label>
+                                                <Input
+                                                    className="bg-white dark:bg-gray-800"
+                                                    placeholder="e.g. Red, Blue, Green"
+                                                    value={typeof variation.options === 'string' ? variation.options : ''}
+                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateVariation(index, 'options', e.target.value)}
+                                                    required
+                                                />
+                                                <span className="text-[11px] text-gray-400">Simple list of options. No stock quantity checks are run.</span>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3 bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-150 dark:border-gray-800">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Quantified Options</span>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => addOption(index)}
+                                                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/20 text-xs px-2.5 h-7"
+                                                    >
+                                                        <Plus className="h-3.5 w-3.5 mr-1" /> Add Option
+                                                    </Button>
+                                                </div>
+
+                                                {Array.isArray(variation.options) && variation.options.map((opt, oIdx) => (
+                                                    <div key={oIdx} className="flex items-center gap-3">
+                                                        <div className="flex-1">
+                                                            <Input
+                                                                className="h-9 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800"
+                                                                placeholder="Option Value (e.g. Red)"
+                                                                value={opt.value}
+                                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateOptionField(index, oIdx, 'value', e.target.value)}
+                                                                required
+                                                            />
+                                                        </div>
+                                                        <div className="w-[120px]">
+                                                            <Input
+                                                                type="number"
+                                                                min="0"
+                                                                className="h-9 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800"
+                                                                placeholder="Qty"
+                                                                value={opt.quantity || ''}
+                                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateOptionField(index, oIdx, 'quantity', e.target.value)}
+                                                                required
+                                                            />
+                                                        </div>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => removeOption(index, oIdx)}
+                                                            className="text-gray-400 hover:text-red-500 h-9 w-9"
+                                                            disabled={variation.options.length <= 1}
+                                                        >
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+
+                                                <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800 mt-2">
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Total distributed: <strong className="text-gray-700 dark:text-gray-200">{optionsSum}</strong> / {prodQty}
+                                                    </span>
+                                                    {matchesProductQuantity ? (
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                                            ✓ Sum matches branch stock
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+                                                            ⚠ Must equal branch stock ({prodQty})
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="flex-1 space-y-2">
-                                        <Input
-                                            placeholder="Options (e.g. Red, Blue)"
-                                            value={variation.options}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateVariation(index, 'options', e.target.value)}
-                                            required
-                                        />
-                                    </div>
-                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeVariation(index)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         <div className="space-y-2">

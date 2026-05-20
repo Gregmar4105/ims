@@ -467,12 +467,31 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'variations' => 'nullable|array',
             'variations.*.name' => 'required|string',
-            'variations.*.options' => 'required|string', // Comma separated
+            'variations.*.options' => 'required', // String or Array
             'image' => 'required|image|max:2048', // 2MB Max
             'price' => 'nullable|numeric|min:0',
             'reorder_level' => 'nullable|integer|min:0',
             'active_until_zero_days' => 'nullable|integer|min:0',
         ]);
+
+        $targetQty = (int)$validated['quantity'];
+        if (!empty($validated['variations'])) {
+            foreach ($validated['variations'] as $v) {
+                $options = $v['options'];
+                if (is_array($options)) {
+                    $sumQty = 0;
+                    foreach ($options as $opt) {
+                        if (!is_array($opt) || !isset($opt['value']) || !isset($opt['quantity'])) {
+                            return back()->withErrors(['variations' => 'Each option must have a value and quantity.'])->withInput();
+                        }
+                        $sumQty += (int)$opt['quantity'];
+                    }
+                    if ($sumQty !== $targetQty) {
+                        return back()->withErrors(['variations' => "The sum of quantities for variation '{$v['name']}' ({$sumQty}) must equal the total product quantity ({$targetQty})."])->withInput();
+                    }
+                }
+            }
+        }
 
         // Resolve target branch: System Admin uses session branch, others use their own
         $targetBranchId = $this->resolveTargetBranchId($user, $isSystemAdmin);
@@ -675,7 +694,7 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'variations' => 'nullable|array',
             'variations.*.name' => 'required|string',
-            'variations.*.options' => 'required|string',
+            'variations.*.options' => 'required', // String or Array
             'image' => 'nullable|image|max:2048',
             'price' => 'nullable|numeric|min:0', 
             'clearance_price' => 'nullable|numeric|min:0',
@@ -684,6 +703,25 @@ class ProductController extends Controller
             'active_until_zero_days' => 'nullable|integer|min:0',
             'status' => 'nullable|string|in:active,inactive',
         ]);
+
+        $targetQty = (int)$validated['quantity'];
+        if (!empty($validated['variations'])) {
+            foreach ($validated['variations'] as $v) {
+                $options = $v['options'];
+                if (is_array($options)) {
+                    $sumQty = 0;
+                    foreach ($options as $opt) {
+                        if (!is_array($opt) || !isset($opt['value']) || !isset($opt['quantity'])) {
+                            return back()->withErrors(['variations' => 'Each option must have a value and quantity.'])->withInput();
+                        }
+                        $sumQty += (int)$opt['quantity'];
+                    }
+                    if ($sumQty !== $targetQty) {
+                        return back()->withErrors(['variations' => "The sum of quantities for variation '{$v['name']}' ({$sumQty}) must equal the total product quantity ({$targetQty})."])->withInput();
+                    }
+                }
+            }
+        }
 
         // Resolve target branch
         $targetBranchId = $this->resolveTargetBranchId($user, $isSystemAdmin);
