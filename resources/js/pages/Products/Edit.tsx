@@ -90,9 +90,28 @@ interface Props {
     notInBranch: boolean;
 }
 
-const normalizeVariations = (variations: any[] | null): Variation[] => {
+const normalizeVariations = (variations: any): Variation[] => {
     if (!variations) return [];
-    return variations.map(v => {
+    let parsed: any[] = [];
+    if (typeof variations === 'string') {
+        try {
+            const decoded = JSON.parse(variations);
+            if (Array.isArray(decoded)) {
+                parsed = decoded;
+            } else {
+                return [];
+            }
+        } catch (e) {
+            console.error('Failed to parse variations JSON:', e);
+            return [];
+        }
+    } else if (Array.isArray(variations)) {
+        parsed = variations;
+    } else {
+        return [];
+    }
+
+    return parsed.map(v => {
         let is_quantified = false;
         let normalizedOptions: VariationOption[] | string = '';
 

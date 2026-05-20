@@ -30,7 +30,23 @@ interface Product {
     }[];
 }
 
+const getParsedVariations = (variations: any): any[] => {
+    if (!variations) return [];
+    if (typeof variations === 'string') {
+        try {
+            const decoded = JSON.parse(variations);
+            if (Array.isArray(decoded)) return decoded;
+        } catch (e) {
+            // Might be a plain string
+        }
+        return [];
+    }
+    if (Array.isArray(variations)) return variations;
+    return [];
+};
+
 export default function Show({ product }: { product: Product }) {
+    const parsedVariations = getParsedVariations(product.variations);
 
     const breadcrumbs = [
         { title: 'Home', href: '/' },
@@ -109,13 +125,13 @@ export default function Show({ product }: { product: Product }) {
                             </div>
 
 
-                            {product.variations && Array.isArray(product.variations) && product.variations.length > 0 && (
+                            {parsedVariations.length > 0 && (
                                 <>
                                     <Separator />
                                     <div>
                                         <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Options</h3>
                                         <div className="space-y-3">
-                                            {product.variations.map((v: any, idx: number) => {
+                                            {parsedVariations.map((v: any, idx: number) => {
                                                 const optionsArray = Array.isArray(v.options)
                                                     ? v.options.map((opt: any) => typeof opt === 'object' ? opt.value : String(opt))
                                                     : typeof v.options === 'string' ? v.options.split(',') : [];

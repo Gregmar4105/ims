@@ -94,6 +94,21 @@ interface Props {
     isSystemAdmin: boolean;
 }
 
+const getParsedVariations = (variations: any): any[] => {
+    if (!variations) return [];
+    if (typeof variations === 'string') {
+        try {
+            const decoded = JSON.parse(variations);
+            if (Array.isArray(decoded)) return decoded;
+        } catch (e) {
+            // Might be a plain string
+        }
+        return [];
+    }
+    if (Array.isArray(variations)) return variations;
+    return [];
+};
+
 export default function Index({ products, filters, options, isSystemAdmin }: Props) {
     const page = usePage<SharedData>();
     const { auth } = page.props;
@@ -1360,26 +1375,32 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             <div className="flex items-end justify-between pt-1 border-t border-gray-100 dark:border-gray-800 mt-1 min-h-[30px]">
                                                 {/* Variations on Left */}
                                                 <div className="flex flex-col gap-1 flex-1 min-w-0 mr-2">
-                                                    {product.variations && product.variations.length > 0 && (
-                                                        <div className="flex flex-wrap gap-1">
-                                                            {product.variations.slice(0, 2).map((v, i) => {
-                                                                const optsStr = typeof v.options === 'string'
-                                                                    ? v.options
-                                                                    : Array.isArray(v.options)
-                                                                        ? v.options.map((opt: any) => `${opt.value} (${opt.quantity})`).join(', ')
-                                                                        : '';
-                                                                return (
-                                                                    <span key={i} className="text-[10px] inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-medium whitespace-nowrap overflow-hidden max-w-full">
-                                                                        <span className="font-bold mr-1">{v.name}:</span> <span className="truncate">{optsStr}</span>
-                                                                    </span>
-                                                                );
-                                                            })}
-                                                            {product.variations.length > 2 && (
-                                                                <span className="text-[9px] text-gray-400">+{product.variations.length - 2}</span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                    {!product.variations?.length && product.branch && (
+                                                    {(() => {
+                                                        const parsedVars = getParsedVariations(product.variations);
+                                                        if (parsedVars.length > 0) {
+                                                            return (
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {parsedVars.slice(0, 2).map((v, i) => {
+                                                                        const optsStr = typeof v.options === 'string'
+                                                                            ? v.options
+                                                                            : Array.isArray(v.options)
+                                                                                ? v.options.map((opt: any) => `${opt.value} (${opt.quantity})`).join(', ')
+                                                                                : '';
+                                                                        return (
+                                                                            <span key={i} className="text-[10px] inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-medium whitespace-nowrap overflow-hidden max-w-full">
+                                                                                <span className="font-bold mr-1">{v.name}:</span> <span className="truncate">{optsStr}</span>
+                                                                            </span>
+                                                                        );
+                                                                    })}
+                                                                    {parsedVars.length > 2 && (
+                                                                        <span className="text-[9px] text-gray-400">+{parsedVars.length - 2}</span>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })()}
+                                                    {(!product.variations || getParsedVariations(product.variations).length === 0) && product.branch && (
                                                         <span className="text-[10px] text-orange-600 dark:text-orange-400 truncate flex items-center gap-1 font-medium">
                                                             <Layers className="h-3 w-3" />
                                                             {product.branch.branch_name}

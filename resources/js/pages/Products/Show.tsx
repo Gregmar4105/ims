@@ -63,8 +63,24 @@ interface Props {
     product: Product;
 }
 
+const getParsedVariations = (variations: any): Variation[] => {
+    if (!variations) return [];
+    if (typeof variations === 'string') {
+        try {
+            const decoded = JSON.parse(variations);
+            if (Array.isArray(decoded)) return decoded;
+        } catch (e) {
+            console.error('Failed to parse variations JSON:', e);
+        }
+        return [];
+    }
+    if (Array.isArray(variations)) return variations;
+    return [];
+};
+
 export default function Show({ product }: Props) {
     const { auth } = usePage<SharedData>().props;
+    const parsedVariations = getParsedVariations(product.variations);
     const isSystemAdmin = auth.roles.includes('System Administrator');
     const isEmployee = auth.roles.includes('Employee') && !isSystemAdmin && !auth.roles.includes('Branch Administrator');
     const isOnClearance = (product: Product) => {
@@ -329,13 +345,13 @@ export default function Show({ product }: Props) {
                             </dl>
                         </div>
 
-                        {product.variations && product.variations.length > 0 && (
+                        {parsedVariations.length > 0 && (
                             <>
                                 <Separator />
                                 <div>
                                     <h3 className="text-lg font-semibold mb-3">Variations</h3>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {product.variations.map((v, i) => (
+                                        {parsedVariations.map((v, i) => (
                                             <div key={i} className="flex flex-col gap-1.5 p-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
                                                 <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">{v.name}</span>
                                                 <div className="flex flex-wrap gap-1.5">
@@ -507,13 +523,13 @@ export default function Show({ product }: Props) {
                         </div>
                     </div>
 
-                    {product.variations && product.variations.length > 0 && (
+                    {parsedVariations.length > 0 && (
                         <>
                             <Separator className="bg-gray-100 dark:bg-gray-800" />
                             <div className="space-y-3">
                                 <span className="text-[11px] font-semibold text-gray-400 uppercase">Variations</span>
                                 <div className="grid grid-cols-1 gap-2.5 pt-1">
-                                    {product.variations.map((v, i) => (
+                                    {parsedVariations.map((v, i) => (
                                         <div key={i} className="flex flex-col gap-1.5 p-3 rounded-xl border border-gray-100 dark:border-gray-800/80 bg-gray-50/50 dark:bg-gray-900/50 shadow-sm">
                                             <span className="text-[10px] font-bold text-gray-400 uppercase">{v.name}</span>
                                             <div className="flex flex-wrap gap-1.5">
