@@ -4,11 +4,12 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPinned, Layers, Package, Tag, ScanBarcode, Truck, Edit, Info, ArrowLeft } from 'lucide-react';
+import { MapPinned, Layers, Package, Tag, ScanBarcode, Truck, Edit, Info, ArrowLeft, Printer } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 import Barcode from 'react-barcode';
 import QRCode from 'react-qr-code';
 import { Avatar, AvatarFallback, AvatarImage, AvatarGroup } from "@/components/ui/avatar";
+import { handleNativePrintFallback } from '@/lib/utils';
 import {
     Tooltip,
     TooltipContent,
@@ -89,6 +90,194 @@ export default function Show({ product }: Props) {
         return new Date(product.clearance_until) > new Date();
     };
 
+    async function handlePrint() {
+        // Try Native Share with our unified utility first
+        const nativeTriggered = await handleNativePrintFallback('native-print-label', `label_${product.sku || product.id}`);
+
+        if (nativeTriggered) {
+            return; // Exit if mobile handled it natively
+        }
+
+        // Process SVG to remove hardcoded dimensions so it scales correctly in the label
+        let qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
+        qrSvg = qrSvg.replace(/width="\d+"/, '').replace(/height="\d+"/, '');
+
+        // Helper to determine dynamic font size based on text length
+        const getDynamicSize = (text: string, base: number, threshold: number, min: number, factor: number = 0.5) => {
+            if (!text) return `${base}pt`;
+            const count = String(text).length;
+            if (count > threshold) {
+                // Ultra-aggressive reduction to force 1-line fit
+                return `${Math.max(min, base - (count - threshold) * factor)}pt`;
+            }
+            return `${base}pt`;
+        };
+
+        // Ultra-aggressive thresholds for 28x20mm landscape
+        // Given ~16mm space for info-stack
+        const skuSize = getDynamicSize(product.sku || product.name || '', 9, 12, 4, 0.5);
+        const codeSize = getDynamicSize((product.code || '') + (product.code_2 || ''), 7.5, 10, 3.5, 0.6);
+        const supplierSize = getDynamicSize(product.supplier?.name || '', 7, 10, 3.5, 0.6);
+
+        // Barcode is strictly 13 characters maximum, we can assign a solid fixed readable size.
+        const barcodeSize = '6pt';
+
+        // CSS-based main window print hack
+        // Mobile webviews block window.print() if called in an iframe.
+        // So we append the label to the main body, add a print-only visible class, and print the main window.
+
+        const containerId = 'temp-qr-print-container-' + Date.now();
+        const container = document.createElement('div');
+        container.id = containerId;
+        container.className = 'print-only-label';
+
+        container.innerHTML = `
+            <style>
+                @media print {
+                    #app {
+                        display: none !important;
+                    }
+                    .print-only-label {
+                        display: block !important;
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: white !important;
+                        z-index: 99999;
+                    }
+                    @page {
+                        size: 28mm 20mm;
+                        margin: 0;
+                    }
+                    html, body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: white !important;
+                        width: 28mm !important;
+                        height: 20mm !important;
+                    }
+                }
+                
+                .label-container {
+                    width: 28mm;
+                    height: 20mm;
+                    margin: 0;
+                    padding: 0.5mm 1mm;
+                    font-family: 'Arial', sans-serif;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                    background: white;
+                    color: black;
+                    box-sizing: border-box;
+                }
+                
+                .upper-section {
+                    display: flex;
+                    width: 100%;
+                    height: 13mm;
+                    align-items: center;
+                }
+
+                .qr-section {
+                    width: 10mm;
+                    height: 10mm;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                }
+                .qr-section svg {
+                    width: 100% !important;
+                    height: 100% !important;
+                }
+
+                .info-stack {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    padding-left: 1mm;
+                    overflow: hidden;
+                }
+                
+                .info-line {
+                    font-size: 7pt;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    line-height: 1.1;
+                    width: 100%;
+                }
+
+                .bottom-section {
+                    width: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                    margin-top: auto;
+                    border-top: 0.1mm solid transparent;
+                }
+                
+                .product-sku {
+                    font-size: 9pt;
+                    font-weight: bold;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    width: 100%;
+                    line-height: 1;
+                }
+
+                .price {
+                    font-size: 10pt;
+                    font-weight: normal;
+                    line-height: 1;
+                    margin-top: 0.5mm;
+                }
+            </style>
+            <div class="label-container">
+                <div class="upper-section">
+                    <div class="qr-section">
+                        ${qrSvg}
+                    </div>
+                    <div class="info-stack">
+                        <div class="info-line" style="font-size: ${barcodeSize}">${product.barcode || '-'}</div>
+                        <div class="info-line" style="font-size: ${codeSize}">
+                            ${product.code || ''} ${product.code_2 || ''}
+                        </div>
+                        <div class="info-line" style="font-size: ${supplierSize}">${product.supplier?.name || '-'}</div>
+                    </div>
+                </div>
+                
+                <div class="bottom-section">
+                    <div class="product-sku" style="font-size: ${skuSize}">${product.sku || product.name || '-'}</div>
+                    <div class="price">
+                        ₱${product.price ? Number(product.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Hide container in normal view (it's only meant for printing)
+        container.style.display = 'none';
+
+        document.body.appendChild(container);
+
+        // Required delay to ensure DOM and generic styles load
+        setTimeout(() => {
+            window.print();
+
+            // Cleanup after print dialog opens/closes
+            setTimeout(() => {
+                if (document.body.contains(container)) {
+                    document.body.removeChild(container);
+                }
+            }, 3000);
+        }, 500);
+    }
+
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Products',
@@ -121,15 +310,18 @@ export default function Show({ product }: Props) {
                         </div>
                     </div>
 
-                    {!isEmployee && (
-                        <div className="flex gap-2">
+                    <div className="flex gap-2">
+                        {!isEmployee && (
                             <Link href={`/products/${product.id}/edit`}>
-                                <Button>
+                                <Button className="bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black">
                                     <Edit className="mr-2 h-4 w-4" /> Edit Product
                                 </Button>
                             </Link>
-                        </div>
-                    )}
+                        )}
+                        <Button variant="outline" onClick={handlePrint} className="gap-2">
+                            <Printer className="h-4 w-4" /> Print Label
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -139,14 +331,25 @@ export default function Show({ product }: Props) {
                     <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white text-left leading-tight tracking-tight flex-1">
                         {product.name}
                     </h1>
-                    {!isEmployee && (
-                        <Link href={`/products/${product.id}/edit`} className="shrink-0 mt-0.5">
-                            <Button variant="outline" size="sm" className="text-xs font-semibold flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-border bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <Edit className="h-3.5 w-3.5" />
-                                <span>Edit</span>
-                            </Button>
-                        </Link>
-                    )}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0 mt-0.5">
+                        {!isEmployee && (
+                            <Link href={`/products/${product.id}/edit`}>
+                                <Button size="sm" className="text-xs font-semibold flex items-center gap-1.5 h-8 px-2.5 rounded-lg border-0 bg-black text-white dark:bg-white dark:text-black shadow-sm hover:bg-gray-900 dark:hover:bg-gray-100">
+                                    <Edit className="h-3.5 w-3.5" />
+                                    <span>Edit</span>
+                                </Button>
+                            </Link>
+                        )}
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={handlePrint}
+                            className="text-xs font-semibold flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-border bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                            <Printer className="h-3.5 w-3.5" />
+                            <span>Print</span>
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -617,6 +820,68 @@ export default function Show({ product }: Props) {
                     </div>
                 </div>
             </div>
+
+            {/* Hidden High-Res Codes for Printing */}
+            <div id="hidden-print-codes" className="hidden">
+                {product.qr_code && <QRCode value={product.qr_code} size={512} />}
+                {product.barcode && <Barcode value={product.barcode} width={4} height={150} fontSize={14} />}
+            </div>
+
+            {/* Hidden Label Render for html-to-image Native Share fallback */}
+            {(() => {
+                const getDynamicSize = (text: string, base: number, threshold: number, min: number, factor: number = 0.5) => {
+                    if (!text) return `${base}pt`;
+                    const count = String(text).length;
+                    if (count > threshold) {
+                        return `${Math.max(min, base - (count - threshold) * factor)}pt`;
+                    }
+                    return `${base}pt`;
+                };
+
+                const skuStr = product.sku || product.name || '';
+                const codesStr = (product.code || '') + (product.code_2 || '');
+                const supplierStr = product.supplier?.name || '';
+
+                const skuSize = getDynamicSize(skuStr, 9, 12, 4, 0.5);
+                const codeSize = getDynamicSize(codesStr, 7.5, 10, 3.5, 0.6);
+                const supplierSize = getDynamicSize(supplierStr, 7, 10, 3.5, 0.6);
+                const barcodeSize = '6.5pt';
+
+                return (
+                    <div style={{ position: 'absolute', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none' }}>
+                        <div id="native-print-label" style={{
+                            width: '28mm',
+                            height: '20mm',
+                            background: 'white',
+                            color: 'black',
+                            fontFamily: 'Arial, sans-serif',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            boxSizing: 'border-box',
+                            padding: '0.5mm 1mm'
+                        }}>
+                            <div style={{ display: 'flex', width: '100%', height: '13mm', alignItems: 'center' }}>
+                                <div style={{ width: '10mm', height: '10mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    <QRCode value={product.qr_code || ''} size={150} style={{ width: '100%', height: '100%' }} />
+                                </div>
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '1mm', overflow: 'hidden' }}>
+                                    <div style={{ fontSize: barcodeSize, whiteSpace: 'nowrap', overflow: 'hidden', lineHeight: 1.1 }}>{product.barcode || '-'}</div>
+                                    <div style={{ fontSize: codeSize, whiteSpace: 'nowrap', overflow: 'hidden', lineHeight: 1.1 }}>
+                                        {product.code || ''} {product.code_2 || ''}
+                                    </div>
+                                    <div style={{ fontSize: supplierSize, whiteSpace: 'nowrap', overflow: 'hidden', lineHeight: 1.1 }}>{product.supplier?.name || '-'}</div>
+                                </div>
+                            </div>
+                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginTop: 'auto' }}>
+                                <div style={{ fontSize: skuSize, fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%', lineHeight: 1 }}>{skuStr}</div>
+                                <div style={{ fontSize: '10pt', fontWeight: 'normal', lineHeight: 1, marginTop: '0.5mm' }}>
+                                    ₱{product.price ? Number(product.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
         </AppLayout>
     );
 }

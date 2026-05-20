@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -92,6 +92,11 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
 
     const [selectedItem, setSelectedItem] = useState<UploadItem | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
 
     const fetchProductDetails = async (id: string, name: string) => {
         try {
@@ -463,23 +468,26 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    className={`relative border-2 border-dashed rounded-xl p-12 transition-all duration-200 flex flex-col items-center justify-center gap-4 bg-card/50 backdrop-blur-sm ${
-                        isDragging ? 'border-primary bg-primary/10 scale-[1.01]' : 'border-muted-foreground/20 hover:border-primary/50'
+                    onClick={handleUploadClick}
+                    className={`relative border-2 border-dashed rounded-xl p-12 transition-all duration-200 flex flex-col items-center justify-center gap-4 bg-card/50 backdrop-blur-sm cursor-pointer ${
+                        isDragging ? 'border-primary bg-primary/10 scale-[1.01]' : 'border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10'
                     }`}
                 >
-                    <div className="p-4 bg-primary/10 rounded-full">
+                    <div className="p-4 bg-primary/10 rounded-full hover:bg-primary/20 transition-colors">
                         <Upload className={`w-8 h-8 ${isDragging ? 'text-primary animate-bounce' : 'text-muted-foreground'}`} />
                     </div>
                     <div className="text-center">
                         <p className="text-lg font-semibold">Drag and drop multiple photos or folders here</p>
                         <p className="text-sm text-muted-foreground">Each photo will start or update a product entry</p>
                     </div>
-                    <Input
+                    <input
+                        ref={fileInputRef}
                         type="file"
                         multiple
                         accept="image/*"
-                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        className="hidden"
                         onChange={handleFileSelect}
+                        onClick={(e) => e.stopPropagation()}
                     />
                 </div>
 
