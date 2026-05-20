@@ -292,6 +292,66 @@ class TransferController extends Controller
                         'status' => 'rejected',
                         'received_by' => $user->id,
                     ]);
+                } elseif ($newStatus === 'incomplete') {
+                    // Incomplete split delivery logic: update remaining items, delete completed items
+                    $itemsInput = collect($request->items)->keyBy('id');
+                    $hasRemaining = false;
+
+                    foreach ($transfer->items as $item) {
+                        $itemData = $itemsInput->get($item->id);
+                        if (!$itemData) {
+                            continue;
+                        }
+
+                        $newReceivedQty = max(0, min((int)$itemData['received_quantity'], $item->quantity));
+                        $remainingQty = $item->quantity - $newReceivedQty;
+
+                        // Increment destination stock by the newly received quantity
+                        if ($newReceivedQty > 0) {
+                            $destBranchProduct = DB::table('branch_products')
+                                ->where('branch_id', $transfer->destination_branch_id)
+                                ->where('product_id', $item->product_id)
+                                ->first();
+
+                            if ($destBranchProduct) {
+                                DB::table('branch_products')
+                                    ->where('id', $destBranchProduct->id)
+                                    ->increment('quantity', $newReceivedQty);
+                            } else {
+                                DB::table('branch_products')->insert([
+                                    'branch_id' => $transfer->destination_branch_id,
+                                    'product_id' => $item->product_id,
+                                    'quantity' => $newReceivedQty,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                            }
+                        }
+
+                        if ($remainingQty > 0) {
+                            $hasRemaining = true;
+                            $item->update([
+                                'quantity' => $remainingQty,
+                                'received_quantity' => 0,
+                                'status' => 'incomplete',
+                            ]);
+                        } else {
+                            $item->delete();
+                        }
+                    }
+
+                    if ($hasRemaining) {
+                        $transfer->update([
+                            'status' => 'incomplete',
+                            'received_by' => $user->id,
+                        ]);
+                    } else {
+                        $transfer->update([
+                            'status' => 'completed',
+                            'received_by' => $user->id,
+                        ]);
+                        $newStatus = 'completed'; // update status for notification / response message
+                    }
                 } else {
                     // Update received quantities and destination stock
                     $itemsInput = collect($request->items)->keyBy('id');
