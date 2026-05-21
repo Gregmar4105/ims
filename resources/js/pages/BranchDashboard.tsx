@@ -76,6 +76,11 @@ interface DashboardProps {
         end_date?: string;
         selectedDateSales?: number;
     };
+    pendingCounts?: {
+        sales: number;
+        transfers: number;
+        reorders: number;
+    };
 }
 
 // Dynamic color generation for many categories
@@ -237,10 +242,46 @@ const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueTy
     );
 };
 
-export default function BranchDashboard({ branchLocation, stats, chartData, pieData, productData, leaderboard, filters }: DashboardProps) {
+export default function BranchDashboard({ branchLocation, stats, chartData, pieData, productData, leaderboard, filters, pendingCounts }: DashboardProps) {
     const { auth } = usePage().props as any;
     const isSystemAdmin = auth.roles.includes('System Administrator');
     const isBranchAdmin = auth.roles.includes('Branch Administrator') && !isSystemAdmin;
+
+    // --- Pending Counts State & Real-time Polling ---
+    const [counts, setCounts] = useState({
+        sales: pendingCounts?.sales ?? 0,
+        transfers: pendingCounts?.transfers ?? 0,
+        reorders: pendingCounts?.reorders ?? 0,
+    });
+
+    useEffect(() => {
+        setCounts({
+            sales: pendingCounts?.sales ?? 0,
+            transfers: pendingCounts?.transfers ?? 0,
+            reorders: pendingCounts?.reorders ?? 0,
+        });
+    }, [pendingCounts]);
+
+    useEffect(() => {
+        const fetchPendingCounts = async () => {
+            try {
+                const response = await fetch('/branch-dashboard/api/pending-counts');
+                if (response.ok) {
+                    const data = await response.json();
+                    setCounts({
+                        sales: data.sales ?? 0,
+                        transfers: data.transfers ?? 0,
+                        reorders: data.reorders ?? 0,
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching pending counts:', error);
+            }
+        };
+
+        const interval = setInterval(fetchPendingCounts, 10000); // Poll every 10 seconds
+        return () => clearInterval(interval);
+    }, []);
     
     // --- Dynamic Stock Distribution State ---
     const [searchQuery, setSearchQuery] = useState('');
@@ -485,8 +526,13 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                         onClick={() => router.visit('/sales-list')}
                         className="flex flex-col items-center justify-center py-2.5 px-1 bg-background dark:bg-zinc-900 border border-border/80 rounded-xl shadow-sm hover:bg-accent/50 dark:hover:bg-zinc-800 transition-all active:scale-95 text-center group cursor-pointer animate-in fade-in slide-in-from-bottom-2"
                     >
-                        <div className="p-2 bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg mb-1 group-hover:scale-110 transition-transform duration-200 shadow-[0_0_10px_rgba(59,130,246,0.05)]">
+                        <div className="p-2 bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg mb-1 group-hover:scale-110 transition-transform duration-200 shadow-[0_0_10px_rgba(59,130,246,0.05)] relative">
                             <ShoppingBag className="w-4 h-4" />
+                            {counts.sales > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-background animate-in zoom-in-50 duration-200">
+                                    {counts.sales}
+                                </span>
+                            )}
                         </div>
                         <span className="font-semibold text-[11px] text-foreground tracking-tight">Sales</span>
                     </button>
@@ -496,8 +542,13 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                         onClick={() => router.visit('/transfer-list')}
                         className="flex flex-col items-center justify-center py-2.5 px-1 bg-background dark:bg-zinc-900 border border-border/80 rounded-xl shadow-sm hover:bg-accent/50 dark:hover:bg-zinc-800 transition-all active:scale-95 text-center group cursor-pointer animate-in fade-in slide-in-from-bottom-2 [animation-delay:40ms]"
                     >
-                        <div className="p-2 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg mb-1 group-hover:scale-110 transition-transform duration-200 shadow-[0_0_10px_rgba(245,158,11,0.05)]">
+                        <div className="p-2 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg mb-1 group-hover:scale-110 transition-transform duration-200 shadow-[0_0_10px_rgba(245,158,11,0.05)] relative">
                             <ArrowRightLeft className="w-4 h-4" />
+                            {counts.transfers > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-background animate-in zoom-in-50 duration-200">
+                                    {counts.transfers}
+                                </span>
+                            )}
                         </div>
                         <span className="font-semibold text-[11px] text-foreground tracking-tight">Transfers</span>
                     </button>
@@ -505,10 +556,15 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                     <button
                         id="btn-quick-reorders"
                         onClick={() => router.visit('/reorders')}
-                        className="flex flex-col items-center justify-center py-2.5 px-1 bg-background dark:bg-zinc-900 border border-border/80 rounded-xl shadow-sm hover:bg-accent/50 dark:hover:bg-zinc-800 transition-all active:scale-95 text-center group cursor-pointer animate-in fade-in slide-in-from-bottom-2 [animation-delay:80ms]"
+                        className="flex flex-col items-center justify-center py-2.5 px-1 bg-background dark:bg-zinc-900 border border-border/80 rounded-xl shadow-sm hover:bg-accent/50 dark:hover:bg-zinc-800 transition-all active:scale-95 text-center group-pointer active:scale-95 transition-all text-center group cursor-pointer animate-in fade-in slide-in-from-bottom-2 [animation-delay:80ms]"
                     >
-                        <div className="p-2 bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-lg mb-1 group-hover:scale-110 transition-transform duration-200 shadow-[0_0_10px_rgba(139,92,246,0.05)]">
+                        <div className="p-2 bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-lg mb-1 group-hover:scale-110 transition-transform duration-200 shadow-[0_0_10px_rgba(139,92,246,0.05)] relative">
                             <Layers className="w-4 h-4" />
+                            {counts.reorders > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-background animate-in zoom-in-50 duration-200">
+                                    {counts.reorders}
+                                </span>
+                            )}
                         </div>
                         <span className="font-semibold text-[11px] text-foreground tracking-tight">Reorders</span>
                     </button>

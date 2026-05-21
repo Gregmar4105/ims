@@ -89,6 +89,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('branch.dashboard');
     Route::get('branch-dashboard/api/products/search', [\App\Http\Controllers\BranchDashboardController::class, 'searchProducts'])->name('branch.dashboard.products.search');
     Route::get('branch-dashboard/api/products/{product}/distribution', [\App\Http\Controllers\BranchDashboardController::class, 'getProductDistribution'])->name('branch.dashboard.products.distribution');
+    Route::get('branch-dashboard/api/pending-counts', [\App\Http\Controllers\BranchDashboardController::class, 'getPendingCounts'])->name('branch.dashboard.pending-counts');
     Route::get('employee-dashboard', [\App\Http\Controllers\EmployeeDashboardController::class, 'index'])
         ->name('employee.dashboard')->middleware('role:Employee');
 

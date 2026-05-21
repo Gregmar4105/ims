@@ -193,6 +193,27 @@ class BranchDashboardController extends Controller
         $branch = \App\Models\Branch::find($branchId);
         $branchLocation = $branch ? $branch->location : 'Manila';
 
+        $pendingSalesCount = Sale::where('branch_id', $branchId)
+            ->where('status', 'readied')
+            ->count();
+
+        $pendingTransfersCount = \App\Models\Transfer::where(function($q) use ($branchId) {
+            $q->where(function($inner) use ($branchId) {
+                $inner->where('destination_branch_id', $branchId)
+                      ->whereIn('status', ['outgoing', 'incomplete']);
+            })->orWhere(function($inner) use ($branchId) {
+                $inner->where('source_branch_id', $branchId)
+                      ->where('status', 'readied');
+            });
+        })->count();
+
+        $reordersCount = \App\Models\Product::whereHas('branches', function ($query) use ($branchId) {
+            $query->where('branch_id', $branchId)
+                  ->whereNotNull('branch_products.reorder_level')
+                  ->where('branch_products.reorder_level', '>', 0)
+                  ->whereRaw('branch_products.quantity <= branch_products.reorder_level');
+        })->count();
+
         return Inertia::render('BranchDashboard', [
             'branchLocation' => $branchLocation,
             'stats' => [
@@ -214,6 +235,56 @@ class BranchDashboardController extends Controller
                 'end_date' => $endDate ? $endDate->format('Y-m-d') : null,
                 'selectedDateSales' => (float)$selectedDateSales,
             ],
+            'pendingCounts' => [
+                'sales' => $pendingSalesCount,
+                'transfers' => $pendingTransfersCount,
+                'reorders' => $reordersCount,
+            ],
+        ]);
+    }
+
+    public function getPendingCounts(Request $request)
+    {
+        $user = $request->user();
+        
+        $branchId = $user->branch_id;
+        if ($user->hasRole('System Administrator')) {
+            $branchId = session('active_branch_id', $user->branch_id);
+        }
+
+        if (!$branchId) {
+            return response()->json([
+                'sales' => 0,
+                'transfers' => 0,
+                'reorders' => 0,
+            ]);
+        }
+
+        $pendingSalesCount = Sale::where('branch_id', $branchId)
+            ->where('status', 'readied')
+            ->count();
+
+        $pendingTransfersCount = \App\Models\Transfer::where(function($q) use ($branchId) {
+            $q->where(function($inner) use ($branchId) {
+                $inner->where('destination_branch_id', $branchId)
+                      ->whereIn('status', ['outgoing', 'incomplete']);
+            })->orWhere(function($inner) use ($branchId) {
+                $inner->where('source_branch_id', $branchId)
+                      ->where('status', 'readied');
+            });
+        })->count();
+
+        $reordersCount = \App\Models\Product::whereHas('branches', function ($query) use ($branchId) {
+            $query->where('branch_id', $branchId)
+                  ->whereNotNull('branch_products.reorder_level')
+                  ->where('branch_products.reorder_level', '>', 0)
+                  ->whereRaw('branch_products.quantity <= branch_products.reorder_level');
+        })->count();
+
+        return response()->json([
+            'sales' => $pendingSalesCount,
+            'transfers' => $pendingTransfersCount,
+            'reorders' => $reordersCount,
         ]);
     }
 
