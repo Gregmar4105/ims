@@ -52,10 +52,10 @@ export function PrintSelectionModal({
                             <Printer className="w-5 h-5" />
                         </div>
                         <div className="text-left min-w-0">
-                            <DialogTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-tight truncate">
+                            <DialogTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-tight whitespace-normal break-words pr-6">
                                 {title}
                             </DialogTitle>
-                            <DialogDescription className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                            <DialogDescription className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 whitespace-normal break-words">
                                 Choose how you want to print this document
                             </DialogDescription>
                         </div>
@@ -108,16 +108,16 @@ export function PrintSelectionModal({
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <Button 
                                         onClick={bt.requestBluetoothEnable}
-                                        className="w-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2 flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/10"
+                                        className="w-full whitespace-normal h-auto py-2.5 px-3 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/10"
                                     >
                                         Turn On Natively
                                     </Button>
                                     <Button 
                                         onClick={bt.openBluetoothSettings}
                                         variant="outline"
-                                        className="w-full text-xs font-bold border-gray-200 hover:bg-gray-50 text-gray-700 dark:text-gray-200 rounded-xl py-2 flex items-center justify-center gap-1.5"
+                                        className="w-full whitespace-normal h-auto py-2.5 px-3 text-xs font-bold border-gray-200 hover:bg-gray-50 text-gray-700 dark:text-gray-200 rounded-xl flex items-center justify-center gap-1.5"
                                     >
-                                        <Settings className="w-3.5 h-3.5" />
+                                        <Settings className="w-3.5 h-3.5 shrink-0" />
                                         Open Settings
                                     </Button>
                                 </div>
@@ -210,10 +210,10 @@ export function PrintSelectionModal({
                                         <Button
                                             onClick={bt.openBluetoothSettings}
                                             variant="outline"
-                                            className="w-full text-xs font-bold border-dashed border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 py-2.5 rounded-xl flex items-center justify-center gap-1.5"
+                                            className="w-full whitespace-normal h-auto py-2.5 px-3 text-xs font-bold border-dashed border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl flex items-center justify-center gap-1.5"
                                         >
-                                            <Settings className="w-3.5 h-3.5" />
-                                            Pair New Device (Open Android Bluetooth Settings)
+                                            <Settings className="w-3.5 h-3.5 shrink-0" />
+                                            <span className="text-center">Pair New Device (Android Settings)</span>
                                         </Button>
 
                                     </div>
@@ -265,9 +265,9 @@ export function PrintSelectionModal({
                                     onClose();
                                 }}
                                 variant="outline"
-                                className="sm:shrink-0 text-xs font-bold hover:bg-gray-50 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 py-2.5 sm:py-3.5 px-4 sm:px-5 rounded-xl transition-all"
+                                className="sm:shrink-0 whitespace-normal h-auto text-xs font-bold hover:bg-gray-50 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 py-2.5 sm:py-3.5 px-4 sm:px-5 rounded-xl transition-all"
                             >
-                                <Printer className="w-3.5 h-3.5 mr-1.5" />
+                                <Printer className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                                 Open System Print
                             </Button>
                         </div>

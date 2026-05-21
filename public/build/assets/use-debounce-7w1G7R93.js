@@ -1,0 +1,1 @@
+import{e as m,r as c}from"./app-Bfu3s9s8.js";function p(t,o){const e=m.c(4),[n,u]=c.useState(t);let r,s;return e[0]!==o||e[1]!==t?(r=()=>{const i=setTimeout(()=>{u(t)},o);return()=>{clearTimeout(i)}},s=[t,o],e[0]=o,e[1]=t,e[2]=r,e[3]=s):(r=e[2],s=e[3]),c.useEffect(r,s),n}export{p as u};
