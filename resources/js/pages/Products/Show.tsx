@@ -4,13 +4,15 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPinned, Layers, Package, Tag, ScanBarcode, Truck, Edit, Info, ArrowLeft, Printer, Bluetooth } from 'lucide-react';
+import { MapPinned, Layers, Package, Tag, ScanBarcode, Truck, Edit, Info, ArrowLeft, Printer } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 import Barcode from 'react-barcode';
 import QRCode from 'react-qr-code';
 import { Avatar, AvatarFallback, AvatarImage, AvatarGroup } from "@/components/ui/avatar";
 import { handleNativePrintFallback } from '@/lib/utils';
 import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
+import { useState } from 'react';
+import { PrintSelectionModal } from '@/components/print-selection-modal';
 import {
     Tooltip,
     TooltipContent,
@@ -83,6 +85,7 @@ const getParsedVariations = (variations: any): Variation[] => {
 export default function Show({ product }: Props) {
     const { auth } = usePage<SharedData>().props;
     const bt = useBluetoothPrinter();
+    const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
     const parsedVariations = getParsedVariations(product.variations);
     const isSystemAdmin = auth.roles.includes('System Administrator');
     const isEmployee = auth.roles.includes('Employee') && !isSystemAdmin && !auth.roles.includes('Branch Administrator');
@@ -320,16 +323,11 @@ export default function Show({ product }: Props) {
                                 </Button>
                             </Link>
                         )}
-                        {bt.isSupported && (
-                            <Button 
-                                onClick={() => bt.printElement('native-print-label')}
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center gap-2 rounded-lg"
-                            >
-                                <Bluetooth className="h-4 w-4" /> Bluetooth Print
-                            </Button>
-                        )}
-                        <Button variant="outline" onClick={handlePrint} className="gap-2">
-                            <Printer className="h-4 w-4" /> System Print
+                        <Button 
+                            onClick={() => setIsPrintModalOpen(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center gap-2 rounded-lg"
+                        >
+                            <Printer className="h-4 w-4" /> Print Label
                         </Button>
                     </div>
                 </div>
@@ -350,24 +348,13 @@ export default function Show({ product }: Props) {
                                 </Button>
                             </Link>
                         )}
-                        {bt.isSupported && (
-                            <Button 
-                                size="sm" 
-                                onClick={() => bt.printElement('native-print-label')}
-                                className="text-xs font-semibold flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                            >
-                                <Bluetooth className="h-3.5 w-3.5" />
-                                <span>BT Print</span>
-                            </Button>
-                        )}
                         <Button 
-                            variant="outline" 
                             size="sm" 
-                            onClick={handlePrint}
-                            className="text-xs font-semibold flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-border bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                            onClick={() => setIsPrintModalOpen(true)}
+                            className="text-xs font-semibold flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                         >
                             <Printer className="h-3.5 w-3.5" />
-                            <span>Print</span>
+                            <span>Print Label</span>
                         </Button>
                     </div>
                 </div>
@@ -902,6 +889,14 @@ export default function Show({ product }: Props) {
                     </div>
                 );
             })()}
+
+            <PrintSelectionModal 
+                isOpen={isPrintModalOpen}
+                onClose={() => setIsPrintModalOpen(false)}
+                onPrintSystem={handlePrint}
+                elementId="native-print-label"
+                title={`Print Product Label - ${product.name}`}
+            />
         </AppLayout>
     );
 }

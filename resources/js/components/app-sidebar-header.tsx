@@ -2,7 +2,7 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { SharedData } from '@/types';
-import { Store, ChevronDown } from 'lucide-react';
+import { Store, ChevronDown, Printer } from 'lucide-react';
 import { NotificationBell } from './notification-bell';
 import {
     Tooltip,
@@ -222,6 +222,21 @@ export function AppSidebarHeader({
                             </div>
                         </div>
                     )
+                )}
+                {typeof window !== 'undefined' && (window as any).AndroidPrint && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    onClick={() => window.dispatchEvent(new CustomEvent('trigger-printer-settings'))}
+                                    className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted text-muted-foreground hover:text-blue-600 transition-colors"
+                                >
+                                    <Printer className="h-4 w-4" />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Printer Settings</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 )}
                 <NotificationBell />
             </div>

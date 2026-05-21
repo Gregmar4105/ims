@@ -31,6 +31,18 @@ export default function AppLayout({ children, breadcrumbs, ...props }: AppLayout
         }
     }, [flash]);
 
+    // Global listener for opening printer settings modal
+    useEffect(() => {
+        const handleTriggerSettings = () => {
+            setShowPrinterModal(true);
+            bt.scan();
+        };
+        window.addEventListener('trigger-printer-settings', handleTriggerSettings);
+        return () => {
+            window.removeEventListener('trigger-printer-settings', handleTriggerSettings);
+        };
+    }, [bt]);
+
     // OneSignal Logic
     useEffect(() => {
         if (auth?.user) {
@@ -122,23 +134,6 @@ export default function AppLayout({ children, breadcrumbs, ...props }: AppLayout
             
             {bt.isSupported && (
                 <>
-                    {/* Floating Printer Icon */}
-                    <button 
-                        onClick={() => {
-                            setShowPrinterModal(true);
-                            bt.scan();
-                        }}
-                        className={`fixed bottom-6 left-6 z-40 p-3.5 rounded-full shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center justify-center border ${
-                            bt.isConnected 
-                                ? 'bg-emerald-600 border-emerald-500 text-white hover:bg-emerald-700 animate-pulse' 
-                                : 'bg-gray-900 border-gray-800 text-gray-200 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-gray-105'
-                        }`}
-                        title="Bluetooth Printer Settings"
-                    >
-                        <Printer className="w-5 h-5" />
-                        {bt.isConnected && <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white dark:border-gray-900" />}
-                    </button>
-
                     {/* Printer Management Glassmorphism Modal */}
                     {showPrinterModal && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300">

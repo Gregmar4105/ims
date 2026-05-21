@@ -15,6 +15,7 @@ export function useBluetoothPrinter() {
     const [autoPrintEnabled, setAutoPrintEnabled] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
+    const [isBluetoothEnabled, setIsBluetoothEnabled] = useState(true);
 
     const androidPrint = typeof window !== 'undefined' ? (window as any).AndroidPrint : null;
 
@@ -23,6 +24,11 @@ export function useBluetoothPrinter() {
             setIsSupported(true);
             const connected = androidPrint.isBluetoothConnected();
             setIsConnected(connected);
+
+            // Check if bluetooth is enabled
+            if (typeof androidPrint.isBluetoothEnabled === 'function') {
+                setIsBluetoothEnabled(androidPrint.isBluetoothEnabled());
+            }
 
             // Load saved preferences
             const savedAddress = localStorage.getItem('bt_printer_address');
@@ -58,6 +64,19 @@ export function useBluetoothPrinter() {
                 }
             }
         }
+    }, [androidPrint]);
+
+    useEffect(() => {
+        const handlePermissionsGranted = () => {
+            toast.success('Bluetooth permissions granted!');
+            setTimeout(() => {
+                scan();
+            }, 300);
+        };
+        window.addEventListener('bluetooth-permissions-granted', handlePermissionsGranted);
+        return () => {
+            window.removeEventListener('bluetooth-permissions-granted', handlePermissionsGranted);
+        };
     }, [androidPrint]);
 
     const scan = () => {
@@ -236,6 +255,42 @@ export function useBluetoothPrinter() {
         }
     };
 
+    const checkBluetoothEnabled = (): boolean => {
+        if (!androidPrint) return false;
+        try {
+            if (typeof androidPrint.isBluetoothEnabled === 'function') {
+                const enabled = androidPrint.isBluetoothEnabled();
+                setIsBluetoothEnabled(enabled);
+                return enabled;
+            }
+        } catch (e) {
+            console.error('Error checking bluetooth enabled state', e);
+        }
+        return true;
+    };
+
+    const openBluetoothSettings = () => {
+        if (!androidPrint) return;
+        try {
+            if (typeof androidPrint.openBluetoothSettings === 'function') {
+                androidPrint.openBluetoothSettings();
+            }
+        } catch (e) {
+            console.error('Error opening bluetooth settings', e);
+        }
+    };
+
+    const requestBluetoothEnable = () => {
+        if (!androidPrint) return;
+        try {
+            if (typeof androidPrint.requestBluetoothEnable === 'function') {
+                androidPrint.requestBluetoothEnable();
+            }
+        } catch (e) {
+            console.error('Error requesting bluetooth enable', e);
+        }
+    };
+
     return {
         isSupported,
         isConnected,
@@ -244,12 +299,16 @@ export function useBluetoothPrinter() {
         autoPrintEnabled,
         isScanning,
         isConnecting,
+        isBluetoothEnabled,
         scan,
         connect,
         disconnect,
         toggleAutoPrint,
         printElement,
         testPrint,
-        isBluetoothConnected
+        isBluetoothConnected,
+        checkBluetoothEnabled,
+        openBluetoothSettings,
+        requestBluetoothEnable
     };
 }

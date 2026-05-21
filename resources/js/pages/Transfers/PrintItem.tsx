@@ -1,10 +1,11 @@
 import { Head } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Printer, Bluetooth } from 'lucide-react';
+import { Printer } from 'lucide-react';
 import { handleNativePrintFallback } from '@/lib/utils';
 import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
+import { PrintSelectionModal } from '@/components/print-selection-modal';
 
 interface Transfer {
     id: number;
@@ -27,6 +28,7 @@ interface Transfer {
 
 export default function PrintItem({ transfer }: { transfer: Transfer }) {
     const bt = useBluetoothPrinter();
+    const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
     useEffect(() => {
         const attemptPrint = async () => {
@@ -65,36 +67,16 @@ export default function PrintItem({ transfer }: { transfer: Transfer }) {
         <div className="min-h-screen bg-white text-gray-900 print:text-black relative">
             <Head title={`Print Transfer #${transfer.id}`} />
 
-            {/* Floating Print Button Group */}
-            <div className="fixed bottom-6 right-6 z-50 print:hidden flex gap-3 items-center">
-                {bt.isSupported ? (
-                    <>
-                        <Button 
-                            onClick={() => bt.printElement('printable-manifest')} 
-                            className="rounded-full shadow-lg gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all hover:scale-105 active:scale-95 flex items-center" 
-                            size="lg"
-                        >
-                            <Bluetooth className="w-4 h-4" />
-                            <span className="relative flex h-2 w-2">
-                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${bt.isConnected ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
-                                <span className={`relative inline-flex rounded-full h-2 w-2 ${bt.isConnected ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-                            </span>
-                            Bluetooth (Thermal)
-                        </Button>
-                        <Button 
-                            onClick={handleManualPrint} 
-                            variant="secondary" 
-                            className="rounded-full shadow-lg gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 transition-all hover:scale-105 active:scale-95" 
-                            size="lg"
-                        >
-                            <Printer className="w-5 h-5 text-gray-500" /> System Print
-                        </Button>
-                    </>
-                ) : (
-                    <Button onClick={handleManualPrint} className="rounded-full shadow-lg gap-2" size="lg">
-                        <Printer className="w-5 h-5" /> Print Manifest
-                    </Button>
-                )}
+            {/* Floating Print Button */}
+            <div className="fixed bottom-6 right-6 z-50 print:hidden">
+                <Button 
+                    onClick={() => setIsPrintModalOpen(true)} 
+                    className="rounded-full shadow-2xl gap-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold transition-all hover:scale-105 active:scale-95 flex items-center px-6 py-6 text-base" 
+                    size="lg"
+                >
+                    <Printer className="w-5 h-5" />
+                    Print Manifest
+                </Button>
             </div>
 
             <div id="printable-manifest" className="max-w-3xl mx-auto p-8 print:p-0 font-sans bg-white">
@@ -174,6 +156,15 @@ export default function PrintItem({ transfer }: { transfer: Transfer }) {
                     </p>
                 </div>
             </div>
+
+            {/* Print Selection Modal */}
+            <PrintSelectionModal 
+                isOpen={isPrintModalOpen}
+                onClose={() => setIsPrintModalOpen(false)}
+                onPrintSystem={handleManualPrint}
+                elementId="printable-manifest"
+                title={`Print Transfer #${transfer.id}`}
+            />
         </div>
     );
 }
