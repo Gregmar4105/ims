@@ -107,25 +107,33 @@ export default function Show({ product }: Props) {
         let qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
         qrSvg = qrSvg.replace(/width="\d+"/, '').replace(/height="\d+"/, '');
 
-        // Helper to determine dynamic font size based on text length
+        const printWidth = bt.labelWidth || 28;
+        const printHeight = bt.labelHeight > 0 
+            ? bt.labelHeight 
+            : (bt.mediaType === 'receipt' 
+                ? Math.round(printWidth * 0.7) 
+                : 20);
+
+        // Helper to determine dynamic font size based on text length and label scale
         const getDynamicSize = (text: string, base: number, threshold: number, min: number, factor: number = 0.5) => {
-            if (!text) return `${base}pt`;
+            const widthScale = printWidth / 28;
+            const scaledBase = base * Math.min(2, widthScale);
+            const scaledMin = min * Math.min(2, widthScale);
+            const scaledThreshold = threshold * widthScale;
+
+            if (!text) return `${scaledBase}pt`;
             const count = String(text).length;
-            if (count > threshold) {
-                // Ultra-aggressive reduction to force 1-line fit
-                return `${Math.max(min, base - (count - threshold) * factor)}pt`;
+            if (count > scaledThreshold) {
+                return `${Math.max(scaledMin, scaledBase - (count - scaledThreshold) * factor)}pt`;
             }
-            return `${base}pt`;
+            return `${scaledBase}pt`;
         };
 
-        // Ultra-aggressive thresholds for 28x20mm landscape
-        // Given ~16mm space for info-stack
+        // Dynamic font sizes based on active dimensions
         const skuSize = getDynamicSize(product.sku || product.name || '', 9, 12, 4, 0.5);
         const codeSize = getDynamicSize((product.code || '') + (product.code_2 || ''), 7.5, 10, 3.5, 0.6);
         const supplierSize = getDynamicSize(product.supplier?.name || '', 7, 10, 3.5, 0.6);
-
-        // Barcode is strictly 13 characters maximum, we can assign a solid fixed readable size.
-        const barcodeSize = '6pt';
+        const barcodeSize = `${6 * Math.min(2, printWidth / 28)}pt`;
 
         // CSS-based main window print hack
         // Mobile webviews block window.print() if called in an iframe.
@@ -153,21 +161,21 @@ export default function Show({ product }: Props) {
                         z-index: 99999;
                     }
                     @page {
-                        size: 28mm 20mm;
+                        size: ${printWidth}mm ${printHeight}mm;
                         margin: 0;
                     }
                     html, body {
                         margin: 0 !important;
                         padding: 0 !important;
                         background: white !important;
-                        width: 28mm !important;
-                        height: 20mm !important;
+                        width: ${printWidth}mm !important;
+                        height: ${printHeight}mm !important;
                     }
                 }
                 
                 .label-container {
-                    width: 28mm;
-                    height: 20mm;
+                    width: ${printWidth}mm;
+                    height: ${printHeight}mm;
                     margin: 0;
                     padding: 0.5mm 1mm;
                     font-family: 'Arial', sans-serif;
@@ -182,13 +190,13 @@ export default function Show({ product }: Props) {
                 .upper-section {
                     display: flex;
                     width: 100%;
-                    height: 13mm;
+                    height: ${printHeight - 7}mm;
                     align-items: center;
                 }
 
                 .qr-section {
-                    width: 10mm;
-                    height: 10mm;
+                    width: ${Math.min(24, Math.max(6, printHeight - 10))}mm;
+                    height: ${Math.min(24, Math.max(6, printHeight - 10))}mm;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -208,8 +216,8 @@ export default function Show({ product }: Props) {
                     overflow: hidden;
                 }
                 
-                .info-line {
-                    font-size: 7pt;
+                 .info-line {
+                    font-size: ${7 * Math.min(2, printWidth / 28)}pt;
                     white-space: nowrap;
                     overflow: hidden;
                     line-height: 1.1;
@@ -236,7 +244,7 @@ export default function Show({ product }: Props) {
                 }
 
                 .price {
-                    font-size: 10pt;
+                    font-size: ${10 * Math.min(2, printWidth / 28)}pt;
                     font-weight: normal;
                     line-height: 1;
                     margin-top: 0.5mm;
@@ -836,13 +844,25 @@ export default function Show({ product }: Props) {
 
             {/* Hidden Label Render for html-to-image Native Share fallback */}
             {(() => {
+                const printWidth = bt.labelWidth || 28;
+                const printHeight = bt.labelHeight > 0 
+                    ? bt.labelHeight 
+                    : (bt.mediaType === 'receipt' 
+                        ? Math.round(printWidth * 0.7) 
+                        : 20);
+
                 const getDynamicSize = (text: string, base: number, threshold: number, min: number, factor: number = 0.5) => {
-                    if (!text) return `${base}pt`;
+                    const widthScale = printWidth / 28;
+                    const scaledBase = base * Math.min(2, widthScale);
+                    const scaledMin = min * Math.min(2, widthScale);
+                    const scaledThreshold = threshold * widthScale;
+
+                    if (!text) return `${scaledBase}pt`;
                     const count = String(text).length;
-                    if (count > threshold) {
-                        return `${Math.max(min, base - (count - threshold) * factor)}pt`;
+                    if (count > scaledThreshold) {
+                        return `${Math.max(scaledMin, scaledBase - (count - scaledThreshold) * factor)}pt`;
                     }
-                    return `${base}pt`;
+                    return `${scaledBase}pt`;
                 };
 
                 const skuStr = product.sku || product.name || '';
@@ -852,13 +872,17 @@ export default function Show({ product }: Props) {
                 const skuSize = getDynamicSize(skuStr, 9, 12, 4, 0.5);
                 const codeSize = getDynamicSize(codesStr, 7.5, 10, 3.5, 0.6);
                 const supplierSize = getDynamicSize(supplierStr, 7, 10, 3.5, 0.6);
-                const barcodeSize = '6.5pt';
+                const barcodeSize = `${6 * Math.min(2, printWidth / 28)}pt`;
+                const priceSize = `${10 * Math.min(2, printWidth / 28)}pt`;
+
+                const qrSize = `${Math.min(24, Math.max(6, printHeight - 10))}mm`;
+                const upperHeight = `${printHeight - 7}mm`;
 
                 return (
                     <div style={{ position: 'absolute', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none' }}>
                         <div id="native-print-label" style={{
-                            width: '28mm',
-                            height: '20mm',
+                            width: `${printWidth}mm`,
+                            height: `${printHeight}mm`,
                             background: 'white',
                             color: 'black',
                             fontFamily: 'Arial, sans-serif',
@@ -867,8 +891,8 @@ export default function Show({ product }: Props) {
                             boxSizing: 'border-box',
                             padding: '0.5mm 1mm'
                         }}>
-                            <div style={{ display: 'flex', width: '100%', height: '13mm', alignItems: 'center' }}>
-                                <div style={{ width: '10mm', height: '10mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <div style={{ display: 'flex', width: '100%', height: upperHeight, alignItems: 'center' }}>
+                                <div style={{ width: qrSize, height: qrSize, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                     <QRCode value={product.qr_code || ''} size={150} style={{ width: '100%', height: '100%' }} />
                                 </div>
                                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '1mm', overflow: 'hidden' }}>
@@ -881,7 +905,7 @@ export default function Show({ product }: Props) {
                             </div>
                             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginTop: 'auto' }}>
                                 <div style={{ fontSize: skuSize, fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%', lineHeight: 1 }}>{skuStr}</div>
-                                <div style={{ fontSize: '10pt', fontWeight: 'normal', lineHeight: 1, marginTop: '0.5mm' }}>
+                                <div style={{ fontSize: priceSize, fontWeight: 'normal', lineHeight: 1, marginTop: '0.5mm' }}>
                                     ₱{product.price ? Number(product.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
                                 </div>
                             </div>

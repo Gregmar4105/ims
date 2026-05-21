@@ -148,6 +148,66 @@ export function PrintSelectionModal({
                                                 Disconnect
                                             </Button>
                                         </div>
+
+                                         {/* Printer Preset Selector */}
+                                         <div className="space-y-1.5 text-left">
+                                             <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400">Printer / Paper Size Preset</label>
+                                             <select
+                                                 value={bt.printerPreset}
+                                                 onChange={(e) => bt.updatePrinterPreset(e.target.value as any)}
+                                                 className="w-full text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2.5 py-1.5 focus:outline-none transition-all"
+                                             >
+                                                 <option value="28mm">Inventory Sticker (28mm x 20mm)</option>
+                                                 <option value="58mm">58mm Receipt Printer (Continuous)</option>
+                                                 <option value="80mm">80mm Receipt Printer (Continuous)</option>
+                                                 <option value="custom">Custom Size...</option>
+                                             </select>
+                                         </div>
+
+                                         {/* Custom configuration details, only shown if custom is selected */}
+                                         {bt.printerPreset === 'custom' && (
+                                             <div className="grid grid-cols-2 gap-3 pt-2.5 border-t border-emerald-100/30 dark:border-emerald-950/30 text-left animate-in slide-in-from-top-2 duration-200">
+                                                 <div className="space-y-1">
+                                                     <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400">Dot Width (px)</label>
+                                                     <input
+                                                         type="number"
+                                                         value={bt.printerWidth}
+                                                         onChange={(e) => bt.updatePrinterWidth(Number(e.target.value))}
+                                                         className="w-full text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1 focus:outline-none"
+                                                     />
+                                                 </div>
+                                                 <div className="space-y-1">
+                                                     <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400">Media Mode</label>
+                                                     <select
+                                                         value={bt.mediaType}
+                                                         onChange={(e) => bt.updateMediaType(e.target.value as 'receipt' | 'label')}
+                                                         className="w-full text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1.5 focus:outline-none"
+                                                     >
+                                                         <option value="label">Label / Sticker</option>
+                                                         <option value="receipt">Continuous Roll</option>
+                                                     </select>
+                                                 </div>
+                                                 <div className="space-y-1">
+                                                     <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400">Physical Width (mm)</label>
+                                                     <input
+                                                         type="number"
+                                                         value={bt.labelWidth}
+                                                         onChange={(e) => bt.updateLabelWidth(Number(e.target.value))}
+                                                         className="w-full text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1 focus:outline-none"
+                                                     />
+                                                 </div>
+                                                 <div className="space-y-1">
+                                                     <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400">Physical Height (mm)</label>
+                                                     <input
+                                                         type="number"
+                                                         value={bt.labelHeight}
+                                                         onChange={(e) => bt.updateLabelHeight(Number(e.target.value))}
+                                                         disabled={bt.mediaType === 'receipt'}
+                                                         className="w-full text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1 focus:outline-none disabled:opacity-50"
+                                                     />
+                                                 </div>
+                                             </div>
+                                         )}
                                         
                                         <Button
                                             onClick={handleBluetoothPrint}

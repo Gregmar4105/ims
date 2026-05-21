@@ -16,6 +16,11 @@ export function useBluetoothPrinter() {
     const [isScanning, setIsScanning] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
     const [isBluetoothEnabled, setIsBluetoothEnabled] = useState(true);
+    const [printerWidth, setPrinterWidth] = useState<number>(384);
+    const [mediaType, setMediaType] = useState<'receipt' | 'label'>('receipt');
+    const [labelWidth, setLabelWidth] = useState<number>(28);
+    const [labelHeight, setLabelHeight] = useState<number>(20);
+    const [printerPreset, setPrinterPreset] = useState<'28mm' | '58mm' | '80mm' | 'custom'>('58mm');
 
     const androidPrint = typeof window !== 'undefined' ? (window as any).AndroidPrint : null;
 
@@ -33,9 +38,19 @@ export function useBluetoothPrinter() {
             // Load saved preferences
             const savedAddress = localStorage.getItem('bt_printer_address');
             const savedAuto = localStorage.getItem('bt_auto_print') === 'true';
+            const savedWidth = localStorage.getItem('bt_printer_width');
+            const savedMediaType = localStorage.getItem('bt_media_type') as 'receipt' | 'label' | null;
+            const savedLabelWidth = localStorage.getItem('bt_label_width');
+            const savedLabelHeight = localStorage.getItem('bt_label_height');
+            const savedPreset = localStorage.getItem('bt_printer_preset') as '28mm' | '58mm' | '80mm' | 'custom' | null;
             
             setSelectedAddress(savedAddress);
             setAutoPrintEnabled(savedAuto);
+            setPrinterWidth(savedWidth ? parseInt(savedWidth, 10) : 384);
+            setMediaType(savedMediaType || 'receipt');
+            setLabelWidth(savedLabelWidth ? parseInt(savedLabelWidth, 10) : 28);
+            setLabelHeight(savedLabelHeight ? parseInt(savedLabelHeight, 10) : 20);
+            setPrinterPreset(savedPreset || '58mm');
 
             if (savedAddress) {
                 // Try to scan first to retrieve paired list, then check if we should auto-connect
@@ -202,7 +217,7 @@ export function useBluetoothPrinter() {
             const base64Data = canvas.toDataURL('image/png');
 
             // Send base64 to native printer spooler
-            const printSuccess = androidPrint.printBluetoothImage(base64Data);
+            const printSuccess = androidPrint.printBluetoothImage(base64Data, printerWidth, mediaType === 'receipt');
             if (printSuccess) {
                 toast.success('Sent print job to Bluetooth printer.');
                 return true;
@@ -226,41 +241,41 @@ export function useBluetoothPrinter() {
         try {
             // We can send a beautifully formatted canvas image as a test page!
             const canvas = document.createElement('canvas');
-            canvas.width = 384;
-            canvas.height = 200;
+            canvas.width = printerWidth;
+            canvas.height = 180;
             const ctx = canvas.getContext('2d');
             if (ctx) {
                 ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, 384, 200);
+                ctx.fillRect(0, 0, printerWidth, 180);
                 
                 ctx.fillStyle = '#000000';
                 
                 // Draw a beautiful header
-                ctx.font = 'bold 20px Arial';
+                ctx.font = 'bold 14px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText('LM2 BICYCLE TRADING', 192, 40);
+                ctx.fillText('LM2 BICYCLE TRADING', printerWidth / 2, 40);
                 
-                ctx.font = '14px Arial';
-                ctx.fillText('Bluetooth Print Test', 192, 70);
+                ctx.font = '11px Arial';
+                ctx.fillText('Bluetooth Print Test', printerWidth / 2, 70);
                 
-                ctx.font = 'italic 11px Arial';
-                ctx.fillText('Connection Success!', 192, 100);
-                ctx.fillText(new Date().toLocaleString(), 192, 120);
+                ctx.font = 'italic 9px Arial';
+                ctx.fillText('Width: ' + printerWidth + 'px | ' + (mediaType === 'label' ? 'Label' : 'Receipt'), printerWidth / 2, 100);
+                ctx.fillText(new Date().toLocaleDateString(), printerWidth / 2, 120);
 
                 ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.setLineDash([4, 4]);
+                ctx.setLineDash([2, 2]);
                 ctx.moveTo(10, 140);
-                ctx.lineTo(374, 140);
+                ctx.lineTo(printerWidth - 10, 140);
                 ctx.stroke();
 
-                ctx.font = 'bold 12px Arial';
-                ctx.fillText('Ready for Sales Receipts', 192, 170);
+                ctx.font = 'bold 11px Arial';
+                ctx.fillText('Ready for Custom Printing', printerWidth / 2, 160);
             }
             
             const base64Data = canvas.toDataURL('image/png');
-            return androidPrint.printBluetoothImage(base64Data);
+            return androidPrint.printBluetoothImage(base64Data, printerWidth, mediaType === 'receipt');
         } catch (err) {
             console.error('Test print failed', err);
             toast.error('Test print failed.');
@@ -313,6 +328,93 @@ export function useBluetoothPrinter() {
         }
     };
 
+    const checkAndSetCustomPreset = (w: number, lw: number, lh: number, mt: 'receipt' | 'label') => {
+        if (w === 224 && lw === 28 && lh === 20 && mt === 'label') {
+            setPrinterPreset('28mm');
+            localStorage.setItem('bt_printer_preset', '28mm');
+        } else if (w === 384 && lw === 58 && lh === 0 && mt === 'receipt') {
+            setPrinterPreset('58mm');
+            localStorage.setItem('bt_printer_preset', '58mm');
+        } else if (w === 576 && lw === 80 && lh === 0 && mt === 'receipt') {
+            setPrinterPreset('80mm');
+            localStorage.setItem('bt_printer_preset', '80mm');
+        } else {
+            setPrinterPreset('custom');
+            localStorage.setItem('bt_printer_preset', 'custom');
+        }
+    };
+
+    const updatePrinterWidth = (width: number) => {
+        setPrinterWidth(width);
+        localStorage.setItem('bt_printer_width', String(width));
+        checkAndSetCustomPreset(width, labelWidth, labelHeight, mediaType);
+        toast.success(`Printer width updated to ${width} dots.`);
+    };
+
+    const updateMediaType = (type: 'receipt' | 'label') => {
+        setMediaType(type);
+        localStorage.setItem('bt_media_type', type);
+        const newLh = type === 'receipt' ? 0 : (labelHeight === 0 ? 20 : labelHeight);
+        if (type === 'receipt') {
+            setLabelHeight(0);
+            localStorage.setItem('bt_label_height', '0');
+        }
+        checkAndSetCustomPreset(printerWidth, labelWidth, newLh, type);
+        toast.success(`Media type updated to ${type === 'label' ? 'Label Mode' : 'Receipt Mode'}.`);
+    };
+
+    const updateLabelWidth = (width: number) => {
+        setLabelWidth(width);
+        localStorage.setItem('bt_label_width', String(width));
+        checkAndSetCustomPreset(printerWidth, width, labelHeight, mediaType);
+        toast.success(`Label physical width updated to ${width}mm.`);
+    };
+
+    const updateLabelHeight = (height: number) => {
+        setLabelHeight(height);
+        localStorage.setItem('bt_label_height', String(height));
+        checkAndSetCustomPreset(printerWidth, labelWidth, height, mediaType);
+        toast.success(`Label physical height updated to ${height}mm.`);
+    };
+
+    const updatePrinterPreset = (preset: '28mm' | '58mm' | '80mm' | 'custom') => {
+        setPrinterPreset(preset);
+        localStorage.setItem('bt_printer_preset', preset);
+        if (preset === '28mm') {
+            setPrinterWidth(224);
+            localStorage.setItem('bt_printer_width', '224');
+            setLabelWidth(28);
+            localStorage.setItem('bt_label_width', '28');
+            setLabelHeight(20);
+            localStorage.setItem('bt_label_height', '20');
+            setMediaType('label');
+            localStorage.setItem('bt_media_type', 'label');
+            toast.success('Switched to 28mm Sticker/Label preset');
+        } else if (preset === '58mm') {
+            setPrinterWidth(384);
+            localStorage.setItem('bt_printer_width', '384');
+            setLabelWidth(58);
+            localStorage.setItem('bt_label_width', '58');
+            setLabelHeight(0);
+            localStorage.setItem('bt_label_height', '0');
+            setMediaType('receipt');
+            localStorage.setItem('bt_media_type', 'receipt');
+            toast.success('Switched to 58mm Receipt preset');
+        } else if (preset === '80mm') {
+            setPrinterWidth(576);
+            localStorage.setItem('bt_printer_width', '576');
+            setLabelWidth(80);
+            localStorage.setItem('bt_label_width', '80');
+            setLabelHeight(0);
+            localStorage.setItem('bt_label_height', '0');
+            setMediaType('receipt');
+            localStorage.setItem('bt_media_type', 'receipt');
+            toast.success('Switched to 80mm Receipt preset');
+        } else if (preset === 'custom') {
+            toast.success('Custom sizing unlocked. Feel free to adjust dimensions.');
+        }
+    };
+
     return {
         isSupported,
         isConnected,
@@ -322,6 +424,11 @@ export function useBluetoothPrinter() {
         isScanning,
         isConnecting,
         isBluetoothEnabled,
+        printerWidth,
+        mediaType,
+        labelWidth,
+        labelHeight,
+        printerPreset,
         scan,
         connect,
         disconnect,
@@ -331,6 +438,11 @@ export function useBluetoothPrinter() {
         isBluetoothConnected,
         checkBluetoothEnabled,
         openBluetoothSettings,
-        requestBluetoothEnable
+        requestBluetoothEnable,
+        updatePrinterWidth,
+        updateMediaType,
+        updateLabelWidth,
+        updateLabelHeight,
+        updatePrinterPreset
     };
 }
