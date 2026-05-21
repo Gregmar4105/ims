@@ -211,8 +211,8 @@ export default function More() {
                 
                 {/* Modern Premium Page Header */}
                 <div className="mb-2">
-                    <h1 className="text-3xl font-bold tracking-tight">More Actions</h1>
-                    <p className="text-muted-foreground mt-1">
+                    <h1 className="text-3xl font-bold tracking-tight dark:text-white">More Actions</h1>
+                    <p className="text-muted-foreground dark:text-white mt-1">
                         Quickly navigate to features and actions available for your role.
                     </p>
                 </div>
@@ -227,7 +227,7 @@ export default function More() {
                                     <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                                         <CategoryIcon className="w-4 h-4" />
                                     </div>
-                                    <h2 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                    <h2 className="text-xs font-bold tracking-wider text-muted-foreground dark:text-white uppercase">
                                         {category.title}
                                     </h2>
                                 </div>
@@ -244,7 +244,7 @@ export default function More() {
                                                 <div className={`p-2 rounded-lg mb-1.5 group-hover:scale-110 transition-transform duration-200 ${theme.iconBg} ${theme.shadow}`}>
                                                     <ActionIcon className="w-4 h-4" />
                                                 </div>
-                                                <span className="font-semibold text-[9px] sm:text-[10px] md:text-[11px] text-foreground tracking-tight leading-tight line-clamp-2 w-full px-1">
+                                                <span className="font-semibold text-[9px] sm:text-[10px] md:text-[11px] text-foreground dark:text-white tracking-tight leading-tight line-clamp-2 w-full px-1">
                                                     {item.title}
                                                 </span>
                                             </button>
