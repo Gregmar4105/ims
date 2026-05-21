@@ -12,8 +12,7 @@ import {
     LayoutDashboard, MapPlus, Brush, Users, UserPen, TriangleAlert, 
     MessagesSquare, ListChecks, BellRing, RotateCcw, ArrowLeftRight, 
     ArrowRightFromLine, ArrowLeftToLine, FileImage, PackageOpen, 
-    ShoppingBasket, Tag, ScanBarcode, IdCardLanyard, ScanQrCode, Settings,
-    Printer
+    ShoppingBasket, Tag, ScanBarcode, IdCardLanyard, ScanQrCode, Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRoleGradient } from '@/lib/role-utils';
@@ -290,15 +289,6 @@ export function AppMobileHeader() {
             )}
 
             <div className="flex items-center gap-2 shrink-0">
-                {typeof window !== 'undefined' && (window as any).AndroidPrint && (
-                    <button
-                        onClick={() => window.dispatchEvent(new CustomEvent('trigger-printer-settings'))}
-                        className="flex items-center justify-center h-9 w-9 rounded-xl hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-all shrink-0 active:scale-95 bg-transparent border-0"
-                        title="Printer Settings"
-                    >
-                        <Printer className="size-5" />
-                    </button>
-                )}
                 <div className="relative text-muted-foreground hover:text-foreground">
                     <NotificationBell className="h-9 w-9" iconClassName="size-5" />
                 </div>

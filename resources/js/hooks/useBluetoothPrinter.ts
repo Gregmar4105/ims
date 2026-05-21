@@ -79,6 +79,28 @@ export function useBluetoothPrinter() {
         };
     }, [androidPrint]);
 
+    useEffect(() => {
+        const handleBluetoothStateChanged = (e: Event) => {
+            const customEvent = e as CustomEvent;
+            const enabled = customEvent.detail?.enabled;
+            setIsBluetoothEnabled(enabled);
+            if (enabled) {
+                toast.success('Bluetooth turned on!');
+                setTimeout(() => {
+                    scan();
+                }, 500);
+            } else {
+                setIsConnected(false);
+                setPairedDevices([]);
+                toast.info('Bluetooth turned off.');
+            }
+        };
+        window.addEventListener('bluetooth-state-changed', handleBluetoothStateChanged);
+        return () => {
+            window.removeEventListener('bluetooth-state-changed', handleBluetoothStateChanged);
+        };
+    }, [androidPrint]);
+
     const scan = () => {
         if (!androidPrint) return;
         setIsScanning(true);
