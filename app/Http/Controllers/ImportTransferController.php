@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Supplier;
+use App\Models\Branch;
 use App\Models\BranchProduct;
 use App\Models\AiImportLog;
 use Carbon\Carbon;
@@ -21,10 +22,17 @@ class ImportTransferController extends Controller
         $importMinuteUsage = AiImportLog::where('created_at', '>=', now()->subMinute())->count();
         $importDailyUsage = AiImportLog::whereDate('created_at', today())->count();
 
+        $user = auth()->user();
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+
         return Inertia::render('Transfers/Import/Index', [
             'brands' => Brand::orderBy('name')->get(),
             'categories' => Category::orderBy('name')->get(),
             'suppliers' => Supplier::orderBy('name')->get(),
+            'branches' => Branch::orderBy('branch_name')->get(),
+            'active_branch_id' => $branchId,
             'importDailyUsage' => $importDailyUsage,
             'importMinuteUsage' => $importMinuteUsage,
         ]);
@@ -140,20 +148,43 @@ class ImportTransferController extends Controller
             'quantity_added' => 'required|integer|min:1',
             'image_path' => 'nullable|string|max:255',
             'attach_image' => 'nullable|boolean',
+            'source_branch_id' => 'nullable|exists:branches,id',
         ]);
 
         $user = auth()->user();
         $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
             ? session('active_branch_id')
             : $user->branch_id;
+        $userId = auth()->id();
 
         $branchProduct = BranchProduct::where('product_id', $request->product_id)
             ->where('branch_id', $branchId)
             ->first();
 
         if ($branchProduct) {
-            $branchProduct->quantity += $request->quantity_added;
-            $branchProduct->save();
+            \Illuminate\Support\Facades\DB::transaction(function () use ($request, $branchId, $branchProduct, $userId) {
+                $branchProduct->quantity += $request->quantity_added;
+                $branchProduct->save();
+
+                $product = Product::find($request->product_id);
+
+                $transfer = \App\Models\Transfer::create([
+                    'source_branch_id' => $request->source_branch_id,
+                    'destination_branch_id' => $branchId,
+                    'supplier_id' => $product ? $product->supplier_id : null,
+                    'status' => 'completed',
+                    'received_by' => $userId,
+                    'notes' => 'Stock updated via Import Transfer photo scan',
+                ]);
+
+                \App\Models\TransferItem::create([
+                    'transfer_id' => $transfer->id,
+                    'product_id' => $request->product_id,
+                    'quantity' => $request->quantity_added,
+                    'received_quantity' => $request->quantity_added,
+                    'status' => 'ok',
+                ]);
+            });
 
             // Handle attaching scanned image to existing product
             if ($request->attach_image && !empty($request->image_path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($request->image_path)) {
@@ -176,7 +207,7 @@ class ImportTransferController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Stock updated successfully.',
+                'message' => 'Stock updated successfully and transfer logged.',
                 'new_stock' => $branchProduct->quantity
             ]);
         }
@@ -202,6 +233,7 @@ class ImportTransferController extends Controller
             'items.*.physical_location' => 'nullable|string|max:255',
             'items.*.reorder_level' => 'nullable|integer|min:0',
             'items.*.image_path' => 'nullable|string|max:255',
+            'source_branch_id' => 'nullable|exists:branches,id',
         ]);
 
         $user = auth()->user();
@@ -210,85 +242,103 @@ class ImportTransferController extends Controller
             : $user->branch_id;
         $userId = auth()->id();
 
-        foreach ($request->items as $item) {
-            // Resolve or Create Brand
-            $brand = Brand::where('name', $item['brand_name'])
-                ->where(function($q) use ($branchId) {
-                    $q->where('branch_id', $branchId)->orWhereNull('branch_id');
-                })
-                ->first();
-            
-            if (!$brand) {
-                $brand = Brand::create([
-                    'name' => $item['brand_name'],
-                    'slug' => \Illuminate\Support\Str::slug($item['brand_name']),
-                    'status' => 'Active',
-                    'branch_id' => $branchId,
-                    'created_by' => $userId,
-                ]);
-            }
-
-            // Resolve or Create Category
-            $category = Category::where('name', $item['category_name'])
-                ->where(function($q) use ($branchId) {
-                    $q->where('branch_id', $branchId)->orWhereNull('branch_id');
-                })
-                ->first();
-            
-            if (!$category) {
-                $category = Category::create([
-                    'name' => $item['category_name'],
-                    'slug' => \Illuminate\Support\Str::slug($item['category_name']),
-                    'status' => 'Active',
-                    'branch_id' => $branchId,
-                    'created_by' => $userId,
-                ]);
-            }
-
-            // Resolve or Create Supplier
-            $supplierId = null;
-            if (!empty($item['supplier_name'])) {
-                $supplier = Supplier::where('name', $item['supplier_name'])->first();
-                if (!$supplier) {
-                    $supplier = Supplier::create(['name' => $item['supplier_name']]);
-                }
-                $supplierId = $supplier->id;
-            }
-
-            // Copy file if image_path is provided and exists
-            $imagePath = 'new_product_import.png';
-            if (!empty($item['image_path']) && \Illuminate\Support\Facades\Storage::disk('public')->exists($item['image_path'])) {
-                $extension = pathinfo($item['image_path'], PATHINFO_EXTENSION);
-                $newFilename = 'products/' . uniqid('prod_', true) . '.' . $extension;
-                if (\Illuminate\Support\Facades\Storage::disk('public')->copy($item['image_path'], $newFilename)) {
-                    $imagePath = $newFilename;
-                }
-            }
-
-            $product = Product::create([
-                'name' => $item['item_name'],
-                'category_id' => $category->id,
-                'brand_id' => $brand->id,
-                'supplier_id' => $supplierId,
-                'price' => $item['price'],
-                'code' => $item['code'] ?? null,
-                'code_2' => $item['code_2'] ?? null,
-                'sku' => $item['sku'] ?? null,
-                'barcode' => $item['barcode'] ?? null,
-                'qr_code' => $item['qr_code'] ?? null,
-                'created_by' => $userId,
-                'image_path' => $imagePath,
-                'status' => 'active',
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $branchId, $userId) {
+            $transfer = \App\Models\Transfer::create([
+                'source_branch_id' => $request->source_branch_id,
+                'destination_branch_id' => $branchId,
+                'status' => 'completed',
+                'received_by' => $userId,
+                'notes' => 'Bulk imported products via Import Transfer photo scan',
             ]);
 
-            BranchProduct::create([
-                'branch_id' => $branchId,
-                'product_id' => $product->id,
-                'quantity' => $item['quantity'],
-                'physical_location' => $item['physical_location'] ?? null,
-                'reorder_level' => $item['reorder_level'] ?? 0,
-            ]);
-        }
+            foreach ($request->items as $item) {
+                // Resolve or Create Brand
+                $brand = Brand::where('name', $item['brand_name'])
+                    ->where(function($q) use ($branchId) {
+                        $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+                    })
+                    ->first();
+                
+                if (!$brand) {
+                    $brand = Brand::create([
+                        'name' => $item['brand_name'],
+                        'slug' => \Illuminate\Support\Str::slug($item['brand_name']),
+                        'status' => 'Active',
+                        'branch_id' => $branchId,
+                        'created_by' => $userId,
+                    ]);
+                }
+
+                // Resolve or Create Category
+                $category = Category::where('name', $item['category_name'])
+                    ->where(function($q) use ($branchId) {
+                        $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+                    })
+                    ->first();
+                
+                if (!$category) {
+                    $category = Category::create([
+                        'name' => $item['category_name'],
+                        'slug' => \Illuminate\Support\Str::slug($item['category_name']),
+                        'status' => 'Active',
+                        'branch_id' => $branchId,
+                        'created_by' => $userId,
+                    ]);
+                }
+
+                // Resolve or Create Supplier
+                $supplierId = null;
+                if (!empty($item['supplier_name'])) {
+                    $supplier = Supplier::where('name', $item['supplier_name'])->first();
+                    if (!$supplier) {
+                        $supplier = Supplier::create(['name' => $item['supplier_name']]);
+                    }
+                    $supplierId = $supplier->id;
+                }
+
+                // Copy file if image_path is provided and exists
+                $imagePath = 'new_product_import.png';
+                if (!empty($item['image_path']) && \Illuminate\Support\Facades\Storage::disk('public')->exists($item['image_path'])) {
+                    $extension = pathinfo($item['image_path'], PATHINFO_EXTENSION);
+                    $newFilename = 'products/' . uniqid('prod_', true) . '.' . $extension;
+                    if (\Illuminate\Support\Facades\Storage::disk('public')->copy($item['image_path'], $newFilename)) {
+                        $imagePath = $newFilename;
+                    }
+                }
+
+                $product = Product::create([
+                    'name' => $item['item_name'],
+                    'category_id' => $category->id,
+                    'brand_id' => $brand->id,
+                    'supplier_id' => $supplierId,
+                    'price' => $item['price'],
+                    'code' => $item['code'] ?? null,
+                    'code_2' => $item['code_2'] ?? null,
+                    'sku' => $item['sku'] ?? null,
+                    'barcode' => $item['barcode'] ?? null,
+                    'qr_code' => $item['qr_code'] ?? null,
+                    'created_by' => $userId,
+                    'image_path' => $imagePath,
+                    'status' => 'active',
+                ]);
+
+                BranchProduct::create([
+                    'branch_id' => $branchId,
+                    'product_id' => $product->id,
+                    'quantity' => $item['quantity'],
+                    'physical_location' => $item['physical_location'] ?? null,
+                    'reorder_level' => $item['reorder_level'] ?? 0,
+                ]);
+
+                \App\Models\TransferItem::create([
+                    'transfer_id' => $transfer->id,
+                    'product_id' => $product->id,
+                    'quantity' => $item['quantity'],
+                    'received_quantity' => $item['quantity'],
+                    'status' => 'ok',
+                ]);
+            }
+        });
 
         return redirect()->route('products.index')->with('success', 'Successfully imported and created new products.');
     }

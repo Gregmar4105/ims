@@ -63,6 +63,8 @@ interface IndexProps {
     brands: { id: number; name: string }[];
     categories: { id: number; name: string }[];
     suppliers: { id: number; name: string }[];
+    branches?: { id: number; branch_name: string }[];
+    active_branch_id?: number | string;
     importDailyUsage?: number;
     importMinuteUsage?: number;
     scanned_image_path?: string;
@@ -91,20 +93,29 @@ const formatDbValue = (field: string, value: any): string => {
     return String(value);
 };
 
-export default function ImportTransferIndex({ brands = [], categories = [], suppliers = [], importDailyUsage = 0, importMinuteUsage = 0, scanned_image_path }: IndexProps) {
+export default function ImportTransferIndex({ brands = [], categories = [], suppliers = [], branches = [], active_branch_id, importDailyUsage = 0, importMinuteUsage = 0, scanned_image_path }: IndexProps) {
     const { data, setData, post, processing, errors } = useForm({
         image: null as File | null,
     });
 
     // Props from controller
-    const { analysis_result, flash, scanned_image_path: scannedImagePathProp } = usePage().props as any;
+    const { analysis_result, flash, scanned_image_path: scannedImagePathProp, branches: branchesProp, active_branch_id: activeBranchIdProp } = usePage().props as any;
     const activeScannedImagePath = scanned_image_path || scannedImagePathProp;
+    const allBranches = branches.length > 0 ? branches : (branchesProp || []);
+    const defaultBranchId = active_branch_id || activeBranchIdProp;
 
     // Local state
     const [items, setItems] = useState<InventoryItem[]>([]);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedSourceBranchId, setSelectedSourceBranchId] = useState<string | number>('');
+
+    useEffect(() => {
+        if (defaultBranchId) {
+            setSelectedSourceBranchId(defaultBranchId);
+        }
+    }, [defaultBranchId]);
 
     // Google Sheets Pull Sync States
     const { auth } = usePage<any>().props;
@@ -439,7 +450,8 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                 product_id: item.product_id,
                 quantity_added: item.quantity,
                 image_path: item.attach_image ? activeScannedImagePath : null,
-                attach_image: !!item.attach_image
+                attach_image: !!item.attach_image,
+                source_branch_id: selectedSourceBranchId || null
             });
 
             if (response.data.success) {
@@ -474,7 +486,10 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
             image_path: item.attach_image ? activeScannedImagePath : null
         }));
 
-        router.post('/import-transfer/bulk-store', { items: preparedItems } as any, {
+        router.post('/import-transfer/bulk-store', { 
+            items: preparedItems,
+            source_branch_id: selectedSourceBranchId || null
+        } as any, {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
@@ -645,6 +660,28 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                     <CardDescription>
                                         Review extracted items ({items.length}). You can edit details before creating the transfer.
                                     </CardDescription>
+
+                                    {/* Predefined & Editable Source Branch selection */}
+                                    <div className="mt-4 p-3 bg-green-100/40 rounded-lg border border-green-200/50 space-y-2">
+                                        <Label htmlFor="source-branch-select" className="text-[11px] font-bold text-green-800 uppercase tracking-wider block">
+                                            Source Branch (Editable)
+                                        </Label>
+                                        <Select
+                                            value={String(selectedSourceBranchId)}
+                                            onValueChange={(val) => setSelectedSourceBranchId(val)}
+                                        >
+                                            <SelectTrigger id="source-branch-select" className="w-full h-9 bg-white text-xs border-green-300 focus:ring-green-500">
+                                                <SelectValue placeholder="Select Source Branch" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {allBranches.map((br: any) => (
+                                                    <SelectItem key={br.id} value={String(br.id)} className="text-xs">
+                                                        {br.branch_name} {br.id === defaultBranchId ? "(Current Branch)" : ""}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </CardHeader>
                                 <CardContent className="p-4 overflow-hidden max-h-[1000px] overflow-y-auto space-y-4 bg-muted/20">
                                     {items.map((item, idx) => {

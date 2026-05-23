@@ -459,128 +459,82 @@ class GoogleSheetsSyncController extends Controller
             $updatedCount = 0;
 
             \Illuminate\Support\Facades\DB::transaction(function() use ($request, $branchId, $userId, &$createdCount, &$updatedCount) {
-                foreach ($request->items as $itemData) {
-                    if ($itemData['is_rejected']) {
-                        continue;
-                    }
+                $validItems = array_filter($request->items, function($itemData) {
+                    return !$itemData['is_rejected'];
+                });
 
-                    $values = $itemData['values'];
-                    
-                    // 1. Resolve Brand
-                    $brandId = null;
-                    if (!empty($values['brand_name'])) {
-                        $brand = \App\Models\Brand::where('name', $values['brand_name'])
-                            ->where(function($q) use ($branchId) {
-                                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
-                            })->first();
+                if (count($validItems) > 0) {
+                    $transfer = \App\Models\Transfer::create([
+                        'source_branch_id' => $branchId,
+                        'destination_branch_id' => $branchId,
+                        'status' => 'completed',
+                        'received_by' => $userId,
+                        'notes' => 'Synchronized & imported via Google Sheet pull-save',
+                    ]);
+
+                    foreach ($validItems as $itemData) {
+                        $values = $itemData['values'];
                         
-                        if (!$brand) {
-                            $brand = \App\Models\Brand::create([
-                                'name' => $values['brand_name'],
-                                'slug' => \Illuminate\Support\Str::slug($values['brand_name']),
-                                'status' => 'Active',
-                                'branch_id' => $branchId,
-                                'created_by' => $userId,
-                            ]);
+                        // 1. Resolve Brand
+                        $brandId = null;
+                        if (!empty($values['brand_name'])) {
+                            $brand = \App\Models\Brand::where('name', $values['brand_name'])
+                                ->where(function($q) use ($branchId) {
+                                    $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+                                })->first();
+                            
+                            if (!$brand) {
+                                $brand = \App\Models\Brand::create([
+                                    'name' => $values['brand_name'],
+                                    'slug' => \Illuminate\Support\Str::slug($values['brand_name']),
+                                    'status' => 'Active',
+                                    'branch_id' => $branchId,
+                                    'created_by' => $userId,
+                                ]);
+                            }
+                            $brandId = $brand->id;
                         }
-                        $brandId = $brand->id;
-                    }
 
-                    // 2. Resolve Category
-                    $categoryId = null;
-                    if (!empty($values['category_name'])) {
-                        $category = \App\Models\Category::where('name', $values['category_name'])
-                            ->where(function($q) use ($branchId) {
-                                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
-                            })->first();
-                        
-                        if (!$category) {
-                            $category = \App\Models\Category::create([
-                                'name' => $values['category_name'],
-                                'slug' => \Illuminate\Support\Str::slug($values['category_name']),
-                                'status' => 'Active',
-                                'branch_id' => $branchId,
-                                'created_by' => $userId,
-                            ]);
+                        // 2. Resolve Category
+                        $categoryId = null;
+                        if (!empty($values['category_name'])) {
+                            $category = \App\Models\Category::where('name', $values['category_name'])
+                                ->where(function($q) use ($branchId) {
+                                    $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+                                })->first();
+                            
+                            if (!$category) {
+                                $category = \App\Models\Category::create([
+                                    'name' => $values['category_name'],
+                                    'slug' => \Illuminate\Support\Str::slug($values['category_name']),
+                                    'status' => 'Active',
+                                    'branch_id' => $branchId,
+                                    'created_by' => $userId,
+                                ]);
+                            }
+                            $categoryId = $category->id;
                         }
-                        $categoryId = $category->id;
-                    }
 
-                    // 3. Resolve Supplier
-                    $supplierId = null;
-                    if (!empty($values['supplier_name'])) {
-                        $supplier = \App\Models\Supplier::where('name', $values['supplier_name'])->first();
-                        if (!$supplier) {
-                            $supplier = \App\Models\Supplier::create(['name' => $values['supplier_name']]);
+                        // 3. Resolve Supplier
+                        $supplierId = null;
+                        if (!empty($values['supplier_name'])) {
+                            $supplier = \App\Models\Supplier::where('name', $values['supplier_name'])->first();
+                            if (!$supplier) {
+                                $supplier = \App\Models\Supplier::create(['name' => $values['supplier_name']]);
+                            }
+                            $supplierId = $supplier->id;
                         }
-                        $supplierId = $supplier->id;
-                    }
 
-                    // Parse Variations
-                    $variations = $this->sheetsService->parseVariationsString($values['variations'] ?? null);
+                        // Parse Variations
+                        $variations = $this->sheetsService->parseVariationsString($values['variations'] ?? null);
 
-                    $productId = $itemData['original_id'];
-
-                    if ($productId) {
-                        // UPDATE EXISTING
-                        $product = \App\Models\Product::findOrFail($productId);
-                        $product->update([
-                            'name' => $values['name'],
-                            'brand_id' => $brandId,
-                            'category_id' => $categoryId,
-                            'supplier_id' => $supplierId,
-                            'barcode' => $values['barcode'] ?: null,
-                            'qr_code' => $values['qr_code'] ?: null,
-                            'code' => $values['code'] ?: null,
-                            'code_2' => $values['code_2'] ?: null,
-                            'sku' => $values['sku'] ?: null,
-                            'description' => $values['description'] ?: null,
-                            'price' => $values['price'],
-                            'variations' => $variations,
-                        ]);
-
-                        $bp = BranchProduct::updateOrCreate([
-                            'branch_id' => $branchId,
-                            'product_id' => $product->id,
-                        ], [
-                            'quantity' => $values['quantity'],
-                            'physical_location' => $values['physical_location'] ?: null,
-                            'reorder_level' => $values['reorder_level'] ?: 0,
-                            'variations' => $variations,
-                        ]);
-
-                        $updatedCount++;
-                    } else {
-                        // CREATE NEW
-                        // Double check if product name exists globally or barcode/sku conflicts to reuse product globally
+                        $productId = $itemData['original_id'];
                         $product = null;
-                        if ($values['barcode']) {
-                            $product = \App\Models\Product::where('barcode', $values['barcode'])->first();
-                        }
-                        if (!$product && $values['qr_code']) {
-                            $product = \App\Models\Product::where('qr_code', $values['qr_code'])->first();
-                        }
-                        if (!$product && $values['sku']) {
-                            $product = \App\Models\Product::where('sku', $values['sku'])->first();
-                        }
-                        if (!$product) {
-                            $product = \App\Models\Product::where('name', $values['name'])->first();
-                        }
 
-                        if ($product) {
-                            // Re-use existing global product, just link to this branch and update details
+                        if ($productId) {
+                            // UPDATE EXISTING
+                            $product = \App\Models\Product::findOrFail($productId);
                             $product->update([
-                                'brand_id' => $brandId ?: $product->brand_id,
-                                'category_id' => $categoryId ?: $product->category_id,
-                                'supplier_id' => $supplierId ?: $product->supplier_id,
-                                'barcode' => $values['barcode'] ?: $product->barcode,
-                                'qr_code' => $values['qr_code'] ?: $product->qr_code,
-                                'sku' => $values['sku'] ?: $product->sku,
-                                'price' => $values['price'],
-                                'variations' => $variations ?: $product->variations,
-                            ]);
-                        } else {
-                            $product = \App\Models\Product::create([
                                 'name' => $values['name'],
                                 'brand_id' => $brandId,
                                 'category_id' => $categoryId,
@@ -593,23 +547,90 @@ class GoogleSheetsSyncController extends Controller
                                 'description' => $values['description'] ?: null,
                                 'price' => $values['price'],
                                 'variations' => $variations,
-                                'created_by' => $userId,
-                                'image_path' => 'new_product_import.png',
-                                'status' => 'active',
                             ]);
+
+                            $bp = BranchProduct::updateOrCreate([
+                                'branch_id' => $branchId,
+                                'product_id' => $product->id,
+                            ], [
+                                'quantity' => $values['quantity'],
+                                'physical_location' => $values['physical_location'] ?: null,
+                                'reorder_level' => $values['reorder_level'] ?: 0,
+                                'variations' => $variations,
+                            ]);
+
+                            $updatedCount++;
+                        } else {
+                            // CREATE NEW
+                            // Double check if product name exists globally or barcode/sku conflicts to reuse product globally
+                            if ($values['barcode']) {
+                                $product = \App\Models\Product::where('barcode', $values['barcode'])->first();
+                            }
+                            if (!$product && $values['qr_code']) {
+                                $product = \App\Models\Product::where('qr_code', $values['qr_code'])->first();
+                            }
+                            if (!$product && $values['sku']) {
+                                $product = \App\Models\Product::where('sku', $values['sku'])->first();
+                            }
+                            if (!$product) {
+                                $product = \App\Models\Product::where('name', $values['name'])->first();
+                            }
+
+                            if ($product) {
+                                // Re-use existing global product, just link to this branch and update details
+                                $product->update([
+                                    'brand_id' => $brandId ?: $product->brand_id,
+                                    'category_id' => $categoryId ?: $product->category_id,
+                                    'supplier_id' => $supplierId ?: $product->supplier_id,
+                                    'barcode' => $values['barcode'] ?: $product->barcode,
+                                    'qr_code' => $values['qr_code'] ?: $product->qr_code,
+                                    'sku' => $values['sku'] ?: $product->sku,
+                                    'price' => $values['price'],
+                                    'variations' => $variations ?: $product->variations,
+                                ]);
+                            } else {
+                                $product = \App\Models\Product::create([
+                                    'name' => $values['name'],
+                                    'brand_id' => $brandId,
+                                    'category_id' => $categoryId,
+                                    'supplier_id' => $supplierId,
+                                    'barcode' => $values['barcode'] ?: null,
+                                    'qr_code' => $values['qr_code'] ?: null,
+                                    'code' => $values['code'] ?: null,
+                                    'code_2' => $values['code_2'] ?: null,
+                                    'sku' => $values['sku'] ?: null,
+                                    'description' => $values['description'] ?: null,
+                                    'price' => $values['price'],
+                                    'variations' => $variations,
+                                    'created_by' => $userId,
+                                    'image_path' => 'new_product_import.png',
+                                    'status' => 'active',
+                                ]);
+                            }
+
+                            BranchProduct::updateOrCreate([
+                                'branch_id' => $branchId,
+                                'product_id' => $product->id,
+                            ], [
+                                'quantity' => $values['quantity'],
+                                'physical_location' => $values['physical_location'] ?: null,
+                                'reorder_level' => $values['reorder_level'] ?: 0,
+                                'variations' => $variations,
+                            ]);
+
+                            $createdCount++;
                         }
 
-                        BranchProduct::updateOrCreate([
-                            'branch_id' => $branchId,
-                            'product_id' => $product->id,
-                        ], [
-                            'quantity' => $values['quantity'],
-                            'physical_location' => $values['physical_location'] ?: null,
-                            'reorder_level' => $values['reorder_level'] ?: 0,
-                            'variations' => $variations,
-                        ]);
-
-                        $createdCount++;
+                        // Create Transfer Item
+                        if ($product) {
+                            \App\Models\TransferItem::create([
+                                'transfer_id' => $transfer->id,
+                                'product_id' => $product->id,
+                                'quantity' => $values['quantity'],
+                                'received_quantity' => $values['quantity'],
+                                'status' => 'ok',
+                            ]);
+                        }
                     }
                 }
             });

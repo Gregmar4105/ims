@@ -46,9 +46,10 @@ interface Transfer {
     created_at: string;
     updated_at: string;
     items: TransferItem[];
-    source_branch: Branch;
+    source_branch: Branch | null;
     destination_branch: Branch;
     received_by: UserType | null;
+    supplier?: { id: number; name: string } | null;
 }
 
 interface PaginatedData<T> {
@@ -321,7 +322,7 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                                                 </span>
                                             </div>
                                             <CardTitle className="flex items-center gap-2 text-xl mt-2">
-                                                <span className="font-semibold">{transfer.source_branch?.branch_name}</span>
+                                                <span className="font-semibold">{transfer.source_branch?.branch_name || (transfer.supplier ? `Supplier: ${transfer.supplier.name}` : 'Import Transfer')}</span>
                                                 <ArrowRight className="w-5 h-5 text-muted-foreground" />
                                                 <span className="font-semibold">{transfer.destination_branch?.branch_name}</span>
                                             </CardTitle>

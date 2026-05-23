@@ -12,9 +12,10 @@ interface Transfer {
     destination_branch_id: number;
     status: string;
     updated_at: string;
-    source_branch: { branch_name: string };
+    source_branch: { branch_name: string } | null;
     destination_branch: { branch_name: string };
     received_by: { name: string } | null;
+    supplier?: { name: string } | null;
     items: Array<{
         id: number;
         received_quantity: number;
@@ -103,7 +104,7 @@ export default function PrintList({ transfers, filters }: { transfers: Transfer[
                             {transfers.map((transfer) => (
                                 <TableRow key={transfer.id} className="print:border-b">
                                     <TableCell className="font-mono text-sm text-gray-600">#{transfer.id}</TableCell>
-                                    <TableCell className="font-medium text-gray-900">{transfer.source_branch?.branch_name}</TableCell>
+                                    <TableCell className="font-medium text-gray-900">{transfer.source_branch?.branch_name || (transfer.supplier ? `Supplier: ${transfer.supplier.name}` : 'Import Transfer')}</TableCell>
                                     <TableCell className="font-medium text-gray-900">{transfer.destination_branch?.branch_name}</TableCell>
                                     <TableCell className="text-gray-600">{formatDate(transfer.updated_at)}</TableCell>
                                     <TableCell>

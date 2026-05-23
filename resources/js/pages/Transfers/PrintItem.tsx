@@ -13,11 +13,12 @@ interface Transfer {
     destination_branch_id: number;
     status: string;
     updated_at: string;
-    source_branch: { branch_name: string };
+    source_branch: { branch_name: string } | null;
     destination_branch: { branch_name: string };
-    readied_by: { name: string };
+    readied_by: { name: string } | null;
     approved_by: { name: string } | null;
     received_by: { name: string } | null;
+    supplier?: { name: string } | null;
     items: Array<{
         id: number;
         quantity: number;
@@ -92,10 +93,12 @@ export default function PrintItem({ transfer }: { transfer: Transfer }) {
                         <p><span className="text-gray-500 font-medium">Manifest No:</span> <span className="font-mono ml-1">#{transfer.id}</span></p>
                         <p><span className="text-gray-500 font-medium">Status:</span> <span className="capitalize ml-1 font-semibold">{transfer.status}</span></p>
                         <p><span className="text-gray-500 font-medium">Date:</span> <span className="ml-1">{formatDate(transfer.updated_at)}</span></p>
-                        <p><span className="text-gray-500 font-medium">Source Branch:</span> <span className="ml-1 font-semibold">{transfer.source_branch?.branch_name}</span></p>
+                        <p><span className="text-gray-500 font-medium">Source Branch:</span> <span className="ml-1 font-semibold">{transfer.source_branch?.branch_name || (transfer.supplier ? `Supplier: ${transfer.supplier.name}` : 'Import Transfer')}</span></p>
                     </div>
                     <div className="space-y-1 text-right">
-                        <p><span className="text-gray-500 font-medium">Readied By:</span> <span className="ml-1">{transfer.readied_by?.name || 'Unknown'}</span></p>
+                        {transfer.readied_by && (
+                            <p><span className="text-gray-500 font-medium">Readied By:</span> <span className="ml-1">{transfer.readied_by.name}</span></p>
+                        )}
                         {transfer.approved_by && (
                             <p><span className="text-gray-500 font-medium">Approved By:</span> <span className="ml-1">{transfer.approved_by.name}</span></p>
                         )}

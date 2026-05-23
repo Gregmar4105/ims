@@ -521,7 +521,7 @@ class TransferController extends Controller
     {
         $user = auth()->user();
         
-        $query = Transfer::with(['items.product', 'sourceBranch', 'destinationBranch', 'receivedBy'])
+        $query = Transfer::with(['items.product', 'sourceBranch', 'destinationBranch', 'receivedBy', 'supplier'])
             ->latest();
 
         // Status Filter
@@ -629,7 +629,7 @@ class TransferController extends Controller
     {
         $user = auth()->user();
         
-        $query = Transfer::with(['items.product', 'sourceBranch', 'destinationBranch', 'receivedBy'])
+        $query = Transfer::with(['items.product', 'sourceBranch', 'destinationBranch', 'receivedBy', 'supplier'])
             ->latest();
             
         // Reuse identical filters from index
@@ -697,7 +697,7 @@ class TransferController extends Controller
             abort(403, 'Unauthorized to view this transfer');
         }
         
-        $transfer->load(['items.product', 'sourceBranch', 'destinationBranch', 'receivedBy', 'readiedBy', 'approvedBy']);
+        $transfer->load(['items.product', 'sourceBranch', 'destinationBranch', 'receivedBy', 'readiedBy', 'approvedBy', 'supplier']);
         
         return Inertia::render('Transfers/PrintItem', [
             'transfer' => $transfer,
