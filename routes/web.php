@@ -221,6 +221,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Google Sheets Sync
     Route::post('/google-sheets/sync-all', [\App\Http\Controllers\GoogleSheetsSyncController::class, 'syncAll'])->name('google-sheets.sync-all');
+    Route::get('/google-sheets/pull-compare', [\App\Http\Controllers\GoogleSheetsSyncController::class, 'pullAndCompare'])->name('google-sheets.pull-compare');
+    Route::post('/google-sheets/pull-save', [\App\Http\Controllers\GoogleSheetsSyncController::class, 'savePulled'])->name('google-sheets.pull-save');
 
     // More actions page route
     Route::get('/more', function () {

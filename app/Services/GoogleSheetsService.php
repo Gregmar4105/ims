@@ -754,4 +754,67 @@ class GoogleSheetsService
         }
         return $cleanRow;
     }
+
+    /**
+     * Get the entire content of a sheet (tab).
+     */
+    public function getSheetContent(string $sheetName): array
+    {
+        try {
+            $range = $sheetName . '!A:P'; // Columns A to P
+            $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
+            return $response->getValues() ?: [];
+        } catch (\Exception $e) {
+            Log::error('Google Sheets Get Sheet Content Error: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Parse variations string from Google Sheets back into standard database structure.
+     * Example: "Size: Medium (10)/Large (5), Color: Red/Blue"
+     */
+    public function parseVariationsString(?string $varString): ?array
+    {
+        if (empty($varString) || strtolower($varString) === 'null') {
+            return null;
+        }
+
+        $result = [];
+        // Support splitting by either ", " or just ","
+        $parts = preg_split('/,\s*/', $varString);
+        foreach ($parts as $part) {
+            $nameValue = explode(':', $part, 2);
+            if (count($nameValue) !== 2) {
+                continue;
+            }
+            $name = trim($nameValue[0]);
+            $optionsStr = trim($nameValue[1]);
+            
+            $options = [];
+            $optionsParts = explode('/', $optionsStr);
+            foreach ($optionsParts as $optPart) {
+                $optPart = trim($optPart);
+                // Check if it matches Value (Quantity) like "Medium (10)"
+                if (preg_match('/^(.*?)\s*\((\d+)\)$/', $optPart, $matches)) {
+                    $options[] = [
+                        'value' => trim($matches[1]),
+                        'quantity' => (int)$matches[2]
+                    ];
+                } else {
+                    $options[] = [
+                        'value' => $optPart,
+                        'quantity' => 0
+                    ];
+                }
+            }
+            
+            $result[] = [
+                'name' => $name,
+                'options' => $options
+            ];
+        }
+
+        return !empty($result) ? $result : null;
+    }
 }
