@@ -18,12 +18,16 @@ class TransferController extends Controller
     {
         $user = auth()->user();
         
-        if (!$user->branch_id) {
-            abort(403, 'User does not belong to a branch');
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+
+        if (!$branchId) {
+            abort(403, 'User does not belong to a branch or no active branch selected');
         }
 
         $transfers = Transfer::with(['items.product', 'destinationBranch', 'readiedBy', 'approvedBy'])
-            ->where('source_branch_id', $user->branch_id)
+            ->where('source_branch_id', $branchId)
             ->whereIn('status', ['readied', 'outgoing'])
             ->latest()
             ->get();
@@ -123,13 +127,16 @@ class TransferController extends Controller
     public function incoming()
     {
         $user = auth()->user();
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
 
-        if (!$user->branch_id) {
-            abort(403, 'User does not belong to a branch');
+        if (!$branchId) {
+            abort(403, 'User does not belong to a branch or no active branch selected');
         }
 
         $transfers = Transfer::with(['items.product', 'sourceBranch', 'readiedBy', 'approvedBy'])
-            ->where('destination_branch_id', $user->branch_id)
+            ->where('destination_branch_id', $branchId)
             ->whereIn('status', ['outgoing', 'incomplete'])
             ->latest()
             ->get();
@@ -525,8 +532,17 @@ class TransferController extends Controller
             $query->where('updated_at', '<=', Carbon::parse($dateTo)->endOfDay());
         }
 
-        // Filter by branch for non-System Admins
-        if (!$user->hasRole('System Administrator') && $user->branch_id) {
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : null;
+
+        // Filter by branch
+        if ($branchId) {
+            $query->where(function($q) use ($branchId) {
+                $q->where('source_branch_id', $branchId)
+                  ->orWhere('destination_branch_id', $branchId);
+            });
+        } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
             $query->where(function($q) use ($user) {
                 $q->where('source_branch_id', $user->branch_id)
                   ->orWhere('destination_branch_id', $user->branch_id);
@@ -545,7 +561,12 @@ class TransferController extends Controller
 
         // Stats queries (respecting current user branch filters but NOT search/date filters to show global totals)
         $statsQuery = Transfer::where('status', 'completed');
-        if (!$user->hasRole('System Administrator') && $user->branch_id) {
+        if ($branchId) {
+            $statsQuery->where(function($q) use ($branchId) {
+                $q->where('source_branch_id', $branchId)
+                  ->orWhere('destination_branch_id', $branchId);
+            });
+        } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
             $statsQuery->where(function($q) use ($user) {
                 $q->where('source_branch_id', $user->branch_id)
                   ->orWhere('destination_branch_id', $user->branch_id);
@@ -618,8 +639,17 @@ class TransferController extends Controller
             $query->where('updated_at', '<=', Carbon::parse($dateTo)->endOfDay());
         }
 
-        // Filter by branch for non-System Admins
-        if (!$user->hasRole('System Administrator') && $user->branch_id) {
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : null;
+
+        // Filter by branch
+        if ($branchId) {
+            $query->where(function($q) use ($branchId) {
+                $q->where('source_branch_id', $branchId)
+                  ->orWhere('destination_branch_id', $branchId);
+            });
+        } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
             $query->where(function($q) use ($user) {
                 $q->where('source_branch_id', $user->branch_id)
                   ->orWhere('destination_branch_id', $user->branch_id);

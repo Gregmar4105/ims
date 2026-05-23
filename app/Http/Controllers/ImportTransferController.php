@@ -70,7 +70,10 @@ class ImportTransferController extends Controller
                 // Store the scanned image in the public imports folder
                 $storedPath = $image->store('imports', 'public');
 
-                $branchId = auth()->user()->branch_id;
+                $user = auth()->user();
+                $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+                    ? session('active_branch_id')
+                    : $user->branch_id;
                 
                 if (is_array($items)) {
                     foreach ($items as &$item) {
@@ -139,7 +142,10 @@ class ImportTransferController extends Controller
             'attach_image' => 'nullable|boolean',
         ]);
 
-        $branchId = auth()->user()->branch_id;
+        $user = auth()->user();
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
 
         $branchProduct = BranchProduct::where('product_id', $request->product_id)
             ->where('branch_id', $branchId)
@@ -198,7 +204,10 @@ class ImportTransferController extends Controller
             'items.*.image_path' => 'nullable|string|max:255',
         ]);
 
-        $branchId = auth()->user()->branch_id;
+        $user = auth()->user();
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
         $userId = auth()->id();
 
         foreach ($request->items as $item) {

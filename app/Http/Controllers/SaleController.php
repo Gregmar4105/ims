@@ -44,8 +44,14 @@ class SaleController extends Controller
             $query->where('created_at', '<=', Carbon::parse($dateTo)->endOfDay());
         }
         
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : null;
+
         // System Admin sees all, others see their branch only
-        if (!$user->hasRole('System Administrator') && $user->branch_id) {
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
             $query->where('branch_id', $user->branch_id);
         }
         
@@ -60,7 +66,9 @@ class SaleController extends Controller
 
         // Stats queries (respecting current user branch filters but NOT search/date filters to show global totals)
         $statsQuery = Sale::where('status', 'completed');
-        if (!$user->hasRole('System Administrator') && $user->branch_id) {
+        if ($branchId) {
+            $statsQuery->where('branch_id', $branchId);
+        } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
             $statsQuery->where('branch_id', $user->branch_id);
         }
         
@@ -130,7 +138,13 @@ class SaleController extends Controller
             $query->where('created_at', '<=', Carbon::parse($dateTo)->endOfDay());
         }
         
-        if (!$user->hasRole('System Administrator') && $user->branch_id) {
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : null;
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
             $query->where('branch_id', $user->branch_id);
         }
         
@@ -175,15 +189,18 @@ class SaleController extends Controller
     public function create()
     {
         $user = auth()->user();
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
         
-        if (!$user->branch_id) {
-            abort(403, 'User does not belong to a branch');
+        if (!$branchId) {
+            abort(403, 'User does not belong to a branch or active branch not selected');
         }
         
         // Get products in user's branch
         $products = DB::table('products')
             ->join('branch_products', 'products.id', '=', 'branch_products.product_id')
-            ->where('branch_products.branch_id', $user->branch_id)
+            ->where('branch_products.branch_id', $branchId)
             ->where('branch_products.quantity', '>', 0)
             ->select(
                 'products.id',
@@ -198,7 +215,7 @@ class SaleController extends Controller
         
         // Get readied sales pending approval (for branch admins)
         $pendingSales = Sale::with(['items.product', 'readiedBy'])
-            ->where('branch_id', $user->branch_id)
+            ->where('branch_id', $branchId)
             ->where('status', 'readied')
             ->latest()
             ->get();
@@ -218,20 +235,23 @@ class SaleController extends Controller
         if (!$search) return response()->json([]);
         
         $user = auth()->user();
-        if (!$user->branch_id) {
-            return response()->json(['error' => 'User does not belong to a branch'], 403);
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+        if (!$branchId) {
+            return response()->json(['error' => 'User does not belong to a branch or active branch not selected'], 403);
         }
         
         $products = $this->performIntelligentSearch(
             $search,
             ['barcode', 'qr_code'],
-            $user->branch_id
+            $branchId
         );
 
         // Map to include available_quantity from branch_products
-        $results = $products->map(function($p) use ($user) {
+        $results = $products->map(function($p) use ($branchId) {
             $branchProduct = DB::table('branch_products')
-                ->where('branch_id', $user->branch_id)
+                ->where('branch_id', $branchId)
                 ->where('product_id', $p->id)
                 ->first();
                 
@@ -259,11 +279,14 @@ class SaleController extends Controller
         ]);
         
         $user = auth()->user();
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
         $code = $request->code;
         
         $product = DB::table('products')
             ->join('branch_products', 'products.id', '=', 'branch_products.product_id')
-            ->where('branch_products.branch_id', $user->branch_id)
+            ->where('branch_products.branch_id', $branchId)
             ->where(function ($query) use ($code) {
                 $query->where('products.barcode', $code)
                       ->orWhere('products.qr_code', $code);
@@ -301,16 +324,19 @@ class SaleController extends Controller
         ]);
         
         $user = auth()->user();
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
         
-        if (!$user->branch_id) {
-            abort(403, 'User does not belong to a branch');
+        if (!$branchId) {
+            abort(403, 'User does not belong to a branch or active branch not selected');
         }
         
         $sale = null;
 
-        DB::transaction(function () use ($request, $user, &$sale) {
+        DB::transaction(function () use ($request, $user, $branchId, &$sale) {
             $sale = Sale::create([
-                'branch_id' => $user->branch_id,
+                'branch_id' => $branchId,
                 'status' => 'readied',
                 'readied_by' => $user->id,
                 'notes' => $request->notes,
@@ -442,8 +468,17 @@ class SaleController extends Controller
         
         $returnsQuery = SaleReturn::with(['sale.branch', 'product', 'returnedBy'])->latest();
 
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : null;
+
         // Role Restrictions
-        if (!$user->hasRole('System Administrator') && $user->branch_id) {
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+            $returnsQuery->whereHas('sale', function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
             $query->where('branch_id', $user->branch_id);
             $returnsQuery->whereHas('sale', function ($q) use ($user) {
                 $q->where('branch_id', $user->branch_id);

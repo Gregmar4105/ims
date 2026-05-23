@@ -15,21 +15,14 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-    DropdownMenuSub,
-    DropdownMenuSubTrigger,
-    DropdownMenuSubContent,
-    DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { usePage, router, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { 
     Download, Cloud, RefreshCw, CloudCheck, 
-    ExternalLink, Copy, Check,
-    ArrowUpDown, ArrowRightFromLine, ArrowLeftToLine,
-    FileImage, ListChecks, ShoppingCart, RotateCcw
+    ExternalLink, Copy, Check 
 } from 'lucide-react';
-import { usePermission } from '@/hooks/usePermission';
 import {
     Dialog,
     DialogContent,
@@ -42,16 +35,6 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/1joMus-vAb-acTV8Jo6UiB1plPsoFfpA6MXQs5SwsvkE/edit?usp=sharing";
-
-const BRANCH_QUICK_ACTIONS = [
-    { title: "Transfer History", url: "/transfer-list", icon: ArrowUpDown },
-    { title: "Outgoing", url: "/outgoing", icon: ArrowRightFromLine },
-    { title: "Incoming", url: "/incoming", icon: ArrowLeftToLine },
-    { title: "Import Transfer", url: "/import-transfer", icon: FileImage },
-    { title: "Sales History", url: "/sales-list", icon: ListChecks },
-    { title: "New Sales", url: "/new-sales", icon: ShoppingCart },
-    { title: "Return Items", url: "/return-items", icon: RotateCcw },
-];
 
 const CloudSync = ({ className, isSyncing }: { className?: string, isSyncing?: boolean }) => (
     <div className={`relative ${className} flex items-center justify-center`}>
@@ -69,18 +52,6 @@ export function AppSidebarHeader({
 }) {
     const { auth, current_branch } = usePage<SharedData>().props;
     const branchName = current_branch?.branch_name || auth.user?.branch?.branch_name;
-    const { can } = usePermission();
-    const isSystemAdmin = can('system.admin');
-
-    const handleBranchSwitch = (branchId: number, targetUrl?: string) => {
-        router.post('/branches/switch', { branch_id: branchId }, {
-            onSuccess: () => {
-                if (targetUrl) {
-                    router.visit(targetUrl);
-                }
-            }
-        });
-    };
 
     const [isSyncing, setIsSyncing] = useState(false);
     const [showCheck, setShowCheck] = useState(false);
@@ -196,57 +167,16 @@ export function AppSidebarHeader({
                                         </button>
                                     </DropdownMenuTrigger>
                                 </div>
-                            <DropdownMenuContent align="end" className="w-64 p-2 rounded-xl shadow-lg border border-border/60 bg-popover text-popover-foreground">
-                                {auth.branches.map((branch) => {
-                                    if (isSystemAdmin) {
-                                        return (
-                                            <DropdownMenuSub key={branch.id}>
-                                                <DropdownMenuSubTrigger className="flex items-center justify-between cursor-pointer font-semibold py-2.5 px-3 rounded-lg hover:bg-muted focus:bg-muted transition-all duration-200">
-                                                    <span className="flex items-center gap-2">
-                                                        <Store className="h-4 w-4 text-primary" />
-                                                        {branch.branch_name}
-                                                    </span>
-                                                </DropdownMenuSubTrigger>
-                                                <DropdownMenuSubContent className="w-60 p-1.5 rounded-lg shadow-md border border-border/50 bg-popover ml-2">
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleBranchSwitch(branch.id)}
-                                                        className="cursor-pointer font-bold text-primary py-2 px-3 rounded-md hover:bg-primary/10 focus:bg-primary/10 transition-colors"
-                                                    >
-                                                        Switch to {branch.branch_name}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator className="my-1.5 bg-border/60" />
-                                                    <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                                                        Quick Actions
-                                                    </div>
-                                                    {BRANCH_QUICK_ACTIONS.map((action) => {
-                                                        const Icon = action.icon;
-                                                        return (
-                                                            <DropdownMenuItem
-                                                                key={action.title}
-                                                                onClick={() => handleBranchSwitch(branch.id, action.url)}
-                                                                className="flex items-center gap-2.5 cursor-pointer font-medium py-2 px-3 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted focus:bg-muted focus:text-foreground transition-all duration-150"
-                                                            >
-                                                                <Icon className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
-                                                                <span>{action.title}</span>
-                                                            </DropdownMenuItem>
-                                                        );
-                                                    })}
-                                                </DropdownMenuSubContent>
-                                            </DropdownMenuSub>
-                                        );
-                                    }
-
-                                    return (
-                                        <DropdownMenuItem
-                                            key={branch.id}
-                                            onClick={() => handleBranchSwitch(branch.id)}
-                                            className="cursor-pointer font-semibold py-2.5 px-3 rounded-lg hover:bg-muted focus:bg-muted transition-colors flex items-center gap-2"
-                                        >
-                                            <Store className="h-4 w-4 text-muted-foreground" />
-                                            {branch.branch_name}
-                                        </DropdownMenuItem>
-                                    );
-                                })}
+                            <DropdownMenuContent align="end" className="w-56">
+                                {auth.branches.map((branch) => (
+                                    <DropdownMenuItem
+                                        key={branch.id}
+                                        onClick={() => router.post('/branches/switch', { branch_id: branch.id })}
+                                        className="cursor-pointer font-medium"
+                                    >
+                                        {branch.branch_name}
+                                    </DropdownMenuItem>
+                                ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     ) : (
