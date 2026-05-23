@@ -95,7 +95,9 @@ export default function TemporaryPhotoUpload({
         // Try to find in missingProducts first (fastest)
         const localMatch = missingProducts.find(p => 
             p.name.toLowerCase() === filename.toLowerCase() || 
-            (p.sku && p.sku.toLowerCase() === filename.toLowerCase())
+            (p.sku && p.sku.toLowerCase() === filename.toLowerCase()) ||
+            (p.barcode && p.barcode.toLowerCase() === filename.toLowerCase()) ||
+            (p.qr_code && p.qr_code.toLowerCase() === filename.toLowerCase())
         );
 
         if (localMatch) {
@@ -107,10 +109,12 @@ export default function TemporaryPhotoUpload({
         try {
             const response = await axios.get('/api/products/search-for-upload', { params: { query: filename } });
             if (response.data && response.data.length > 0) {
-                // If there's an exact match in name or SKU
+                // If there's an exact match in name, SKU, barcode, or QR code
                 const exactMatch = response.data.find((p: Product) => 
                     p.name.toLowerCase() === filename.toLowerCase() || 
-                    (p.sku && p.sku.toLowerCase() === filename.toLowerCase())
+                    (p.sku && p.sku.toLowerCase() === filename.toLowerCase()) ||
+                    (p.barcode && p.barcode.toLowerCase() === filename.toLowerCase()) ||
+                    (p.qr_code && p.qr_code.toLowerCase() === filename.toLowerCase())
                 );
                 if (exactMatch) {
                     updateMapping(item.id, exactMatch.id, exactMatch.name);
@@ -553,12 +557,16 @@ export default function TemporaryPhotoUpload({
                                 missingProducts.map((product) => (
                                     <div 
                                         key={product.id} 
-                                        data-search={`${product.name} ${product.sku}`}
+                                        data-search={`${product.name} ${product.sku || ''} ${product.barcode || ''} ${product.qr_code || ''}`}
                                         className="missing-product-item flex items-center justify-between p-3 hover:bg-red-50/30 dark:hover:bg-red-900/10 transition-colors"
                                     >
                                         <div className="flex flex-col">
                                             <span className="font-medium text-sm">{product.name}</span>
-                                            <span className="text-[10px] text-muted-foreground font-mono">{product.sku || 'No SKU'}</span>
+                                            <span className="text-[10px] text-muted-foreground font-mono">
+                                                {product.sku || 'No SKU'}
+                                                {product.barcode && ` | Barcode: ${product.barcode}`}
+                                                {product.qr_code && ` | QR: ${product.qr_code}`}
+                                            </span>
                                         </div>
                                         <Badge variant="outline" className="bg-red-100/50 text-red-600 border-red-200 text-[10px] h-5">
                                             No Image
@@ -724,7 +732,11 @@ function UploadCard({
                                             }}
                                         >
                                             <span className="font-semibold text-sm text-foreground">{product.name}</span>
-                                            <span className="text-[10px] text-muted-foreground font-mono mt-0.5">{product.sku || 'No SKU'}</span>
+                                            <span className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                                                {product.sku || 'No SKU'}
+                                                {product.barcode && ` | Barcode: ${product.barcode}`}
+                                                {product.qr_code && ` | QR: ${product.qr_code}`}
+                                            </span>
                                         </button>
                                     ))
                                 )}

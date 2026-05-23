@@ -18,19 +18,23 @@ interface Option {
 interface AutocompleteInputProps {
     value: string;
     onValueChange: (value: string) => void;
+    onOptionSelect?: (value: string) => void;
     placeholder: string;
     searchUrl: string;
     className?: string;
     error?: string;
+    onBlur?: () => void;
 }
 
 export function AutocompleteInput({
     value,
     onValueChange,
+    onOptionSelect,
     placeholder,
     searchUrl,
     className,
     error,
+    onBlur,
 }: AutocompleteInputProps) {
     const [open, setOpen] = React.useState(false);
     const [inputValue, setInputValue] = React.useState(value);
@@ -76,6 +80,7 @@ export function AutocompleteInput({
     const handleSelectOption = (option: Option) => {
         setInputValue(option.name);
         onValueChange(option.name);
+        onOptionSelect?.(option.name);
         setOpen(false);
     };
 
@@ -88,6 +93,12 @@ export function AutocompleteInput({
                             value={inputValue}
                             onChange={handleInputChange}
                             onFocus={() => inputValue.length > 0 && setOpen(true)}
+                            onBlur={() => {
+                                // Add a short delay to allow item click on popover before input blur event
+                                setTimeout(() => {
+                                    onBlur?.();
+                                }, 200);
+                            }}
                             placeholder={placeholder}
                             className={cn(error && "border-red-500")}
                         />

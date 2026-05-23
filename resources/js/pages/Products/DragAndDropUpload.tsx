@@ -98,14 +98,17 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
         fileInputRef.current?.click();
     };
 
-    const fetchProductDetails = async (id: string, name: string) => {
+    const fetchProductDetails = async (id: string, value: string, field: string = 'name') => {
+        if (!value) return false;
+        setUploadItems(prev => prev.map(item => item.id === id ? { ...item, isFetching: true } : item));
         try {
-            const response = await axios.get('/api/products/details', { params: { value: name, field: 'name' } });
+            const response = await axios.get('/api/products/details', { params: { value, field } });
             if (response.data) {
                 const p = response.data;
                 setUploadItems(prev => prev.map(item => item.id === id ? {
                     ...item,
                     isExisting: true,
+                    name: p.name || item.name,
                     brand: p.brand_name || '',
                     category: p.category_name || '',
                     supplier: p.supplier_name || '',
@@ -281,6 +284,27 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
             const response = await axios.post('/api/products/validate-field', { field, value });
             const exists = response.data.exists;
             
+            // If it exists, and we are not already marked isExisting, let's fetch details by this field to auto-populate!
+            if (exists) {
+                const fetched = await fetchProductDetails(id, value, field);
+                if (fetched) {
+                    // Clear validating state since we fetched details successfully
+                    setUploadItems((prev) =>
+                        prev.map((item) => {
+                            if (item.id === id) {
+                                const newValidating = { ...item.isValidating };
+                                delete newValidating[field];
+                                const newErrors = { ...item.errors };
+                                delete newErrors[field];
+                                return { ...item, errors: newErrors, isValidating: newValidating };
+                            }
+                            return item;
+                        })
+                    );
+                    return;
+                }
+            }
+
             setUploadItems((prev) =>
                 prev.map((item) => {
                     if (item.id === id) {
@@ -537,6 +561,7 @@ export default function DragAndDropUpload({ brands, categories, suppliers, isSys
                                     onRemove={() => removeUpload(item.id)}
                                     onUpdate={(field, value) => updateItem(item.id, field, value)}
                                     onValidate={(field, value) => validateField(item.id, field, value)}
+                                    onFetchDetails={fetchProductDetails}
                                     onPhotoClick={() => {
                                         setSelectedItem(item);
                                         setIsModalOpen(true);
@@ -579,12 +604,14 @@ function ProductUploadCard({
     onUpdate,
     onValidate,
     onPhotoClick,
+    onFetchDetails,
 }: {
     item: UploadItem;
     onRemove: () => void;
     onUpdate: (field: keyof UploadItem, value: any) => void;
     onValidate: (field: string, value: string) => void;
     onPhotoClick: () => void;
+    onFetchDetails: (id: string, value: string, field?: string) => Promise<boolean>;
 }) {
     const addVariation = () => {
         onUpdate('variations', [...item.variations, { name: '', options: '' }]);
@@ -730,9 +757,11 @@ function ProductUploadCard({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <Label>Product Name*</Label>
-                            <AutocompleteInput 
+                             <AutocompleteInput 
                                 value={item.name} 
                                 onValueChange={val => onUpdate('name', val)}
+                                onOptionSelect={val => onFetchDetails(item.id, val, 'name')}
+                                onBlur={() => onValidate('name', item.name)}
                                 placeholder="Product Name"
                                 searchUrl="/api/products/search"
                                 className={item.errors.name ? 'border-red-500' : ''}

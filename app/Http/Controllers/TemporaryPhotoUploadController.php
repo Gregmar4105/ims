@@ -101,6 +101,8 @@ class TemporaryPhotoUploadController extends Controller
             'id' => $p->id, 
             'name' => $p->name, 
             'sku' => $p->sku, 
+            'barcode' => $p->barcode,
+            'qr_code' => $p->qr_code,
             'image_path' => $p->image_path
         ]));
     }
