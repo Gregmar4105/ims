@@ -385,6 +385,10 @@ class GoogleSheetsSyncController extends Controller
                     $status = 'duplicate';
                 }
 
+                if ($status === 'unchanged') {
+                    continue;
+                }
+
                 $comparedItems[] = [
                     'sheet_row_index' => $index + 2, // 1-indexed plus header row offset
                     'status' => $status,

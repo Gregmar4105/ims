@@ -800,7 +800,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
 
             {/* Google Sheets Pull sync spreadsheet modal */}
             <Dialog open={isPullModalOpen} onOpenChange={setIsPullModalOpen}>
-                <DialogContent className="max-w-[95vw] w-[95vw] h-[92vh] flex flex-col p-0 overflow-hidden bg-background border shadow-2xl rounded-xl">
+                <DialogContent className="max-w-[98vw] sm:max-w-[98vw] md:max-w-[98vw] lg:max-w-[98vw] xl:max-w-[98vw] w-[98vw] h-[95vh] flex flex-col p-0 overflow-hidden bg-background border shadow-2xl rounded-xl">
                     {/* Modal Header */}
                     <div className="bg-emerald-800 text-white px-6 py-4 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-3">
@@ -854,7 +854,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                         </div>
 
                         {/* Spreadsheet Grid Container */}
-                        <div className="flex-1 overflow-x-auto overflow-y-auto border border-muted-foreground/20 rounded-lg shadow-inner bg-background relative max-h-[52vh]">
+                        <div className="flex-1 overflow-x-auto overflow-y-auto border border-muted-foreground/20 rounded-lg shadow-inner bg-background relative max-h-[58vh]">
                             <table className="table-auto w-auto min-w-max border-collapse border border-muted/50">
                                 <thead className="bg-emerald-900/10 sticky top-0 z-20 shadow-[0_1px_0_0_rgba(0,0,0,0.1)]">
                                     <tr className="bg-emerald-800 text-white">
