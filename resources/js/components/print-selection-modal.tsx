@@ -237,7 +237,20 @@ export function PrintSelectionModal({
 
                                         {/* Paired Devices scroll box */}
                                         <div className="space-y-2 max-h-36 sm:max-h-48 overflow-y-auto pr-1 scrollbar-thin">
-                                            {bt.pairedDevices.length > 0 ? (
+                                            {bt.isScanning ? (
+                                                <div className="flex flex-col items-center justify-center py-6 text-center bg-white dark:bg-gray-900 rounded-xl border border-dashed border-gray-100 dark:border-gray-800 space-y-3 animate-in fade-in duration-300">
+                                                    <div className="relative flex items-center justify-center">
+                                                        <div className="absolute w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950/50 animate-ping opacity-75" />
+                                                        <div className="relative p-2.5 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 shrink-0">
+                                                            <Bluetooth className="w-5 h-5 animate-pulse" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-0.5 px-4">
+                                                        <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Scanning for devices...</p>
+                                                        <p className="text-[10px] text-gray-400 leading-tight">Searching for paired Bluetooth thermal printers</p>
+                                                    </div>
+                                                </div>
+                                            ) : bt.pairedDevices.length > 0 ? (
                                                 bt.pairedDevices.map((device) => {
                                                     const isThisDeviceConnecting = bt.isConnecting && bt.connectingAddress === device.address;
                                                     return (

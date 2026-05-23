@@ -57,8 +57,18 @@ export function useBluetoothPrinter(): BluetoothPrinterState {
 
     // Use ref to prevent double-initialization in StrictMode
     const initializedRef = useRef(false);
+    const scanTimeoutRef = useRef<any>(null);
 
     const androidPrint = typeof window !== 'undefined' ? (window as any).AndroidPrint : null;
+
+    // Cleanup scan timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (scanTimeoutRef.current) {
+                clearTimeout(scanTimeoutRef.current);
+            }
+        };
+    }, []);
 
     useEffect(() => {
         if (androidPrint && !initializedRef.current) {
@@ -182,22 +192,32 @@ export function useBluetoothPrinter(): BluetoothPrinterState {
 
     const scan = useCallback(() => {
         if (!androidPrint) return;
-        setIsScanning(true);
-        try {
-            const devicesRaw = androidPrint.getPairedDevices();
-            const devices: BluetoothDevice[] = JSON.parse(devicesRaw || '[]');
-            setPairedDevices(devices);
-            
-            // Trigger android permission prompt implicitly if empty
-            if (devices.length === 0) {
-                androidPrint.checkBluetoothPermissions();
-            }
-        } catch (e) {
-            console.error('Failed to get paired devices', e);
-            toast.error('Failed to scan for paired Bluetooth devices');
-        } finally {
-            setIsScanning(false);
+        
+        // Clear any pending scan timeout
+        if (scanTimeoutRef.current) {
+            clearTimeout(scanTimeoutRef.current);
         }
+        
+        setIsScanning(true);
+        
+        scanTimeoutRef.current = setTimeout(() => {
+            try {
+                const devicesRaw = androidPrint.getPairedDevices();
+                const devices: BluetoothDevice[] = JSON.parse(devicesRaw || '[]');
+                setPairedDevices(devices);
+                
+                // Trigger android permission prompt implicitly if empty
+                if (devices.length === 0) {
+                    androidPrint.checkBluetoothPermissions();
+                }
+            } catch (e) {
+                console.error('Failed to get paired devices', e);
+                toast.error('Failed to scan for paired Bluetooth devices');
+            } finally {
+                setIsScanning(false);
+                scanTimeoutRef.current = null;
+            }
+        }, 1000); // 1 second visual delay for premium scanning feel
     }, [androidPrint]);
 
     const connect = (address: string): boolean => {
