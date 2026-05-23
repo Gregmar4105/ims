@@ -7,7 +7,7 @@ import { usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
+import { BluetoothPrinterProvider, useBluetoothPrinterContext } from '@/contexts/bluetooth-printer-context';
 import { Printer, Bluetooth, Check, Wifi, X, RefreshCw } from 'lucide-react';
 
 interface AppLayoutProps {
@@ -16,10 +16,20 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children, breadcrumbs, ...props }: AppLayoutProps) {
+    return (
+        <BluetoothPrinterProvider>
+            <AppLayoutInner breadcrumbs={breadcrumbs} {...props}>
+                {children}
+            </AppLayoutInner>
+        </BluetoothPrinterProvider>
+    );
+}
+
+function AppLayoutInner({ children, breadcrumbs, ...props }: AppLayoutProps) {
     const { auth, flash } = usePage().props as any;
     const [isCapacitorWrapper, setIsCapacitorWrapper] = useState(false);
     const [testingNotification, setTestingNotification] = useState(false);
-    const bt = useBluetoothPrinter();
+    const bt = useBluetoothPrinterContext();
     const [showPrinterModal, setShowPrinterModal] = useState(false);
 
     useEffect(() => {

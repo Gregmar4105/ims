@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 import { handleNativePrintFallback } from '@/lib/utils';
-import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
+import { useBluetoothPrinterContext } from '@/contexts/bluetooth-printer-context';
 import { PrintSelectionModal } from '@/components/print-selection-modal';
 
 interface Transfer {
@@ -27,7 +27,7 @@ interface Transfer {
 }
 
 export default function PrintItem({ transfer }: { transfer: Transfer }) {
-    const bt = useBluetoothPrinter();
+    const bt = useBluetoothPrinterContext();
     const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
     useEffect(() => {

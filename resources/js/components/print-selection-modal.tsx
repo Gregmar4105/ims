@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Bluetooth, Printer, RefreshCw, Check, AlertTriangle, Settings, Smartphone, Wifi, X, Loader2 } from 'lucide-react';
-import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
+import { useBluetoothPrinterContext } from '@/contexts/bluetooth-printer-context';
 
 interface PrintSelectionModalProps {
     isOpen: boolean;
@@ -20,7 +20,7 @@ export function PrintSelectionModal({
     elementId,
     title = "Select Print Method"
 }: PrintSelectionModalProps) {
-    const bt = useBluetoothPrinter();
+    const bt = useBluetoothPrinterContext();
 
     // Scan for devices whenever the modal opens and Bluetooth is supported
     useEffect(() => {
@@ -239,19 +239,19 @@ export function PrintSelectionModal({
                                         <div className="space-y-2 max-h-36 sm:max-h-48 overflow-y-auto pr-1 scrollbar-thin">
                                             {bt.pairedDevices.length > 0 ? (
                                                 bt.pairedDevices.map((device) => {
-                                                    const isConnecting = bt.isConnecting && bt.selectedAddress === device.address;
+                                                    const isThisDeviceConnecting = bt.isConnecting && bt.connectingAddress === device.address;
                                                     return (
                                                         <button
                                                             key={device.address}
                                                             onClick={() => bt.connect(device.address)}
-                                                            disabled={bt.isConnecting}
-                                                            className="w-full text-left p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-850 flex items-center justify-between transition-all hover:border-gray-200"
+                                                            disabled={isThisDeviceConnecting}
+                                                            className="w-full text-left p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-850 flex items-center justify-between transition-all hover:border-gray-200 disabled:opacity-60"
                                                         >
                                                             <div className="min-w-0 pr-2">
                                                                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[140px] xs:max-w-[200px] sm:max-w-[260px]">{device.name || 'Unnamed Printer'}</p>
                                                                 <p className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">{device.address}</p>
                                                             </div>
-                                                            {isConnecting ? (
+                                                            {isThisDeviceConnecting ? (
                                                                 <Loader2 className="w-4 h-4 animate-spin text-blue-500 shrink-0" />
                                                             ) : (
                                                                 <span className="text-[10px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-950 px-2 py-1 rounded-lg shrink-0">Connect</span>

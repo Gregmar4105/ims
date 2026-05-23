@@ -10,7 +10,7 @@ import Barcode from 'react-barcode';
 import QRCode from 'react-qr-code';
 import { Avatar, AvatarFallback, AvatarImage, AvatarGroup } from "@/components/ui/avatar";
 import { handleNativePrintFallback } from '@/lib/utils';
-import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
+import { useBluetoothPrinterContext } from '@/contexts/bluetooth-printer-context';
 import { useState } from 'react';
 import { PrintSelectionModal } from '@/components/print-selection-modal';
 import {
@@ -84,7 +84,7 @@ const getParsedVariations = (variations: any): Variation[] => {
 
 export default function Show({ product }: Props) {
     const { auth } = usePage<SharedData>().props;
-    const bt = useBluetoothPrinter();
+    const bt = useBluetoothPrinterContext();
     const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
     const parsedVariations = getParsedVariations(product.variations);
     const isSystemAdmin = auth.roles.includes('System Administrator');

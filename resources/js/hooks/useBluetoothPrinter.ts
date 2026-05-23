@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toCanvas } from 'html-to-image';
 import { toast } from 'sonner';
 
@@ -7,11 +7,44 @@ interface BluetoothDevice {
     address: string;
 }
 
-export function useBluetoothPrinter() {
+export interface BluetoothPrinterState {
+    isSupported: boolean;
+    isConnected: boolean;
+    pairedDevices: BluetoothDevice[];
+    selectedAddress: string | null;
+    connectingAddress: string | null;
+    autoPrintEnabled: boolean;
+    isScanning: boolean;
+    isConnecting: boolean;
+    isBluetoothEnabled: boolean;
+    printerWidth: number;
+    mediaType: 'receipt' | 'label';
+    labelWidth: number;
+    labelHeight: number;
+    printerPreset: '28mm' | '58mm' | '80mm' | 'custom';
+    scan: () => void;
+    connect: (address: string) => boolean;
+    disconnect: () => void;
+    toggleAutoPrint: (enabled: boolean) => void;
+    printElement: (elementId: string) => Promise<boolean>;
+    testPrint: () => Promise<boolean>;
+    isBluetoothConnected: () => boolean;
+    checkBluetoothEnabled: () => boolean;
+    openBluetoothSettings: () => void;
+    requestBluetoothEnable: () => void;
+    updatePrinterWidth: (width: number) => void;
+    updateMediaType: (type: 'receipt' | 'label') => void;
+    updateLabelWidth: (width: number) => void;
+    updateLabelHeight: (height: number) => void;
+    updatePrinterPreset: (preset: '28mm' | '58mm' | '80mm' | 'custom') => void;
+}
+
+export function useBluetoothPrinter(): BluetoothPrinterState {
     const [isSupported, setIsSupported] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [pairedDevices, setPairedDevices] = useState<BluetoothDevice[]>([]);
     const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
+    const [connectingAddress, setConnectingAddress] = useState<string | null>(null);
     const [autoPrintEnabled, setAutoPrintEnabled] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
@@ -22,10 +55,14 @@ export function useBluetoothPrinter() {
     const [labelHeight, setLabelHeight] = useState<number>(20);
     const [printerPreset, setPrinterPreset] = useState<'28mm' | '58mm' | '80mm' | 'custom'>('58mm');
 
+    // Use ref to prevent double-initialization in StrictMode
+    const initializedRef = useRef(false);
+
     const androidPrint = typeof window !== 'undefined' ? (window as any).AndroidPrint : null;
 
     useEffect(() => {
-        if (androidPrint) {
+        if (androidPrint && !initializedRef.current) {
+            initializedRef.current = true;
             setIsSupported(true);
             const connected = androidPrint.isBluetoothConnected();
             setIsConnected(connected);
@@ -61,14 +98,19 @@ export function useBluetoothPrinter() {
 
                     const found = devices.some(d => d.address === savedAddress);
                     if (found && !connected) {
-                        // Silent auto-connect attempt
+                        // Silent auto-connect attempt — track the specific address being connected
                         setIsConnecting(true);
+                        setConnectingAddress(savedAddress);
                         setTimeout(() => {
                             try {
                                 const ok = androidPrint.connectToDevice(savedAddress);
                                 setIsConnected(ok);
+                                if (!ok) {
+                                    setConnectingAddress(null);
+                                }
                             } catch (e) {
                                 console.error('Auto-connect failed', e);
+                                setConnectingAddress(null);
                             } finally {
                                 setIsConnecting(false);
                             }
@@ -80,6 +122,28 @@ export function useBluetoothPrinter() {
             }
         }
     }, [androidPrint]);
+
+    // Listen for async connection results from the native side
+    useEffect(() => {
+        const handleAsyncConnect = (e: Event) => {
+            const customEvent = e as CustomEvent;
+            const { address, success } = customEvent.detail || {};
+            setIsConnecting(false);
+            setConnectingAddress(null);
+            if (success) {
+                setIsConnected(true);
+                setSelectedAddress(address);
+                localStorage.setItem('bt_printer_address', address);
+                toast.success('Connected to Bluetooth printer successfully!');
+            } else {
+                toast.error('Failed to connect to printer. Ensure it is turned on and paired.');
+            }
+        };
+        window.addEventListener('bluetooth-connect-result', handleAsyncConnect);
+        return () => {
+            window.removeEventListener('bluetooth-connect-result', handleAsyncConnect);
+        };
+    }, []);
 
     useEffect(() => {
         const handlePermissionsGranted = () => {
@@ -116,7 +180,7 @@ export function useBluetoothPrinter() {
         };
     }, [androidPrint]);
 
-    const scan = () => {
+    const scan = useCallback(() => {
         if (!androidPrint) return;
         setIsScanning(true);
         try {
@@ -134,12 +198,22 @@ export function useBluetoothPrinter() {
         } finally {
             setIsScanning(false);
         }
-    };
+    }, [androidPrint]);
 
     const connect = (address: string): boolean => {
         if (!androidPrint) return false;
         setIsConnecting(true);
+        setConnectingAddress(address);
         try {
+            // Check if the native side supports async connection
+            if (typeof androidPrint.connectToDeviceAsync === 'function') {
+                // Async path: native side will fire 'bluetooth-connect-result' event
+                androidPrint.connectToDeviceAsync(address);
+                // Don't set isConnecting=false here — the event handler will do it
+                return true; // Return true to indicate the request was dispatched
+            }
+
+            // Fallback: synchronous connection (older wrapper builds)
             const success = androidPrint.connectToDevice(address);
             if (success) {
                 setIsConnected(true);
@@ -156,7 +230,11 @@ export function useBluetoothPrinter() {
             toast.error('Connection error occurred');
             return false;
         } finally {
-            setIsConnecting(false);
+            // Only clear connecting state for sync path
+            if (typeof androidPrint.connectToDeviceAsync !== 'function') {
+                setIsConnecting(false);
+                setConnectingAddress(null);
+            }
         }
     };
 
@@ -165,6 +243,7 @@ export function useBluetoothPrinter() {
         try {
             androidPrint.disconnect();
             setIsConnected(false);
+            setConnectingAddress(null);
             toast.info('Disconnected from printer.');
         } catch (e) {
             console.error('Disconnection error', e);
@@ -348,7 +427,6 @@ export function useBluetoothPrinter() {
         setPrinterWidth(width);
         localStorage.setItem('bt_printer_width', String(width));
         checkAndSetCustomPreset(width, labelWidth, labelHeight, mediaType);
-        toast.success(`Printer width updated to ${width} dots.`);
     };
 
     const updateMediaType = (type: 'receipt' | 'label') => {
@@ -360,21 +438,18 @@ export function useBluetoothPrinter() {
             localStorage.setItem('bt_label_height', '0');
         }
         checkAndSetCustomPreset(printerWidth, labelWidth, newLh, type);
-        toast.success(`Media type updated to ${type === 'label' ? 'Label Mode' : 'Receipt Mode'}.`);
     };
 
     const updateLabelWidth = (width: number) => {
         setLabelWidth(width);
         localStorage.setItem('bt_label_width', String(width));
         checkAndSetCustomPreset(printerWidth, width, labelHeight, mediaType);
-        toast.success(`Label physical width updated to ${width}mm.`);
     };
 
     const updateLabelHeight = (height: number) => {
         setLabelHeight(height);
         localStorage.setItem('bt_label_height', String(height));
         checkAndSetCustomPreset(printerWidth, labelWidth, height, mediaType);
-        toast.success(`Label physical height updated to ${height}mm.`);
     };
 
     const updatePrinterPreset = (preset: '28mm' | '58mm' | '80mm' | 'custom') => {
@@ -410,8 +485,6 @@ export function useBluetoothPrinter() {
             setMediaType('receipt');
             localStorage.setItem('bt_media_type', 'receipt');
             toast.success('Switched to 80mm Receipt preset');
-        } else if (preset === 'custom') {
-            toast.success('Custom sizing unlocked. Feel free to adjust dimensions.');
         }
     };
 
@@ -420,6 +493,7 @@ export function useBluetoothPrinter() {
         isConnected,
         pairedDevices,
         selectedAddress,
+        connectingAddress,
         autoPrintEnabled,
         isScanning,
         isConnecting,
