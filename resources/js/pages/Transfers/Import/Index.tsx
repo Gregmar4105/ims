@@ -231,14 +231,62 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
 
     const handleToggleRejectPullItem = (index: number) => {
         const updated = [...pullItems];
+        const isNowRejected = !updated[index].is_rejected;
+        
         updated[index] = {
             ...updated[index],
-            is_rejected: !updated[index].is_rejected
+            is_rejected: isNowRejected
         };
-        // Re-validate duplicates for all non-rejected items
+
+        // Recalculate duplicate warnings for the entire sheet using the newly updated array
+        const barcodeCounts: Record<string, number> = {};
+        const qrCodeCounts: Record<string, number> = {};
+        const skuCounts: Record<string, number> = {};
+
+        updated.forEach((it) => {
+            if (it.is_rejected) return;
+            const bc = String(it.values.barcode || '').trim();
+            const qr = String(it.values.qr_code || '').trim();
+            const sk = String(it.values.sku || '').trim();
+
+            if (bc) barcodeCounts[bc] = (barcodeCounts[bc] || 0) + 1;
+            if (qr) qrCodeCounts[qr] = (qrCodeCounts[qr] || 0) + 1;
+            if (sk) skuCounts[sk] = (skuCounts[sk] || 0) + 1;
+        });
+
+        // Re-calculate warnings for all items
+        updated.forEach((it) => {
+            const bc = String(it.values.barcode || '').trim();
+            const qr = String(it.values.qr_code || '').trim();
+            const sk = String(it.values.sku || '').trim();
+
+            let newWarnings = [...(it.warnings || [])];
+            newWarnings = newWarnings.filter(
+                (w: string) => !w.includes('multiple times in the Google Sheet')
+            );
+
+            if (!it.is_rejected) {
+                if (bc && barcodeCounts[bc] > 1) {
+                    newWarnings.push(`Duplicate barcode '${bc}' found multiple times in the Google Sheet.`);
+                }
+                if (qr && qrCodeCounts[qr] > 1) {
+                    newWarnings.push(`Duplicate QR Code '${qr}' found multiple times in the Google Sheet.`);
+                }
+                if (sk && skuCounts[sk] > 1) {
+                    newWarnings.push(`Duplicate SKU '${sk}' found multiple times in the Google Sheet.`);
+                }
+            }
+
+            it.warnings = Array.from(new Set(newWarnings));
+
+            if (it.warnings.length > 0) {
+                it.status = 'duplicate';
+            } else if (it.status === 'duplicate') {
+                it.status = it.original_id ? 'modified' : 'new';
+            }
+        });
+
         setPullItems(updated);
-        // Force a recalculation trigger
-        handleUpdatePullItemCell(index, 'id', updated[index].values.id);
     };
 
     const handleSavePullData = async () => {
