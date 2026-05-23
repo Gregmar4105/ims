@@ -41,14 +41,18 @@ class TransferController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->branch_id) {
-            abort(403, 'User does not belong to a branch');
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+
+        if (!$branchId) {
+            abort(403, 'User does not belong to a branch or no active branch selected');
         }
 
         // Fetch products available in the user's branch via the pivot table
         $products = DB::table('products')
             ->join('branch_products', 'products.id', '=', 'branch_products.product_id')
-            ->where('branch_products.branch_id', $user->branch_id)
+            ->where('branch_products.branch_id', $branchId)
             ->where('branch_products.quantity', '>', 0)
             ->select(
                 'products.id', 
@@ -59,7 +63,7 @@ class TransferController extends Controller
             )
             ->get();
 
-        $branches = Branch::where('id', '!=', $user->branch_id)->get();
+        $branches = Branch::where('id', '!=', $branchId)->get();
 
         return Inertia::render('Transfers/Create', [
             'products' => $products,
@@ -78,11 +82,20 @@ class TransferController extends Controller
         ]);
 
         $user = auth()->user();
+
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+
+        if (!$branchId) {
+            abort(403, 'User does not belong to a branch or no active branch selected');
+        }
+
         $transfer = null;
 
-        DB::transaction(function () use ($request, $user, &$transfer) {
+        DB::transaction(function () use ($request, $user, $branchId, &$transfer) {
             $transfer = Transfer::create([
-                'source_branch_id' => $user->branch_id,
+                'source_branch_id' => $branchId,
                 'destination_branch_id' => $request->destination_branch_id,
                 'status' => 'readied',
                 'readied_by' => $user->id,
@@ -102,7 +115,7 @@ class TransferController extends Controller
         // Notify Branch Administrators (Source)
         try {
             $adminPlayerIds = \App\Models\User::role('Branch Administrator')
-                ->where('branch_id', $user->branch_id)
+                ->where('branch_id', $branchId)
                 ->whereNotNull('onesignal_player_id')
                 ->where('id', '!=', $user->id) // Optional: exclude self if admin is also readying
                 ->pluck('onesignal_player_id')
@@ -118,8 +131,6 @@ class TransferController extends Controller
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Failed to send transfer notification (source): " . $e->getMessage());
         }
-
-
 
         return redirect()->route('transfers.outgoing')->with('success', 'Transfer readied successfully.');
     }

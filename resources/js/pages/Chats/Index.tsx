@@ -944,6 +944,13 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
             {/* Image Preview Modal */}
             <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
                 <DialogContent className="max-w-4xl p-0 overflow-hidden bg-transparent border-none shadow-none md:max-w-5xl flex items-center justify-center">
+                    <button
+                        onClick={() => setPreviewImage(null)}
+                        className="absolute top-4 right-4 rounded-full p-2 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white transition-all z-[100] shadow-lg border border-white/10 hover:scale-105 active:scale-95"
+                        title="Close"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
                     <div className="relative flex items-center justify-center w-full h-full max-h-[85vh] p-4 select-none">
                         <img
                             src={previewImage || ''}

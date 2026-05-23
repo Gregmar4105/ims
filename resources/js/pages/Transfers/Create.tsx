@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm, Link } from '@inertiajs/react';
+import { useForm, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, ArrowLeft, Save } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, Save, Store } from 'lucide-react';
+import { SharedData } from '@/types';
 import { ProductSearchSelect } from '@/components/ProductSearchSelect';
 
 interface Branch {
@@ -36,6 +37,10 @@ const breadcrumbs = [
 ];
 
 export default function Create({ products, branches }: { products: Product[], branches: Branch[] }) {
+    const { auth, current_branch } = usePage<SharedData>().props;
+    const currentBranchName = current_branch?.branch_name || auth.user?.branch?.branch_name || 'Selected Branch';
+    const isSystemAdmin = auth.roles?.includes('System Administrator');
+
     const { data, setData, post, processing, errors } = useForm({
         destination_branch_id: '',
         items: [{ product_id: '', quantity: 1 }],
@@ -86,6 +91,36 @@ export default function Create({ products, branches }: { products: Product[], br
                             <CardDescription>Select the destination and items to transfer.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
+                            {/* Source Branch - aware of active branch switch */}
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Source Branch</Label>
+                                <div className="flex items-center justify-between gap-4 p-4 rounded-xl border-2 border-dashed border-muted bg-muted/30">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                                            <Store className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <span className="font-semibold text-foreground text-sm leading-none block">
+                                                {currentBranchName}
+                                            </span>
+                                            <span className="text-[11px] text-muted-foreground leading-none mt-1 block">
+                                                Transferring inventory out of this branch
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {isSystemAdmin && (
+                                        <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400">
+                                            Switchable
+                                        </span>
+                                    )}
+                                </div>
+                                {isSystemAdmin && (
+                                    <p className="text-xs text-muted-foreground">
+                                        💡 To transfer from a different branch, switch the active branch in the sidebar header dropdown.
+                                    </p>
+                                )}
+                            </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="destination">Destination Branch</Label>
                                 <Select
