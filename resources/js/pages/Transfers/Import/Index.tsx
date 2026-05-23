@@ -289,6 +289,53 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
         setPullItems(updated);
     };
 
+    const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
+    const [rejectTargetIndex, setRejectTargetIndex] = useState<number | null>(null);
+    const [isSyncingReject, setIsSyncingReject] = useState(false);
+
+    const handleTriggerRejectPrompt = (index: number) => {
+        setRejectTargetIndex(index);
+        setIsRejectConfirmOpen(true);
+    };
+
+    const handleConfirmRejectAndSync = async () => {
+        if (rejectTargetIndex === null) return;
+        
+        setIsSyncingReject(true);
+        const item = pullItems[rejectTargetIndex];
+        const rowIndex = item.sheet_row_index;
+
+        const toastId = toast.loading(`Saving & Syncing rejection of '${item.values.name}' to Google Sheet...`);
+        try {
+            const response = await axios.post('/google-sheets/reject-row', {
+                sheet_row_index: rowIndex
+            });
+
+            if (response.data.success) {
+                toast.success(`Successfully saved and synced to Google Sheet for branch '${pullBranchName}'! Rejected item has been removed from row ${rowIndex}.`, { id: toastId });
+                
+                // Remove the item from pullItems and decrement the sheet_row_index of all subsequent items
+                const updated = pullItems.filter((_, idx) => idx !== rejectTargetIndex).map(it => {
+                    if (it.sheet_row_index > rowIndex) {
+                        return { ...it, sheet_row_index: it.sheet_row_index - 1 };
+                    }
+                    return it;
+                });
+                
+                setPullItems(updated);
+                setIsRejectConfirmOpen(false);
+                setRejectTargetIndex(null);
+            } else {
+                toast.error(response.data.error || "Failed to remove row from Google Sheet.", { id: toastId });
+            }
+        } catch (err: any) {
+            console.error(err);
+            toast.error(err.response?.data?.error || "Error communicating with sync service.", { id: toastId });
+        } finally {
+            setIsSyncingReject(false);
+        }
+    };
+
     const handleSavePullData = async () => {
         setIsSavingPull(true);
         const toastId = toast.loading("Writing confirmed sheet changes to database...", { duration: 15000 });
@@ -942,17 +989,15 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                                     <div className="flex items-center justify-center gap-1.5">
                                                         <Button
                                                             size="sm"
-                                                            variant={isRejected ? "secondary" : "destructive"}
-                                                            className="h-6 px-1.5 text-[10px] font-bold"
-                                                            onClick={() => handleToggleRejectPullItem(idx)}
+                                                            variant="destructive"
+                                                            className="h-6 px-1.5 text-[10px] font-bold bg-rose-600 hover:bg-rose-700"
+                                                            onClick={() => handleTriggerRejectPrompt(idx)}
                                                         >
-                                                            {isRejected ? "Approve" : "Reject"}
+                                                            Reject
                                                         </Button>
                                                         
                                                         {/* Simple status indicator badge */}
-                                                        {isRejected ? (
-                                                            <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4">Rejected</Badge>
-                                                        ) : item.status === 'duplicate' ? (
+                                                        {item.status === 'duplicate' ? (
                                                             <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 bg-rose-600 animate-pulse">Duplicate</Badge>
                                                         ) : item.status === 'new' ? (
                                                             <Badge className="text-[9px] px-1 py-0 h-4 bg-emerald-600 hover:bg-emerald-600 text-white">New</Badge>
@@ -1105,6 +1150,46 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                             )}
                         </div>
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Google Sheets Reject Row Confirm Dialog */}
+            <Dialog open={isRejectConfirmOpen} onOpenChange={setIsRejectConfirmOpen}>
+                <DialogContent className="max-w-md p-6 bg-background border shadow-2xl rounded-xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-rose-600">
+                            <AlertTriangle className="w-5 h-5 text-rose-500 animate-bounce" />
+                            Save & Sync to Google Sheet (Branch: {pullBranchName} Only)
+                        </DialogTitle>
+                        <DialogDescription className="pt-2 text-sm text-muted-foreground leading-relaxed">
+                            Would you like to save and sync the rejection of this item? 
+                            <br /><br />
+                            This will **permanently delete Row {rejectTargetIndex !== null && pullItems[rejectTargetIndex]?.sheet_row_index}** representing <strong>"{rejectTargetIndex !== null && pullItems[rejectTargetIndex]?.values?.name}"</strong> from the Google Sheet for this branch only, so the rejected item will be gone from the row.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-6 flex justify-end gap-2">
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setIsRejectConfirmOpen(false)}
+                            disabled={isSyncingReject}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleConfirmRejectAndSync} 
+                            disabled={isSyncingReject}
+                            className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+                        >
+                            {isSyncingReject ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Saving & Syncing...
+                                </>
+                            ) : (
+                                "Save & Sync to Google Sheet"
+                            )}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </AppLayout>

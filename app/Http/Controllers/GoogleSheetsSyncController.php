@@ -624,4 +624,47 @@ class GoogleSheetsSyncController extends Controller
             return response()->json(['error' => 'Failed to apply changes to database: ' . $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Reject an item and permanently delete its row from the Google Sheet.
+     */
+    public function rejectRow(Request $request)
+    {
+        if (!auth()->user()->hasRole('System Administrator')) {
+            return response()->json(['error' => 'Unauthorized. Only System Administrators can perform this action.'], 403);
+        }
+
+        $request->validate([
+            'sheet_row_index' => 'required|integer|min:2',
+        ]);
+
+        try {
+            $user = auth()->user();
+            $branchId = session()->has('active_branch_id')
+                ? session('active_branch_id')
+                : $user->branch_id;
+
+            if (!$branchId) {
+                return response()->json(['error' => 'No active branch selected.'], 400);
+            }
+
+            $branch = Branch::findOrFail($branchId);
+            $sheetName = $branch->branch_name;
+            $rowIndex = $request->sheet_row_index;
+
+            $success = $this->sheetsService->deleteRowFromSheet($sheetName, $rowIndex);
+            if (!$success) {
+                return response()->json(['error' => "Google Sheet tab '{$sheetName}' not found or failed to delete row."], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Row {$rowIndex} successfully deleted from Google Sheet."
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Google Sheets rejectRow error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to delete row from Google Sheet: ' . $e->getMessage()], 500);
+        }
+    }
 }

@@ -223,6 +223,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/google-sheets/sync-all', [\App\Http\Controllers\GoogleSheetsSyncController::class, 'syncAll'])->name('google-sheets.sync-all');
     Route::get('/google-sheets/pull-compare', [\App\Http\Controllers\GoogleSheetsSyncController::class, 'pullAndCompare'])->name('google-sheets.pull-compare');
     Route::post('/google-sheets/pull-save', [\App\Http\Controllers\GoogleSheetsSyncController::class, 'savePulled'])->name('google-sheets.pull-save');
+    Route::post('/google-sheets/reject-row', [\App\Http\Controllers\GoogleSheetsSyncController::class, 'rejectRow'])->name('google-sheets.reject-row');
 
     // More actions page route
     Route::get('/more', function () {

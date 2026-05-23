@@ -817,4 +817,38 @@ class GoogleSheetsService
 
         return !empty($result) ? $result : null;
     }
+
+    /**
+     * Delete a specific row by its index from a sheet (tab).
+     */
+    public function deleteRowFromSheet(string $sheetName, int $rowIndex): bool
+    {
+        try {
+            $this->loadExistingSheets();
+            if (!isset($this->existingSheets[$sheetName])) {
+                return false;
+            }
+
+            $sheetId = $this->existingSheets[$sheetName];
+
+            $body = new BatchUpdateSpreadsheetRequest([
+                'requests' => [
+                    'deleteDimension' => [
+                        'range' => [
+                            'sheetId' => $sheetId,
+                            'dimension' => 'ROWS',
+                            'startIndex' => $rowIndex - 1, // 0-indexed
+                            'endIndex' => $rowIndex
+                        ]
+                    ]
+                ]
+            ]);
+
+            $this->service->spreadsheets->batchUpdate($this->spreadsheetId, $body);
+            return true;
+        } catch (\Exception $e) {
+            Log::error("Google Sheets Delete Row Error: " . $e->getMessage());
+            return false;
+        }
+    }
 }
