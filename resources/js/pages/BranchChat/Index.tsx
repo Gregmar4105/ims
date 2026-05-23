@@ -142,6 +142,7 @@ export default function BranchChatIndex({ branch }: { branch: Branch }) {
     const [mediaGallery, setMediaGallery] = useState<{ [date: string]: { id: number, attachment_path: string }[] }>({});
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
 
     // Contextual transfers for selected branch
     const branchTransfers = selectedBranch ? activeTransfers.filter(t => {
@@ -479,7 +480,7 @@ export default function BranchChatIndex({ branch }: { branch: Branch }) {
                                                                                 src={`/storage/${item.attachment_path}`}
                                                                                 alt="History"
                                                                                 className="object-cover w-full h-full transition-transform group-hover:scale-105 cursor-pointer"
-                                                                                onClick={() => window.open(`/storage/${item.attachment_path}`, '_blank')}
+                                                                                onClick={() => setPreviewImage(`/storage/${item.attachment_path}`)}
                                                                             />
                                                                         </div>
                                                                     ))}
@@ -643,7 +644,7 @@ export default function BranchChatIndex({ branch }: { branch: Branch }) {
                                                                             src={`/storage/${msg.attachment_path}`}
                                                                             alt="Attachment"
                                                                             className="rounded-lg max-h-60 object-contain cursor-pointer"
-                                                                            onClick={() => window.open(`/storage/${msg.attachment_path}`, '_blank')}
+                                                                            onClick={() => setPreviewImage(`/storage/${msg.attachment_path}`)}
                                                                         />
                                                                     </div>
                                                                 )}
@@ -758,6 +759,44 @@ export default function BranchChatIndex({ branch }: { branch: Branch }) {
                 </div>
 
             </div>
+
+            {/* Image Preview Modal */}
+            <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+                <DialogContent className="max-w-4xl p-0 overflow-hidden bg-transparent border-none shadow-none md:max-w-5xl flex items-center justify-center">
+                    <div className="relative flex items-center justify-center w-full h-full max-h-[85vh] p-4 select-none">
+                        <img
+                            src={previewImage || ''}
+                            alt="Preview Attachment"
+                            className="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-200"
+                        />
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-4 text-white z-50 shadow-lg border border-white/10">
+                            <a
+                                href={previewImage || ''}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs hover:underline flex items-center gap-1.5 font-medium transition-colors hover:text-primary-foreground text-white"
+                            >
+                                Open Original
+                            </a>
+                            <span className="w-px h-3 bg-white/20"></span>
+                            <button
+                                onClick={() => {
+                                    if (!previewImage) return;
+                                    const link = document.createElement('a');
+                                    link.href = previewImage;
+                                    link.download = previewImage.split('/').pop() || 'attachment';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                }}
+                                className="text-xs hover:underline flex items-center gap-1.5 font-medium transition-colors hover:text-primary-foreground text-white"
+                            >
+                                Download
+                            </button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
