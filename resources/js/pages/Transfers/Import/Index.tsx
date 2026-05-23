@@ -816,14 +816,6 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                 </DialogDescription>
                             </div>
                         </div>
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => setIsPullModalOpen(false)}
-                            className="text-emerald-100 hover:text-white hover:bg-emerald-700/50"
-                        >
-                            <X className="w-5 h-5" />
-                        </Button>
                     </div>
 
                     {/* Modal Content - Scrolling Grid */}
