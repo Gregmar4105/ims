@@ -68,6 +68,29 @@ interface IndexProps {
     scanned_image_path?: string;
 }
 
+const formatDbValue = (field: string, value: any): string => {
+    if (value === null || value === undefined) return '';
+    if (field === 'variations' && typeof value === 'object') {
+        try {
+            if (Array.isArray(value)) {
+                return value.map((v: any) => {
+                    const name = v.name;
+                    const opts = Array.isArray(v.options) 
+                        ? v.options.map((o: any) => `${o.value}${o.quantity ? ` (${o.quantity})` : ''}`).join('/') 
+                        : v.options;
+                    return `${name}: ${opts}`;
+                }).join(', ');
+            }
+        } catch (e) {
+            return JSON.stringify(value);
+        }
+    }
+    if (typeof value === 'object') {
+        return JSON.stringify(value);
+    }
+    return String(value);
+};
+
 export default function ImportTransferIndex({ brands = [], categories = [], suppliers = [], importDailyUsage = 0, importMinuteUsage = 0, scanned_image_path }: IndexProps) {
     const { data, setData, post, processing, errors } = useForm({
         image: null as File | null,
@@ -257,7 +280,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                 />
                 {isChanged && originalValue !== undefined && (
                     <span className="absolute bottom-0 right-1 text-[8px] text-amber-600 dark:text-amber-400 font-bold pointer-events-none scale-90 select-none">
-                        DB: {originalValue}
+                        DB: {formatDbValue(field, originalValue)}
                     </span>
                 )}
             </td>
