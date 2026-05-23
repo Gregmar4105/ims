@@ -284,15 +284,14 @@ class GoogleSheetsSyncController extends Controller
                 $warnings = [];
                 $isDuplicate = false;
 
-                // 1. Check duplicate barcode globally
+                // 1. Check duplicate barcode within this branch (using memory lookups)
                 if ($sheetBarcode) {
-                    $existing = \App\Models\Product::where('barcode', $sheetBarcode)
-                        ->when($matchedBp, function($q) use ($matchedBp) {
-                            $q->where('id', '!=', $matchedBp->product_id);
-                        })->first();
-                    if ($existing) {
-                        $warnings[] = "Barcode '{$sheetBarcode}' conflicts with an existing product globally: ID {$existing->id} ('{$existing->name}').";
-                        $isDuplicate = true;
+                    if (isset($dbProductsByBarcode[$sheetBarcode])) {
+                        $existingBp = $dbProductsByBarcode[$sheetBarcode];
+                        if (!$matchedBp || $existingBp->product_id != $matchedBp->product_id) {
+                            $warnings[] = "Barcode '{$sheetBarcode}' conflicts with an existing product in this branch: ID {$existingBp->product_id} ('{$existingBp->product->name}').";
+                            $isDuplicate = true;
+                        }
                     }
 
                     if (isset($seenSheetBarcodes[$sheetBarcode])) {
@@ -302,15 +301,14 @@ class GoogleSheetsSyncController extends Controller
                     $seenSheetBarcodes[$sheetBarcode] = true;
                 }
 
-                // 2. Check duplicate QR Code globally
+                // 2. Check duplicate QR Code within this branch (using memory lookups)
                 if ($sheetQrCode) {
-                    $existing = \App\Models\Product::where('qr_code', $sheetQrCode)
-                        ->when($matchedBp, function($q) use ($matchedBp) {
-                            $q->where('id', '!=', $matchedBp->product_id);
-                        })->first();
-                    if ($existing) {
-                        $warnings[] = "QR Code '{$sheetQrCode}' conflicts with an existing product globally: ID {$existing->id} ('{$existing->name}').";
-                        $isDuplicate = true;
+                    if (isset($dbProductsByQrCode[$sheetQrCode])) {
+                        $existingBp = $dbProductsByQrCode[$sheetQrCode];
+                        if (!$matchedBp || $existingBp->product_id != $matchedBp->product_id) {
+                            $warnings[] = "QR Code '{$sheetQrCode}' conflicts with an existing product in this branch: ID {$existingBp->product_id} ('{$existingBp->product->name}').";
+                            $isDuplicate = true;
+                        }
                     }
 
                     if (isset($seenSheetQrCodes[$sheetQrCode])) {
@@ -320,15 +318,14 @@ class GoogleSheetsSyncController extends Controller
                     $seenSheetQrCodes[$sheetQrCode] = true;
                 }
 
-                // 3. Check duplicate SKU globally
+                // 3. Check duplicate SKU within this branch (using memory lookups)
                 if ($sheetSku) {
-                    $existing = \App\Models\Product::where('sku', $sheetSku)
-                        ->when($matchedBp, function($q) use ($matchedBp) {
-                            $q->where('id', '!=', $matchedBp->product_id);
-                        })->first();
-                    if ($existing) {
-                        $warnings[] = "SKU '{$sheetSku}' conflicts with an existing product globally: ID {$existing->id} ('{$existing->name}').";
-                        $isDuplicate = true;
+                    if (isset($dbProductsBySku[$sheetSku])) {
+                        $existingBp = $dbProductsBySku[$sheetSku];
+                        if (!$matchedBp || $existingBp->product_id != $matchedBp->product_id) {
+                            $warnings[] = "SKU '{$sheetSku}' conflicts with an existing product in this branch: ID {$existingBp->product_id} ('{$existingBp->product->name}').";
+                            $isDuplicate = true;
+                        }
                     }
 
                     if (isset($seenSheetSkus[$sheetSku])) {
