@@ -161,7 +161,11 @@ class TransferController extends Controller
     {
         $user = auth()->user();
 
-        if ($transfer->source_branch_id !== $user->branch_id) {
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+
+        if ($transfer->source_branch_id !== $branchId) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -223,7 +227,7 @@ class TransferController extends Controller
                 ->toArray();
 
             if (!empty($destAdminPlayerIds)) {
-                $sourceBranch = \App\Models\Branch::find($user->branch_id);
+                $sourceBranch = \App\Models\Branch::find($transfer->source_branch_id);
                 $sourceBranchName = $sourceBranch ? $sourceBranch->branch_name : 'Unknown Branch';
                 
                 $oneSignal->sendNotification(
@@ -243,7 +247,11 @@ class TransferController extends Controller
     {
         $user = auth()->user();
 
-        if ($transfer->destination_branch_id !== $user->branch_id) {
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+
+        if ($transfer->destination_branch_id !== $branchId) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -468,7 +476,11 @@ class TransferController extends Controller
     {
         $user = auth()->user();
 
-        if ($transfer->source_branch_id !== $user->branch_id) {
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+
+        if ($transfer->source_branch_id !== $branchId) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -501,7 +513,7 @@ class TransferController extends Controller
                 ->toArray();
 
             if (!empty($destAdminPlayerIds)) {
-                $sourceBranch = \App\Models\Branch::find($user->branch_id);
+                $sourceBranch = \App\Models\Branch::find($transfer->source_branch_id);
                 $sourceBranchName = $sourceBranch ? $sourceBranch->branch_name : 'Unknown Branch';
                 
                 $oneSignal->sendNotification(
