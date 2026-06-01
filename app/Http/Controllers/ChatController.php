@@ -15,15 +15,19 @@ class ChatController extends Controller
         $branches = \App\Models\Branch::all();
 
         $activeTransfers = [];
-        if ($user->branch_id) {
+        $currentBranchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+
+        if ($currentBranchId) {
              $activeTransfers = \App\Models\Transfer::with(['sourceBranch', 'destinationBranch'])
-                ->where(function($q) use ($user) {
-                    $q->where('source_branch_id', $user->branch_id)
-                      ->whereIn('status', ['readied', 'outgoing']);
+                ->where(function($q) use ($currentBranchId) {
+                    $q->where('source_branch_id', $currentBranchId)
+                      ->whereIn('status', ['readied', 'outgoing', 'requested']);
                 })
-                ->orWhere(function($q) use ($user) {
-                    $q->where('destination_branch_id', $user->branch_id)
-                      ->where('status', 'outgoing');
+                ->orWhere(function($q) use ($currentBranchId) {
+                    $q->where('destination_branch_id', $currentBranchId)
+                      ->whereIn('status', ['outgoing', 'requested']);
                 })
                 ->latest()
                 ->get();

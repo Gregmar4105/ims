@@ -672,7 +672,53 @@ export default function ChatsIndex({ branches, activeTransfers = [], initialBran
                                 {branchTransfers.length > 0 && (
                                     <div className="bg-blue-50/50 border-b p-3 flex flex-col gap-2 text-sm text-blue-800 dark:bg-blue-900/20 dark:text-blue-200 shadow-inner">
                                         {branchTransfers.map(transfer => {
+                                            const isRequested = transfer.status === 'requested';
                                             const isIncoming = transfer.destination_branch_id === user.branch_id;
+
+                                            // Request Order (status requested)
+                                            if (isRequested) {
+                                                if (isIncoming) {
+                                                    // Requesting branch's perspective (they made the request, awaiting LM2 approval)
+                                                    return (
+                                                        <div key={transfer.id} className="flex items-center justify-between text-violet-800 dark:text-violet-200">
+                                                            <div className="flex items-center gap-2">
+                                                                <Clock className="w-4 h-4 text-violet-500 animate-spin" />
+                                                                <span className="font-semibold">Pending Request Order:</span>
+                                                                <span className="bg-violet-100/50 px-2 py-0.5 rounded border border-violet-200 dark:bg-violet-900/50 dark:border-violet-800 font-mono">
+                                                                    #{transfer.id}
+                                                                </span>
+                                                            </div>
+                                                            <a
+                                                                href="/incoming"
+                                                                className="flex items-center gap-1 text-xs font-bold text-violet-600 hover:text-violet-800 hover:underline dark:text-violet-400"
+                                                            >
+                                                                <span>View My Requests</span>
+                                                                <ArrowLeft className="w-3 h-3 rotate-180" />
+                                                            </a>
+                                                        </div>
+                                                    );
+                                                } else {
+                                                    // LM2 Main Bodega's perspective (incoming request from another branch)
+                                                    return (
+                                                        <div key={transfer.id} className="flex items-center justify-between text-violet-800 dark:text-violet-200">
+                                                            <div className="flex items-center gap-2">
+                                                                <FileText className="w-4 h-4 text-violet-500" />
+                                                                <span className="font-semibold">Incoming Request Order:</span>
+                                                                <span className="bg-violet-100/50 px-2 py-0.5 rounded border border-violet-200 dark:bg-violet-900/50 dark:border-violet-800 font-mono">
+                                                                    #{transfer.id}
+                                                                </span>
+                                                            </div>
+                                                            <a
+                                                                href="/outgoing"
+                                                                className="flex items-center gap-1 text-xs font-bold text-violet-600 hover:text-violet-800 hover:underline dark:text-violet-400"
+                                                            >
+                                                                <span>Approve & Transfer</span>
+                                                                <ArrowLeft className="w-3 h-3 rotate-180" />
+                                                            </a>
+                                                        </div>
+                                                    );
+                                                }
+                                            }
 
                                             // Incoming (always outgoing status because of backend filter)
                                             if (isIncoming) {

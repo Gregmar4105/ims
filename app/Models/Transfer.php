@@ -11,7 +11,7 @@ class Transfer extends Model
         'destination_branch_id',
         'supplier_id',
         'status',
-        'status',
+        'is_request',
         'readied_by',
         'approved_by',
         'received_by',

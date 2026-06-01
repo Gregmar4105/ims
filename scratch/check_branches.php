@@ -1,12 +1,15 @@
 <?php
-require __DIR__.'/../vendor/autoload.php';
-$app = require_once __DIR__.'/../bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
 
-foreach(\App\Models\Product::whereIn('id', [73,74,204,205])->get() as $p) {
-    echo "ID: {$p->id}, Name: {$p->name}, Branches: " . $p->branches->count() . "\n";
-    foreach($p->branches as $b) {
-        echo "  - Branch: {$b->branch_name}, Qty: {$b->pivot->quantity}\n";
-    }
+require __DIR__ . '/../vendor/autoload.php';
+$app = require __DIR__ . '/../bootstrap/app.php';
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+
+echo "=== BRANCHES ===\n";
+foreach (\App\Models\Branch::all() as $branch) {
+    echo "ID: {$branch->id} | Name: {$branch->branch_name} | Location: {$branch->location}\n";
+}
+
+echo "\n=== ROLES ===\n";
+foreach (\Spatie\Permission\Models\Role::all() as $role) {
+    echo "Role: {$role->name}\n";
 }

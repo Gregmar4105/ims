@@ -76,6 +76,7 @@ const Products = {
     items: [
         { title: "Product List", url: "/products", icon: ListChecks },
         { title: "Reorders", url: "/reorders", icon: ShoppingBasket },
+        { title: "Request Orders", url: "/request-orders", icon: ShoppingCart },
         {
             title: "Prod. Category",
             url: "/categories",

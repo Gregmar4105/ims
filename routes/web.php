@@ -223,6 +223,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/notifications-view', [\App\Http\Controllers\NotificationController::class, 'view'])->name('notifications.view');
     
     Route::get('/reorders', [ReorderController::class, 'index'])->name('reorders.index');
+    Route::get('/request-orders', [\App\Http\Controllers\RequestOrderController::class, 'index'])->name('request-orders.index');
+    Route::post('/request-orders', [\App\Http\Controllers\RequestOrderController::class, 'store'])->name('request-orders.store');
     
     // Google Sheets Sync
     Route::post('/google-sheets/sync-all', [\App\Http\Controllers\GoogleSheetsSyncController::class, 'syncAll'])->name('google-sheets.sync-all');

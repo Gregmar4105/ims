@@ -28,7 +28,7 @@ class TransferController extends Controller
 
         $transfers = Transfer::with(['items.product', 'destinationBranch', 'readiedBy', 'approvedBy'])
             ->where('source_branch_id', $branchId)
-            ->whereIn('status', ['readied', 'outgoing'])
+            ->whereIn('status', ['readied', 'outgoing', 'requested'])
             ->latest()
             ->get();
 
@@ -148,7 +148,7 @@ class TransferController extends Controller
 
         $transfers = Transfer::with(['items.product', 'sourceBranch', 'readiedBy', 'approvedBy'])
             ->where('destination_branch_id', $branchId)
-            ->whereIn('status', ['outgoing', 'incomplete'])
+            ->whereIn('status', ['outgoing', 'incomplete', 'requested'])
             ->latest()
             ->get();
 
@@ -169,7 +169,7 @@ class TransferController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        if ($transfer->status !== 'readied') {
+        if (!in_array($transfer->status, ['readied', 'requested'])) {
             return back()->with('error', 'Transfer cannot be initiated.');
         }
 
@@ -496,7 +496,7 @@ class TransferController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        if ($transfer->status !== 'readied') {
+        if (!in_array($transfer->status, ['readied', 'requested'])) {
             return back()->with('error', 'Transfer cannot be rejected.');
         }
 

@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, Truck, CheckCircle, Clock, User, Barcode, QrCode, Plus, XCircle, Send } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, User, Barcode, QrCode, Plus, XCircle, Send, ShoppingCart } from 'lucide-react';
 
 interface Branch {
     id: number;
@@ -47,6 +47,7 @@ interface Transfer {
     source_branch_id: number;
     destination_branch_id: number;
     status: string; // 'readied', 'outgoing', 'received', 'completed'
+    is_request: boolean;
     notes: string | null;
     created_at: string;
     items: TransferItem[];
@@ -157,24 +158,48 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                 ) : (
                     <div className="grid gap-6">
                         {transfers.map((transfer) => (
-                            <Card key={transfer.id} className="overflow-hidden border shadow-sm hover:shadow-md transition-shadow duration-200">
+                            <Card 
+                                key={transfer.id} 
+                                className={`overflow-hidden border shadow-sm hover:shadow-md transition-all duration-200 ${
+                                    transfer.is_request 
+                                        ? 'border-violet-300 dark:border-violet-900/65 bg-violet-50/5 dark:bg-violet-950/5 ring-1 ring-violet-500/5 shadow-violet-50/50 dark:shadow-none' 
+                                        : ''
+                                }`}
+                            >
                                 <CardHeader className="bg-muted/30 pb-4 border-b">
                                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-3">
-                                                <Badge
-                                                    variant={transfer.status === 'readied' ? 'secondary' : 'default'}
-                                                    className={`px-2.5 py-0.5 text-sm font-medium ${transfer.status === 'readied'
-                                                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800'
-                                                        : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800'
-                                                        }`}
-                                                >
-                                                    {transfer.status === 'readied' ? (
+                                                {transfer.status === 'requested' ? (
+                                                    <Badge
+                                                        variant="default"
+                                                        className="px-2.5 py-0.5 text-sm font-medium bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300 border-violet-200 dark:border-violet-800"
+                                                    >
+                                                        <span className="flex items-center gap-1.5"><ShoppingCart className="w-3.5 h-3.5" /> Requested</span>
+                                                    </Badge>
+                                                ) : transfer.status === 'readied' ? (
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="px-2.5 py-0.5 text-sm font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800"
+                                                    >
                                                         <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Readied</span>
-                                                    ) : (
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge
+                                                        variant="default"
+                                                        className="px-2.5 py-0.5 text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                                                    >
                                                         <span className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" /> Outgoing</span>
-                                                    )}
-                                                </Badge>
+                                                    </Badge>
+                                                )}
+                                                {transfer.is_request && transfer.status !== 'requested' && (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="px-2 py-0.5 text-xs font-semibold border-violet-300 text-violet-700 bg-violet-50 dark:bg-violet-950/20 dark:text-violet-400 dark:border-violet-800"
+                                                    >
+                                                        Request Order
+                                                    </Badge>
+                                                )}
                                                 <span className="text-sm text-muted-foreground font-mono">
                                                     #{transfer.id}
                                                 </span>
@@ -184,8 +209,8 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                                                 <span className="font-semibold">{transfer.destination_branch?.branch_name || 'Unknown Branch'}</span>
                                             </CardTitle>
                                         </div>
-
-                                        {transfer.status === 'readied' && (
+ 
+                                        {['readied', 'requested'].includes(transfer.status) && (
                                             <div className="flex items-center gap-2 w-full sm:w-auto">
                                                 <Button
                                                     variant="destructive"
@@ -194,15 +219,19 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                                                     className="flex-1 sm:flex-none gap-2"
                                                 >
                                                     <XCircle className="w-4 h-4" />
-                                                    Reject
+                                                    {transfer.status === 'requested' ? "Reject Request" : "Reject"}
                                                 </Button>
                                                 <Button
                                                     size="sm"
                                                     onClick={() => handleInitiateClick(transfer)}
-                                                    className="flex-1 sm:flex-none gap-2 bg-green-600 hover:bg-green-700 text-white"
+                                                    className={`flex-1 sm:flex-none gap-2 text-white ${
+                                                        transfer.status === 'requested'
+                                                            ? 'bg-violet-600 hover:bg-violet-700 dark:bg-violet-700 dark:hover:bg-violet-800'
+                                                            : 'bg-green-600 hover:bg-green-700'
+                                                    }`}
                                                 >
                                                     <Send className="w-4 h-4" />
-                                                    Initiate Transfer
+                                                    {transfer.status === 'requested' ? "Approve & Transfer" : "Initiate Transfer"}
                                                 </Button>
                                             </div>
                                         )}
