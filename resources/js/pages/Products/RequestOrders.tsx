@@ -19,13 +19,6 @@ import {
 import Pagination from '@/components/Pagination';
 import { SearchableSelect } from '@/components/SearchableSelect';
 import { toast } from 'sonner';
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-} from "@/components/ui/sheet";
 
 interface Product {
     id: number;
@@ -82,7 +75,6 @@ export default function RequestOrders({ products, filters, options, requestingBr
     const [cart, setCart] = useState<Array<{ product: Product; quantity: number }>>([]);
     const [notes, setNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isSheetOpen, setIsSheetOpen] = useState(false);
 
     // Synchronize filters when query parameters change
     useEffect(() => {
@@ -205,7 +197,6 @@ export default function RequestOrders({ products, filters, options, requestingBr
                 setCart([]);
                 setNotes('');
                 setIsSubmitting(false);
-                setIsSheetOpen(false);
                 toast.success("Request Order submitted successfully!");
             },
             onError: (err) => {
@@ -222,44 +213,33 @@ export default function RequestOrders({ products, filters, options, requestingBr
         <AppLayout breadcrumbs={[{ title: 'Request Orders', href: '/request-orders' }]}>
             <Head title="Request Orders" />
 
-            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 w-full max-w-none">
-                    
-                    {/* Header Banner - Matches System style */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-zinc-900 border p-6 rounded-xl shadow-sm">
-                        <div className="flex-1">
-                            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white flex items-center gap-2 flex-wrap">
-                                Request Orders Catalog
-                                {requestingBranch && (
-                                    <span className="bg-violet-100 text-violet-700 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-violet-900/30 dark:text-violet-300">
-                                        For: {requestingBranch.branch_name}
-                                    </span>
-                                )}
-                            </h1>
-                            <p className="text-sm text-muted-foreground mt-1">
-                                Select products from <span className="font-semibold text-foreground text-zinc-800 dark:text-zinc-200">LM2 Main Bodega</span> and compile your request order.
-                            </p>
-                        </div>
-
-                        <Button 
-                            onClick={() => setIsSheetOpen(true)} 
-                            className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white dark:bg-violet-700 dark:hover:bg-violet-600 shadow-sm transition-all"
-                        >
-                            <ShoppingCart className="w-4 h-4" />
-                            View Basket
-                            {cart.length > 0 && (
-                                <span className="ml-1 bg-violet-850 dark:bg-violet-900/60 text-white rounded-full px-2 py-0.5 text-xs font-bold font-mono">
-                                    {cart.length}
+            <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 w-full max-w-none">
+                
+                {/* Header Banner - Matches System style */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-800 border p-6 rounded-xl shadow-sm">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
+                            Request Orders Catalog
+                            {requestingBranch && (
+                                <span className="bg-violet-100 text-violet-700 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-violet-900/30 dark:text-violet-300">
+                                    For: {requestingBranch.branch_name}
                                 </span>
                             )}
-                        </Button>
+                        </h1>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Select products from <span className="font-semibold text-foreground text-gray-850 dark:text-gray-200">LM2 Main Bodega</span> and compile your request order in the right-side container.
+                        </p>
                     </div>
+                </div>
 
-                    <div className="w-full space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start w-full">
+                    
+                    {/* Left Column: Product List Table (Span 3) - EXACT UX/UI match of /reorders */}
+                    <div className="lg:col-span-3 space-y-6">
                         
                         {/* Filters Container - Matching /reorders page search & filters */}
-                        <div className="bg-white dark:bg-zinc-900 rounded-xl border shadow-sm flex flex-col">
-                            <div className="p-4 border-b flex flex-col md:flex-row gap-4 items-center justify-between bg-gray-50/50 dark:bg-zinc-900/50">
+                        <div className="bg-white dark:bg-gray-800 rounded-xl border shadow-sm flex flex-col">
+                            <div className="p-4 border-b flex flex-col md:flex-row gap-4 items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
                                 <div className="relative w-full md:max-w-xs">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                                     <Input
@@ -312,7 +292,7 @@ export default function RequestOrders({ products, filters, options, requestingBr
                             <div className="overflow-x-auto">
                                 <Table>
                                     <TableHeader>
-                                        <TableRow className="bg-gray-50/50 dark:bg-zinc-900/50">
+                                        <TableRow className="bg-gray-50/50 dark:bg-gray-800/50">
                                             <TableHead className="w-[80px]">Image</TableHead>
                                             <TableHead>Product</TableHead>
                                             <TableHead>Category/Brand</TableHead>
@@ -330,7 +310,7 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                                 return (
                                                     <TableRow 
                                                         key={product.id} 
-                                                        className={`hover:bg-gray-50/50 dark:hover:bg-zinc-800/50 transition-colors ${
+                                                        className={`hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors ${
                                                             inCart ? 'bg-violet-500/[0.04] dark:bg-violet-500/[0.02]' : ''
                                                         }`}
                                                     >
@@ -345,7 +325,7 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                                                     />
                                                                 </div>
                                                             ) : (
-                                                                <div className="h-12 w-12 rounded-lg border bg-gray-50 dark:bg-zinc-800 flex items-center justify-center text-gray-400">
+                                                                <div className="h-12 w-12 rounded-lg border bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400">
                                                                     <Bike className="h-6 w-6" />
                                                                 </div>
                                                             )}
@@ -448,149 +428,122 @@ export default function RequestOrders({ products, filters, options, requestingBr
                         )}
                     </div>
 
-                </div>
-
-                <SheetContent side="right" className="flex flex-col h-full p-0 gap-0 bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 w-full sm:max-w-md">
-                    <SheetHeader className="bg-violet-500/5 dark:bg-violet-950/15 border-b p-5 flex flex-col gap-1.5 shrink-0 text-left">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <ShoppingCart className="w-5 h-5 text-violet-500" />
-                                <SheetTitle className="text-lg font-bold text-zinc-950 dark:text-zinc-50">Request Basket</SheetTitle>
-                            </div>
-                            <Badge className="bg-violet-600 hover:bg-violet-700 text-white text-xs px-2.5 py-0.5 rounded-full font-bold">
-                                {cart.length} items
-                            </Badge>
-                        </div>
-                        <SheetDescription className="text-xs text-muted-foreground">
-                            Specify quantities and optional notes below to confirm your request from LM2 Main Bodega.
-                        </SheetDescription>
-                    </SheetHeader>
-
-                    {/* Basket Contents */}
-                    <div className="flex-1 overflow-y-auto p-5">
-                        {cart.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-20 text-center">
-                                <ShoppingCart className="w-12 h-12 text-zinc-300 dark:text-zinc-700 stroke-[1.2] mb-4 animate-pulse" />
-                                <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Your basket is empty</h3>
-                                <p className="text-xs text-zinc-400 mt-2 max-w-[200px]">
-                                    Click "Request Item" on any product in the catalog to build your list.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <div className="divide-y border rounded-xl bg-zinc-50/50 dark:bg-zinc-950/20 overflow-hidden border-zinc-200 dark:border-zinc-800">
-                                    {cart.map(item => (
-                                        <div key={item.product.id} className="p-3.5 hover:bg-zinc-100/30 dark:hover:bg-zinc-950/30 transition-colors flex items-center justify-between gap-4">
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate" title={item.product.name}>
-                                                    {item.product.name}
-                                                </h4>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    {item.product.sku && (
-                                                        <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded font-mono">
-                                                            {item.product.sku}
-                                                        </span>
-                                                    )}
-                                                    <span className="text-[10px] text-muted-foreground">
-                                                        Max: {item.product.quantity} units
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                {/* Quantity selector */}
-                                                <div className="flex items-center gap-1 border rounded-full bg-white dark:bg-zinc-900 p-0.5 shadow-sm border-zinc-200 dark:border-zinc-800 font-mono">
-                                                    <Button 
-                                                        size="icon" 
-                                                        variant="ghost" 
-                                                        className="h-6 w-6 rounded-full text-zinc-650 dark:text-zinc-450"
-                                                        onClick={() => updateQuantity(item.product.id, -1)}
-                                                    >
-                                                        <Minus className="w-3 h-3" />
-                                                    </Button>
-                                                    <span className="w-5 text-center text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                                                        {item.quantity}
-                                                    </span>
-                                                    <Button 
-                                                        size="icon" 
-                                                        variant="ghost" 
-                                                        className="h-6 w-6 rounded-full text-zinc-650 dark:text-zinc-450"
-                                                        onClick={() => updateQuantity(item.product.id, 1)}
-                                                        disabled={item.quantity >= item.product.quantity}
-                                                    >
-                                                        <Plus className="w-3 h-3" />
-                                                    </Button>
-                                                </div>
-                                                
-                                                {/* Remove button */}
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    className="h-8 w-8 rounded-full text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                                                    onClick={() => removeFromCart(item.product.id)}
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
+                    {/* Right Column: Sticky Cart Container (Span 1) - Persistent Basket Container */}
+                    <div className="lg:col-span-1 sticky top-6">
+                        <Card className="border shadow-md overflow-hidden bg-white dark:bg-gray-800 border-violet-500/10 rounded-xl">
+                            <CardHeader className="bg-violet-500/5 dark:bg-violet-950/15 border-b p-4 flex flex-row items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <ShoppingCart className="w-4 h-4 text-violet-500" />
+                                    <CardTitle className="text-base font-bold text-gray-900 dark:text-white">Request Basket</CardTitle>
                                 </div>
-                            </div>
-                        )}
+                                <Badge className="bg-violet-600 text-white text-xs px-2.5 py-0.5 rounded-full font-bold">{cart.length} items</Badge>
+                            </CardHeader>
+                            
+                            <CardContent className="p-4 space-y-4">
+                                
+                                {cart.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                                        <ShoppingCart className="w-10 h-10 text-gray-300 dark:text-gray-600 stroke-[1.2] mb-3" />
+                                        <p className="text-xs font-semibold text-gray-500">Your basket is empty.</p>
+                                        <p className="text-[10px] text-gray-400 mt-1 max-w-[180px]">
+                                            Click "Request Item" on the table to add products to your list.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Basket Items List */}
+                                        <div className="max-h-[350px] overflow-y-auto divide-y border rounded-lg bg-gray-50/30 dark:bg-gray-900/30 border-gray-200 dark:border-gray-700">
+                                            {cart.map(item => (
+                                                <div key={item.product.id} className="p-3 hover:bg-gray-100/50 dark:hover:bg-gray-900/50 transition-colors flex items-center justify-between gap-3">
+                                                    <div className="flex-1 min-w-0 col-span-1">
+                                                        <h4 className="font-semibold text-xs text-gray-900 dark:text-gray-100 truncate" title={item.product.name}>
+                                                            {item.product.name}
+                                                        </h4>
+                                                        <span className="text-[10px] text-muted-foreground block font-mono mt-0.5">
+                                                            Max: {item.product.quantity} available
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1.5 shrink-0 col-span-1">
+                                                        {/* Quantity selector */}
+                                                        <div className="flex items-center gap-1 border rounded-full bg-white dark:bg-gray-800 p-0.5 shadow-sm border-gray-200 dark:border-gray-700 font-mono">
+                                                            <Button 
+                                                                size="icon" 
+                                                                variant="ghost" 
+                                                                className="h-5 w-5 rounded-full text-gray-600 dark:text-gray-405"
+                                                                onClick={() => updateQuantity(item.product.id, -1)}
+                                                            >
+                                                                <Minus className="w-2.5 h-2.5" />
+                                                            </Button>
+                                                            <span className="w-5 text-center text-xs font-bold text-gray-900 dark:text-gray-100">
+                                                                {item.quantity}
+                                                            </span>
+                                                            <Button 
+                                                                size="icon" 
+                                                                variant="ghost" 
+                                                                className="h-5 w-5 rounded-full text-gray-600 dark:text-gray-405"
+                                                                onClick={() => updateQuantity(item.product.id, 1)}
+                                                                disabled={item.quantity >= item.product.quantity}
+                                                            >
+                                                                <Plus className="w-2.5 h-2.5" />
+                                                            </Button>
+                                                        </div>
+                                                        
+                                                        {/* Remove button */}
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            className="h-6 w-6 rounded-full text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                                                            onClick={() => removeFromCart(item.product.id)}
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Notes input */}
+                                        <div className="space-y-1.5 pt-2">
+                                            <Label htmlFor="request-notes" className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                                Request Notes
+                                            </Label>
+                                            <Textarea
+                                                id="request-notes"
+                                                placeholder="Provide reasons, specifications, variations needed, etc."
+                                                value={notes}
+                                                onChange={e => setNotes(e.target.value)}
+                                                className="resize-none text-xs min-h-[70px] border-gray-200 dark:border-gray-700 focus-visible:ring-violet-500 bg-white dark:bg-gray-800"
+                                            />
+                                        </div>
+
+                                        {/* Action Button */}
+                                        <div className="pt-2 border-t mt-4 space-y-2 border-gray-200 dark:border-gray-750">
+                                            <Button
+                                                onClick={handleConfirmRequest}
+                                                disabled={isSubmitting}
+                                                className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold gap-2 shadow-lg h-11 text-sm shadow-violet-200 dark:shadow-none border-0"
+                                            >
+                                                {isSubmitting ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <Send className="w-4 h-4" />
+                                                )}
+                                                {isSubmitting ? 'Confirming Request...' : 'Confirm Request'}
+                                            </Button>
+                                            <p className="text-[10px] text-muted-foreground text-center">
+                                                Order will appear on the LM2 Main Bodega Outgoing page immediately.
+                                            </p>
+                                        </div>
+                                    </>
+                                )}
+                            </CardContent>
+                        </Card>
                     </div>
 
-                    {/* Drawer Footer - Sticky */}
-                    {cart.length > 0 && (
-                        <div className="p-5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20 shrink-0 space-y-4">
-                            {/* Notes input */}
-                            <div className="space-y-1.5">
-                                <Label htmlFor="drawer-request-notes" className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                                    Request Notes
-                                </Label>
-                                <Textarea
-                                    id="drawer-request-notes"
-                                    placeholder="Provide reasons, specifications, variations needed, etc."
-                                    value={notes}
-                                    onChange={e => setNotes(e.target.value)}
-                                    className="resize-none text-xs min-h-[80px] border-zinc-200 dark:border-zinc-800 focus-visible:ring-violet-500 focus-visible:ring-offset-0 bg-white dark:bg-zinc-900"
-                                />
-                            </div>
-
-                            {/* Action Button */}
-                            <div className="space-y-2">
-                                <Button
-                                    onClick={handleConfirmRequest}
-                                    disabled={isSubmitting}
-                                    className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold gap-2 shadow-lg h-11 text-sm shadow-violet-200 dark:shadow-none border-0"
-                                >
-                                    {isSubmitting ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <Send className="w-4 h-4" />
-                                    )}
-                                    {isSubmitting ? 'Submitting Request...' : 'Confirm Request'}
-                                </Button>
-                                <p className="text-[10px] text-muted-foreground text-center">
-                                    Order will appear on the LM2 Main Bodega Outgoing page immediately.
-                                </p>
-                            </div>
-                        </div>
-                    )}
-                </SheetContent>
-            </Sheet>
-
-            {/* Floating Action Button (FAB) Checkout */}
-            {cart.length > 0 && (
-                <div className="fixed bottom-6 right-6 z-40 animate-fade-in print:hidden">
-                    <Button
-                        onClick={() => setIsSheetOpen(true)}
-                        className="rounded-full shadow-xl shadow-violet-500/20 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white border-0 px-6 py-6 h-auto font-bold flex items-center gap-2.5 group transition-all duration-300 hover:scale-105"
-                    >
-                        <ShoppingCart className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                        <span>Confirm Request ({cart.length})</span>
-                    </Button>
                 </div>
-            )}
+
+            </div>
         </AppLayout>
     );
 }
