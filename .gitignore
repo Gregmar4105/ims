@@ -28,3 +28,7 @@ yarn-error.log
 
 # Credential files (keystores, private keys, etc.)
 /credentials/
+
+# Temporary scratch and debugging files
+/scratch/
+

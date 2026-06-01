@@ -84,6 +84,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/schedule', [\App\Http\Controllers\SystemDashboardController::class, 'scheduleShutdown'])->name('schedule');
         Route::get('/schedules', [\App\Http\Controllers\SystemDashboardController::class, 'getSchedules'])->name('schedules');
         Route::post('/schedules/{command}/cancel', [\App\Http\Controllers\SystemDashboardController::class, 'cancelSchedule'])->name('cancel');
+        Route::get('/cloudflare-stats', [\App\Http\Controllers\SystemDashboardController::class, 'getCloudflareStats'])->name('cloudflare-stats');
+        Route::get('/entity-stats', [\App\Http\Controllers\SystemDashboardController::class, 'getSystemEntityStats'])->name('entity-stats');
     });
     Route::get('branch-dashboard', [\App\Http\Controllers\BranchDashboardController::class, 'index'])
         ->name('branch.dashboard');

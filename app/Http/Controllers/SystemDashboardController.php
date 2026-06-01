@@ -8,13 +8,24 @@ use App\Services\ProxmoxService;
 use App\Models\ScheduledCommand;
 use Carbon\Carbon;
 
+use App\Services\CloudflareService;
+use App\Models\User;
+use App\Models\Product;
+use App\Models\Branch;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Sale;
+use App\Models\Transfer;
+
 class SystemDashboardController extends Controller
 {
     protected $proxmox;
+    protected $cloudflare;
 
-    public function __construct(ProxmoxService $proxmox)
+    public function __construct(ProxmoxService $proxmox, CloudflareService $cloudflare)
     {
         $this->proxmox = $proxmox;
+        $this->cloudflare = $cloudflare;
     }
 
     public function index()
@@ -91,5 +102,43 @@ class SystemDashboardController extends Controller
     {
         $command->update(['status' => 'cancelled']);
         return response()->json(['message' => 'Schedule cancelled']);
+    }
+
+    public function getCloudflareStats()
+    {
+        try {
+            $threatStats = $this->cloudflare->getThreatStats();
+            $trafficStats = $this->cloudflare->getTrafficStats();
+
+            return response()->json([
+                'threat' => $threatStats,
+                'traffic' => $trafficStats
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to fetch Cloudflare Stats: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch Cloudflare Stats'], 500);
+        }
+    }
+
+    public function getSystemEntityStats()
+    {
+        try {
+            $stats = [
+                'users' => User::count(),
+                'products' => Product::count(),
+                'branches' => Branch::count(),
+                'brands' => Brand::count(),
+                'categories' => Category::count(),
+                'sales' => Sale::where('status', 'completed')->count(),
+                'pending_sales' => Sale::where('status', 'readied')->count(),
+                'active_transfers' => Transfer::whereIn('status', ['pending', 'readied', 'outgoing', 'incomplete'])->count(),
+                'completed_transfers' => Transfer::where('status', 'completed')->count(),
+            ];
+
+            return response()->json($stats);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to fetch System Entity Stats: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch system entity stats'], 500);
+        }
     }
 }
