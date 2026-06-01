@@ -261,6 +261,7 @@ class TransferController extends Controller
 
         $request->validate([
             'status' => 'required|string|in:completed,incomplete,rejected,outgoing',
+            'received_by' => 'required|exists:users,id',
             'items' => 'required|array',
             'items.*.id' => 'required|exists:transfer_items,id',
             'items.*.received_quantity' => 'required|integer|min:0',
@@ -316,7 +317,7 @@ class TransferController extends Controller
 
                     $transfer->update([
                         'status' => 'rejected',
-                        'received_by' => $user->id,
+                        'received_by' => $request->received_by,
                     ]);
                 } elseif ($newStatus === 'incomplete') {
                     // Incomplete split delivery logic: update remaining items, delete completed items
@@ -369,12 +370,12 @@ class TransferController extends Controller
                     if ($hasRemaining) {
                         $transfer->update([
                             'status' => 'incomplete',
-                            'received_by' => $user->id,
+                            'received_by' => $request->received_by,
                         ]);
                     } else {
                         $transfer->update([
                             'status' => 'completed',
-                            'received_by' => $user->id,
+                            'received_by' => $request->received_by,
                         ]);
                         $newStatus = 'completed'; // update status for notification / response message
                     }
@@ -431,7 +432,7 @@ class TransferController extends Controller
 
                     $transfer->update([
                         'status' => $newStatus,
-                        'received_by' => $user->id,
+                        'received_by' => $request->received_by,
                     ]);
                 }
             });

@@ -173,6 +173,7 @@ class ImportTransferController extends Controller
                     'destination_branch_id' => $branchId,
                     'supplier_id' => $product ? $product->supplier_id : null,
                     'status' => 'completed',
+                    'readied_by' => $userId,
                     'received_by' => $userId,
                     'notes' => 'Stock updated via Import Transfer photo scan',
                 ]);
@@ -247,6 +248,7 @@ class ImportTransferController extends Controller
                 'source_branch_id' => $request->source_branch_id,
                 'destination_branch_id' => $branchId,
                 'status' => 'completed',
+                'readied_by' => $userId,
                 'received_by' => $userId,
                 'notes' => 'Bulk imported products via Import Transfer photo scan',
             ]);

@@ -134,4 +134,21 @@ class BranchController extends Controller
 
         return back();
     }
+
+    public function getUsers(Request $request, Branch $branch)
+    {
+        $search = $request->query('search');
+
+        $users = User::where('branch_id', $branch->id)
+            ->when($search, function ($query) use ($search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return response()->json($users);
+    }
 }

@@ -472,6 +472,7 @@ class GoogleSheetsSyncController extends Controller
                         'source_branch_id' => $branchId,
                         'destination_branch_id' => $branchId,
                         'status' => 'completed',
+                        'readied_by' => $userId,
                         'received_by' => $userId,
                         'notes' => 'Synchronized & imported via Google Sheet pull-save',
                     ]);

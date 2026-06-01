@@ -19,6 +19,7 @@ interface AutocompleteInputProps {
     value: string;
     onValueChange: (value: string) => void;
     onOptionSelect?: (value: string) => void;
+    onOptionSelectObject?: (option: Option) => void;
     placeholder: string;
     searchUrl: string;
     className?: string;
@@ -30,6 +31,7 @@ export function AutocompleteInput({
     value,
     onValueChange,
     onOptionSelect,
+    onOptionSelectObject,
     placeholder,
     searchUrl,
     className,
@@ -81,6 +83,7 @@ export function AutocompleteInput({
         setInputValue(option.name);
         onValueChange(option.name);
         onOptionSelect?.(option.name);
+        onOptionSelectObject?.(option);
         setOpen(false);
     };
 

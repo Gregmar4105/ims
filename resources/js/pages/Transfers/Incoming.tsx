@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useForm } from '@inertiajs/react';
+import { useForm, Head, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { Head } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import { AutocompleteInput } from '@/components/AutocompleteInput';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -59,12 +60,17 @@ const breadcrumbs = [
 ];
 
 export default function Incoming({ transfers }: { transfers: Transfer[] }) {
+    const { auth } = usePage<SharedData>().props;
+    const currentUser = auth.user;
+
     const [selectedTransfer, setSelectedTransfer] = useState<Transfer | null>(null);
     const [isOpen, setIsOpen] = useState(false);
     const [verifiedProducts, setVerifiedProducts] = useState<Record<number, boolean>>({});
+    const [receiverName, setReceiverName] = useState('');
 
-    const { data, setData, post, processing, reset } = useForm({
+    const { data, setData, post, processing, reset, errors } = useForm({
         status: 'completed',
+        received_by: '',
         items: [] as Array<{ id: number; received_quantity: number }>,
     });
 
@@ -80,8 +86,10 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
 
     const handleOpenConfirmModal = (transfer: Transfer) => {
         setSelectedTransfer(transfer);
+        setReceiverName(currentUser.name);
         setData({
             status: 'completed',
+            received_by: currentUser.id.toString(),
             items: transfer.items.map(item => ({
                 id: item.id,
                 received_quantity: item.received_quantity > 0 ? item.received_quantity : item.quantity
@@ -319,6 +327,23 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                                 {data.status === 'rejected' && "✖ Decline receipt. Stock will be completely returned to the sender."}
                                 {data.status === 'outgoing' && "⏳ Keep the transfer as pending (outgoing) for verification later."}
                             </p>
+                        </div>
+
+                        {/* Received By Selection */}
+                        <div className="space-y-2">
+                            <Label htmlFor="received_by" className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Accepted/Received By</Label>
+                            {selectedTransfer && (
+                                <AutocompleteInput
+                                    value={receiverName}
+                                    onValueChange={setReceiverName}
+                                    onOptionSelectObject={(opt) => {
+                                        setData('received_by', opt.id.toString());
+                                    }}
+                                    placeholder="Search and select claiming user..."
+                                    searchUrl={`/api/branches/${selectedTransfer.destination_branch_id}/users`}
+                                    error={errors.received_by}
+                                />
+                            )}
                         </div>
 
                         {data.status !== 'rejected' && (
