@@ -357,7 +357,7 @@ export default function SystemDashboard() {
                     }
                 </CardHeader>
                 <CardContent className="pt-4">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                         <div className="flex flex-col space-y-1">
                             <span className="text-xs text-muted-foreground flex items-center gap-1"><Cpu className="h-3 w-3" /> CPU Usage</span>
                             <span className="text-2xl font-bold">{data.cpu}%</span>
@@ -470,18 +470,18 @@ export default function SystemDashboard() {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-                    <div className="flex justify-center w-full">
-                        <TabsList className="bg-muted/60 p-1.5 rounded-xl border border-border/30 shadow-sm gap-1 backdrop-blur-sm">
-                            <TabsTrigger value="infrastructure" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none">
+                    <div className="w-full overflow-x-auto scrollbar-none py-1 flex md:justify-center" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                        <TabsList className="flex bg-muted/60 p-1.5 rounded-xl border border-border/30 shadow-sm gap-1 backdrop-blur-sm w-max min-w-full md:min-w-0 md:w-auto overflow-x-auto whitespace-nowrap flex-nowrap shrink-0 scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                            <TabsTrigger value="infrastructure" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none shrink-0">
                                 <Server className="h-4 w-4" /> Infrastructure Nodes
                             </TabsTrigger>
-                            <TabsTrigger value="entity_analytics" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none">
+                            <TabsTrigger value="entity_analytics" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none shrink-0">
                                 <Database className="h-4 w-4" /> App & DB Analytics
                             </TabsTrigger>
-                            <TabsTrigger value="cloudflare_traffic" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none">
+                            <TabsTrigger value="cloudflare_traffic" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none shrink-0">
                                 <Globe className="h-4 w-4" /> Cloudflare Web Traffic
                             </TabsTrigger>
-                            <TabsTrigger value="cloudflare_threats" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none">
+                            <TabsTrigger value="cloudflare_threats" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none shrink-0">
                                 <ShieldAlert className="h-4 w-4" /> Security Threats
                             </TabsTrigger>
                         </TabsList>
@@ -581,33 +581,35 @@ export default function SystemDashboard() {
                                             No pending schedules.
                                         </div>
                                     ) : (
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Command</TableHead>
-                                                    <TableHead>Scheduled For</TableHead>
-                                                    <TableHead className="text-right">Action</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {schedules.map((schedule) => (
-                                                    <TableRow key={schedule.id}>
-                                                        <TableCell className="font-medium capitalize text-sm">
-                                                            <div className="flex flex-col gap-1">
-                                                                <span>{schedule.command} (All Nodes)</span>
-                                                                {schedule.is_recurring && <Badge variant="secondary" className="w-fit text-[9px] h-5 px-1.5">Daily</Badge>}
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell className="text-xs">{new Date(schedule.scheduled_at).toLocaleString()}</TableCell>
-                                                        <TableCell className="text-right">
-                                                            <Button variant="ghost" size="icon" onClick={() => cancelSchedule(schedule.id)}>
-                                                                <X className="h-4 w-4 text-destructive" />
-                                                            </Button>
-                                                        </TableCell>
+                                        <div className="overflow-x-auto w-full scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Command</TableHead>
+                                                        <TableHead>Scheduled For</TableHead>
+                                                        <TableHead className="text-right">Action</TableHead>
                                                     </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {schedules.map((schedule) => (
+                                                        <TableRow key={schedule.id}>
+                                                            <TableCell className="font-medium capitalize text-sm whitespace-nowrap">
+                                                                <div className="flex flex-col gap-1">
+                                                                    <span>{schedule.command} (All Nodes)</span>
+                                                                    {schedule.is_recurring && <Badge variant="secondary" className="w-fit text-[9px] h-5 px-1.5">Daily</Badge>}
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="text-xs whitespace-nowrap">{new Date(schedule.scheduled_at).toLocaleString()}</TableCell>
+                                                            <TableCell className="text-right">
+                                                                <Button variant="ghost" size="icon" onClick={() => cancelSchedule(schedule.id)}>
+                                                                    <X className="h-4 w-4 text-destructive" />
+                                                                </Button>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
                                     )}
                                 </CardContent>
                             </Card>
@@ -645,7 +647,7 @@ export default function SystemDashboard() {
 
                                 {/* Stats Cards */}
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <Card className="p-4 shadow-sm hover:shadow transition-shadow flex flex-col justify-between h-28">
+                                    <Card className="p-4 shadow-sm hover:shadow transition-shadow flex flex-col justify-between min-h-[110px]">
                                         <div className="flex items-center justify-between pb-1">
                                             <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Registered Users</span>
                                             <Users className="h-4 w-4 text-muted-foreground" />
@@ -655,7 +657,7 @@ export default function SystemDashboard() {
                                             <span className="text-[10px] text-muted-foreground">All users in system</span>
                                         </div>
                                     </Card>
-                                    <Card className="p-4 shadow-sm hover:shadow transition-shadow flex flex-col justify-between h-28">
+                                    <Card className="p-4 shadow-sm hover:shadow transition-shadow flex flex-col justify-between min-h-[110px]">
                                         <div className="flex items-center justify-between pb-1">
                                             <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Inventory Products</span>
                                             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
@@ -665,7 +667,7 @@ export default function SystemDashboard() {
                                             <span className="text-[10px] text-muted-foreground">All global inventory</span>
                                         </div>
                                     </Card>
-                                    <Card className="p-4 shadow-sm hover:shadow transition-shadow flex flex-col justify-between h-28">
+                                    <Card className="p-4 shadow-sm hover:shadow transition-shadow flex flex-col justify-between min-h-[110px]">
                                         <div className="flex items-center justify-between pb-1">
                                             <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Active Transfers</span>
                                             <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
@@ -675,7 +677,7 @@ export default function SystemDashboard() {
                                             <span className="text-[10px] text-muted-foreground">All active transfers</span>
                                         </div>
                                     </Card>
-                                    <Card className="p-4 shadow-sm hover:shadow transition-shadow flex flex-col justify-between h-28">
+                                    <Card className="p-4 shadow-sm hover:shadow transition-shadow flex flex-col justify-between min-h-[110px]">
                                         <div className="flex items-center justify-between pb-1">
                                             <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Completed Sales</span>
                                             <BadgePercent className="h-4 w-4 text-muted-foreground" />
