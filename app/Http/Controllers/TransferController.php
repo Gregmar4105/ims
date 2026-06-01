@@ -259,6 +259,12 @@ class TransferController extends Controller
             return back()->with('error', 'Transfer cannot be confirmed.');
         }
 
+        $input = $request->all();
+        if (empty($input['received_by']) || !is_numeric($input['received_by'])) {
+            $input['received_by'] = null;
+        }
+        $request->merge($input);
+
         $request->validate([
             'status' => 'required|string|in:completed,incomplete,rejected,outgoing',
             'received_by' => 'nullable|exists:users,id',
