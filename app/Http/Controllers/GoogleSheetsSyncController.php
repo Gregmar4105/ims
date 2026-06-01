@@ -156,7 +156,7 @@ class GoogleSheetsSyncController extends Controller
                     $transfer->created_at->format('Y-m-d H:i'),
                     $transfer->readiedBy?->name,
                     $transfer->approvedBy?->name,
-                    $transfer->receivedBy?->name,
+                    $transfer->received_by_name ?? $transfer->receivedBy?->name,
                     $itemsSummary,
                     $transfer->notes,
                 ];

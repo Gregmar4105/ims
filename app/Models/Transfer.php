@@ -15,6 +15,7 @@ class Transfer extends Model
         'readied_by',
         'approved_by',
         'received_by',
+        'received_by_name',
         'notes',
     ];
 

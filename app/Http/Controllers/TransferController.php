@@ -261,7 +261,8 @@ class TransferController extends Controller
 
         $request->validate([
             'status' => 'required|string|in:completed,incomplete,rejected,outgoing',
-            'received_by' => 'required|exists:users,id',
+            'received_by' => 'nullable|exists:users,id',
+            'received_by_name' => 'required|string|max:255',
             'items' => 'required|array',
             'items.*.id' => 'required|exists:transfer_items,id',
             'items.*.received_quantity' => 'required|integer|min:0',
@@ -318,6 +319,7 @@ class TransferController extends Controller
                     $transfer->update([
                         'status' => 'rejected',
                         'received_by' => $request->received_by,
+                        'received_by_name' => $request->received_by_name,
                     ]);
                 } elseif ($newStatus === 'incomplete') {
                     // Incomplete split delivery logic: update remaining items, delete completed items
@@ -371,11 +373,13 @@ class TransferController extends Controller
                         $transfer->update([
                             'status' => 'incomplete',
                             'received_by' => $request->received_by,
+                            'received_by_name' => $request->received_by_name,
                         ]);
                     } else {
                         $transfer->update([
                             'status' => 'completed',
                             'received_by' => $request->received_by,
+                            'received_by_name' => $request->received_by_name,
                         ]);
                         $newStatus = 'completed'; // update status for notification / response message
                     }
@@ -433,6 +437,7 @@ class TransferController extends Controller
                     $transfer->update([
                         'status' => $newStatus,
                         'received_by' => $request->received_by,
+                        'received_by_name' => $request->received_by_name,
                     ]);
                 }
             });

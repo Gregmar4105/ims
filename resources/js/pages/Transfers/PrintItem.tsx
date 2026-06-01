@@ -18,6 +18,7 @@ interface Transfer {
     readied_by: { name: string } | null;
     approved_by: { name: string } | null;
     received_by: { name: string } | null;
+    received_by_name: string | null;
     supplier?: { name: string } | null;
     items: Array<{
         id: number;
@@ -102,8 +103,8 @@ export default function PrintItem({ transfer }: { transfer: Transfer }) {
                         {transfer.approved_by && (
                             <p><span className="text-gray-500 font-medium">Approved By:</span> <span className="ml-1">{transfer.approved_by.name}</span></p>
                         )}
-                        {transfer.received_by && (
-                            <p><span className="text-gray-500 font-medium">Received By:</span> <span className="ml-1">{transfer.received_by.name}</span></p>
+                        {(transfer.received_by_name || transfer.received_by) && (
+                            <p><span className="text-gray-500 font-medium">Received By:</span> <span className="ml-1">{transfer.received_by_name || transfer.received_by?.name}</span></p>
                         )}
                     </div>
                 </div>

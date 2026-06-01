@@ -49,6 +49,7 @@ interface Transfer {
     source_branch: Branch | null;
     destination_branch: Branch;
     received_by: UserType | null;
+    received_by_name: string | null;
     supplier?: { id: number; name: string } | null;
 }
 
@@ -342,7 +343,7 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                                         </span>
                                         <span className="flex items-center gap-1.5">
                                             <User className="w-4 h-4 text-muted-foreground" />
-                                            Received by: {transfer.received_by?.name || 'Unknown'}
+                                            Received by: {transfer.received_by_name || transfer.received_by?.name || 'Unknown'}
                                         </span>
                                     </CardDescription>
                                 </CardHeader>

@@ -75,6 +75,7 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
     const { data, setData, post, processing, reset, errors } = useForm({
         status: 'completed',
         received_by: '',
+        received_by_name: '',
         items: [] as Array<{ id: number; received_quantity: number }>,
     });
 
@@ -94,6 +95,7 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
         setData({
             status: 'completed',
             received_by: currentUser.id.toString(),
+            received_by_name: currentUser.name,
             items: transfer.items.map(item => ({
                 id: item.id,
                 received_quantity: item.received_quantity > 0 ? item.received_quantity : item.quantity
@@ -346,32 +348,34 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                             {selectedTransfer && (
                                 <Popover open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            aria-expanded={isDropdownOpen}
-                                            className="w-full justify-between h-11 px-3 text-left font-normal"
-                                        >
-                                            {receiverName || "Select claiming user..."}
-                                            <span className="ml-2 h-4 w-4 shrink-0 opacity-50">▼</span>
-                                        </Button>
+                                        <Input
+                                            id="received_by"
+                                            value={receiverName}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setReceiverName(val);
+                                                setData(prev => ({
+                                                    ...prev,
+                                                    received_by_name: val,
+                                                    received_by: '', // Reset ID since they are typing manually
+                                                }));
+                                                // Keep the popover open so suggestions can be shown/clicked
+                                                setIsDropdownOpen(true);
+                                            }}
+                                            onFocus={() => {
+                                                setIsDropdownOpen(true);
+                                            }}
+                                            placeholder="Type or select recipient..."
+                                            className="h-11 focus-visible:ring-primary"
+                                        />
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                                        <div className="p-2 border-b">
-                                            <Input
-                                                placeholder="Search user..."
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="h-9 focus-visible:ring-primary"
-                                                onClick={(e) => e.stopPropagation()}
-                                            />
-                                        </div>
+                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
                                         <div className="max-h-[200px] overflow-y-auto p-1">
                                             {branchUsers.filter(u => 
-                                                u.name.toLowerCase().includes(searchQuery.toLowerCase())
+                                                u.name.toLowerCase().includes(receiverName.toLowerCase())
                                             ).length > 0 ? (
                                                 branchUsers.filter(u => 
-                                                    u.name.toLowerCase().includes(searchQuery.toLowerCase())
+                                                    u.name.toLowerCase().includes(receiverName.toLowerCase())
                                                 ).map((user) => (
                                                     <div
                                                         key={user.id}
@@ -379,25 +383,30 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                                                             data.received_by === user.id.toString() ? "bg-accent font-semibold" : ""
                                                         }`}
                                                         onClick={() => {
-                                                            setData('received_by', user.id.toString());
+                                                            setData(prev => ({
+                                                                ...prev,
+                                                                received_by: user.id.toString(),
+                                                                received_by_name: user.name,
+                                                            }));
                                                             setReceiverName(user.name);
                                                             setIsDropdownOpen(false);
-                                                            setSearchQuery('');
                                                         }}
                                                     >
                                                         {user.name}
                                                     </div>
                                                 ))
                                             ) : (
-                                                <div className="py-6 text-center text-sm text-muted-foreground">
-                                                    No users found
+                                                <div className="py-4 px-2 text-xs text-muted-foreground text-center">
+                                                    No matching branch users. Name will be saved as text.
                                                 </div>
                                             )}
                                         </div>
                                     </PopoverContent>
                                 </Popover>
                             )}
-                            {errors.received_by && <p className="text-sm text-red-500 mt-1">{errors.received_by}</p>}
+                            {(errors.received_by || errors.received_by_name) && (
+                                <p className="text-sm text-red-500 mt-1">{errors.received_by_name || errors.received_by}</p>
+                            )}
                         </div>
 
                         {data.status !== 'rejected' && (

@@ -1,0 +1,1 @@
+import{c as m,r as c}from"./app-CQW0Vswv.js";function p(e,o){const t=m.c(4),[n,u]=c.useState(e);let r,s;return t[0]!==o||t[1]!==e?(r=()=>{const i=setTimeout(()=>{u(e)},o);return()=>{clearTimeout(i)}},s=[e,o],t[0]=o,t[1]=e,t[2]=r,t[3]=s):(r=t[2],s=t[3]),c.useEffect(r,s),n}export{p as u};
