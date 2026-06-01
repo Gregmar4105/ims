@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger, PopoverAnchor } from '@/components/ui/popover';
 import axios from 'axios';
 
 interface Branch {
@@ -346,8 +346,8 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                         <div className="space-y-2">
                             <Label htmlFor="received_by" className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Accepted/Received By</Label>
                             {selectedTransfer && (
-                                <Popover open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-                                    <PopoverTrigger asChild>
+                                <Popover open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
+                                    <PopoverAnchor asChild>
                                         <Input
                                             id="received_by"
                                             value={receiverName}
@@ -368,8 +368,13 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                                             placeholder="Type or select recipient..."
                                             className="h-11 focus-visible:ring-primary"
                                         />
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+                                    </PopoverAnchor>
+                                    <PopoverContent 
+                                        className="w-[var(--radix-popover-trigger-width)] p-0" 
+                                        align="start" 
+                                        onOpenAutoFocus={(e) => e.preventDefault()}
+                                        onInteractOutside={() => setIsDropdownOpen(false)}
+                                    >
                                         <div className="max-h-[200px] overflow-y-auto p-1">
                                             {branchUsers.filter(u => 
                                                 u.name.toLowerCase().includes(receiverName.toLowerCase())
