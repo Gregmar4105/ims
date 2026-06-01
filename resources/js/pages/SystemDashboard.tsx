@@ -32,7 +32,9 @@ import {
     Info
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import {
     Area,
     AreaChart,
@@ -150,6 +152,7 @@ export default function SystemDashboard() {
     const [fetchingEntities, setFetchingEntities] = useState(false);
     const [fetchingCloudflare, setFetchingCloudflare] = useState(false);
     const [activeTab, setActiveTab] = useState('infrastructure');
+    const isMobile = useIsMobile();
 
     const getCookie = (name: string) => {
         const value = `; ${document.cookie}`;
@@ -256,6 +259,16 @@ export default function SystemDashboard() {
             clearInterval(scheduleInterval);
         };
     }, []);
+
+    // Force Recharts to recalculate dimensions on layout changes or tab switches once loaded
+    useEffect(() => {
+        if (!loading && !fetchingEntities && !fetchingCloudflare) {
+            const timer = setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 600);
+            return () => clearTimeout(timer);
+        }
+    }, [isMobile, activeTab, loading, fetchingEntities, fetchingCloudflare]);
 
     // Fetch tab data on manual tab switch
     const handleTabChange = (val: string) => {
@@ -470,25 +483,29 @@ export default function SystemDashboard() {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-                    <div className="w-full overflow-x-auto scrollbar-none py-1 flex md:justify-center" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                        <TabsList className="flex bg-muted/60 p-1.5 rounded-xl border border-border/30 shadow-sm gap-1 backdrop-blur-sm w-max min-w-full md:min-w-0 md:w-auto overflow-x-auto whitespace-nowrap flex-nowrap shrink-0 scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                            <TabsTrigger value="infrastructure" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none shrink-0">
+                    <div className="hidden md:flex w-full overflow-x-auto scrollbar-none py-1 md:justify-center" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                        <TabsList className="bg-muted/60 p-1.5 rounded-xl border border-border/30 shadow-sm gap-1 backdrop-blur-sm flex">
+                            <TabsTrigger value="infrastructure" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none">
                                 <Server className="h-4 w-4" /> Infrastructure Nodes
                             </TabsTrigger>
-                            <TabsTrigger value="entity_analytics" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none shrink-0">
+                            <TabsTrigger value="entity_analytics" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none">
                                 <Database className="h-4 w-4" /> App & DB Analytics
                             </TabsTrigger>
-                            <TabsTrigger value="cloudflare_traffic" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none shrink-0">
+                            <TabsTrigger value="cloudflare_traffic" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none">
                                 <Globe className="h-4 w-4" /> Cloudflare Web Traffic
                             </TabsTrigger>
-                            <TabsTrigger value="cloudflare_threats" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none shrink-0">
+                            <TabsTrigger value="cloudflare_threats" className="rounded-lg py-2 px-4 flex items-center gap-2 text-xs md:text-sm font-semibold transition-all text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm select-none">
                                 <ShieldAlert className="h-4 w-4" /> Security Threats
                             </TabsTrigger>
                         </TabsList>
                     </div>
 
                     {/* Tab 1: Proxmox Infrastructure */}
-                    <TabsContent value="infrastructure" className="space-y-6 animate-in fade-in duration-200">
+                    <TabsContent value="infrastructure" forceMount={isMobile} className={cn("space-y-6 animate-in fade-in duration-200", isMobile ? "!block" : "")}>
+                        <div className="flex items-center gap-2 border-b pb-2 px-1 md:hidden">
+                            <Server className="h-4.5 w-4.5 text-primary" />
+                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Infrastructure Nodes</h3>
+                        </div>
                         {/* Real-time Hardware tracking charts */}
                         {history.length > 0 && (
                             <Card className="shadow-sm">
@@ -617,7 +634,11 @@ export default function SystemDashboard() {
                     </TabsContent>
 
                     {/* Tab 2: System & DB Analytics */}
-                    <TabsContent value="entity_analytics" className="space-y-6 animate-in fade-in duration-200">
+                    <TabsContent value="entity_analytics" forceMount={isMobile} className={cn("space-y-6 animate-in fade-in duration-200", isMobile ? "!block" : "")}>
+                        <div className="flex items-center gap-2 border-b pb-2 px-1 md:hidden mt-6">
+                            <Database className="h-4.5 w-4.5 text-primary" />
+                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">App & DB Analytics</h3>
+                        </div>
                         {fetchingEntities ? (
                             <div className="flex h-[300px] items-center justify-center">
                                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
@@ -626,22 +647,23 @@ export default function SystemDashboard() {
                             <>
                                 {/* Premium Global Database Indicator */}
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border/40 bg-card/65 backdrop-blur-md shadow-sm select-none animate-in slide-in-from-top duration-300">
-                                    <div className="flex items-center gap-3">
-                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                                    <div className="flex items-start sm:items-center gap-3 max-w-full">
+                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500 border border-blue-500/20 shrink-0 mt-0.5 sm:mt-0">
                                             <Database className="h-4 w-4 animate-pulse" />
                                         </span>
-                                        <div className="space-y-0.5">
+                                        <div className="space-y-1 min-w-0 flex-1">
                                             <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Database Scope</span>
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-sans text-sm font-bold text-foreground">Global System Database</span>
-                                                <Badge variant="outline" className="h-4 px-1.5 bg-blue-500/5 text-blue-500 border-blue-500/20 text-[9px] font-semibold flex items-center gap-1">
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                                                <span className="font-sans text-sm font-bold text-foreground leading-tight">Global System Database</span>
+                                                <Badge variant="outline" className="h-4 w-fit px-1.5 bg-blue-500/5 text-blue-500 border-blue-500/20 text-[9px] font-semibold flex items-center gap-1 shrink-0">
                                                     <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" /> Cross-Branch
                                                 </Badge>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-[10px] text-muted-foreground/80 self-end sm:self-auto flex items-center gap-1 font-medium bg-muted/30 px-2.5 py-1 rounded-full border border-border/40">
-                                        <Info className="h-3 w-3" /> Showing system-wide aggregates for all users, inventory, active transfers, and completed sales.
+                                    <div className="text-[10px] text-muted-foreground/80 self-start sm:self-auto flex items-start gap-1 font-medium bg-muted/30 px-2.5 py-1.5 rounded-lg sm:rounded-full border border-border/40 max-w-full">
+                                        <Info className="h-3 w-3 shrink-0 mt-0.5" />
+                                        <span className="leading-normal">Showing system-wide aggregates for all users, inventory, active transfers, and completed sales.</span>
                                     </div>
                                 </div>
 
@@ -772,7 +794,11 @@ export default function SystemDashboard() {
                     </TabsContent>
 
                     {/* Tab 3: Cloudflare Web Traffic */}
-                    <TabsContent value="cloudflare_traffic" className="space-y-6 animate-in fade-in duration-200">
+                    <TabsContent value="cloudflare_traffic" forceMount={isMobile} className={cn("space-y-6 animate-in fade-in duration-200", isMobile ? "!block" : "")}>
+                        <div className="flex items-center gap-2 border-b pb-2 px-1 md:hidden mt-6">
+                            <Globe className="h-4.5 w-4.5 text-primary" />
+                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Cloudflare Web Traffic</h3>
+                        </div>
                         {fetchingCloudflare ? (
                             <div className="flex h-[300px] items-center justify-center">
                                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
@@ -781,22 +807,25 @@ export default function SystemDashboard() {
                             <div className="space-y-6">
                                 {/* Premium SSL Verified Domain Selector */}
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border/40 bg-card/65 backdrop-blur-md shadow-sm select-none">
-                                    <div className="flex items-center gap-3">
-                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10 text-green-500 border border-green-500/20">
+                                    <div className="flex items-start sm:items-center gap-3 max-w-full">
+                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10 text-green-500 border border-green-500/20 shrink-0 mt-0.5 sm:mt-0">
                                             <Globe className="h-4 w-4 animate-pulse" />
                                         </span>
-                                        <div className="space-y-0.5">
+                                        <div className="space-y-1 min-w-0 flex-1">
                                             <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Active Target Application</span>
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-mono text-sm font-bold text-foreground">https://lm2bicycletrading.larable.dev/*</span>
-                                                <Badge variant="outline" className="h-4 px-1.5 bg-green-500/5 text-green-500 border-green-500/20 text-[9px] font-semibold flex items-center gap-1">
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                                                <span className="font-mono text-xs sm:text-sm font-bold text-foreground break-all leading-tight">
+                                                    https://lm2bicycletrading.larable.dev/*
+                                                </span>
+                                                <Badge variant="outline" className="h-4 w-fit px-1.5 bg-green-500/5 text-green-500 border-green-500/20 text-[9px] font-semibold flex items-center gap-1 shrink-0">
                                                     <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> Verified SSL
                                                 </Badge>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-[10px] text-muted-foreground/80 self-end sm:self-auto flex items-center gap-1 font-medium bg-muted/30 px-2.5 py-1 rounded-full border border-border/40">
-                                        <Info className="h-3 w-3" /> Showing request traffic filtered for this application host.
+                                    <div className="text-[10px] text-muted-foreground/80 self-start sm:self-auto flex items-start gap-1 font-medium bg-muted/30 px-2.5 py-1.5 rounded-lg sm:rounded-full border border-border/40 max-w-full">
+                                        <Info className="h-3 w-3 shrink-0 mt-0.5" />
+                                        <span className="leading-normal">Showing request traffic filtered for this application host.</span>
                                     </div>
                                 </div>
 
@@ -1014,7 +1043,11 @@ export default function SystemDashboard() {
                     </TabsContent>
 
                     {/* Tab 4: Cloudflare Threat Insights */}
-                    <TabsContent value="cloudflare_threats" className="space-y-6 animate-in fade-in duration-200">
+                    <TabsContent value="cloudflare_threats" forceMount={isMobile} className={cn("space-y-6 animate-in fade-in duration-200", isMobile ? "!block" : "")}>
+                        <div className="flex items-center gap-2 border-b pb-2 px-1 md:hidden mt-6">
+                            <ShieldAlert className="h-4.5 w-4.5 text-destructive" />
+                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Security Threats</h3>
+                        </div>
                         {fetchingCloudflare ? (
                             <div className="flex h-[300px] items-center justify-center">
                                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
@@ -1023,22 +1056,25 @@ export default function SystemDashboard() {
                             <div className="space-y-6">
                                 {/* Premium SSL Verified Domain Selector */}
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border/40 bg-card/65 backdrop-blur-md shadow-sm select-none animate-in slide-in-from-top duration-300">
-                                    <div className="flex items-center gap-3">
-                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10 text-green-500 border border-green-500/20">
+                                    <div className="flex items-start sm:items-center gap-3 max-w-full">
+                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10 text-green-500 border border-green-500/20 shrink-0 mt-0.5 sm:mt-0">
                                             <Globe className="h-4 w-4 animate-pulse" />
                                         </span>
-                                        <div className="space-y-0.5">
+                                        <div className="space-y-1 min-w-0 flex-1">
                                             <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Active Target Application</span>
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-mono text-sm font-bold text-foreground">https://lm2bicycletrading.larable.dev/*</span>
-                                                <Badge variant="outline" className="h-4 px-1.5 bg-green-500/5 text-green-500 border-green-500/20 text-[9px] font-semibold flex items-center gap-1">
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                                                <span className="font-mono text-xs sm:text-sm font-bold text-foreground break-all leading-tight">
+                                                    https://lm2bicycletrading.larable.dev/*
+                                                </span>
+                                                <Badge variant="outline" className="h-4 w-fit px-1.5 bg-green-500/5 text-green-500 border-green-500/20 text-[9px] font-semibold flex items-center gap-1 shrink-0">
                                                     <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> Verified SSL
                                                 </Badge>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-[10px] text-muted-foreground/80 self-end sm:self-auto flex items-center gap-1 font-medium bg-muted/30 px-2.5 py-1 rounded-full border border-border/40">
-                                        <Info className="h-3 w-3" /> Showing security threats filtered for this application host.
+                                    <div className="text-[10px] text-muted-foreground/80 self-start sm:self-auto flex items-start gap-1 font-medium bg-muted/30 px-2.5 py-1.5 rounded-lg sm:rounded-full border border-border/40 max-w-full">
+                                        <Info className="h-3 w-3 shrink-0 mt-0.5" />
+                                        <span className="leading-normal">Showing security threats filtered for this application host.</span>
                                     </div>
                                 </div>
 
