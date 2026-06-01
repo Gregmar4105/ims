@@ -311,11 +311,10 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                 )}
             </div>
 
-            {/* Initiate/Approve Transfer Modal */}
             <Dialog open={initiatingTransfer !== null} onOpenChange={(open) => !open && setInitiatingTransfer(null)}>
-                <DialogContent className="sm:max-w-xl">
+                <DialogContent className="sm:max-w-xl overflow-hidden bg-white dark:bg-zinc-950 p-6 flex flex-col gap-4">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+                        <DialogTitle className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white">
                             <Send className="w-5 h-5 text-green-600" />
                             Verify and Initiate Transfer #{initiatingTransfer?.id}
                         </DialogTitle>
@@ -324,31 +323,31 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="py-4 space-y-4">
-                        <div className="max-h-[300px] overflow-y-auto border rounded-lg divide-y bg-muted/5">
+                    <div className="py-2 space-y-4 flex-1 min-w-0 w-full max-w-full">
+                        <div className="max-h-[300px] overflow-y-auto border rounded-lg divide-y bg-muted/5 w-full max-w-full border-gray-100 dark:border-gray-800">
                             {adjustedItems.map((item) => (
-                                <div key={item.id} className="flex items-center justify-between p-4 hover:bg-muted/10 transition-colors">
-                                    <div className="flex-1 min-w-0 pr-4">
-                                        <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
+                                <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-muted/10 transition-colors gap-3 w-full max-w-full">
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate" title={item.product?.name}>
                                             {item.product?.name}
                                         </h4>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1.5">
                                             {item.product?.barcode && (
-                                                <span className="flex items-center gap-1 font-mono">
+                                                <span className="flex items-center gap-1 font-mono bg-gray-100 dark:bg-zinc-900 border border-gray-150 dark:border-gray-800 px-1.5 py-0.5 rounded text-gray-700 dark:text-gray-300">
                                                     <Barcode className="w-3.5 h-3.5" />
                                                     {item.product.barcode}
                                                 </span>
                                             )}
                                             {item.product?.qr_code && (
-                                                <span className="flex items-center gap-1 font-mono">
+                                                <span className="flex items-center gap-1 font-mono bg-gray-100 dark:bg-zinc-900 border border-gray-150 dark:border-gray-800 px-1.5 py-0.5 rounded text-gray-700 dark:text-gray-300">
                                                     <QrCode className="w-3.5 h-3.5" />
                                                     {item.product.qr_code}
                                                 </span>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 shrink-0">
-                                        <span className="text-xs text-muted-foreground">Qty:</span>
+                                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 w-full sm:w-auto border-t border-dashed sm:border-0 pt-2 sm:pt-0 border-gray-100 dark:border-gray-800">
+                                        <span className="text-xs text-muted-foreground font-semibold">Qty:</span>
                                         <div className="flex items-center gap-1">
                                             <Button 
                                                 type="button" 
@@ -395,12 +394,13 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                         )}
                     </div>
 
-                    <DialogFooter className="bg-muted/10 p-4 border-t flex justify-end gap-2 -mx-6 -mb-6">
+                    <DialogFooter className="bg-muted/10 p-4 border-t flex flex-col-reverse sm:flex-row justify-end gap-2 -mx-6 -mb-6 border-gray-100 dark:border-gray-800">
                         <Button 
                             type="button" 
                             variant="ghost" 
                             onClick={() => setInitiatingTransfer(null)}
                             disabled={isSubmitting}
+                            className="w-full sm:w-auto"
                         >
                             Cancel
                         </Button>
@@ -408,7 +408,7 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                             type="button" 
                             onClick={handleConfirmInitiate}
                             disabled={isSubmitting}
-                            className="bg-green-600 hover:bg-green-700 text-white gap-2 font-medium"
+                            className="bg-green-600 hover:bg-green-700 text-white gap-2 font-semibold w-full sm:w-auto border-0"
                         >
                             <CheckCircle className="w-4 h-4" />
                             {isSubmitting ? 'Initiating...' : 'Confirm & Initiate'}
