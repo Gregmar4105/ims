@@ -69,6 +69,17 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
     const [adjustedItems, setAdjustedItems] = useState<{ id: number; product: Product; quantity: number }[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const longestProductNameLength = useMemo(() => {
+        if (!adjustedItems || adjustedItems.length === 0) return 0;
+        return Math.max(...adjustedItems.map(item => item.product?.name?.length || 0));
+    }, [adjustedItems]);
+
+    const modalWidthClass = useMemo(() => {
+        if (longestProductNameLength > 50) return "sm:max-w-3xl";
+        if (longestProductNameLength > 30) return "sm:max-w-2xl";
+        return "sm:max-w-xl";
+    }, [longestProductNameLength]);
+
     const handleInitiateClick = (transfer: Transfer) => {
         setInitiatingTransfer(transfer);
         setAdjustedItems(transfer.items.map(item => ({
@@ -312,7 +323,7 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
             </div>
 
             <Dialog open={initiatingTransfer !== null} onOpenChange={(open) => !open && setInitiatingTransfer(null)}>
-                <DialogContent className="sm:max-w-xl overflow-hidden bg-white dark:bg-zinc-950 p-6 flex flex-col gap-4">
+                <DialogContent className={`overflow-hidden bg-white dark:bg-zinc-950 p-6 flex flex-col gap-4 w-full ${modalWidthClass}`}>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white">
                             <Send className="w-5 h-5 text-green-600" />
@@ -328,7 +339,7 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                             {adjustedItems.map((item) => (
                                 <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-muted/10 transition-colors gap-3 w-full max-w-full">
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate" title={item.product?.name}>
+                                        <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 break-words whitespace-normal" title={item.product?.name}>
                                             {item.product?.name}
                                         </h4>
                                         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1.5">
