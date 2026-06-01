@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useForm, Head, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { SharedData } from '@/types';
-import { AutocompleteInput } from '@/components/AutocompleteInput';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import axios from 'axios';
 
 interface Branch {
     id: number;
@@ -67,6 +68,9 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
     const [isOpen, setIsOpen] = useState(false);
     const [verifiedProducts, setVerifiedProducts] = useState<Record<number, boolean>>({});
     const [receiverName, setReceiverName] = useState('');
+    const [branchUsers, setBranchUsers] = useState<Array<{ id: number; name: string }>>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const { data, setData, post, processing, reset, errors } = useForm({
         status: 'completed',
@@ -84,7 +88,7 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
         }).format(new Date(dateString));
     };
 
-    const handleOpenConfirmModal = (transfer: Transfer) => {
+    const handleOpenConfirmModal = async (transfer: Transfer) => {
         setSelectedTransfer(transfer);
         setReceiverName(currentUser.name);
         setData({
@@ -102,6 +106,13 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
         });
         setVerifiedProducts(initialVerified);
         setIsOpen(true);
+
+        try {
+            const response = await axios.get(`/api/branches/${transfer.destination_branch_id}/users`);
+            setBranchUsers(response.data);
+        } catch (error) {
+            console.error("Error fetching branch users:", error);
+        }
     };
 
     const handleToggleVerify = (itemId: number, checked: boolean) => {
@@ -333,17 +344,60 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                         <div className="space-y-2">
                             <Label htmlFor="received_by" className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Accepted/Received By</Label>
                             {selectedTransfer && (
-                                <AutocompleteInput
-                                    value={receiverName}
-                                    onValueChange={setReceiverName}
-                                    onOptionSelectObject={(opt) => {
-                                        setData('received_by', opt.id.toString());
-                                    }}
-                                    placeholder="Search and select claiming user..."
-                                    searchUrl={`/api/branches/${selectedTransfer.destination_branch_id}/users`}
-                                    error={errors.received_by}
-                                />
+                                <Popover open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={isDropdownOpen}
+                                            className="w-full justify-between h-11 px-3 text-left font-normal"
+                                        >
+                                            {receiverName || "Select claiming user..."}
+                                            <span className="ml-2 h-4 w-4 shrink-0 opacity-50">▼</span>
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                        <div className="p-2 border-b">
+                                            <Input
+                                                placeholder="Search user..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="h-9 focus-visible:ring-primary"
+                                                onClick={(e) => e.stopPropagation()}
+                                            />
+                                        </div>
+                                        <div className="max-h-[200px] overflow-y-auto p-1">
+                                            {branchUsers.filter(u => 
+                                                u.name.toLowerCase().includes(searchQuery.toLowerCase())
+                                            ).length > 0 ? (
+                                                branchUsers.filter(u => 
+                                                    u.name.toLowerCase().includes(searchQuery.toLowerCase())
+                                                ).map((user) => (
+                                                    <div
+                                                        key={user.id}
+                                                        className={`relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground transition-colors ${
+                                                            data.received_by === user.id.toString() ? "bg-accent font-semibold" : ""
+                                                        }`}
+                                                        onClick={() => {
+                                                            setData('received_by', user.id.toString());
+                                                            setReceiverName(user.name);
+                                                            setIsDropdownOpen(false);
+                                                            setSearchQuery('');
+                                                        }}
+                                                    >
+                                                        {user.name}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="py-6 text-center text-sm text-muted-foreground">
+                                                    No users found
+                                                </div>
+                                            )}
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
                             )}
+                            {errors.received_by && <p className="text-sm text-red-500 mt-1">{errors.received_by}</p>}
                         </div>
 
                         {data.status !== 'rejected' && (
