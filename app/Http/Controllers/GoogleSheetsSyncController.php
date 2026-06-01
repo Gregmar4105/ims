@@ -28,9 +28,9 @@ class GoogleSheetsSyncController extends Controller
             $branches = Branch::all();
             
             $headers = [
-                'ID', 'Product Name', 'Brand', 'Category', 'Supplier', 
-                'Barcode', 'QR Code', 'Code', '2code', 'SKU', 
-                'Variations', 'Physical Location', 'Description', 
+                'ID', 'Physical Location', 'Supplier', 'Barcode', 'QR Code',
+                'SKU', 'Category', 'Product Name', 'Brand', 'Code',
+                '2code', 'Variations', 'Description', 'Supplier Description',
                 'Reorder Level', 'Price', 'Quantity'
             ];
 
@@ -47,17 +47,18 @@ class GoogleSheetsSyncController extends Controller
 
                     $rows[] = array_values([
                         $product->id,
-                        $product->name,
-                        $product->brand?->name,
-                        $product->category?->name,
+                        $bp->physical_location,
                         $product->supplier?->name,
                         $product->barcode,
                         $product->qr_code,
+                        $product->sku,
+                        $product->category?->name,
+                        $product->name,
+                        $product->brand?->name,
                         $product->code,
                         $product->code_2,
-                        $product->sku,
                         $bp->variations ?? $product->variations,
-                        $bp->physical_location,
+                        $bp->description,
                         $product->description,
                         $bp->reorder_level,
                         $product->price,
@@ -243,21 +244,22 @@ class GoogleSheetsSyncController extends Controller
                 }
 
                 $sheetId = $cleanValue($row[0] ?? null);
-                $sheetName = $cleanValue($row[1] ?? null);
-                $sheetBrand = $cleanValue($row[2] ?? null);
-                $sheetCategory = $cleanValue($row[3] ?? null);
-                $sheetSupplier = $cleanValue($row[4] ?? null);
-                $sheetBarcode = $cleanValue($row[5] ?? null);
-                $sheetQrCode = $cleanValue($row[6] ?? null);
-                $sheetCode = $cleanValue($row[7] ?? null);
-                $sheetCode2 = $cleanValue($row[8] ?? null);
-                $sheetSku = $cleanValue($row[9] ?? null);
-                $sheetVariations = $cleanValue($row[10] ?? null);
-                $sheetPhysLoc = $cleanValue($row[11] ?? null);
+                $sheetPhysLoc = $cleanValue($row[1] ?? null);
+                $sheetSupplier = $cleanValue($row[2] ?? null);
+                $sheetBarcode = $cleanValue($row[3] ?? null);
+                $sheetQrCode = $cleanValue($row[4] ?? null);
+                $sheetSku = $cleanValue($row[5] ?? null);
+                $sheetCategory = $cleanValue($row[6] ?? null);
+                $sheetName = $cleanValue($row[7] ?? null);
+                $sheetBrand = $cleanValue($row[8] ?? null);
+                $sheetCode = $cleanValue($row[9] ?? null);
+                $sheetCode2 = $cleanValue($row[10] ?? null);
+                $sheetVariations = $cleanValue($row[11] ?? null);
                 $sheetDesc = $cleanValue($row[12] ?? null);
-                $sheetReorder = $cleanValue($row[13] ?? null, 0);
-                $sheetPrice = $cleanValue($row[14] ?? null, 0);
-                $sheetQty = $cleanValue($row[15] ?? null, 0);
+                $sheetSupplierDesc = $cleanValue($row[13] ?? null);
+                $sheetReorder = $cleanValue($row[14] ?? null, 0);
+                $sheetPrice = $cleanValue($row[15] ?? null, 0);
+                $sheetQty = $cleanValue($row[16] ?? null, 0);
 
                 if (!$sheetName) {
                     continue; // Skip products with no name
@@ -372,7 +374,8 @@ class GoogleSheetsSyncController extends Controller
                     }
 
                     $checkDiff('physical_location', $sheetPhysLoc, $matchedBp->physical_location);
-                    $checkDiff('description', $sheetDesc, $p->description);
+                    $checkDiff('description', $sheetDesc, $matchedBp->description);
+                    $checkDiff('supplier_description', $sheetSupplierDesc, $p->description);
                     $checkDiff('reorder_level', (int)$sheetReorder, (int)$matchedBp->reorder_level);
                     $checkDiff('price', (float)$sheetPrice, (float)$p->price);
                     $checkDiff('quantity', (int)$sheetQty, (int)$matchedBp->quantity);
@@ -408,6 +411,7 @@ class GoogleSheetsSyncController extends Controller
                         'variations' => $sheetVariations ?: '',
                         'physical_location' => $sheetPhysLoc ?: '',
                         'description' => $sheetDesc ?: '',
+                        'supplier_description' => $sheetSupplierDesc ?: '',
                         'reorder_level' => (int)$sheetReorder,
                         'price' => (float)$sheetPrice,
                         'quantity' => (int)$sheetQty,
@@ -544,7 +548,7 @@ class GoogleSheetsSyncController extends Controller
                                 'code' => $values['code'] ?: null,
                                 'code_2' => $values['code_2'] ?: null,
                                 'sku' => $values['sku'] ?: null,
-                                'description' => $values['description'] ?: null,
+                                'description' => $values['supplier_description'] ?: null,
                                 'price' => $values['price'],
                                 'variations' => $variations,
                             ]);
@@ -557,6 +561,7 @@ class GoogleSheetsSyncController extends Controller
                                 'physical_location' => $values['physical_location'] ?: null,
                                 'reorder_level' => $values['reorder_level'] ?: 0,
                                 'variations' => $variations,
+                                'description' => $values['description'] ?: null,
                             ]);
 
                             $updatedCount++;
@@ -587,6 +592,7 @@ class GoogleSheetsSyncController extends Controller
                                     'sku' => $values['sku'] ?: $product->sku,
                                     'price' => $values['price'],
                                     'variations' => $variations ?: $product->variations,
+                                    'description' => $values['supplier_description'] ?: $product->description,
                                 ]);
                             } else {
                                 $product = \App\Models\Product::create([
@@ -599,7 +605,7 @@ class GoogleSheetsSyncController extends Controller
                                     'code' => $values['code'] ?: null,
                                     'code_2' => $values['code_2'] ?: null,
                                     'sku' => $values['sku'] ?: null,
-                                    'description' => $values['description'] ?: null,
+                                    'description' => $values['supplier_description'] ?: null,
                                     'price' => $values['price'],
                                     'variations' => $variations,
                                     'created_by' => $userId,
@@ -616,6 +622,7 @@ class GoogleSheetsSyncController extends Controller
                                 'physical_location' => $values['physical_location'] ?: null,
                                 'reorder_level' => $values['reorder_level'] ?: 0,
                                 'variations' => $variations,
+                                'description' => $values['description'] ?: null,
                             ]);
 
                             $createdCount++;

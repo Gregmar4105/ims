@@ -103,9 +103,9 @@ class GoogleSheetsService
 
             // Set Headers
             $headers = [
-                'ID', 'Product Name', 'Brand', 'Category', 'Supplier', 
-                'Barcode', 'QR Code', 'Code', '2code', 'SKU', 
-                'Variations', 'Physical Location', 'Description', 
+                'ID', 'Physical Location', 'Supplier', 'Barcode', 'QR Code',
+                'SKU', 'Category', 'Product Name', 'Brand', 'Code',
+                '2code', 'Variations', 'Description', 'Supplier Description',
                 'Reorder Level', 'Price', 'Quantity'
             ];
 
@@ -761,7 +761,7 @@ class GoogleSheetsService
     public function getSheetContent(string $sheetName): array
     {
         try {
-            $range = $sheetName . '!A:P'; // Columns A to P
+            $range = $sheetName . '!A:Q'; // Columns A to Q
             $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
             return $response->getValues() ?: [];
         } catch (\Exception $e) {
