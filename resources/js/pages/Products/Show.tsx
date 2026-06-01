@@ -4,7 +4,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPinned, Layers, Package, Tag, ScanBarcode, Truck, Edit, Info, ArrowLeft, Printer } from 'lucide-react';
+import { MapPinned, Layers, Package, Tag, ScanBarcode, Truck, Edit, Info, ArrowLeft, Printer, Terminal } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 import Barcode from 'react-barcode';
 import QRCode from 'react-qr-code';
@@ -13,6 +13,7 @@ import { handleNativePrintFallback } from '@/lib/utils';
 import { useBluetoothPrinterContext } from '@/contexts/bluetooth-printer-context';
 import { useState } from 'react';
 import { PrintSelectionModal } from '@/components/print-selection-modal';
+import { DdlPrintModal } from '@/components/ddl-print-modal';
 import {
     Tooltip,
     TooltipContent,
@@ -86,6 +87,7 @@ export default function Show({ product }: Props) {
     const { auth } = usePage<SharedData>().props;
     const bt = useBluetoothPrinterContext();
     const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+    const [isDdlModalOpen, setIsDdlModalOpen] = useState(false);
     const parsedVariations = getParsedVariations(product.variations);
     const isSystemAdmin = auth.roles.includes('System Administrator');
     const isEmployee = auth.roles.includes('Employee') && !isSystemAdmin && !auth.roles.includes('Branch Administrator');
@@ -337,6 +339,12 @@ export default function Show({ product }: Props) {
                         >
                             <Printer className="h-4 w-4" /> Print Label
                         </Button>
+                        <Button 
+                            onClick={() => setIsDdlModalOpen(true)}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center gap-2 rounded-lg"
+                        >
+                            <Terminal className="h-4 w-4" /> Print DDL
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -363,6 +371,14 @@ export default function Show({ product }: Props) {
                         >
                             <Printer className="h-3.5 w-3.5" />
                             <span>Print Label</span>
+                        </Button>
+                        <Button 
+                            size="sm" 
+                            onClick={() => setIsDdlModalOpen(true)}
+                            className="text-xs font-semibold flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+                        >
+                            <Terminal className="h-3.5 w-3.5" />
+                            <span>Print DDL</span>
                         </Button>
                     </div>
                 </div>
@@ -920,6 +936,12 @@ export default function Show({ product }: Props) {
                 onPrintSystem={handlePrint}
                 elementId="native-print-label"
                 title={`Print Product Label - ${product.name}`}
+            />
+
+            <DdlPrintModal
+                isOpen={isDdlModalOpen}
+                onClose={() => setIsDdlModalOpen(false)}
+                product={product}
             />
         </AppLayout>
     );

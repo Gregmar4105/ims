@@ -909,4 +909,134 @@ class ProductController extends Controller
 
         return back()->with('success', 'Clearance sales updated successfully.');
     }
+
+    public function searchPrinterApp(Product $product)
+    {
+        $user = auth()->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+        $targetBranchId = $this->resolveTargetBranchId($user, $isSystemAdmin);
+
+        // Resolve branch details if available
+        $branchProduct = null;
+        if ($targetBranchId) {
+            $branchProduct = $product->branches()->where('branch_id', $targetBranchId)->first();
+        }
+
+        $quantity = $branchProduct ? $branchProduct->pivot->quantity : 0;
+        $location = $branchProduct ? $branchProduct->pivot->physical_location : '';
+
+        // Generate DDL structured content
+        $ddlContent = "[ProductPrintJob]\n" .
+                      "ProductID=" . $product->id . "\n" .
+                      "Name=" . $product->name . "\n" .
+                      "SKU=" . ($product->sku ?? '-') . "\n" .
+                      "Barcode=" . ($product->barcode ?? '-') . "\n" .
+                      "QRCode=" . ($product->qr_code ?? '-') . "\n" .
+                      "Price=PHP " . number_format($product->price ?? 0, 2) . "\n" .
+                      "Brand=" . ($product->brand->name ?? '-') . "\n" .
+                      "Category=" . ($product->category->name ?? '-') . "\n" .
+                      "Supplier=" . ($product->supplier->name ?? '-') . "\n" .
+                      "Location=" . ($location ?: '-') . "\n" .
+                      "StockQuantity=" . $quantity . "\n" .
+                      "PrintTime=" . now()->toIso8601String() . "\n";
+
+        // Detect paths on Windows
+        $programFiles = env('PROGRAMFILES', 'C:\\Program Files');
+        $programFilesX86 = env('PROGRAMFILES(X86)', 'C:\\Program Files (x86)');
+        $localAppData = env('LOCALAPPDATA', 'C:\\Users\\' . get_current_user() . '\\AppData\\Local');
+
+        $pathsToCheck = [
+            base_path('Label.exe'),
+            base_path('bin\\Label.exe'),
+            "{$programFiles}\\Label.exe",
+            "{$programFilesX86}\\Label.exe",
+            "{$programFiles}\\LabelApp\\Label.exe",
+            "{$programFilesX86}\\LabelApp\\Label.exe",
+            "{$programFiles}\\DLabel\\Label.exe",
+            "{$programFilesX86}\\DLabel\\Label.exe",
+            "{$localAppData}\\Programs\\Label.exe",
+            "C:\\Label.exe",
+        ];
+
+        // Also check if Label.exe is in Windows PATH using "where" command
+        $whereOutput = [];
+        $exitCode = -1;
+        @exec('where Label.exe 2>&1', $whereOutput, $exitCode);
+        if ($exitCode === 0 && !empty($whereOutput)) {
+            foreach ($whereOutput as $foundPath) {
+                $trimmed = trim($foundPath);
+                if (!empty($trimmed) && file_exists($trimmed)) {
+                    array_unshift($pathsToCheck, $trimmed);
+                }
+            }
+        }
+
+        $foundPath = null;
+        foreach ($pathsToCheck as $path) {
+            if (file_exists($path)) {
+                $foundPath = $path;
+                break;
+            }
+        }
+
+        return response()->json([
+            'found' => !is_null($foundPath),
+            'path' => $foundPath,
+            'searched_paths' => array_values(array_unique($pathsToCheck)),
+            'ddl_content' => $ddlContent,
+        ]);
+    }
+
+    public function printDdl(Request $request, Product $product)
+    {
+        $request->validate([
+            'exe_path' => 'required|string',
+            'ddl_content' => 'required|string',
+        ]);
+
+        $exePath = $request->input('exe_path');
+        $ddlContent = $request->input('ddl_content');
+
+        if (!file_exists($exePath)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The executable "Label.exe" was not found at the specified path: ' . $exePath,
+            ], 422);
+        }
+
+        try {
+            // Write DDL content silently to a temp file in Windows temp dir
+            $tempDir = sys_get_temp_dir();
+            $tempFile = $tempDir . DIRECTORY_SEPARATOR . 'label_print_temp_' . $product->id . '_' . time() . '.ddl';
+            
+            file_put_contents($tempFile, $ddlContent);
+
+            if (!file_exists($tempFile)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create local temporary printing document.',
+                ], 500);
+            }
+
+            // Command: start /B "" "C:\path\to\Label.exe" "C:\path\to\temp.ddl"
+            // This runs the app in the background without launching a black CMD window on Windows.
+            $command = sprintf('start /B "" %s %s', escapeshellarg($exePath), escapeshellarg($tempFile));
+            
+            $p = popen($command, 'r');
+            if ($p) {
+                pclose($p);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Label document generated and redirected to ' . basename($exePath) . ' successfully.',
+                'temp_file' => $tempFile,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error launching print redirect app: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
