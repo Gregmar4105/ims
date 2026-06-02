@@ -202,10 +202,14 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
             const bc = String(it.values.barcode || '').trim();
             const qr = String(it.values.qr_code || '').trim();
             const sk = String(it.values.sku || '').trim();
+            const spl = String(it.values.supplier_name || '').trim().toLowerCase();
 
             if (bc) barcodeCounts[bc] = (barcodeCounts[bc] || 0) + 1;
             if (qr) qrCodeCounts[qr] = (qrCodeCounts[qr] || 0) + 1;
-            if (sk) skuCounts[sk] = (skuCounts[sk] || 0) + 1;
+            if (sk) {
+                const skuKey = `${sk}|||${spl}`;
+                skuCounts[skuKey] = (skuCounts[skuKey] || 0) + 1;
+            }
         });
 
         // Re-calculate warnings
@@ -213,6 +217,8 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
             const bc = String(it.values.barcode || '').trim();
             const qr = String(it.values.qr_code || '').trim();
             const sk = String(it.values.sku || '').trim();
+            const spl = String(it.values.supplier_name || '').trim().toLowerCase();
+            const skuKey = sk ? `${sk}|||${spl}` : '';
 
             let newWarnings = [...(it.warnings || [])];
             // Clear prior internal duplicate warnings
@@ -226,7 +232,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
             if (qr && qrCodeCounts[qr] > 1) {
                 newWarnings.push(`Duplicate QR Code '${qr}' found multiple times in the Google Sheet.`);
             }
-            if (sk && skuCounts[sk] > 1) {
+            if (sk && skuKey && skuCounts[skuKey] > 1) {
                 newWarnings.push(`Duplicate SKU '${sk}' found multiple times in the Google Sheet.`);
             }
 
@@ -262,10 +268,14 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
             const bc = String(it.values.barcode || '').trim();
             const qr = String(it.values.qr_code || '').trim();
             const sk = String(it.values.sku || '').trim();
+            const spl = String(it.values.supplier_name || '').trim().toLowerCase();
 
             if (bc) barcodeCounts[bc] = (barcodeCounts[bc] || 0) + 1;
             if (qr) qrCodeCounts[qr] = (qrCodeCounts[qr] || 0) + 1;
-            if (sk) skuCounts[sk] = (skuCounts[sk] || 0) + 1;
+            if (sk) {
+                const skuKey = `${sk}|||${spl}`;
+                skuCounts[skuKey] = (skuCounts[skuKey] || 0) + 1;
+            }
         });
 
         // Re-calculate warnings for all items
@@ -273,6 +283,8 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
             const bc = String(it.values.barcode || '').trim();
             const qr = String(it.values.qr_code || '').trim();
             const sk = String(it.values.sku || '').trim();
+            const spl = String(it.values.supplier_name || '').trim().toLowerCase();
+            const skuKey = sk ? `${sk}|||${spl}` : '';
 
             let newWarnings = [...(it.warnings || [])];
             newWarnings = newWarnings.filter(
@@ -286,7 +298,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                 if (qr && qrCodeCounts[qr] > 1) {
                     newWarnings.push(`Duplicate QR Code '${qr}' found multiple times in the Google Sheet.`);
                 }
-                if (sk && skuCounts[sk] > 1) {
+                if (sk && skuKey && skuCounts[skuKey] > 1) {
                     newWarnings.push(`Duplicate SKU '${sk}' found multiple times in the Google Sheet.`);
                 }
             }

@@ -222,7 +222,9 @@ class GoogleSheetsSyncController extends Controller
                 $dbProductsById[$p->id] = $bp;
                 if ($p->barcode) $dbProductsByBarcode[$p->barcode] = $bp;
                 if ($p->qr_code) $dbProductsByQrCode[$p->qr_code] = $bp;
-                if ($p->sku) $dbProductsBySku[$p->sku] = $bp;
+                if ($p->sku) {
+                    $dbProductsBySku[$p->sku][] = $bp;
+                }
                 $dbProductsByName[strtolower(trim($p->name))] = $bp;
             }
 
@@ -277,7 +279,14 @@ class GoogleSheetsSyncController extends Controller
                     } elseif ($sheetQrCode && isset($dbProductsByQrCode[$sheetQrCode])) {
                         $matchedBp = $dbProductsByQrCode[$sheetQrCode];
                     } elseif ($sheetSku && isset($dbProductsBySku[$sheetSku])) {
-                        $matchedBp = $dbProductsBySku[$sheetSku];
+                        $sheetSupplierClean = strtolower(trim($sheetSupplier ?? ''));
+                        foreach ($dbProductsBySku[$sheetSku] as $bp) {
+                            $dbSupplierClean = strtolower(trim($bp->product->supplier?->name ?? ''));
+                            if ($dbSupplierClean === $sheetSupplierClean) {
+                                $matchedBp = $bp;
+                                break;
+                            }
+                        }
                     } elseif ($sheetName && isset($dbProductsByName[strtolower($sheetName)])) {
                         $matchedBp = $dbProductsByName[strtolower($sheetName)];
                     }
@@ -323,18 +332,30 @@ class GoogleSheetsSyncController extends Controller
                 // 3. Check duplicate SKU within this branch (using memory lookups)
                 if ($sheetSku) {
                     if (isset($dbProductsBySku[$sheetSku])) {
-                        $existingBp = $dbProductsBySku[$sheetSku];
-                        if (!$matchedBp || $existingBp->product_id != $matchedBp->product_id) {
-                            $warnings[] = "SKU '{$sheetSku}' conflicts with an existing product in this branch: ID {$existingBp->product_id} ('{$existingBp->product->name}').";
-                            $isDuplicate = true;
+                        foreach ($dbProductsBySku[$sheetSku] as $existingBp) {
+                            if (!$matchedBp || $existingBp->product_id != $matchedBp->product_id) {
+                                $existingSupplier = strtolower(trim($existingBp->product->supplier?->name ?? ''));
+                                $sheetSupplierClean = strtolower(trim($sheetSupplier ?? ''));
+                                if ($existingSupplier === $sheetSupplierClean) {
+                                    $warnings[] = "SKU '{$sheetSku}' conflicts with an existing product in this branch: ID {$existingBp->product_id} ('{$existingBp->product->name}').";
+                                    $isDuplicate = true;
+                                    break;
+                                }
+                            }
                         }
                     }
 
+                    $sheetSupplierClean = strtolower(trim($sheetSupplier ?? ''));
                     if (isset($seenSheetSkus[$sheetSku])) {
-                        $warnings[] = "Duplicate SKU '{$sheetSku}' found multiple times in the Google Sheet.";
-                        $isDuplicate = true;
+                        foreach ($seenSheetSkus[$sheetSku] as $seenSupplier) {
+                            if ($seenSupplier === $sheetSupplierClean) {
+                                $warnings[] = "Duplicate SKU '{$sheetSku}' found multiple times in the Google Sheet.";
+                                $isDuplicate = true;
+                                break;
+                            }
+                        }
                     }
-                    $seenSheetSkus[$sheetSku] = true;
+                    $seenSheetSkus[$sheetSku][] = $sheetSupplierClean;
                 }
 
                 $status = 'new';
@@ -576,7 +597,15 @@ class GoogleSheetsSyncController extends Controller
                                 $product = \App\Models\Product::where('qr_code', $values['qr_code'])->first();
                             }
                             if (!$product && $values['sku']) {
-                                $product = \App\Models\Product::where('sku', $values['sku'])->first();
+                                $product = \App\Models\Product::where('sku', $values['sku'])
+                                    ->whereHas('supplier', function($q) use ($values) {
+                                        $q->where('name', $values['supplier_name']);
+                                    })->first();
+                                if (!$product && empty($values['supplier_name'])) {
+                                    $product = \App\Models\Product::where('sku', $values['sku'])
+                                        ->whereNull('supplier_id')
+                                        ->first();
+                                }
                             }
                             if (!$product) {
                                 $product = \App\Models\Product::where('name', $values['name'])->first();
