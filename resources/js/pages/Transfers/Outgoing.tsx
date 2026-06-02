@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useForm, router } from '@inertiajs/react';
 import {
     Dialog,
@@ -9,6 +9,8 @@ import {
     DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -67,6 +69,7 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
     const { post } = useForm();
     const [initiatingTransfer, setInitiatingTransfer] = useState<Transfer | null>(null);
     const [adjustedItems, setAdjustedItems] = useState<{ id: number; product: Product; quantity: number }[]>([]);
+    const [notes, setNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const longestProductNameLength = useMemo(() => {
@@ -87,6 +90,7 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
             product: item.product,
             quantity: item.quantity
         })));
+        setNotes(transfer.notes || '');
     };
 
     const handleConfirmInitiate = () => {
@@ -102,7 +106,8 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
             items: adjustedItems.map(item => ({
                 id: item.id,
                 quantity: item.quantity
-            }))
+            })),
+            notes: notes
         }, {
             onSuccess: () => {
                 setInitiatingTransfer(null);
@@ -394,12 +399,24 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="transfer-notes" className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                Transfer / Dispatch Notes
+                            </Label>
+                            <Textarea
+                                id="transfer-notes"
+                                placeholder="Enter details about this transfer (e.g. explain if certain requested items cannot be fully supplied)..."
+                                value={notes}
+                                onChange={e => setNotes(e.target.value)}
+                                className="resize-none text-xs min-h-[80px] bg-white dark:bg-zinc-950 border border-gray-200 dark:border-gray-800"
+                            />
                         </div>
                         
                         {initiatingTransfer?.notes && (
                             <div className="p-3 bg-yellow-50 dark:bg-yellow-900/10 rounded-lg text-sm text-yellow-800 dark:text-yellow-200 border border-yellow-100 dark:border-yellow-900/20">
-                                <span className="font-semibold">Prepared Notes: </span>
+                                <span className="font-semibold">Original Request Notes: </span>
                                 {initiatingTransfer.notes}
                             </div>
                         )}

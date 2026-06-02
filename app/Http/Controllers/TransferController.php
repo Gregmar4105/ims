@@ -177,6 +177,7 @@ class TransferController extends Controller
             'items' => 'nullable|array',
             'items.*.id' => 'required|exists:transfer_items,id',
             'items.*.quantity' => 'required|integer|min:1',
+            'notes' => 'nullable|string',
         ]);
 
         try {
@@ -212,6 +213,7 @@ class TransferController extends Controller
                 $transfer->update([
                     'status' => 'outgoing',
                     'approved_by' => $user->id,
+                    'notes' => $request->notes,
                 ]);
             });
         } catch (\Exception $e) {

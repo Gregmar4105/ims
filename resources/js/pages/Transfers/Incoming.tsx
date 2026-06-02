@@ -344,6 +344,13 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                     </DialogHeader>
 
                     <div className="p-6 max-h-[60vh] overflow-y-auto space-y-6">
+                        {selectedTransfer?.notes && (
+                            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/10 rounded-lg text-sm text-yellow-800 dark:text-yellow-200 border border-yellow-100 dark:border-yellow-900/20 flex flex-col gap-1">
+                                <span className="font-bold">Bodega Dispatch Notes:</span>
+                                <span className="whitespace-pre-wrap">{selectedTransfer.notes}</span>
+                            </div>
+                        )}
+
                         {/* Status Selection */}
                         <div className="space-y-2">
                             <Label className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Overall Transfer Status</Label>
