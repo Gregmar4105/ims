@@ -166,6 +166,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('transfers/{transfer}/print', [\App\Http\Controllers\TransferController::class, 'printItem'])->name('transfers.printItem');
     Route::get('import-transfer', [\App\Http\Controllers\ImportTransferController::class, 'index'])->name('transfers.import');
     Route::post('import-transfer', [\App\Http\Controllers\ImportTransferController::class, 'store'])->name('transfers.import.store');
+    Route::post('import-transfer/parse-file', [\App\Http\Controllers\ImportTransferController::class, 'parseFile'])->name('transfers.import.parseFile');
     Route::post('import-transfer/update-stock', [\App\Http\Controllers\ImportTransferController::class, 'updateStock'])->name('transfers.import.updateStock');
     Route::post('import-transfer/bulk-store', [\App\Http\Controllers\ImportTransferController::class, 'bulkStore'])->name('transfers.import.bulkStore');
     Route::get('api/branches/{branch}/users', [\App\Http\Controllers\BranchController::class, 'getUsers'])->name('branches.users');

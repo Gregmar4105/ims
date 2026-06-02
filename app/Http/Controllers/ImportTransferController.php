@@ -141,6 +141,99 @@ class ImportTransferController extends Controller
         }
     }
 
+    public function parseFile(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|array',
+        ]);
+
+        $user = auth()->user();
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+
+        $items = $request->input('items');
+        $resolvedItems = [];
+
+        foreach ($items as $item) {
+            $productName = trim($item['item_name'] ?? '');
+            if (empty($productName)) {
+                continue;
+            }
+
+            // Database matching logic:
+            // Match by Product ID if numeric and exists
+            $product = null;
+            $productId = $item['product_id'] ?? null;
+            if ($productId && is_numeric($productId)) {
+                $product = Product::with(['brand', 'category', 'supplier'])->find((int)$productId);
+            }
+
+            // If not matched by ID, try other fields: Barcode, QR Code, SKU, and Name
+            if (!$product) {
+                if (!empty($item['barcode'])) {
+                    $product = Product::with(['brand', 'category', 'supplier'])->where('barcode', $item['barcode'])->first();
+                }
+                if (!$product && !empty($item['qr_code'])) {
+                    $product = Product::with(['brand', 'category', 'supplier'])->where('qr_code', $item['qr_code'])->first();
+                }
+                if (!$product && !empty($item['sku'])) {
+                    $product = Product::with(['brand', 'category', 'supplier'])->where('sku', $item['sku'])->first();
+                }
+                if (!$product) {
+                    $product = Product::with(['brand', 'category', 'supplier'])
+                        ->where('name', 'like', '%' . $productName . '%')
+                        ->first();
+                }
+            }
+
+            $resolved = [
+                'item_name' => $productName,
+                'quantity' => (int)($item['quantity'] ?? 0),
+                'exists_in_branch' => false,
+                'product_id' => $product ? $product->id : null,
+                'brand_id' => $product ? (string) $product->brand_id : '',
+                'category_id' => $product ? (string) $product->category_id : '',
+                'supplier_id' => $product ? (string) $product->supplier_id : '',
+                'brand_name' => $product && $product->brand ? $product->brand->name : ($item['brand_name'] ?? ''),
+                'category_name' => $product && $product->category ? $product->category->name : ($item['category_name'] ?? ''),
+                'supplier_name' => $product && $product->supplier ? $product->supplier->name : ($item['supplier_name'] ?? ''),
+                'price' => $product ? $product->price : ($item['price'] ?? ''),
+                'code' => $product ? $product->code : ($item['code'] ?? ''),
+                'code_2' => $product ? $product->code_2 : ($item['code_2'] ?? ''),
+                'sku' => $product ? $product->sku : ($item['sku'] ?? ''),
+                'barcode' => $product ? $product->barcode : ($item['barcode'] ?? ''),
+                'qr_code' => $product ? $product->qr_code : ($item['qr_code'] ?? ''),
+                'physical_location' => $item['physical_location'] ?? '',
+                'reorder_level' => (int)($item['reorder_level'] ?? 0),
+                'current_stock' => 0,
+                'description' => $item['description'] ?? '',
+                'variations' => [],
+            ];
+
+            if ($product && $branchId) {
+                $branchProduct = BranchProduct::where('product_id', $product->id)
+                    ->where('branch_id', $branchId)
+                    ->first();
+
+                if ($branchProduct) {
+                    $resolved['exists_in_branch'] = true;
+                    $resolved['current_stock'] = $branchProduct->quantity;
+                    $resolved['physical_location'] = $branchProduct->physical_location ?: $resolved['physical_location'];
+                    $resolved['reorder_level'] = $branchProduct->reorder_level ?: $resolved['reorder_level'];
+                    $resolved['description'] = $branchProduct->description ?: $resolved['description'];
+                }
+            }
+
+            $resolvedItems[] = $resolved;
+        }
+
+        return response()->json([
+            'success' => true,
+            'inventory_items' => $resolvedItems,
+        ]);
+    }
+
     public function updateStock(Request $request)
     {
         $request->validate([

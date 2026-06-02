@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save, CheckCircle, PlusCircle, HelpCircle, Sparkles, Barcode, QrCode, Eye, AlertTriangle, RefreshCw, X, Ban, FileSpreadsheet, Check } from 'lucide-react';
+import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save, CheckCircle, PlusCircle, HelpCircle, Sparkles, Barcode, QrCode, Eye, AlertTriangle, RefreshCw, X, Ban, FileSpreadsheet, Check, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { AutocompleteInput } from '@/components/AutocompleteInput';
 import axios from 'axios';
@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import * as XLSX from 'xlsx';
 import {
     Dialog,
     DialogContent,
@@ -110,6 +112,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedSourceBranchId, setSelectedSourceBranchId] = useState<string | number>('');
+    const [isParsingFile, setIsParsingFile] = useState(false);
 
     useEffect(() => {
         if (defaultBranchId) {
@@ -417,6 +420,114 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
         }
     };
 
+    const handleSpreadsheetUpload = (file: File) => {
+        setIsParsingFile(true);
+        const toastId = toast.loading("Reading spreadsheet file...");
+        
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = e.target?.result;
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                
+                // Read as array of arrays (raw grid data)
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+                
+                if (!rows || rows.length === 0) {
+                    toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
+                    setIsParsingFile(false);
+                    return;
+                }
+
+                // Check if first row is a header row by looking for standard names
+                let startRowIndex = 0;
+                const firstRow = rows[0];
+                const isHeader = firstRow.some(cell => {
+                    const str = String(cell || '').toLowerCase();
+                    return str.includes('product') || str.includes('sku') || str.includes('id') || str.includes('barcode') || str.includes('name');
+                });
+                if (isHeader) {
+                    startRowIndex = 1;
+                }
+
+                const rawItems = rows.slice(startRowIndex).map(row => {
+                    const clean = (val: any) => {
+                        if (val === null || val === undefined || String(val).trim() === '' || String(val).toLowerCase() === 'null') {
+                            return null;
+                        }
+                        return String(val).trim();
+                    };
+
+                    const cleanNum = (val: any) => {
+                        const str = clean(val);
+                        if (!str) return 0;
+                        const num = parseFloat(str);
+                        return isNaN(num) ? 0 : num;
+                    };
+
+                    return {
+                        product_id: clean(row[0]),
+                        physical_location: clean(row[1]) || '',
+                        supplier_name: clean(row[2]) || '',
+                        barcode: clean(row[3]) || '',
+                        qr_code: clean(row[4]) || '',
+                        sku: clean(row[5]) || '',
+                        category_name: clean(row[6]) || '',
+                        item_name: clean(row[7]) || '',
+                        brand_name: clean(row[8]) || '',
+                        code: clean(row[9]) || '',
+                        code_2: clean(row[10]) || '',
+                        variations: clean(row[11]) || '',
+                        description: clean(row[12]) || '',
+                        supplier_description: clean(row[13]) || '',
+                        reorder_level: cleanNum(row[14]),
+                        price: cleanNum(row[15]),
+                        quantity: cleanNum(row[16]),
+                    };
+                }).filter(item => item.item_name !== ''); // Skip rows with no product name
+
+                if (rawItems.length === 0) {
+                    toast.error("No valid products with a name were found in the file.", { id: toastId });
+                    setIsParsingFile(false);
+                    return;
+                }
+
+                toast.loading(`Processing and resolving ${rawItems.length} products against local database...`, { id: toastId });
+
+                // Call backend API to resolve database matches
+                const response = await axios.post('/import-transfer/parse-file', {
+                    items: rawItems
+                });
+
+                if (response.data.success) {
+                    const resolved = response.data.inventory_items;
+                    const mappedItems = resolved.map((item: any) => ({
+                        ...item,
+                        brand_name: item.brand_id ? brands.find(b => String(b.id) === String(item.brand_id))?.name : item.brand_name || '',
+                        category_name: item.category_id ? categories.find(c => String(c.id) === String(item.category_id))?.name : item.category_name || '',
+                        supplier_name: item.supplier_id ? suppliers.find(s => String(s.id) === String(item.supplier_id))?.name : item.supplier_name || '',
+                        attach_image: false,
+                    }));
+
+                    setItems(mappedItems);
+                    toast.success(`Successfully mapped ${mappedItems.length} products! Review results below.`, { id: toastId });
+                } else {
+                    toast.error("Failed to map products.", { id: toastId });
+                }
+
+            } catch (err: any) {
+                console.error(err);
+                toast.error(`Error reading file: ${err.message || err}`, { id: toastId });
+            } finally {
+                setIsParsingFile(false);
+            }
+        };
+
+        reader.readAsArrayBuffer(file);
+    };
+
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!data.image) {
@@ -533,97 +644,162 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Upload Section */}
                     <Card className="lg:col-span-6 sticky top-6">
-                        <CardHeader className="flex flex-col gap-2">
-                            <div>
-                                <CardTitle className="flex items-center gap-2">
-                                    Upload Image
-                                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-none font-medium whitespace-nowrap text-[10px] px-1.5 py-0 h-4">
-                                        <Sparkles className="w-2.5 h-2.5 mr-1" />
-                                        Larable AI default Subscription
-                                    </Badge>
-                                </CardTitle>
-                                <CardDescription className="flex items-center justify-between mt-1">
-                                    <span>Supported formats: JPG, PNG</span>
-                                    <div className="flex items-center gap-3">
-                                        <span className={`text-xs font-semibold ${importMinuteUsage >= 5 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                                            {importMinuteUsage} / 5 Per Minute
-                                        </span>
-                                        <span className={`text-xs font-semibold ${importDailyUsage >= 20 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                                            {importDailyUsage} / 20 Daily Limit
-                                        </span>
+                        <Tabs defaultValue="image" className="w-full">
+                            <CardHeader className="flex flex-col gap-4 pb-2">
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="text-xl font-bold tracking-tight">Import Products</CardTitle>
+                                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-none font-medium whitespace-nowrap text-[10px] px-1.5 py-0 h-4">
+                                            <FileSpreadsheet className="w-2.5 h-2.5 mr-1" />
+                                            Multi-Format Import
+                                        </Badge>
                                     </div>
-                                </CardDescription>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={submit} className="space-y-4">
-                                <div 
-                                    className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-pointer relative h-96 bg-muted/5 overflow-hidden"
-                                    onClick={() => previewUrl && setIsModalOpen(true)}
-                                >
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        onChange={handleFileChange}
-                                        onClick={(e) => e.stopPropagation()}
-                                    />
-                                    <div className="flex flex-col items-center gap-2 pointer-events-none w-full h-full justify-center">
-                                        {previewUrl ? (
-                                            <div className="relative w-full h-full p-2">
-                                                <img
-                                                    src={previewUrl}
-                                                    alt="Preview"
-                                                    className="w-full h-full object-contain rounded-md"
-                                                />
-                                                <div className="absolute bottom-2 left-0 right-0 text-center bg-black/50 text-white text-xs py-1.5 rounded-b-md mx-2 flex items-center justify-center gap-2">
-                                                    <Eye className="w-3 h-3" /> Click to view full size
-                                                </div>
-                                            </div>
-                                        ) : data.image ? (
-                                            <>
-                                                <FileImage className="h-10 w-10 text-primary" />
-                                                <span className="font-medium text-sm">{data.image.name}</span>
-                                                <span className="text-xs text-muted-foreground">Click to change</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Upload className="h-12 w-12 text-muted-foreground mb-2" />
-                                                <span className="font-medium text-base">Click to upload or drag and drop</span>
-                                                <span className="text-xs text-muted-foreground">Supported: JPG, PNG (Max 10MB)</span>
-                                            </>
-                                        )}
-                                    </div>
+                                    <CardDescription>
+                                        Choose between scanning packing list images with AI or importing branch spreadsheets directly.
+                                    </CardDescription>
                                 </div>
-                                {errors.image && <span className="text-sm text-red-500">{errors.image}</span>}
-                                {flash?.error && (
-                                    <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-center gap-2">
-                                        <AlertCircle className="w-4 h-4" />
-                                        {flash.error}
-                                    </div>
-                                )}
+                                <TabsList className="grid w-full grid-cols-2 bg-muted/30">
+                                    <TabsTrigger value="image" className="text-xs font-semibold py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                                        <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                                        AI OCR Scanner
+                                    </TabsTrigger>
+                                    <TabsTrigger value="spreadsheet" className="text-xs font-semibold py-2 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                                        <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
+                                        Spreadsheet Mapper
+                                    </TabsTrigger>
+                                </TabsList>
+                            </CardHeader>
+                            <CardContent className="pt-2">
+                                <TabsContent value="image" className="space-y-4 outline-none">
+                                    <form onSubmit={submit} className="space-y-4">
+                                        <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/20 px-3 py-1.5 rounded-md border">
+                                            <span>Format: JPG, PNG</span>
+                                            <div className="flex items-center gap-3">
+                                                <span className={`font-semibold ${importMinuteUsage >= 5 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                                                    {importMinuteUsage} / 5 Min
+                                                </span>
+                                                <span className={`font-semibold ${importDailyUsage >= 20 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                                                    {importDailyUsage} / 20 Daily
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div 
+                                            className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-pointer relative h-80 bg-muted/5 overflow-hidden"
+                                            onClick={() => previewUrl && setIsModalOpen(true)}
+                                        >
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                onChange={handleFileChange}
+                                                onClick={(e) => e.stopPropagation()}
+                                            />
+                                            <div className="flex flex-col items-center gap-2 pointer-events-none w-full h-full justify-center">
+                                                {previewUrl ? (
+                                                    <div className="relative w-full h-full p-2">
+                                                        <img
+                                                            src={previewUrl}
+                                                            alt="Preview"
+                                                            className="w-full h-full object-contain rounded-md"
+                                                        />
+                                                        <div className="absolute bottom-2 left-0 right-0 text-center bg-black/50 text-white text-xs py-1.5 rounded-b-md mx-2 flex items-center justify-center gap-2">
+                                                            <Eye className="w-3 h-3" /> Click to view full size
+                                                        </div>
+                                                    </div>
+                                                ) : data.image ? (
+                                                    <>
+                                                        <FileImage className="h-10 w-10 text-primary" />
+                                                        <span className="font-medium text-sm">{data.image.name}</span>
+                                                        <span className="text-xs text-muted-foreground">Click to change</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Upload className="h-12 w-12 text-muted-foreground mb-2" />
+                                                        <span className="font-medium text-sm">Click to upload or drag & drop</span>
+                                                        <span className="text-xs text-muted-foreground">Supported: JPG, PNG (Max 10MB)</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {errors.image && <span className="text-sm text-red-500">{errors.image}</span>}
+                                        {flash?.error && (
+                                            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-center gap-2">
+                                                <AlertCircle className="w-4 h-4" />
+                                                {flash.error}
+                                            </div>
+                                        )}
 
-                                <Button
-                                    type="submit"
-                                    className="w-full"
-                                    disabled={processing || !data.image || importDailyUsage >= 20 || importMinuteUsage >= 5}
-                                    variant={(importDailyUsage >= 20 || importMinuteUsage >= 5) ? "secondary" : "default"}
-                                >
-                                    {processing ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Analyzing...
-                                        </>
-                                    ) : importDailyUsage >= 20 ? (
-                                        "Daily Limit Reached"
-                                    ) : importMinuteUsage >= 5 ? (
-                                        "Minute Limit Reached (Wait 60s)"
-                                    ) : (
-                                        "Upload & Analyze"
-                                    )}
-                                </Button>
-                            </form>
-                        </CardContent>
+                                        <Button
+                                            type="submit"
+                                            className="w-full"
+                                            disabled={processing || !data.image || importDailyUsage >= 20 || importMinuteUsage >= 5}
+                                            variant={(importDailyUsage >= 20 || importMinuteUsage >= 5) ? "secondary" : "default"}
+                                        >
+                                            {processing ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Analyzing...
+                                                </>
+                                            ) : importDailyUsage >= 20 ? (
+                                                "Daily Limit Reached"
+                                            ) : importMinuteUsage >= 5 ? (
+                                                "Minute Limit Reached (Wait 60s)"
+                                            ) : (
+                                                "Upload & Analyze"
+                                            )}
+                                        </Button>
+                                    </form>
+                                </TabsContent>
+
+                                <TabsContent value="spreadsheet" className="space-y-4 outline-none">
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground bg-emerald-500/5 px-3 py-1.5 rounded-md border border-emerald-500/20">
+                                        <span className="text-emerald-700 dark:text-emerald-400 font-medium">Auto-mapping active</span>
+                                        <Badge variant="outline" className="border-emerald-300 text-emerald-700 bg-emerald-100/40 text-[9px] px-1.5 py-0">
+                                            Google Sheets Backup Format
+                                        </Badge>
+                                    </div>
+                                    <div 
+                                        className="border-2 border-dashed border-muted-foreground/30 hover:border-emerald-500 hover:bg-emerald-500/5 rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors cursor-pointer relative h-80 bg-muted/5 overflow-hidden"
+                                    >
+                                        <input
+                                            type="file"
+                                            accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                            onChange={(e) => {
+                                                if (e.target.files && e.target.files[0]) {
+                                                    handleSpreadsheetUpload(e.target.files[0]);
+                                                }
+                                            }}
+                                        />
+                                        <div className="flex flex-col items-center gap-2 pointer-events-none w-full h-full justify-center">
+                                            {isParsingFile ? (
+                                                <>
+                                                    <Loader2 className="h-12 w-12 text-emerald-600 mb-2 animate-spin" />
+                                                    <span className="font-semibold text-emerald-950 dark:text-emerald-300 text-sm">Processing Spreadsheet...</span>
+                                                    <span className="text-xs text-muted-foreground">Parsing grids and resolving against database records</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <FileSpreadsheet className="h-12 w-12 text-emerald-600 mb-2" />
+                                                    <span className="font-medium text-sm">Click to upload spreadsheet or drag & drop</span>
+                                                    <span className="text-xs text-muted-foreground">Supported: CSV, XLSX (Max 10MB)</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-lg space-y-1">
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-400">
+                                            <Info className="w-3.5 h-3.5 text-emerald-600" />
+                                            Google Sheets Backup Format Guide
+                                        </div>
+                                        <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                            Ensure columns follow: <strong>ID, Physical Location, Supplier, Barcode, QR Code, SKU, Category, Product Name, Brand, Code, 2Code, Variations, Description, Supplier Desc, Reorder Lvl, Price, Quantity.</strong>
+                                        </p>
+                                    </div>
+                                </TabsContent>
+                            </CardContent>
+                        </Tabs>
                     </Card>
 
                     {/* Results Section */}
