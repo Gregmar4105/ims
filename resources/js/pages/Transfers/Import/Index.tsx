@@ -445,12 +445,72 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                 let startRowIndex = 0;
                 const firstRow = rows[0];
                 const isHeader = firstRow.some(cell => {
-                    const str = String(cell || '').toLowerCase();
-                    return str.includes('product') || str.includes('sku') || str.includes('id') || str.includes('barcode') || str.includes('name');
+                    const str = String(cell || '').toLowerCase().trim();
+                    return str.includes('product') || 
+                           str.includes('sku') || 
+                           str.includes('id') || 
+                           str.includes('barcode') || 
+                           str.includes('name') || 
+                           str === 'item' || 
+                           str === 'loc' || 
+                           str === 'spl' || 
+                           str === 'cat' || 
+                           str === 'qty' || 
+                           str === '2code';
                 });
                 if (isHeader) {
                     startRowIndex = 1;
                 }
+
+                // Analyze headers if first row is a header row
+                let headerMap: Record<string, number> = {};
+                if (isHeader) {
+                    firstRow.forEach((cell, index) => {
+                        if (cell === null || cell === undefined) return;
+                        const cellStr = String(cell).toLowerCase().trim().replace(/[\/\s_-]/g, '');
+                        
+                        if (cellStr === 'id' || cellStr === 'productid') {
+                            headerMap['product_id'] = index;
+                        } else if (cellStr === 'loc' || cellStr === 'physicallocation' || cellStr === 'location' || cellStr === 'physicalloc') {
+                            headerMap['physical_location'] = index;
+                        } else if (cellStr === 'spl' || cellStr === 'supplier' || cellStr === 'suppliername') {
+                            headerMap['supplier_name'] = index;
+                        } else if (cellStr === 'barcode' || cellStr === 'bar') {
+                            headerMap['barcode'] = index;
+                            if (headerMap['qr_code'] === undefined) {
+                                headerMap['qr_code'] = index;
+                            }
+                        } else if (cellStr === 'qrcode' || cellStr === 'qr') {
+                            headerMap['qr_code'] = index;
+                        } else if (cellStr === 'sku') {
+                            headerMap['sku'] = index;
+                        } else if (cellStr === 'cat' || cellStr === 'category' || cellStr === 'categoryname') {
+                            headerMap['category_name'] = index;
+                        } else if (cellStr === 'item' || cellStr === 'itemname' || cellStr === 'productname' || cellStr === 'product') {
+                            headerMap['item_name'] = index;
+                        } else if (cellStr === 'brand' || cellStr === 'brandname') {
+                            headerMap['brand_name'] = index;
+                        } else if (cellStr === '2code' || cellStr === 'code2') {
+                            headerMap['code_2'] = index;
+                        } else if (cellStr === 'code') {
+                            headerMap['code'] = index;
+                        } else if (cellStr === 'variations' || cellStr === 'variation') {
+                            headerMap['variations'] = index;
+                        } else if (cellStr === 'description' || cellStr === 'desc' || cellStr === 'notes' || cellStr === 'note' || cellStr === 'notes') {
+                            headerMap['description'] = index;
+                        } else if (cellStr === 'reorderlevel' || cellStr === 'reorderlvl') {
+                            headerMap['reorder_level'] = index;
+                        } else if (cellStr === 'price') {
+                            headerMap['price'] = index;
+                        } else if (cellStr === 'qty' || cellStr === 'quantity' || cellStr === 'qtysent' || cellStr === 'quantityadded') {
+                            headerMap['quantity'] = index;
+                        }
+                    });
+                }
+
+                // If no headers were detected, check column counts of the first row to determine template layout
+                const colCount = firstRow ? firstRow.length : 0;
+                const isFormatB = colCount <= 14;
 
                 const rawItems = rows.slice(startRowIndex).map(row => {
                     const clean = (val: any) => {
@@ -467,24 +527,119 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                         return isNaN(num) ? 0 : num;
                     };
 
+                    const getValue = (field: string, fallbackIdx: number) => {
+                        if (isHeader && headerMap[field] !== undefined) {
+                            const valIdx = headerMap[field];
+                            return valIdx < row.length ? clean(row[valIdx]) : null;
+                        }
+                        return fallbackIdx !== -1 && fallbackIdx < row.length ? clean(row[fallbackIdx]) : null;
+                    };
+
+                    const getNumValue = (field: string, fallbackIdx: number) => {
+                        if (isHeader && headerMap[field] !== undefined) {
+                            const valIdx = headerMap[field];
+                            return valIdx < row.length ? cleanNum(row[valIdx]) : 0;
+                        }
+                        return fallbackIdx !== -1 && fallbackIdx < row.length ? cleanNum(row[fallbackIdx]) : 0;
+                    };
+
+                    let product_id = null;
+                    let physical_location = '';
+                    let supplier_name = '';
+                    let barcode = '';
+                    let qr_code = '';
+                    let sku = '';
+                    let category_name = '';
+                    let item_name = '';
+                    let brand_name = '';
+                    let code = '';
+                    let code_2 = '';
+                    let variations = '';
+                    let description = '';
+                    let supplier_description = '';
+                    let reorder_level = 0;
+                    let price = 0;
+                    let quantity = 0;
+
+                    if (isHeader && Object.keys(headerMap).length > 0) {
+                        product_id = getValue('product_id', -1);
+                        physical_location = getValue('physical_location', -1) || '';
+                        supplier_name = getValue('supplier_name', -1) || '';
+                        barcode = getValue('barcode', -1) || '';
+                        qr_code = getValue('qr_code', -1) || '';
+                        sku = getValue('sku', -1) || '';
+                        category_name = getValue('category_name', -1) || '';
+                        item_name = getValue('item_name', -1) || '';
+                        brand_name = getValue('brand_name', -1) || '';
+                        code = getValue('code', -1) || '';
+                        code_2 = getValue('code_2', -1) || '';
+                        variations = getValue('variations', -1) || '';
+                        description = getValue('description', -1) || '';
+                        reorder_level = getNumValue('reorder_level', -1);
+                        price = getNumValue('price', -1);
+                        quantity = getNumValue('quantity', -1);
+
+                        // If QR code is not mapped separately but barcode is, map barcode to QR code
+                        if (!qr_code && barcode) {
+                            qr_code = barcode;
+                        }
+                    } else {
+                        if (isFormatB) {
+                            // Format B: DATE (0), LOC (1), SPL (2), BARCODE (3), SKU (4), CAT (5), ITEM (6), CODE (7), PRICE (8), 2CODE (9), SALE (10), QTY (11), NOTE/s (12)
+                            product_id = null;
+                            physical_location = clean(row[1]) || '';
+                            supplier_name = clean(row[2]) || '';
+                            barcode = clean(row[3]) || '';
+                            qr_code = clean(row[3]) || ''; // BARCODE maps to both barcode and QR code
+                            sku = clean(row[4]) || '';
+                            category_name = clean(row[5]) || '';
+                            item_name = clean(row[6]) || '';
+                            brand_name = '';
+                            code = clean(row[7]) || '';
+                            price = cleanNum(row[8]);
+                            code_2 = clean(row[9]) || '';
+                            quantity = cleanNum(row[11]);
+                            description = clean(row[12]) || ''; // NOTE/s maps to description
+                        } else {
+                            // Format A: ID (0), Physical Location (1), Supplier (2), Barcode (3), QR Code (4), SKU (5), Category (6), Product Name (7), Brand (8), Code (9), 2Code (10), Variations (11), Description (12), Supplier Desc (13), Reorder Lvl (14), Price (15), Quantity (16)
+                            product_id = clean(row[0]);
+                            physical_location = clean(row[1]) || '';
+                            supplier_name = clean(row[2]) || '';
+                            barcode = clean(row[3]) || '';
+                            qr_code = clean(row[4]) || '';
+                            sku = clean(row[5]) || '';
+                            category_name = clean(row[6]) || '';
+                            item_name = clean(row[7]) || '';
+                            brand_name = clean(row[8]) || '';
+                            code = clean(row[9]) || '';
+                            code_2 = clean(row[10]) || '';
+                            variations = clean(row[11]) || '';
+                            description = clean(row[12]) || '';
+                            supplier_description = clean(row[13]) || '';
+                            reorder_level = cleanNum(row[14]);
+                            price = cleanNum(row[15]);
+                            quantity = cleanNum(row[16]);
+                        }
+                    }
+
                     return {
-                        product_id: clean(row[0]),
-                        physical_location: clean(row[1]) || '',
-                        supplier_name: clean(row[2]) || '',
-                        barcode: clean(row[3]) || '',
-                        qr_code: clean(row[4]) || '',
-                        sku: clean(row[5]) || '',
-                        category_name: clean(row[6]) || '',
-                        item_name: clean(row[7]) || '',
-                        brand_name: clean(row[8]) || '',
-                        code: clean(row[9]) || '',
-                        code_2: clean(row[10]) || '',
-                        variations: clean(row[11]) || '',
-                        description: clean(row[12]) || '',
-                        supplier_description: clean(row[13]) || '',
-                        reorder_level: cleanNum(row[14]),
-                        price: cleanNum(row[15]),
-                        quantity: cleanNum(row[16]),
+                        product_id,
+                        physical_location,
+                        supplier_name,
+                        barcode,
+                        qr_code,
+                        sku,
+                        category_name,
+                        item_name,
+                        brand_name,
+                        code,
+                        code_2,
+                        variations,
+                        description,
+                        supplier_description,
+                        reorder_level,
+                        price,
+                        quantity,
                     };
                 }).filter(item => item.item_name !== ''); // Skip rows with no product name
 
@@ -755,7 +910,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                     <div className="flex items-center justify-between text-xs text-muted-foreground bg-emerald-500/5 px-3 py-1.5 rounded-md border border-emerald-500/20">
                                         <span className="text-emerald-700 dark:text-emerald-400 font-medium">Auto-mapping active</span>
                                         <Badge variant="outline" className="border-emerald-300 text-emerald-700 bg-emerald-100/40 text-[9px] px-1.5 py-0">
-                                            Google Sheets Backup Format
+                                            Multi-Format Support
                                         </Badge>
                                     </div>
                                     <div 
@@ -788,14 +943,22 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                                         </div>
                                     </div>
 
-                                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-lg space-y-1">
+                                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-lg space-y-1.5">
                                         <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-400">
                                             <Info className="w-3.5 h-3.5 text-emerald-600" />
-                                            Google Sheets Backup Format Guide
+                                            Spreadsheet Format & Dynamic Mapping Guide
                                         </div>
                                         <p className="text-[11px] leading-relaxed text-muted-foreground">
-                                            Ensure columns follow: <strong>ID, Physical Location, Supplier, Barcode, QR Code, SKU, Category, Product Name, Brand, Code, 2Code, Variations, Description, Supplier Desc, Reorder Lvl, Price, Quantity.</strong>
+                                            The mapper dynamically detects columns by their headers (e.g. LOC, SPL, BARCODE, SKU, CAT, ITEM, QTY). If headers are missing, it falls back to standard templates:
                                         </p>
+                                        <div className="text-[10px] space-y-1.5 pl-2 text-muted-foreground border-l-2 border-emerald-500/30">
+                                            <div>
+                                                <strong>1. Branch Sync Template (13 cols):</strong> DATE, LOC, SPL, BARCODE, SKU, CAT, ITEM, CODE, PRICE, 2CODE, SALE, QTY, NOTE/s
+                                            </div>
+                                            <div>
+                                                <strong>2. Google Sheets Backup Template (17 cols):</strong> ID, LOC, SPL, Barcode, QR Code, SKU, CAT, ITEM, Brand, Code, 2Code, Variations, Description, Supplier Desc, Reorder Lvl, Price, QTY
+                                            </div>
+                                        </div>
                                     </div>
                                 </TabsContent>
                             </CardContent>
