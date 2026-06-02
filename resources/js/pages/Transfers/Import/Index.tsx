@@ -441,28 +441,36 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                     return;
                 }
 
-                // Locate header row dynamically by scanning first 5 rows
+                // Locate header row dynamically by scanning all rows in the sheet
                 let headerRowIndex = -1;
                 let isHeader = false;
                 let headerMap: Record<string, number> = {};
 
-                for (let r = 0; r < Math.min(5, rows.length); r++) {
+                for (let r = 0; r < rows.length; r++) {
                     const row = rows[r];
                     if (!row || !Array.isArray(row)) continue;
                     
                     const matchesHeader = row.some(cell => {
-                        const str = String(cell || '').toLowerCase().trim();
-                        return str.includes('product') || 
-                               str.includes('sku') || 
-                               str.includes('id') || 
-                               str.includes('barcode') || 
-                               str.includes('name') || 
-                               str === 'item' || 
+                        const str = String(cell || '').toLowerCase().trim().replace(/[\/\s_-]/g, '');
+                        return str === 'location' || 
                                str === 'loc' || 
+                               str === 'supplier' || 
                                str === 'spl' || 
+                               str === 'barcode' || 
+                               str === 'sku' || 
+                               str === 'category' || 
                                str === 'cat' || 
+                               str === 'item' || 
+                               str === 'productname' || 
+                               str === 'product' || 
+                               str === 'code' || 
+                               str === 'price' || 
+                               str === '2code' || 
+                               str === 'sale' || 
                                str === 'qty' || 
-                               str === '2code';
+                               str === 'quantity' || 
+                               str === 'notes' || 
+                               str === 'note';
                     });
 
                     if (matchesHeader) {
@@ -519,7 +527,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                     });
                 }
 
-                // Count columns in the first row by ignoring trailing nulls/undefineds
+                // Count columns in the header row by ignoring trailing nulls/undefineds
                 const getActualColCount = (row: any[]) => {
                     if (!row) return 0;
                     let lastPopulatedIndex = -1;
@@ -532,9 +540,9 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                     return lastPopulatedIndex + 1;
                 };
 
-                const firstRow = rows[0] || [];
+                const headerRow = isHeader && headerRowIndex !== -1 ? rows[headerRowIndex] : (rows[0] || []);
                 const firstDataRow = rows[startRowIndex] || [];
-                const colCount = getActualColCount(firstDataRow);
+                const colCount = getActualColCount(headerRow);
                 
                 // Let's decide if it's the new Format B (13 columns)
                 let isFormatB = colCount <= 14;
