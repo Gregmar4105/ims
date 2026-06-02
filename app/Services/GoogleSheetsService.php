@@ -476,8 +476,8 @@ class GoogleSheetsService
 
             // Build items summary
             $items = $sale->items->map(function($item) {
-                return ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity . ' @ ' . $item->price;
-            })->implode(', ');
+                return '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity . ' @ ' . $item->price;
+            })->implode("\n");
 
             // Calculate total
             $total = $sale->items->sum(function($item) {
@@ -602,12 +602,12 @@ class GoogleSheetsService
 
             // Build items summary
             $items = $transfer->items->map(function($item) {
-                $summary = ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
+                $summary = '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
                 if ($item->received_quantity !== null) {
                     $summary .= " [Rec: {$item->received_quantity}]";
                 }
                 return $summary;
-            })->implode(', ');
+            })->implode("\n");
 
             $destination = $transfer->destinationBranch?->branch_name ?? $transfer->supplier?->name ?? 'Unknown';
 

@@ -111,8 +111,8 @@ class GoogleSheetsSyncController extends Controller
             
             foreach ($allSales as $sale) {
                 $itemsSummary = $sale->items->map(function($item) {
-                    return ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity . ' @ ' . $item->price;
-                })->implode(', ');
+                    return '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity . ' @ ' . $item->price;
+                })->implode("\n");
 
                 $total = $sale->items->sum(function($item) {
                     return $item->price * $item->quantity;
@@ -139,12 +139,12 @@ class GoogleSheetsSyncController extends Controller
 
             foreach ($allTransfers as $transfer) {
                 $itemsSummary = $transfer->items->map(function($item) {
-                    $summary = ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
+                    $summary = '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
                     if ($item->received_quantity !== null) {
                         $summary .= " [Rec: {$item->received_quantity}]";
                     }
                     return $summary;
-                })->implode(', ');
+                })->implode("\n");
 
                 $destination = $transfer->destinationBranch?->branch_name ?? $transfer->supplier?->name ?? 'Unknown';
 
@@ -762,12 +762,12 @@ class GoogleSheetsSyncController extends Controller
 
                 foreach ($allTransfers as $t) {
                     $itemsSummary = $t->items->map(function($item) {
-                        $summary = ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
+                        $summary = '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
                         if ($item->received_quantity !== null) {
                             $summary .= " [Rec: {$item->received_quantity}]";
                         }
                         return $summary;
-                    })->implode(', ');
+                    })->implode("\n");
 
                     $destination = $t->destinationBranch?->branch_name ?? $t->supplier?->name ?? 'Unknown';
 
