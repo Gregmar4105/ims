@@ -68,12 +68,32 @@ class ImportTransferController extends Controller
 
             if ($response->successful()) {
                 $raw = $response->json();
-                // Handle n8n output structure: [{ "output": { "inventory_items": [...] } }]
-                // Or sometimes it might be just the object. Check both.
-                $items = $raw[0]['output']['inventory_items']
-                    ?? $raw['output']['inventory_items']
-                    ?? $raw['inventory_items']
-                    ?? [];
+                
+                $rawItems = [];
+                if (is_array($raw)) {
+                    // Try to locate inventory_items or items within various nested structures
+                    if (isset($raw[0]['output']['inventory_items'])) {
+                        $rawItems = $raw[0]['output']['inventory_items'];
+                    } elseif (isset($raw['output']['inventory_items'])) {
+                        $rawItems = $raw['output']['inventory_items'];
+                    } elseif (isset($raw['inventory_items'])) {
+                        $rawItems = $raw['inventory_items'];
+                    } elseif (isset($raw[0]['output']['items'])) {
+                        $rawItems = $raw[0]['output']['items'];
+                    } elseif (isset($raw['output']['items'])) {
+                        $rawItems = $raw['output']['items'];
+                    } elseif (isset($raw['items'])) {
+                        $rawItems = $raw['items'];
+                    } elseif (isset($raw[0]['items'])) {
+                        $rawItems = $raw[0]['items'];
+                    } else {
+                        // Check if the array itself is a list of items (e.g. has keys like article or item_name)
+                        $firstElem = reset($raw);
+                        if (is_array($firstElem) && (isset($firstElem['article']) || isset($firstElem['item_name']) || isset($firstElem['qty']) || isset($firstElem['quantity']))) {
+                            $rawItems = $raw;
+                        }
+                    }
+                }
 
                 // Store the scanned image in the public imports folder
                 $storedPath = $image->store('imports', 'public');
@@ -83,33 +103,83 @@ class ImportTransferController extends Controller
                     ? session('active_branch_id')
                     : $user->branch_id;
                 
-                if (is_array($items)) {
-                    foreach ($items as &$item) {
-                        $item['exists_in_branch'] = false;
-                        if (isset($item['item_name']) && $branchId) {
-                            $product = Product::with(['branches' => function ($query) use ($branchId) {
-                                $query->where('branches.id', $branchId);
-                            }])->where('name', 'like', '%' . trim($item['item_name']) . '%')->first();
+                $items = [];
+                if (is_array($rawItems)) {
+                    foreach ($rawItems as $rawItem) {
+                        if (!is_array($rawItem)) {
+                            continue;
+                        }
 
-                            if ($product && $product->branches->isNotEmpty()) {
-                                $item['exists_in_branch'] = true;
-                                $item['product_id'] = $product->id;
-                                $item['brand_id'] = (string) $product->brand_id;
-                                $item['category_id'] = (string) $product->category_id;
-                                $item['supplier_id'] = (string) $product->supplier_id;
-                                $item['price'] = $product->price;
-                                $item['code'] = $product->code;
-                                $item['code_2'] = $product->code_2;
-                                $item['sku'] = $product->sku;
-                                
-                                $branchProduct = $product->branches->first()->pivot;
-                                $item['current_stock'] = $branchProduct->quantity;
-                                $item['physical_location'] = $branchProduct->physical_location;
-                            } else {
-                                $item['exists_in_branch'] = false;
-                                $item['current_stock'] = 0;
+                        $itemName = trim($rawItem['item_name'] ?? $rawItem['article'] ?? '');
+                        if (empty($itemName)) {
+                            continue;
+                        }
+
+                        $quantity = (int)($rawItem['quantity'] ?? $rawItem['qty'] ?? 1);
+
+                        // Try to find product match in database
+                        $product = null;
+                        $productId = $rawItem['product_id'] ?? null;
+                        if ($productId && is_numeric($productId)) {
+                            $product = Product::with(['brand', 'category', 'supplier'])->find((int)$productId);
+                        }
+
+                        if (!$product) {
+                            if (!empty($rawItem['barcode'])) {
+                                $product = Product::with(['brand', 'category', 'supplier'])->where('barcode', $rawItem['barcode'])->first();
+                            }
+                            if (!$product && !empty($rawItem['qr_code'])) {
+                                $product = Product::with(['brand', 'category', 'supplier'])->where('qr_code', $rawItem['qr_code'])->first();
+                            }
+                            if (!$product && !empty($rawItem['sku'])) {
+                                $product = Product::with(['brand', 'category', 'supplier'])->where('sku', $rawItem['sku'])->first();
+                            }
+                            if (!$product) {
+                                $product = Product::with(['brand', 'category', 'supplier'])
+                                    ->where('name', 'like', '%' . $itemName . '%')
+                                    ->first();
                             }
                         }
+
+                        $resolved = [
+                            'item_name' => $itemName,
+                            'quantity' => $quantity,
+                            'exists_in_branch' => false,
+                            'product_id' => $product ? $product->id : null,
+                            'brand_id' => $product ? (string) $product->brand_id : '',
+                            'category_id' => $product ? (string) $product->category_id : '',
+                            'supplier_id' => $product ? (string) $product->supplier_id : '',
+                            'brand_name' => $product && $product->brand ? $product->brand->name : ($rawItem['brand_name'] ?? $rawItem['brand'] ?? ''),
+                            'category_name' => $product && $product->category ? $product->category->name : ($rawItem['category_name'] ?? $rawItem['category'] ?? ''),
+                            'supplier_name' => $product && $product->supplier ? $product->supplier->name : ($rawItem['supplier_name'] ?? $rawItem['supplier'] ?? ''),
+                            'price' => $product ? $product->price : ($rawItem['price'] ?? ''),
+                            'code' => $product ? $product->code : ($rawItem['code'] ?? ''),
+                            'code_2' => $product ? $product->code_2 : ($rawItem['code_2'] ?? ''),
+                            'sku' => $product ? $product->sku : ($rawItem['sku'] ?? ''),
+                            'barcode' => $product ? $product->barcode : ($rawItem['barcode'] ?? ''),
+                            'qr_code' => $product ? $product->qr_code : ($rawItem['qr_code'] ?? ''),
+                            'physical_location' => $rawItem['physical_location'] ?? '',
+                            'reorder_level' => (int)($rawItem['reorder_level'] ?? 0),
+                            'current_stock' => 0,
+                            'description' => $rawItem['description'] ?? '',
+                            'variations' => [],
+                        ];
+
+                        if ($product && $branchId) {
+                            $branchProduct = BranchProduct::where('product_id', $product->id)
+                                ->where('branch_id', $branchId)
+                                ->first();
+
+                            if ($branchProduct) {
+                                $resolved['exists_in_branch'] = true;
+                                $resolved['current_stock'] = $branchProduct->quantity;
+                                $resolved['physical_location'] = $branchProduct->physical_location ?: $resolved['physical_location'];
+                                $resolved['reorder_level'] = $branchProduct->reorder_level ?: $resolved['reorder_level'];
+                                $resolved['description'] = $branchProduct->description ?: $resolved['description'];
+                            }
+                        }
+
+                        $items[] = $resolved;
                     }
                 }
 

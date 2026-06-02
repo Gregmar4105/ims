@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save, CheckCircle, PlusCircle, HelpCircle, Sparkles, Barcode, QrCode, Eye, AlertTriangle, RefreshCw, X, Ban, FileSpreadsheet, Check, Info } from 'lucide-react';
+import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save, CheckCircle, PlusCircle, HelpCircle, Sparkles, Barcode, QrCode, Eye, AlertTriangle, RefreshCw, X, Ban, FileSpreadsheet, Check, Info, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { AutocompleteInput } from '@/components/AutocompleteInput';
 import axios from 'axios';
@@ -128,6 +128,8 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
     const [pullBranchName, setPullBranchName] = useState('');
     const [pullItems, setPullItems] = useState<any[]>([]);
     const [isSavingPull, setIsSavingPull] = useState(false);
+    const [pullSearchQuery, setPullSearchQuery] = useState('');
+    const [pullStatusFilter, setPullStatusFilter] = useState('all');
 
     const handlePullFromGoogleSheets = async () => {
         setIsFetchingPull(true);
@@ -841,6 +843,57 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
         });
     };
 
+    // Reactive filtering for Google Sheets pulled items
+    const itemsWithOriginalIndex = pullItems.map((item, index) => ({ ...item, originalIndex: index }));
+
+    const filteredPullItems = itemsWithOriginalIndex.filter((item) => {
+        // 1. Status Filter
+        if (pullStatusFilter !== 'all') {
+            if (pullStatusFilter === 'rejected') {
+                if (!item.is_rejected) return false;
+            } else {
+                if (item.is_rejected) return false;
+                
+                if (pullStatusFilter === 'new' && item.status !== 'new') return false;
+                if (pullStatusFilter === 'modified' && item.status !== 'modified') return false;
+                if (pullStatusFilter === 'duplicate' && item.status !== 'duplicate') return false;
+                if (pullStatusFilter === 'synced' && item.status !== 'unchanged') return false;
+            }
+        }
+
+        // 2. Search Query Filter
+        if (pullSearchQuery.trim() !== '') {
+            const query = pullSearchQuery.toLowerCase().trim();
+            const name = String(item.values?.name || '').toLowerCase();
+            const barcode = String(item.values?.barcode || '').toLowerCase();
+            const qrCode = String(item.values?.qr_code || '').toLowerCase();
+            const sku = String(item.values?.sku || '').toLowerCase();
+            const brand = String(item.values?.brand_name || '').toLowerCase();
+            const category = String(item.values?.category_name || '').toLowerCase();
+            const supplier = String(item.values?.supplier_name || '').toLowerCase();
+            const physicalLocation = String(item.values?.physical_location || '').toLowerCase();
+            const code = String(item.values?.code || '').toLowerCase();
+            const code2 = String(item.values?.code_2 || '').toLowerCase();
+
+            if (
+                !name.includes(query) &&
+                !barcode.includes(query) &&
+                !qrCode.includes(query) &&
+                !sku.includes(query) &&
+                !brand.includes(query) &&
+                !category.includes(query) &&
+                !supplier.includes(query) &&
+                !physicalLocation.includes(query) &&
+                !code.includes(query) &&
+                !code2.includes(query)
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
     return (
         <AppLayout breadcrumbs={[{ title: 'Import Transfer', href: '/import-transfer' }]}>
             <Head title="Import Transfer" />
@@ -1389,6 +1442,66 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                             </div>
                         </div>
 
+                        {/* Search & Filter Control Bar */}
+                        <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0 bg-background/50 border border-muted/50 p-4 rounded-xl shadow-sm backdrop-blur-sm">
+                            {/* Search Input */}
+                            <div className="relative flex-1 w-full">
+                                <Input
+                                    type="text"
+                                    placeholder="Search by Name, SKU, Barcode, Supplier, Brand, Category, Location..."
+                                    value={pullSearchQuery}
+                                    onChange={(e) => setPullSearchQuery(e.target.value)}
+                                    className="pl-9 pr-8 h-9 text-xs border-muted-foreground/20 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-background rounded-lg shadow-sm transition-all"
+                                />
+                                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                                {pullSearchQuery && (
+                                    <button
+                                        onClick={() => setPullSearchQuery('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full hover:bg-muted transition-colors"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Dropdown status filter */}
+                            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+                                <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Status:</span>
+                                <Select
+                                    value={pullStatusFilter}
+                                    onValueChange={(val) => setPullStatusFilter(val)}
+                                >
+                                    <SelectTrigger className="w-[180px] h-9 text-xs border-muted-foreground/20 focus:ring-2 focus:ring-emerald-500 bg-background rounded-lg shadow-sm">
+                                        <SelectValue placeholder="All Statuses" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all" className="text-xs font-medium">All Items ({pullItems.length})</SelectItem>
+                                        <SelectItem value="new" className="text-xs font-medium text-emerald-600 dark:text-emerald-400">New ({pullItems.filter(i => i.status === 'new' && !i.is_rejected).length})</SelectItem>
+                                        <SelectItem value="modified" className="text-xs font-medium text-amber-600 dark:text-amber-400">Modified ({pullItems.filter(i => i.status === 'modified' && !i.is_rejected).length})</SelectItem>
+                                        <SelectItem value="duplicate" className="text-xs font-medium text-rose-600 dark:text-rose-400">Duplicates ({pullItems.filter(i => i.status === 'duplicate' && !i.is_rejected).length})</SelectItem>
+                                        <SelectItem value="rejected" className="text-xs font-medium text-muted-foreground">Rejected ({pullItems.filter(i => i.is_rejected).length})</SelectItem>
+                                        <SelectItem value="synced" className="text-xs font-medium text-blue-600 dark:text-blue-400">Synced / Unchanged ({pullItems.filter(i => i.status === 'unchanged' && !i.is_rejected).length})</SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                {/* Clear Filters button */}
+                                {(pullSearchQuery || pullStatusFilter !== 'all') && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                            setPullSearchQuery('');
+                                            setPullStatusFilter('all');
+                                        }}
+                                        className="h-9 px-3 text-xs font-semibold hover:bg-muted text-muted-foreground hover:text-foreground transition-all gap-1"
+                                    >
+                                        <RefreshCw className="w-3.5 h-3.5" />
+                                        Reset
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+
                         {/* Spreadsheet Grid Container */}
                         <div className="flex-1 overflow-x-auto overflow-y-auto border border-muted-foreground/20 rounded-lg shadow-inner bg-background relative max-h-[50vh]">
                             <table className="table-auto w-auto min-w-max border-collapse border border-muted/50">
@@ -1415,7 +1528,8 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {pullItems.map((item, idx) => {
+                                    {filteredPullItems.map((item) => {
+                                        const idx = item.originalIndex;
                                         const isRejected = item.is_rejected;
                                         const hasWarnings = item.warnings && item.warnings.length > 0;
                                         
@@ -1538,14 +1652,14 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                         </div>
 
                         {/* Sheet Health Alerts / Warning panel */}
-                        {pullItems.some(i => i.warnings && i.warnings.length > 0 && !i.is_rejected) && (
+                        {filteredPullItems.some(i => i.warnings && i.warnings.length > 0 && !i.is_rejected) && (
                             <div className="shrink-0 bg-rose-50 dark:bg-rose-950/20 border-2 border-rose-200 dark:border-rose-900 rounded-lg p-3 space-y-1.5 max-h-[14vh] overflow-y-auto">
                                 <h4 className="text-xs font-bold text-rose-800 dark:text-rose-400 flex items-center gap-1.5">
                                     <AlertTriangle className="w-4 h-4 animate-bounce" />
                                     Sheet Health Alerts & Conflict Warnings
                                 </h4>
                                 <ul className="list-disc pl-5 text-[11px] text-rose-700 dark:text-rose-300 space-y-1">
-                                    {pullItems.flatMap((it: any, idx: number) => {
+                                    {filteredPullItems.flatMap((it: any, idx: number) => {
                                         if (it.is_rejected || !it.warnings) return [];
                                         return it.warnings.map((w: string, wIdx: number) => (
                                             <li key={`${idx}-${wIdx}`}>
@@ -1577,11 +1691,13 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                                 <Button 
                                     className="bg-rose-600 hover:bg-rose-700 text-white font-bold h-9 px-4 text-xs gap-1.5 shadow-sm"
                                     onClick={() => {
-                                        toast.warning("Please reject or fix duplicate warnings before saving.");
+                                        setPullSearchQuery('');
+                                        setPullStatusFilter('all');
+                                        toast.warning("Please resolve duplicate warnings. Filters have been reset to show all items.");
                                     }}
                                 >
                                     <Ban className="w-4 h-4" />
-                                    Resolve Warnings First
+                                    Resolve Warnings First {filteredPullItems.filter(i => i.warnings && i.warnings.length > 0 && !i.is_rejected).length === 0 && "(Filtered)"}
                                 </Button>
                             ) : (
                                 <Button 
