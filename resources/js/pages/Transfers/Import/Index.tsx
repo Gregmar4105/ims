@@ -622,18 +622,24 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                     };
 
                     const getValue = (field: string) => {
-                        if (isHeader && headerMap[field] !== undefined) {
-                            const valIdx = headerMap[field];
-                            return valIdx < row.length ? clean(row[valIdx]) : null;
+                        if (isHeader) {
+                            if (headerMap[field] !== undefined) {
+                                const valIdx = headerMap[field];
+                                return valIdx < row.length ? clean(row[valIdx]) : null;
+                            }
+                            return null;
                         }
                         const fallbackIdx = getFallbackIndex(field);
                         return fallbackIdx !== -1 && fallbackIdx < row.length ? clean(row[fallbackIdx]) : null;
                     };
 
                     const getNumValue = (field: string) => {
-                        if (isHeader && headerMap[field] !== undefined) {
-                            const valIdx = headerMap[field];
-                            return valIdx < row.length ? cleanNum(row[valIdx]) : 0;
+                        if (isHeader) {
+                            if (headerMap[field] !== undefined) {
+                                const valIdx = headerMap[field];
+                                return valIdx < row.length ? cleanNum(row[valIdx]) : 0;
+                            }
+                            return 0;
                         }
                         const fallbackIdx = getFallbackIndex(field);
                         return fallbackIdx !== -1 && fallbackIdx < row.length ? cleanNum(row[fallbackIdx]) : 0;
