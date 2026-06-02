@@ -451,26 +451,20 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                     if (!row || !Array.isArray(row)) continue;
                     
                     const matchesHeader = row.some(cell => {
-                        const str = String(cell || '').toLowerCase().trim().replace(/[\/\s_-]/g, '');
-                        return str === 'location' || 
-                               str === 'loc' || 
-                               str === 'supplier' || 
-                               str === 'spl' || 
-                               str === 'barcode' || 
-                               str === 'sku' || 
-                               str === 'category' || 
-                               str === 'cat' || 
-                               str === 'item' || 
-                               str === 'productname' || 
-                               str === 'product' || 
-                               str === 'code' || 
-                               str === 'price' || 
-                               str === '2code' || 
-                               str === 'sale' || 
-                               str === 'qty' || 
-                               str === 'quantity' || 
-                               str === 'notes' || 
-                               str === 'note';
+                        const str = String(cell || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+                        return str.includes('product') || 
+                               str.includes('sku') || 
+                               str.includes('id') || 
+                               str.includes('barcode') || 
+                               str.includes('name') || 
+                               str.includes('item') || 
+                               str.includes('loc') || 
+                               str.includes('spl') || 
+                               str.includes('cat') || 
+                               str.includes('qty') || 
+                               str.includes('2code') ||
+                               str.includes('supplier') ||
+                               str.includes('category');
                     });
 
                     if (matchesHeader) {
@@ -486,42 +480,44 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                     const headerRow = rows[headerRowIndex];
                     headerRow.forEach((cell, index) => {
                         if (cell === null || cell === undefined) return;
-                        const cellStr = String(cell).toLowerCase().trim().replace(/[\/\s_-]/g, '');
+                        const cellStr = String(cell).toLowerCase().trim().replace(/[^a-z0-9]/g, '');
                         
-                        if (cellStr === 'id' || cellStr === 'productid') {
+                        if (cellStr.includes('id') || cellStr === 'productid') {
                             headerMap['product_id'] = index;
-                        } else if (cellStr === 'loc' || cellStr === 'physicallocation' || cellStr === 'location' || cellStr === 'physicalloc') {
+                        } else if (cellStr.includes('loc') || cellStr.includes('location')) {
                             headerMap['physical_location'] = index;
-                        } else if (cellStr === 'spl' || cellStr === 'supplier' || cellStr === 'suppliername') {
+                        } else if (cellStr.includes('spl') || cellStr.includes('supplier')) {
                             headerMap['supplier_name'] = index;
-                        } else if (cellStr === 'barcode' || cellStr === 'bar') {
+                        } else if (cellStr.includes('barcode') || cellStr === 'bar') {
                             headerMap['barcode'] = index;
                             if (headerMap['qr_code'] === undefined) {
                                 headerMap['qr_code'] = index;
                             }
-                        } else if (cellStr === 'qrcode' || cellStr === 'qr') {
+                        } else if (cellStr.includes('qrcode') || cellStr === 'qr') {
                             headerMap['qr_code'] = index;
                         } else if (cellStr === 'sku') {
                             headerMap['sku'] = index;
-                        } else if (cellStr === 'cat' || cellStr === 'category' || cellStr === 'categoryname') {
+                        } else if (cellStr.includes('cat') || cellStr.includes('category')) {
                             headerMap['category_name'] = index;
-                        } else if (cellStr === 'item' || cellStr === 'itemname' || cellStr === 'productname' || cellStr === 'product') {
+                        } else if (cellStr.includes('item') || cellStr.includes('productname') || cellStr.includes('product')) {
                             headerMap['item_name'] = index;
-                        } else if (cellStr === 'brand' || cellStr === 'brandname') {
+                        } else if (cellStr.includes('brand')) {
                             headerMap['brand_name'] = index;
-                        } else if (cellStr === '2code' || cellStr === 'code2') {
+                        } else if (cellStr.includes('2code') || cellStr.includes('code2')) {
                             headerMap['code_2'] = index;
-                        } else if (cellStr === 'code') {
-                            headerMap['code'] = index;
-                        } else if (cellStr === 'variations' || cellStr === 'variation') {
+                        } else if (cellStr.includes('code')) {
+                            if (headerMap['code'] === undefined) {
+                                headerMap['code'] = index;
+                            }
+                        } else if (cellStr.includes('variations') || cellStr.includes('variation')) {
                             headerMap['variations'] = index;
-                        } else if (cellStr === 'description' || cellStr === 'desc' || cellStr === 'notes' || cellStr === 'note' || cellStr === 'notes') {
+                        } else if (cellStr.includes('description') || cellStr.includes('desc') || cellStr.includes('notes') || cellStr.includes('note')) {
                             headerMap['description'] = index;
-                        } else if (cellStr === 'reorderlevel' || cellStr === 'reorderlvl') {
+                        } else if (cellStr.includes('reorderlevel') || cellStr.includes('reorderlvl') || cellStr.includes('reorder')) {
                             headerMap['reorder_level'] = index;
-                        } else if (cellStr === 'price') {
+                        } else if (cellStr.includes('price')) {
                             headerMap['price'] = index;
-                        } else if (cellStr === 'qty' || cellStr === 'quantity' || cellStr === 'qtysent' || cellStr === 'quantityadded') {
+                        } else if (cellStr.includes('qty') || cellStr.includes('quantity')) {
                             headerMap['quantity'] = index;
                         }
                     });
