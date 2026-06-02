@@ -441,31 +441,42 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                     return;
                 }
 
-                // Check if first row is a header row by looking for standard names
-                let startRowIndex = 0;
-                const firstRow = rows[0];
-                const isHeader = firstRow.some(cell => {
-                    const str = String(cell || '').toLowerCase().trim();
-                    return str.includes('product') || 
-                           str.includes('sku') || 
-                           str.includes('id') || 
-                           str.includes('barcode') || 
-                           str.includes('name') || 
-                           str === 'item' || 
-                           str === 'loc' || 
-                           str === 'spl' || 
-                           str === 'cat' || 
-                           str === 'qty' || 
-                           str === '2code';
-                });
-                if (isHeader) {
-                    startRowIndex = 1;
+                // Locate header row dynamically by scanning first 5 rows
+                let headerRowIndex = -1;
+                let isHeader = false;
+                let headerMap: Record<string, number> = {};
+
+                for (let r = 0; r < Math.min(5, rows.length); r++) {
+                    const row = rows[r];
+                    if (!row || !Array.isArray(row)) continue;
+                    
+                    const matchesHeader = row.some(cell => {
+                        const str = String(cell || '').toLowerCase().trim();
+                        return str.includes('product') || 
+                               str.includes('sku') || 
+                               str.includes('id') || 
+                               str.includes('barcode') || 
+                               str.includes('name') || 
+                               str === 'item' || 
+                               str === 'loc' || 
+                               str === 'spl' || 
+                               str === 'cat' || 
+                               str === 'qty' || 
+                               str === '2code';
+                    });
+
+                    if (matchesHeader) {
+                        headerRowIndex = r;
+                        isHeader = true;
+                        break;
+                    }
                 }
 
-                // Analyze headers if first row is a header row
-                let headerMap: Record<string, number> = {};
-                if (isHeader) {
-                    firstRow.forEach((cell, index) => {
+                let startRowIndex = 0;
+                if (isHeader && headerRowIndex !== -1) {
+                    startRowIndex = headerRowIndex + 1;
+                    const headerRow = rows[headerRowIndex];
+                    headerRow.forEach((cell, index) => {
                         if (cell === null || cell === undefined) return;
                         const cellStr = String(cell).toLowerCase().trim().replace(/[\/\s_-]/g, '');
                         
@@ -508,9 +519,50 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                     });
                 }
 
-                // If no headers were detected, check column counts of the first row to determine template layout
-                const colCount = firstRow ? firstRow.length : 0;
-                const isFormatB = colCount <= 14;
+                // Count columns in the first row by ignoring trailing nulls/undefineds
+                const getActualColCount = (row: any[]) => {
+                    if (!row) return 0;
+                    let lastPopulatedIndex = -1;
+                    for (let i = row.length - 1; i >= 0; i--) {
+                        if (row[i] !== null && row[i] !== undefined && String(row[i]).trim() !== '') {
+                            lastPopulatedIndex = i;
+                            break;
+                        }
+                    }
+                    return lastPopulatedIndex + 1;
+                };
+
+                const firstRow = rows[0] || [];
+                const firstDataRow = rows[startRowIndex] || [];
+                const colCount = getActualColCount(firstDataRow);
+                
+                // Let's decide if it's the new Format B (13 columns)
+                let isFormatB = colCount <= 14;
+                if (!isFormatB && isHeader && headerRowIndex !== -1) {
+                    const headerRow = rows[headerRowIndex];
+                    const locIdx = headerRow.findIndex(cell => String(cell || '').toLowerCase().trim() === 'loc');
+                    const splIdx = headerRow.findIndex(cell => String(cell || '').toLowerCase().trim() === 'spl');
+                    if ((locIdx === 0 || locIdx === 1) && (splIdx === 1 || splIdx === 2)) {
+                        isFormatB = true;
+                    }
+                }
+
+                // Determine if Format B has DATE at index 0
+                let hasDateColumn = true;
+                if (isHeader && headerRowIndex !== -1) {
+                    const headerRow = rows[headerRowIndex];
+                    const locIdx = headerRow.findIndex(cell => String(cell || '').toLowerCase().trim() === 'loc');
+                    if (locIdx === 0) {
+                        hasDateColumn = false;
+                    }
+                } else {
+                    const cell0 = String(firstDataRow[0] || '').toLowerCase().trim();
+                    if (cell0.includes('.') || cell0.includes('/') || cell0.length === 0) {
+                        hasDateColumn = true;
+                    } else {
+                        hasDateColumn = false;
+                    }
+                }
 
                 const rawItems = rows.slice(startRowIndex).map(row => {
                     const clean = (val: any) => {
@@ -527,99 +579,86 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                         return isNaN(num) ? 0 : num;
                     };
 
-                    const getValue = (field: string, fallbackIdx: number) => {
+                    const getFallbackIndex = (field: string) => {
+                        if (isFormatB) {
+                            const offset = hasDateColumn ? 1 : 0;
+                            switch (field) {
+                                case 'physical_location': return 0 + offset;
+                                case 'supplier_name': return 1 + offset;
+                                case 'barcode': return 2 + offset;
+                                case 'qr_code': return 2 + offset;
+                                case 'sku': return 3 + offset;
+                                case 'category_name': return 4 + offset;
+                                case 'item_name': return 5 + offset;
+                                case 'code': return 6 + offset;
+                                case 'price': return 7 + offset;
+                                case 'code_2': return 8 + offset;
+                                case 'quantity': return 10 + offset;
+                                case 'description': return 11 + offset;
+                                default: return -1;
+                            }
+                        } else {
+                            switch (field) {
+                                case 'product_id': return 0;
+                                case 'physical_location': return 1;
+                                case 'supplier_name': return 2;
+                                case 'barcode': return 3;
+                                case 'qr_code': return 4;
+                                case 'sku': return 5;
+                                case 'category_name': return 6;
+                                case 'item_name': return 7;
+                                case 'brand_name': return 8;
+                                case 'code': return 9;
+                                case 'code_2': return 10;
+                                case 'variations': return 11;
+                                case 'description': return 12;
+                                case 'supplier_description': return 13;
+                                case 'reorder_level': return 14;
+                                case 'price': return 15;
+                                case 'quantity': return 16;
+                                default: return -1;
+                            }
+                        }
+                    };
+
+                    const getValue = (field: string) => {
                         if (isHeader && headerMap[field] !== undefined) {
                             const valIdx = headerMap[field];
                             return valIdx < row.length ? clean(row[valIdx]) : null;
                         }
+                        const fallbackIdx = getFallbackIndex(field);
                         return fallbackIdx !== -1 && fallbackIdx < row.length ? clean(row[fallbackIdx]) : null;
                     };
 
-                    const getNumValue = (field: string, fallbackIdx: number) => {
+                    const getNumValue = (field: string) => {
                         if (isHeader && headerMap[field] !== undefined) {
                             const valIdx = headerMap[field];
                             return valIdx < row.length ? cleanNum(row[valIdx]) : 0;
                         }
+                        const fallbackIdx = getFallbackIndex(field);
                         return fallbackIdx !== -1 && fallbackIdx < row.length ? cleanNum(row[fallbackIdx]) : 0;
                     };
 
-                    let product_id = null;
-                    let physical_location = '';
-                    let supplier_name = '';
-                    let barcode = '';
-                    let qr_code = '';
-                    let sku = '';
-                    let category_name = '';
-                    let item_name = '';
-                    let brand_name = '';
-                    let code = '';
-                    let code_2 = '';
-                    let variations = '';
-                    let description = '';
-                    let supplier_description = '';
-                    let reorder_level = 0;
-                    let price = 0;
-                    let quantity = 0;
+                    const product_id = getValue('product_id');
+                    const physical_location = getValue('physical_location') || '';
+                    const supplier_name = getValue('supplier_name') || '';
+                    const barcode = getValue('barcode') || '';
+                    let qr_code = getValue('qr_code') || '';
+                    const sku = getValue('sku') || '';
+                    const category_name = getValue('category_name') || '';
+                    const item_name = getValue('item_name') || '';
+                    const brand_name = getValue('brand_name') || '';
+                    const code = getValue('code') || '';
+                    const code_2 = getValue('code_2') || '';
+                    const variations = getValue('variations') || '';
+                    const description = getValue('description') || '';
+                    const supplier_description = getValue('supplier_description') || '';
+                    const reorder_level = getNumValue('reorder_level');
+                    const price = getNumValue('price');
+                    const quantity = getNumValue('quantity');
 
-                    if (isHeader && Object.keys(headerMap).length > 0) {
-                        product_id = getValue('product_id', -1);
-                        physical_location = getValue('physical_location', -1) || '';
-                        supplier_name = getValue('supplier_name', -1) || '';
-                        barcode = getValue('barcode', -1) || '';
-                        qr_code = getValue('qr_code', -1) || '';
-                        sku = getValue('sku', -1) || '';
-                        category_name = getValue('category_name', -1) || '';
-                        item_name = getValue('item_name', -1) || '';
-                        brand_name = getValue('brand_name', -1) || '';
-                        code = getValue('code', -1) || '';
-                        code_2 = getValue('code_2', -1) || '';
-                        variations = getValue('variations', -1) || '';
-                        description = getValue('description', -1) || '';
-                        reorder_level = getNumValue('reorder_level', -1);
-                        price = getNumValue('price', -1);
-                        quantity = getNumValue('quantity', -1);
-
-                        // If QR code is not mapped separately but barcode is, map barcode to QR code
-                        if (!qr_code && barcode) {
-                            qr_code = barcode;
-                        }
-                    } else {
-                        if (isFormatB) {
-                            // Format B: DATE (0), LOC (1), SPL (2), BARCODE (3), SKU (4), CAT (5), ITEM (6), CODE (7), PRICE (8), 2CODE (9), SALE (10), QTY (11), NOTE/s (12)
-                            product_id = null;
-                            physical_location = clean(row[1]) || '';
-                            supplier_name = clean(row[2]) || '';
-                            barcode = clean(row[3]) || '';
-                            qr_code = clean(row[3]) || ''; // BARCODE maps to both barcode and QR code
-                            sku = clean(row[4]) || '';
-                            category_name = clean(row[5]) || '';
-                            item_name = clean(row[6]) || '';
-                            brand_name = '';
-                            code = clean(row[7]) || '';
-                            price = cleanNum(row[8]);
-                            code_2 = clean(row[9]) || '';
-                            quantity = cleanNum(row[11]);
-                            description = clean(row[12]) || ''; // NOTE/s maps to description
-                        } else {
-                            // Format A: ID (0), Physical Location (1), Supplier (2), Barcode (3), QR Code (4), SKU (5), Category (6), Product Name (7), Brand (8), Code (9), 2Code (10), Variations (11), Description (12), Supplier Desc (13), Reorder Lvl (14), Price (15), Quantity (16)
-                            product_id = clean(row[0]);
-                            physical_location = clean(row[1]) || '';
-                            supplier_name = clean(row[2]) || '';
-                            barcode = clean(row[3]) || '';
-                            qr_code = clean(row[4]) || '';
-                            sku = clean(row[5]) || '';
-                            category_name = clean(row[6]) || '';
-                            item_name = clean(row[7]) || '';
-                            brand_name = clean(row[8]) || '';
-                            code = clean(row[9]) || '';
-                            code_2 = clean(row[10]) || '';
-                            variations = clean(row[11]) || '';
-                            description = clean(row[12]) || '';
-                            supplier_description = clean(row[13]) || '';
-                            reorder_level = cleanNum(row[14]);
-                            price = cleanNum(row[15]);
-                            quantity = cleanNum(row[16]);
-                        }
+                    if (!qr_code && barcode) {
+                        qr_code = barcode;
                     }
 
                     return {
