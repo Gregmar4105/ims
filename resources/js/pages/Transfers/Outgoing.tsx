@@ -399,6 +399,7 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                                         </div>
                                     </div>
                                 </div>
+                            ))}
                         </div>
 
                         <div className="space-y-2">
