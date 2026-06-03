@@ -87,7 +87,14 @@ class HandleInertiaRequests extends Middleware
         $categories = [];
         try {
             $categories = \App\Models\Category::where('status', 'Active')
-                ->withCount('products')
+                ->whereHas('products.branches', function ($q) {
+                    $q->where('branch_name', 'LM2 Bicycle Trading');
+                })
+                ->withCount(['products' => function ($q) {
+                    $q->whereHas('branches', function ($bq) {
+                        $bq->where('branch_name', 'LM2 Bicycle Trading');
+                    });
+                }])
                 ->orderByDesc('products_count')
                 ->take(20)
                 ->get()
@@ -98,7 +105,7 @@ class HandleInertiaRequests extends Middleware
                     $category->setRelation('brands', \App\Models\Brand::whereHas('products', function ($q) use ($category) {
                         $q->where('category_id', $category->id)
                           ->whereHas('branches', function ($bq) {
-                              $bq->whereIn('branch_name', ['Main Branch', 'LM2 Bicycle Trading']);
+                              $bq->where('branch_name', 'LM2 Bicycle Trading');
                           });
                     })->take(5)->get(['id', 'name', 'slug']));
                     return $category;
@@ -119,6 +126,9 @@ class HandleInertiaRequests extends Middleware
         $brands = [];
         try {
             $brands = \App\Models\Brand::where('status', 'Active')
+                ->whereHas('products.branches', function ($q) {
+                    $q->where('branch_name', 'LM2 Bicycle Trading');
+                })
                 ->orderBy('name')
                 ->get(['id', 'name', 'slug']);
         } catch (\Throwable) {

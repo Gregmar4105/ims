@@ -19,7 +19,7 @@ class ShopController extends Controller
             });
 
         if ($request->boolean('new')) {
-            $query->where('created_at', '>=', now()->subDays(7));
+            $query->where('created_at', '>=', now()->subDays(30));
         }
 
         if ($request->filled('search')) {
