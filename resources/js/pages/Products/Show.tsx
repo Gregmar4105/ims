@@ -107,33 +107,24 @@ export default function Show({ product }: Props) {
         let qrSvg = document.querySelector('#hidden-print-codes svg')?.outerHTML || '<!-- QR Error -->';
         qrSvg = qrSvg.replace(/width="\d+"/, '').replace(/height="\d+"/, '');
 
-        const printWidth = bt.labelWidth || 28;
-        const printHeight = bt.labelHeight > 0 
-            ? bt.labelHeight 
-            : (bt.mediaType === 'receipt' 
-                ? Math.round(printWidth * 0.7) 
-                : 20);
+        const printWidth = 28;
+        const printHeight = 20;
 
-        // Helper to determine dynamic font size based on text length and label scale
+        // Helper to determine dynamic font size based on text length
         const getDynamicSize = (text: string, base: number, threshold: number, min: number, factor: number = 0.5) => {
-            const widthScale = printWidth / 28;
-            const scaledBase = base * Math.min(2, widthScale);
-            const scaledMin = min * Math.min(2, widthScale);
-            const scaledThreshold = threshold * widthScale;
-
-            if (!text) return `${scaledBase}pt`;
+            if (!text) return `${base}pt`;
             const count = String(text).length;
-            if (count > scaledThreshold) {
-                return `${Math.max(scaledMin, scaledBase - (count - scaledThreshold) * factor)}pt`;
+            if (count > threshold) {
+                return `${Math.max(min, base - (count - threshold) * factor)}pt`;
             }
-            return `${scaledBase}pt`;
+            return `${base}pt`;
         };
 
         // Dynamic font sizes based on active dimensions
         const skuSize = getDynamicSize(product.sku || product.name || '', 7.5, 10, 3, 0.6);
         const codeSize = getDynamicSize((product.code || '') + (product.code_2 || ''), 7.5, 10, 3.5, 0.6);
         const supplierSize = getDynamicSize(product.supplier?.name || '', 7, 10, 3.5, 0.6);
-        const barcodeSize = `${6 * Math.min(2, printWidth / 28) - 1}pt`;
+        const barcodeSize = '5.5pt';
 
         // CSS-based main window print hack
         // Mobile webviews block window.print() if called in an iframe.
@@ -846,25 +837,16 @@ export default function Show({ product }: Props) {
 
             {/* Hidden Label Render for html-to-image Native Share fallback */}
             {(() => {
-                const printWidth = bt.labelWidth || 28;
-                const printHeight = bt.labelHeight > 0 
-                    ? bt.labelHeight 
-                    : (bt.mediaType === 'receipt' 
-                        ? Math.round(printWidth * 0.7) 
-                        : 20);
+                const printWidth = 28;
+                const printHeight = 20;
 
                 const getDynamicSize = (text: string, base: number, threshold: number, min: number, factor: number = 0.5) => {
-                    const widthScale = printWidth / 28;
-                    const scaledBase = base * Math.min(2, widthScale);
-                    const scaledMin = min * Math.min(2, widthScale);
-                    const scaledThreshold = threshold * widthScale;
-
-                    if (!text) return `${scaledBase}pt`;
+                    if (!text) return `${base}pt`;
                     const count = String(text).length;
-                    if (count > scaledThreshold) {
-                        return `${Math.max(scaledMin, scaledBase - (count - scaledThreshold) * factor)}pt`;
+                    if (count > threshold) {
+                        return `${Math.max(min, base - (count - threshold) * factor)}pt`;
                     }
-                    return `${scaledBase}pt`;
+                    return `${base}pt`;
                 };
 
                 const skuStr = product.sku || product.name || '';
@@ -874,8 +856,8 @@ export default function Show({ product }: Props) {
                 const skuSize = getDynamicSize(skuStr, 7.5, 10, 3, 0.6);
                 const codeSize = getDynamicSize(codesStr, 7.5, 10, 3.5, 0.6);
                 const supplierSize = getDynamicSize(supplierStr, 7, 10, 3.5, 0.6);
-                const barcodeSize = `${6 * Math.min(2, printWidth / 28) - 1}pt`;
-                const priceSize = `${10 * Math.min(2, printWidth / 28)}pt`;
+                const barcodeSize = '5.5pt';
+                const priceSize = '10pt';
 
                 const qrSize = `${Math.min(24, Math.max(6, printHeight - 12))}mm`;
                 const upperHeight = `${printHeight - 7}mm`;
