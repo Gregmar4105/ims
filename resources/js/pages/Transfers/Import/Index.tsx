@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, useForm, usePage, router } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Upload, FileImage, Loader2, AlertCircle, Trash2, Plus, Save, CheckCircle, PlusCircle, HelpCircle, Sparkles, Barcode, QrCode, Eye, AlertTriangle, RefreshCw, X, Ban, FileSpreadsheet, Check, Info, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { AutocompleteInput } from '@/components/AutocompleteInput';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import axios from 'axios';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -130,6 +131,27 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
     const [isSavingPull, setIsSavingPull] = useState(false);
     const [pullSearchQuery, setPullSearchQuery] = useState('');
     const [pullStatusFilter, setPullStatusFilter] = useState('all');
+    const [pullBrandFilter, setPullBrandFilter] = useState('all');
+    const [pullBaseCategoryFilter, setPullBaseCategoryFilter] = useState('all');
+    const [pullSubCategoryFilter, setPullSubCategoryFilter] = useState('all');
+
+    // Intelligent Category Grouping for Google Sheets Sync
+    const pullCategoryGroups = useMemo(() => {
+        const groups: Record<string, string[]> = {};
+        categories.forEach(cat => {
+            const firstWord = cat.name.split(' ')[0];
+            if (!groups[firstWord]) groups[firstWord] = [];
+            groups[firstWord].push(cat.name);
+        });
+        return groups;
+    }, [categories]);
+
+    const pullBaseCategories = useMemo(() => Object.keys(pullCategoryGroups).sort(), [pullCategoryGroups]);
+
+    const pullSubCategories = useMemo(() => {
+        if (pullBaseCategoryFilter === 'all') return [];
+        return pullCategoryGroups[pullBaseCategoryFilter] || [];
+    }, [pullBaseCategoryFilter, pullCategoryGroups]);
 
     const handlePullFromGoogleSheets = async () => {
         setIsFetchingPull(true);
@@ -861,7 +883,26 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
             }
         }
 
-        // 2. Search Query Filter
+        // 2. Brand Filter
+        if (pullBrandFilter !== 'all') {
+            if (item.is_rejected) return false;
+            const itemBrand = String(item.values?.brand_name || '').trim();
+            if (itemBrand !== pullBrandFilter) return false;
+        }
+
+        // 3. Category Filter
+        if (pullBaseCategoryFilter !== 'all') {
+            if (item.is_rejected) return false;
+            const itemCategory = String(item.values?.category_name || '').trim();
+            if (pullSubCategoryFilter !== 'all') {
+                if (itemCategory !== pullSubCategoryFilter) return false;
+            } else {
+                const subs = pullCategoryGroups[pullBaseCategoryFilter] || [];
+                if (!subs.includes(itemCategory)) return false;
+            }
+        }
+
+        // 4. Search Query Filter
         if (pullSearchQuery.trim() !== '') {
             const query = pullSearchQuery.toLowerCase().trim();
             const name = String(item.values?.name || '').toLowerCase();
@@ -1464,18 +1505,18 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                                 )}
                             </div>
 
-                            {/* Dropdown status filter */}
-                            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+                            {/* Dropdown filters */}
+                            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
                                 <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Status:</span>
                                 <Select
                                     value={pullStatusFilter}
                                     onValueChange={(val) => setPullStatusFilter(val)}
                                 >
-                                    <SelectTrigger className="w-[180px] h-9 text-xs border-muted-foreground/20 focus:ring-2 focus:ring-emerald-500 bg-background rounded-lg shadow-sm">
+                                    <SelectTrigger className="w-full sm:w-[130px] h-9 text-xs border-muted-foreground/20 focus:ring-2 focus:ring-emerald-500 bg-background rounded-lg shadow-sm">
                                         <SelectValue placeholder="All Statuses" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all" className="text-xs font-medium">All Items ({pullItems.length})</SelectItem>
+                                        <SelectItem value="all" className="text-xs font-medium">All Statuses ({pullItems.length})</SelectItem>
                                         <SelectItem value="new" className="text-xs font-medium text-emerald-600 dark:text-emerald-400">New ({pullItems.filter(i => i.status === 'new' && !i.is_rejected).length})</SelectItem>
                                         <SelectItem value="modified" className="text-xs font-medium text-amber-600 dark:text-amber-400">Modified ({pullItems.filter(i => i.status === 'modified' && !i.is_rejected).length})</SelectItem>
                                         <SelectItem value="duplicate" className="text-xs font-medium text-rose-600 dark:text-rose-400">Duplicates ({pullItems.filter(i => i.status === 'duplicate' && !i.is_rejected).length})</SelectItem>
@@ -1484,14 +1525,59 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                                     </SelectContent>
                                 </Select>
 
+                                <SearchableSelect
+                                    options={brands.map(b => b.name)}
+                                    value={pullBrandFilter}
+                                    onValueChange={(val) => setPullBrandFilter(val)}
+                                    placeholder="Brand"
+                                    allLabel="All Brands"
+                                    triggerClassName="w-full sm:w-[130px]"
+                                />
+
+                                <SearchableSelect
+                                    options={pullBaseCategories}
+                                    value={pullBaseCategoryFilter}
+                                    onValueChange={(val) => {
+                                        setPullBaseCategoryFilter(val);
+                                        if (val === 'all') {
+                                            setPullSubCategoryFilter('all');
+                                        } else {
+                                            const subs = pullCategoryGroups[val];
+                                            if (subs.length === 1) {
+                                                setPullSubCategoryFilter(subs[0]);
+                                            } else {
+                                                setPullSubCategoryFilter('all');
+                                            }
+                                        }
+                                    }}
+                                    placeholder="Category"
+                                    allLabel="All Categories"
+                                    triggerClassName="w-full sm:w-[130px]"
+                                />
+
+                                {pullBaseCategoryFilter !== 'all' && pullSubCategories.length > 1 && (
+                                    <SearchableSelect
+                                        options={pullSubCategories}
+                                        value={pullSubCategoryFilter}
+                                        onValueChange={(val) => setPullSubCategoryFilter(val)}
+                                        placeholder="Sub-Category"
+                                        allLabel="All Sub-Categories"
+                                        getLabel={(opt) => opt === 'all' ? 'All' : opt.replace(new RegExp(`^${pullBaseCategoryFilter}\\s*`), '') || opt}
+                                        triggerClassName="w-full sm:w-[130px]"
+                                    />
+                                )}
+
                                 {/* Clear Filters button */}
-                                {(pullSearchQuery || pullStatusFilter !== 'all') && (
+                                {(pullSearchQuery || pullStatusFilter !== 'all' || pullBrandFilter !== 'all' || pullBaseCategoryFilter !== 'all') && (
                                     <Button
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => {
                                             setPullSearchQuery('');
                                             setPullStatusFilter('all');
+                                            setPullBrandFilter('all');
+                                            setPullBaseCategoryFilter('all');
+                                            setPullSubCategoryFilter('all');
                                         }}
                                         className="h-9 px-3 text-xs font-semibold hover:bg-muted text-muted-foreground hover:text-foreground transition-all gap-1"
                                     >
