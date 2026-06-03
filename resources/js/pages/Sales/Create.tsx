@@ -19,6 +19,7 @@ import axios from 'axios';
 interface Product {
     id: number;
     name: string;
+    code: string | null;
     barcode: string | null;
     qr_code: string | null;
     price: number | null;
@@ -31,6 +32,7 @@ interface SaleItem {
     quantity: number;
     price: number; // The current selling price (can be discounted)
     product: Product;
+    custom_code: string | null;
 }
 
 interface PendingSale {
@@ -43,6 +45,7 @@ interface PendingSale {
     items: {
         id: number;
         quantity: number;
+        custom_code?: string | null;
         product: {
             name: string;
         };
@@ -65,7 +68,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const lastScanRef = useRef<number>(0);
 
     const { data, setData, post, processing, reset, errors } = useForm({
-        items: [] as { product_id: number; quantity: number; price: number; original_price: number }[],
+        items: [] as { product_id: number; quantity: number; price: number; original_price: number; custom_code: string | null }[],
         notes: '',
     });
 
@@ -252,7 +255,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                 );
             }
             toast.success('Item added to list');
-            return [...prev, { product_id: product.id, quantity: 1, price: Number(product.price) || 0, product: product }];
+            return [...prev, { product_id: product.id, quantity: 1, price: Number(product.price) || 0, product: product, custom_code: product.code }];
         });
     };
 
@@ -275,6 +278,14 @@ export default function Create({ products, pendingSales }: { products: Product[]
         setCart(prev => prev.map(item =>
             item.product_id === productId
                 ? { ...item, quantity: newQuantity }
+                : item
+        ));
+    };
+
+    const updateCustomCode = (productId: number, newCode: string) => {
+        setCart(prev => prev.map(item =>
+            item.product_id === productId
+                ? { ...item, custom_code: newCode }
                 : item
         ));
     };
@@ -314,7 +325,8 @@ export default function Create({ products, pendingSales }: { products: Product[]
             product_id: item.product_id,
             quantity: item.quantity,
             price: item.price,
-            original_price: Number(item.product.price) || 0
+            original_price: Number(item.product.price) || 0,
+            custom_code: item.custom_code || null
         }));
 
         post('/sales', {
@@ -517,6 +529,17 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 </div>
                                                 <div className="flex items-center gap-4">
                                                     <div className="flex items-center gap-2">
+                                                        {/* Editable Product Code */}
+                                                        <div className="flex flex-col items-end mr-2">
+                                                            <span className="text-[10px] text-muted-foreground mb-0.5">Code</span>
+                                                            <Input
+                                                                type="text"
+                                                                value={item.custom_code || ''}
+                                                                onChange={(e) => updateCustomCode(item.product_id, e.target.value)}
+                                                                className="w-24 h-8 text-center text-xs font-mono px-1.5"
+                                                                placeholder="Code"
+                                                            />
+                                                        </div>
                                                         <div className="flex flex-col items-end mr-4">
                                                             <span className="text-sm font-bold">₱{(item.price * item.quantity).toFixed(2)}</span>
                                                             <div className="flex flex-col items-end">
@@ -635,9 +658,14 @@ export default function Create({ products, pendingSales }: { products: Product[]
 
                                             <div className="space-y-1">
                                                 {sale.items.map((item) => (
-                                                    <div key={item.id} className="flex justify-between text-sm">
-                                                        <span>{item.product.name}</span>
-                                                        <span className="font-medium">x{item.quantity}</span>
+                                                    <div key={item.id} className="flex flex-col border-b last:border-0 pb-1 mb-1">
+                                                        <div className="flex justify-between text-sm">
+                                                            <span>{item.product.name}</span>
+                                                            <span className="font-medium">x{item.quantity}</span>
+                                                        </div>
+                                                        {item.custom_code && (
+                                                            <span className="text-[10px] text-muted-foreground font-mono">Code: {item.custom_code}</span>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>

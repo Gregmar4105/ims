@@ -18,7 +18,9 @@ interface SaleItem {
         name: string;
         barcode: string;
         qr_code: string;
+        code: string | null;
     };
+    custom_code: string | null;
     quantity: number;
     price: number;
     original_price: number | null;
@@ -391,6 +393,17 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                                                         </TableCell>
                                                         <TableCell>
                                                             <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                                                                {item.custom_code ? (
+                                                                    <div className="flex items-center gap-1.5 font-medium text-foreground">
+                                                                        <span className="text-[10px] text-muted-foreground">Code:</span>
+                                                                        <span className="font-mono">{item.custom_code}</span>
+                                                                    </div>
+                                                                ) : item.product?.code ? (
+                                                                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                                                                        <span className="text-[10px] text-muted-foreground">Code:</span>
+                                                                        <span className="font-mono">{item.product.code}</span>
+                                                                    </div>
+                                                                ) : null}
                                                                 {item.product?.barcode && (
                                                                     <div className="flex items-center gap-1.5">
                                                                         <Barcode className="w-3.5 h-3.5" />

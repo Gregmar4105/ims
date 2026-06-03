@@ -20,7 +20,8 @@ interface Sale {
         quantity: number;
         price: number;
         original_price: number | null;
-        product: { name: string; barcode: string; qr_code: string };
+        product: { name: string; barcode: string; qr_code: string; code: string | null };
+        custom_code: string | null;
     }>;
 }
 
@@ -115,7 +116,14 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                                 <TableRow key={item.id} className="border-b border-gray-100 hover:bg-transparent">
                                     <TableCell className="py-3 pl-0">
                                         <p className="font-medium">{item.product.name}</p>
-                                        <p className="text-xs text-gray-500 font-mono mt-0.5">{item.product.barcode || item.product.qr_code}</p>
+                                        <div className="flex flex-col gap-0.5 mt-0.5 text-xs text-gray-500 font-mono">
+                                            {item.custom_code ? (
+                                                <p>Code: {item.custom_code}</p>
+                                            ) : item.product.code ? (
+                                                <p>Code: {item.product.code}</p>
+                                            ) : null}
+                                            <p>{item.product.barcode || item.product.qr_code}</p>
+                                        </div>
                                     </TableCell>
                                     <TableCell className="text-right py-3">{item.quantity}</TableCell>
                                     <TableCell className="text-right py-3">

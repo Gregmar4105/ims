@@ -205,6 +205,7 @@ class SaleController extends Controller
             ->select(
                 'products.id',
                 'products.name',
+                'products.code',
                 'products.barcode',
                 'products.qr_code',
                 'products.price',
@@ -258,6 +259,7 @@ class SaleController extends Controller
             return [
                 'id' => $p->id,
                 'name' => $p->name,
+                'code' => $p->code,
                 'barcode' => $p->barcode,
                 'qr_code' => $p->qr_code,
                 'price' => $p->price,
@@ -294,6 +296,7 @@ class SaleController extends Controller
             ->select(
                 'products.id',
                 'products.name',
+                'products.code',
                 'products.barcode',
                 'products.qr_code',
                 'products.price',
@@ -320,6 +323,7 @@ class SaleController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.original_price' => 'required|numeric|min:0',
+            'items.*.custom_code' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
         
@@ -349,6 +353,7 @@ class SaleController extends Controller
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
                     'original_price' => $item['original_price'],
+                    'custom_code' => $item['custom_code'] ?? null,
                 ]);
             }
         });
