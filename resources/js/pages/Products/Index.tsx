@@ -512,7 +512,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         const supplierSize = getDynamicSize(viewCodeProduct.supplier?.name || '', 7, 10, 3.5, 0.6);
 
         // Barcode is strictly 13 characters maximum, we can assign a solid fixed readable size.
-        const barcodeSize = '6pt';
+        const barcodeSize = '5pt';
 
         // CSS-based main window print hack
         // Mobile webviews block window.print() if called in an iframe.
@@ -556,6 +556,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     width: 28mm;
                     height: 20mm;
                     margin: 0;
+                    margin-left: 1.5mm;
                     padding: 0.5mm 1mm;
                     font-family: 'Arial', sans-serif;
                     overflow: hidden;
@@ -1529,13 +1530,14 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         const skuSize = getDynamicSize(skuStr, 9, 12, 4, 0.5);
                         const codeSize = getDynamicSize(codesStr, 7.5, 10, 3.5, 0.6);
                         const supplierSize = getDynamicSize(supplierStr, 7, 10, 3.5, 0.6);
-                        const barcodeSize = '6.5pt';
+                        const barcodeSize = '5.5pt';
 
                         return (
                             <div style={{ position: 'absolute', left: '-9999px', top: 0, opacity: 0, pointerEvents: 'none' }}>
                                 <div id="native-print-label" style={{
                                     width: '28mm',
                                     height: '20mm',
+                                    marginLeft: '1.5mm',
                                     background: 'white',
                                     color: 'black',
                                     fontFamily: 'Arial, sans-serif',

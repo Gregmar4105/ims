@@ -133,7 +133,7 @@ export default function Show({ product }: Props) {
         const skuSize = getDynamicSize(product.sku || product.name || '', 6, 12, 3, 0.5);
         const codeSize = getDynamicSize((product.code || '') + (product.code_2 || ''), 7.5, 10, 3.5, 0.6);
         const supplierSize = getDynamicSize(product.supplier?.name || '', 7, 10, 3.5, 0.6);
-        const barcodeSize = `${6 * Math.min(2, printWidth / 28)}pt`;
+        const barcodeSize = `${6 * Math.min(2, printWidth / 28) - 1}pt`;
 
         // CSS-based main window print hack
         // Mobile webviews block window.print() if called in an iframe.
@@ -177,6 +177,7 @@ export default function Show({ product }: Props) {
                     width: ${printWidth}mm;
                     height: ${printHeight}mm;
                     margin: 0;
+                    margin-left: 1.5mm;
                     padding: 0.5mm 1mm;
                     font-family: 'Arial', sans-serif;
                     overflow: hidden;
@@ -872,7 +873,7 @@ export default function Show({ product }: Props) {
                 const skuSize = getDynamicSize(skuStr, 6, 12, 3, 0.5);
                 const codeSize = getDynamicSize(codesStr, 7.5, 10, 3.5, 0.6);
                 const supplierSize = getDynamicSize(supplierStr, 7, 10, 3.5, 0.6);
-                const barcodeSize = `${6 * Math.min(2, printWidth / 28)}pt`;
+                const barcodeSize = `${6 * Math.min(2, printWidth / 28) - 1}pt`;
                 const priceSize = `${10 * Math.min(2, printWidth / 28)}pt`;
 
                 const qrSize = `${Math.min(24, Math.max(6, printHeight - 10))}mm`;
@@ -883,6 +884,7 @@ export default function Show({ product }: Props) {
                         <div id="native-print-label" style={{
                             width: `${printWidth}mm`,
                             height: `${printHeight}mm`,
+                            marginLeft: '1.5mm',
                             background: 'white',
                             color: 'black',
                             fontFamily: 'Arial, sans-serif',
