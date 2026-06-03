@@ -130,7 +130,7 @@ export default function Show({ product }: Props) {
         };
 
         // Dynamic font sizes based on active dimensions
-        const skuSize = getDynamicSize(product.sku || product.name || '', 9, 12, 4, 0.5);
+        const skuSize = getDynamicSize(product.sku || product.name || '', 6, 12, 3, 0.5);
         const codeSize = getDynamicSize((product.code || '') + (product.code_2 || ''), 7.5, 10, 3.5, 0.6);
         const supplierSize = getDynamicSize(product.supplier?.name || '', 7, 10, 3.5, 0.6);
         const barcodeSize = `${6 * Math.min(2, printWidth / 28)}pt`;
@@ -235,7 +235,7 @@ export default function Show({ product }: Props) {
                 }
                 
                 .product-sku {
-                    font-size: 9pt;
+                    font-size: ${skuSize};
                     font-weight: bold;
                     white-space: nowrap;
                     overflow: hidden;
@@ -869,7 +869,7 @@ export default function Show({ product }: Props) {
                 const codesStr = (product.code || '') + (product.code_2 || '');
                 const supplierStr = product.supplier?.name || '';
 
-                const skuSize = getDynamicSize(skuStr, 9, 12, 4, 0.5);
+                const skuSize = getDynamicSize(skuStr, 6, 12, 3, 0.5);
                 const codeSize = getDynamicSize(codesStr, 7.5, 10, 3.5, 0.6);
                 const supplierSize = getDynamicSize(supplierStr, 7, 10, 3.5, 0.6);
                 const barcodeSize = `${6 * Math.min(2, printWidth / 28)}pt`;
