@@ -507,7 +507,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
 
         // Ultra-aggressive thresholds for 28x20mm landscape
         // Given ~16mm space for info-stack
-        const skuSize = getDynamicSize(viewCodeProduct.sku || viewCodeProduct.name || '', 7.5, 10, 3, 0.6);
+        const skuSize = getDynamicSize(viewCodeProduct.sku || viewCodeProduct.name || '', 7.5, 10, 4, 0.2);
         const codeSize = getDynamicSize((viewCodeProduct.code || '') + (viewCodeProduct.code_2 || ''), 7.5, 10, 3.5, 0.6);
         const supplierSize = getDynamicSize(viewCodeProduct.supplier?.name || '', 7, 10, 3.5, 0.6);
 
@@ -1527,7 +1527,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         const codesStr = (viewCodeProduct.code || '') + (viewCodeProduct.code_2 || '');
                         const supplierStr = viewCodeProduct.supplier?.name || '';
 
-                        const skuSize = getDynamicSize(skuStr, 7.5, 10, 3, 0.6);
+                        const skuSize = getDynamicSize(skuStr, 7.5, 10, 4, 0.2);
                         const codeSize = getDynamicSize(codesStr, 7.5, 10, 3.5, 0.6);
                         const supplierSize = getDynamicSize(supplierStr, 7, 10, 3.5, 0.6);
                         const barcodeSize = '5.5pt';
