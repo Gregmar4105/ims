@@ -116,9 +116,14 @@ export default function QrScannerIndex({
     // --- Scanner Logic ---
     // Moved initialization to useEffect to wait for DOM Rendering
     useEffect(() => {
+        let isMounted = true;
+        let timer: any = null;
+
         if (isScanning) {
             // Small delay to ensure the #reader div is mounted
-            const timer = setTimeout(() => {
+            timer = setTimeout(() => {
+                if (!isMounted) return;
+
                 const html5QrCode = new Html5Qrcode("reader");
                 scannerRef.current = html5QrCode;
 
@@ -140,29 +145,34 @@ export default function QrScannerIndex({
                     setIsScanning(false);
                 });
             }, 100);
-
-            return () => {
-                clearTimeout(timer);
-                // Only clean up on unmount or if we are still marked as scanning but effect is re-running
-                // The explicit stopScanner function handles the main cleanup.
-            };
         }
+
+        return () => {
+            isMounted = false;
+            if (timer) {
+                clearTimeout(timer);
+            }
+            if (scannerRef.current) {
+                const currentScanner = scannerRef.current;
+                if (currentScanner.isScanning) {
+                    currentScanner.stop().then(() => {
+                        currentScanner.clear();
+                    }).catch(err => console.error("Error stopping scanner in cleanup", err));
+                } else {
+                    try {
+                        currentScanner.clear();
+                    } catch (e) {
+                        console.error("Error clearing scanner in cleanup", e);
+                    }
+                }
+                scannerRef.current = null;
+            }
+        };
     }, [isScanning]);
 
     const startScanner = () => setIsScanning(true);
 
-    const stopScanner = async () => {
-        if (scannerRef.current) {
-            try {
-                if (scannerRef.current.isScanning) {
-                    await scannerRef.current.stop();
-                }
-                scannerRef.current.clear();
-            } catch (e) {
-                console.error("Error stopping scanner", e);
-            }
-            scannerRef.current = null;
-        }
+    const stopScanner = () => {
         setIsScanning(false);
     };
 

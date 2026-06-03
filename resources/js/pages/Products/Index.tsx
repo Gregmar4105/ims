@@ -277,8 +277,13 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     };
 
     useEffect(() => {
+        let isMounted = true;
+        let timer: any = null;
+
         if (isScanning) {
-            const timer = setTimeout(() => {
+            timer = setTimeout(() => {
+                if (!isMounted) return;
+
                 const html5QrCode = new Html5Qrcode("search-scanner-reader");
                 scannerRef.current = html5QrCode;
 
@@ -304,11 +309,31 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     setIsScanning(false);
                 });
             }, 100);
-
-            return () => {
-                clearTimeout(timer);
-            };
         }
+
+        return () => {
+            isMounted = false;
+            if (timer) {
+                clearTimeout(timer);
+            }
+            if (scannerRef.current) {
+                const currentScanner = scannerRef.current;
+                if (currentScanner.isScanning) {
+                    currentScanner.stop().then(() => {
+                        currentScanner.clear();
+                    }).catch(err => {
+                        console.error("Error stopping scanner in cleanup", err);
+                    });
+                } else {
+                    try {
+                        currentScanner.clear();
+                    } catch (e) {
+                        console.error("Error clearing scanner in cleanup", e);
+                    }
+                }
+                scannerRef.current = null;
+            }
+        };
     }, [isScanning]);
 
     useEffect(() => {
@@ -321,18 +346,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
         };
     }, []);
 
-    const stopScanner = async () => {
-        if (scannerRef.current) {
-            try {
-                if (scannerRef.current.isScanning) {
-                    await scannerRef.current.stop();
-                }
-                scannerRef.current.clear();
-            } catch (e) {
-                console.error("Error stopping scanner", e);
-            }
-            scannerRef.current = null;
-        }
+    const stopScanner = () => {
         setIsScanning(false);
     };
 

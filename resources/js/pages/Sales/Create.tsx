@@ -82,11 +82,16 @@ export default function Create({ products, pendingSales }: { products: Product[]
 
     // Initialize/Cleanup Scanner
     useEffect(() => {
+        let isMounted = true;
+        let timer: any = null;
+
         if (showScanner) {
             setScannerError(null);
 
             // Small delay to ensure DOM is ready
-            const timer = setTimeout(() => {
+            timer = setTimeout(() => {
+                if (!isMounted) return;
+
                 const html5QrCode = new Html5Qrcode("reader");
                 html5QrCodeRef.current = html5QrCode;
 
@@ -102,25 +107,27 @@ export default function Create({ products, pendingSales }: { products: Product[]
                     setScannerError("Failed to start camera. Please ensure permissions are granted.");
                 });
             }, 100);
-
-            return () => clearTimeout(timer);
-        } else {
-            if (html5QrCodeRef.current) {
-                if (html5QrCodeRef.current.isScanning) {
-                    html5QrCodeRef.current.stop().then(() => {
-                        html5QrCodeRef.current?.clear();
-                        html5QrCodeRef.current = null;
-                    }).catch(err => console.error("Failed to stop scanner", err));
-                } else {
-                    html5QrCodeRef.current.clear();
-                    html5QrCodeRef.current = null;
-                }
-            }
         }
 
         return () => {
-            if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
-                html5QrCodeRef.current.stop().catch(err => console.error("Failed to stop scanner cleanup", err));
+            isMounted = false;
+            if (timer) {
+                clearTimeout(timer);
+            }
+            if (html5QrCodeRef.current) {
+                const currentScanner = html5QrCodeRef.current;
+                if (currentScanner.isScanning) {
+                    currentScanner.stop().then(() => {
+                        currentScanner.clear();
+                    }).catch(err => console.error("Failed to stop scanner cleanup", err));
+                } else {
+                    try {
+                        currentScanner.clear();
+                    } catch (e) {
+                        console.error("Failed to clear scanner cleanup", e);
+                    }
+                }
+                html5QrCodeRef.current = null;
             }
         };
     }, [showScanner]);
