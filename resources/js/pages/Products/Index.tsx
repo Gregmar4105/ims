@@ -575,8 +575,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                 }
 
                 .qr-section {
-                    width: 10mm;
-                    height: 10mm;
+                    width: 8mm;
+                    height: 8mm;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -1547,7 +1547,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     padding: '0.5mm 1mm'
                                 }}>
                                     <div style={{ display: 'flex', width: '100%', height: '13mm', alignItems: 'center' }}>
-                                        <div style={{ width: '10mm', height: '10mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <div style={{ width: '8mm', height: '8mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                             <QRCode value={viewCodeProduct.qr_code || ''} size={150} style={{ width: '100%', height: '100%' }} />
                                         </div>
                                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '1mm', overflow: 'hidden' }}>

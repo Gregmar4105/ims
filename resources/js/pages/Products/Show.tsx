@@ -196,8 +196,8 @@ export default function Show({ product }: Props) {
                 }
 
                 .qr-section {
-                    width: ${Math.min(24, Math.max(6, printHeight - 10))}mm;
-                    height: ${Math.min(24, Math.max(6, printHeight - 10))}mm;
+                    width: ${Math.min(24, Math.max(6, printHeight - 12))}mm;
+                    height: ${Math.min(24, Math.max(6, printHeight - 12))}mm;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -876,7 +876,7 @@ export default function Show({ product }: Props) {
                 const barcodeSize = `${6 * Math.min(2, printWidth / 28) - 1}pt`;
                 const priceSize = `${10 * Math.min(2, printWidth / 28)}pt`;
 
-                const qrSize = `${Math.min(24, Math.max(6, printHeight - 10))}mm`;
+                const qrSize = `${Math.min(24, Math.max(6, printHeight - 12))}mm`;
                 const upperHeight = `${printHeight - 7}mm`;
 
                 return (
