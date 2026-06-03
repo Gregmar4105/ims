@@ -46,7 +46,9 @@ class QrBarcodeController extends Controller
         $productId = $request->input('product_id');
         
         $request->validate([
-            'product_id' => 'required_without:generate_all|exists:products,id',
+            'product_id' => 'required_without_all:generate_all,product_ids|nullable|exists:products,id',
+            'product_ids' => 'required_without_all:generate_all,product_id|nullable|array',
+            'product_ids.*' => 'exists:products,id',
             'generate_all' => 'boolean',
             'barcode' => [
                 'nullable',
@@ -70,6 +72,32 @@ class QrBarcodeController extends Controller
             $query = Product::where(function ($q) {
                 $q->whereNull('barcode')->orWhereNull('qr_code');
             });
+
+            if (!$user->hasRole('System Administrator')) {
+                 if (!$user->branch_id) {
+                     return redirect()->back()->with('error', 'User does not belong to a branch.');
+                 }
+                $query->whereHas('branches', function ($q) use ($user) {
+                    $q->where('branches.id', $user->branch_id);
+                });
+            }
+
+            $products = $query->get();
+            $count = 0;
+
+            foreach ($products as $product) {
+                $this->generateCodesForProduct($product);
+                $count++;
+            }
+
+            return redirect()->back()->with('success', "$count products updated with new codes.");
+        }
+
+        if ($request->has('product_ids')) {
+            $query = Product::whereIn('id', $request->product_ids)
+                ->where(function ($q) {
+                    $q->whereNull('barcode')->orWhereNull('qr_code');
+                });
 
             if (!$user->hasRole('System Administrator')) {
                  if (!$user->branch_id) {

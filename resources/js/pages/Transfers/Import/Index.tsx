@@ -212,7 +212,11 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
                 }
             });
 
-            item.status = hasChanges ? 'modified' : 'unchanged';
+            if (item.values.barcode && item.values.barcode === item.db_values.barcode) {
+                item.status = 'possible_reorder';
+            } else {
+                item.status = hasChanges ? 'modified' : 'unchanged';
+            }
             item.changes = changesList;
         }
 
@@ -266,7 +270,11 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
             if (it.warnings.length > 0) {
                 it.status = 'duplicate';
             } else if (it.status === 'duplicate') {
-                it.status = it.original_id ? 'modified' : 'new';
+                if (it.original_id && it.values.barcode && it.values.barcode === it.db_values.barcode) {
+                    it.status = 'possible_reorder';
+                } else {
+                    it.status = it.original_id ? 'modified' : 'new';
+                }
             }
         });
 
@@ -332,7 +340,11 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
             if (it.warnings.length > 0) {
                 it.status = 'duplicate';
             } else if (it.status === 'duplicate') {
-                it.status = it.original_id ? 'modified' : 'new';
+                if (it.original_id && it.values.barcode && it.values.barcode === it.db_values.barcode) {
+                    it.status = 'possible_reorder';
+                } else {
+                    it.status = it.original_id ? 'modified' : 'new';
+                }
             }
         });
 
@@ -878,6 +890,7 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                 
                 if (pullStatusFilter === 'new' && item.status !== 'new') return false;
                 if (pullStatusFilter === 'modified' && item.status !== 'modified') return false;
+                if (pullStatusFilter === 'possible_reorder' && item.status !== 'possible_reorder') return false;
                 if (pullStatusFilter === 'duplicate' && item.status !== 'duplicate') return false;
                 if (pullStatusFilter === 'synced' && item.status !== 'unchanged') return false;
             }
@@ -1470,6 +1483,10 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                                     <span>Modified: {pullItems.filter(i => i.status === 'modified' && !i.is_rejected).length}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                                    <span className="font-semibold text-indigo-600 dark:text-indigo-400">Possible Reorders: {pullItems.filter(i => i.status === 'possible_reorder' && !i.is_rejected).length}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
                                     <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
                                     <span className="font-semibold text-rose-600 dark:text-rose-400">Duplicates/Warnings: {pullItems.filter(i => i.status === 'duplicate' && !i.is_rejected).length}</span>
                                 </div>
@@ -1519,6 +1536,7 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                                         <SelectItem value="all" className="text-xs font-medium">All Statuses ({pullItems.length})</SelectItem>
                                         <SelectItem value="new" className="text-xs font-medium text-emerald-600 dark:text-emerald-400">New ({pullItems.filter(i => i.status === 'new' && !i.is_rejected).length})</SelectItem>
                                         <SelectItem value="modified" className="text-xs font-medium text-amber-600 dark:text-amber-400">Modified ({pullItems.filter(i => i.status === 'modified' && !i.is_rejected).length})</SelectItem>
+                                        <SelectItem value="possible_reorder" className="text-xs font-medium text-indigo-600 dark:text-indigo-400">Possible Reorders ({pullItems.filter(i => i.status === 'possible_reorder' && !i.is_rejected).length})</SelectItem>
                                         <SelectItem value="duplicate" className="text-xs font-medium text-rose-600 dark:text-rose-400">Duplicates ({pullItems.filter(i => i.status === 'duplicate' && !i.is_rejected).length})</SelectItem>
                                         <SelectItem value="rejected" className="text-xs font-medium text-muted-foreground">Rejected ({pullItems.filter(i => i.is_rejected).length})</SelectItem>
                                         <SelectItem value="synced" className="text-xs font-medium text-blue-600 dark:text-blue-400">Synced / Unchanged ({pullItems.filter(i => i.status === 'unchanged' && !i.is_rejected).length})</SelectItem>
@@ -1622,14 +1640,16 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                                         // Row coloring classes
                                         let rowBg = 'bg-background hover:bg-muted/30';
                                         if (isRejected) {
-                                            rowBg = 'bg-muted/40 opacity-60 line-through select-none';
-                                        } else if (item.status === 'duplicate') {
-                                            rowBg = 'bg-rose-500/10 hover:bg-rose-500/20';
-                                        } else if (item.status === 'new') {
-                                            rowBg = 'bg-emerald-500/5 hover:bg-emerald-500/10';
-                                        } else if (item.status === 'modified') {
-                                            rowBg = 'bg-amber-500/5 hover:bg-amber-500/10';
-                                        }
+                                             rowBg = 'bg-muted/40 opacity-60 line-through select-none';
+                                         } else if (item.status === 'duplicate') {
+                                             rowBg = 'bg-rose-500/10 hover:bg-rose-500/20';
+                                         } else if (item.status === 'possible_reorder') {
+                                             rowBg = 'bg-indigo-500/5 hover:bg-indigo-500/10 dark:bg-indigo-950/10';
+                                         } else if (item.status === 'new') {
+                                             rowBg = 'bg-emerald-500/5 hover:bg-emerald-500/10';
+                                         } else if (item.status === 'modified') {
+                                             rowBg = 'bg-amber-500/5 hover:bg-amber-500/10';
+                                         }
 
                                         return (
                                             <tr key={idx} className={`${rowBg} transition-colors border-b`}>
@@ -1647,14 +1667,16 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                                                         
                                                         {/* Simple status indicator badge */}
                                                         {item.status === 'duplicate' ? (
-                                                            <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 bg-rose-600 animate-pulse">Duplicate</Badge>
-                                                        ) : item.status === 'new' ? (
-                                                            <Badge className="text-[9px] px-1 py-0 h-4 bg-emerald-600 hover:bg-emerald-600 text-white">New</Badge>
-                                                        ) : item.status === 'modified' ? (
-                                                            <Badge className="text-[9px] px-1 py-0 h-4 bg-amber-50 hover:bg-amber-50 text-amber-950 font-bold">Modified</Badge>
-                                                        ) : (
-                                                            <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 text-muted-foreground border-muted-foreground/30">Synced</Badge>
-                                                        )}
+                                                             <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 bg-rose-600 animate-pulse">Duplicate</Badge>
+                                                         ) : item.status === 'possible_reorder' ? (
+                                                             <Badge className="text-[9px] px-1.5 py-0 h-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center gap-0.5"><PlusCircle className="w-2.5 h-2.5" /> Possible Reorder New Stocks</Badge>
+                                                         ) : item.status === 'new' ? (
+                                                             <Badge className="text-[9px] px-1 py-0 h-4 bg-emerald-600 hover:bg-emerald-600 text-white">New</Badge>
+                                                         ) : item.status === 'modified' ? (
+                                                             <Badge className="text-[9px] px-1 py-0 h-4 bg-amber-50 hover:bg-amber-50 text-amber-950 font-bold">Modified</Badge>
+                                                         ) : (
+                                                             <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 text-muted-foreground border-muted-foreground/30">Synced</Badge>
+                                                         )}
                                                     </div>
                                                 </td>
 

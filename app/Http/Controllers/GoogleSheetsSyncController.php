@@ -294,15 +294,14 @@ class GoogleSheetsSyncController extends Controller
 
                 $warnings = [];
                 $isDuplicate = false;
+                $isPossibleReorder = false;
 
                 // 1. Check duplicate barcode within this branch (using memory lookups)
                 if ($sheetBarcode) {
                     if (isset($dbProductsByBarcode[$sheetBarcode])) {
                         $existingBp = $dbProductsByBarcode[$sheetBarcode];
-                        if (!$matchedBp || $existingBp->product_id != $matchedBp->product_id) {
-                            $warnings[] = "Barcode '{$sheetBarcode}' conflicts with an existing product in this branch: ID {$existingBp->product_id} ('{$existingBp->product->name}').";
-                            $isDuplicate = true;
-                        }
+                        $isPossibleReorder = true;
+                        $matchedBp = $existingBp;
                     }
 
                     if (isset($seenSheetBarcodes[$sheetBarcode])) {
@@ -366,6 +365,10 @@ class GoogleSheetsSyncController extends Controller
                     $status = 'unchanged';
                     $p = $matchedBp->product;
 
+                    // Always populate db_values with original quantity and barcode for comparison / display
+                    $dbValues['quantity'] = (int)$matchedBp->quantity;
+                    $dbValues['barcode'] = $p->barcode;
+
                     $checkDiff = function($field, $sheetVal, $dbVal) use (&$changes, &$dbValues, &$status) {
                         if ($sheetVal != $dbVal) {
                             $changes[] = $field;
@@ -402,7 +405,9 @@ class GoogleSheetsSyncController extends Controller
                     $checkDiff('quantity', (int)$sheetQty, (int)$matchedBp->quantity);
                 }
 
-                if ($isDuplicate) {
+                if ($isPossibleReorder) {
+                    $status = 'possible_reorder';
+                } elseif ($isDuplicate) {
                     $status = 'duplicate';
                 }
 
@@ -580,11 +585,22 @@ class GoogleSheetsSyncController extends Controller
                                             'variations' => $variations,
                                         ]);
 
+                                        $bpQuantity = $values['quantity'];
+                                        if (($itemData['status'] ?? '') === 'possible_reorder') {
+                                            $existingBp = BranchProduct::where([
+                                                'branch_id' => $branchId,
+                                                'product_id' => $product->id,
+                                            ])->first();
+                                            if ($existingBp) {
+                                                $bpQuantity = $existingBp->quantity + $values['quantity'];
+                                            }
+                                        }
+                                        
                                         $bp = BranchProduct::updateOrCreate([
                                             'branch_id' => $branchId,
                                             'product_id' => $product->id,
                                         ], [
-                                            'quantity' => $values['quantity'],
+                                            'quantity' => $bpQuantity,
                                             'physical_location' => $values['physical_location'] ?: null,
                                             'reorder_level' => $values['reorder_level'] ?: 0,
                                             'variations' => $variations,
@@ -649,11 +665,22 @@ class GoogleSheetsSyncController extends Controller
                                             ]);
                                         }
 
+                                        $bpQuantity = $values['quantity'];
+                                        if (($itemData['status'] ?? '') === 'possible_reorder') {
+                                            $existingBp = BranchProduct::where([
+                                                'branch_id' => $branchId,
+                                                'product_id' => $product->id,
+                                            ])->first();
+                                            if ($existingBp) {
+                                                $bpQuantity = $existingBp->quantity + $values['quantity'];
+                                            }
+                                        }
+                                        
                                         BranchProduct::updateOrCreate([
                                             'branch_id' => $branchId,
                                             'product_id' => $product->id,
                                         ], [
-                                            'quantity' => $values['quantity'],
+                                            'quantity' => $bpQuantity,
                                             'physical_location' => $values['physical_location'] ?: null,
                                             'reorder_level' => $values['reorder_level'] ?: 0,
                                             'variations' => $variations,

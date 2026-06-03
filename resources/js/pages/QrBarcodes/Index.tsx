@@ -26,6 +26,7 @@ import {
 import { QrCode, ScanBarcode, Sparkles, Pencil } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -70,6 +71,7 @@ export default function Index({ products }: Props) {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [barcode, setBarcode] = useState('');
     const [qrCode, setQrCode] = useState('');
+    const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
 
     function openGenerateDialog(product: Product) {
         setEditingProduct(product);
@@ -101,6 +103,35 @@ export default function Index({ products }: Props) {
         }
     }
 
+    function generateSelectedCodes() {
+        if (confirm(`Are you sure you want to generate codes for the ${selectedProductIds.length} selected products?`)) {
+            router.post('/qr-barcodes', {
+                product_ids: selectedProductIds,
+            }, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setSelectedProductIds([]);
+                }
+            });
+        }
+    }
+
+    const handleToggleProduct = (productId: number, checked: boolean) => {
+        if (checked) {
+            setSelectedProductIds(prev => [...prev, productId]);
+        } else {
+            setSelectedProductIds(prev => prev.filter(id => id !== productId));
+        }
+    };
+
+    const handleToggleAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedProductIds(products.data.map(p => p.id));
+        } else {
+            setSelectedProductIds([]);
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="QR & Barcodes" />
@@ -120,9 +151,22 @@ export default function Index({ products }: Props) {
                         </div>
                     </div>
                     {!isEmployee && (
-                        <Button onClick={generateAllCodes}>
-                            <Sparkles className="mr-2 h-4 w-4" /> Generate All
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            {selectedProductIds.length > 0 ? (
+                                <>
+                                    <Button variant="outline" onClick={() => setSelectedProductIds([])}>
+                                        Clear Selection
+                                    </Button>
+                                    <Button onClick={generateSelectedCodes}>
+                                        <Sparkles className="mr-2 h-4 w-4" /> Generate Selected ({selectedProductIds.length})
+                                    </Button>
+                                </>
+                            ) : (
+                                <Button onClick={generateAllCodes}>
+                                    <Sparkles className="mr-2 h-4 w-4" /> Generate All
+                                </Button>
+                            )}
+                        </div>
                     )}
                 </div>
 
@@ -138,6 +182,20 @@ export default function Index({ products }: Props) {
                     <Table>
                         <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-sm">
                             <TableRow>
+                                {!isEmployee && (
+                                    <TableHead className="w-[50px] px-4">
+                                        <Checkbox 
+                                            checked={
+                                                products.data.length > 0 && 
+                                                (selectedProductIds.length === products.data.length 
+                                                    ? true 
+                                                    : (selectedProductIds.length > 0 ? "indeterminate" : false))
+                                            }
+                                            onCheckedChange={(checked) => handleToggleAll(!!checked)}
+                                            aria-label="Select all"
+                                        />
+                                    </TableHead>
+                                )}
                                 <TableHead>Product Name</TableHead>
                                 <TableHead>Branch</TableHead>
                                 <TableHead>Brand</TableHead>
@@ -152,13 +210,22 @@ export default function Index({ products }: Props) {
                         <TableBody>
                             {products.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                                    <TableCell colSpan={isEmployee ? 9 : 10} className="text-center py-8 text-muted-foreground">
                                         All products have codes generated!
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 products.data.map((product) => (
                                     <TableRow key={product.id}>
+                                        {!isEmployee && (
+                                            <TableCell className="px-4">
+                                                <Checkbox
+                                                    checked={selectedProductIds.includes(product.id)}
+                                                    onCheckedChange={(checked) => handleToggleProduct(product.id, !!checked)}
+                                                    aria-label={`Select ${product.name}`}
+                                                />
+                                            </TableCell>
+                                        )}
                                         <TableCell className="font-medium">{product.name}</TableCell>
                                         <TableCell className="text-muted-foreground">{product.branch?.branch_name}</TableCell>
                                         <TableCell>{product.brand?.name}</TableCell>
