@@ -21,11 +21,11 @@ interface Sale {
         quantity: number;
         product: {
             name: string;
-        };
+        } | null;
     }[];
     branch: {
         branch_name: string;
-    };
+    } | null;
 }
 
 interface Return {
@@ -35,16 +35,16 @@ interface Return {
     created_at: string;
     product: {
         name: string;
-    };
+    } | null;
     sale: {
         id: number;
         branch: {
             branch_name: string;
-        };
-    };
+        } | null;
+    } | null;
     returned_by: {
         name: string;
-    };
+    } | null;
 }
 
 export default function Returns({ completedSales, recentReturns, filters }: { completedSales: Sale[], recentReturns: Return[], filters: { search?: string } }) {
@@ -141,7 +141,7 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
                                                 <div className="relative w-full cursor-default overflow-hidden rounded-md border border-input bg-background text-left focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 sm:text-sm">
                                                     <ComboboxInput
                                                         className="w-full border-none py-2 pl-3 pr-10 text-sm leading-5 text-gray-900 focus:ring-0 dark:text-gray-100 bg-transparent focus:outline-none"
-                                                        displayValue={(sale: Sale) => sale ? `Sale #${sale.id} - ${sale.branch.branch_name}` : ''}
+                                                        displayValue={(sale: Sale) => sale ? `Sale #${sale.id} - ${sale.branch?.branch_name || 'Deleted Branch'}` : ''}
                                                         onChange={(event) => setQuery(event.target.value)}
                                                         placeholder="Search Sale ID..."
                                                     />
@@ -217,7 +217,7 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
                                                 <option value="" disabled>Select product...</option>
                                                 {selectedSale.items.map((item) => (
                                                     <option key={item.product_id} value={item.product_id.toString()}>
-                                                        {item.product.name} (Qty: {item.quantity})
+                                                        {item.product?.name || 'Deleted Product'} (Qty: {item.quantity})
                                                     </option>
                                                 ))}
                                             </select>
@@ -285,17 +285,17 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
                                                     <TableRow key={ret.id}>
                                                         <TableCell className="font-medium">
                                                             <div className="flex flex-col">
-                                                                <span>{ret.product.name}</span>
+                                                                <span>{ret.product?.name || 'Deleted Product'}</span>
                                                                 <span className="text-xs text-muted-foreground">{ret.reason}</span>
                                                             </div>
                                                         </TableCell>
                                                         <TableCell>
                                                             <div className="flex flex-col text-xs">
-                                                                <span>Sale #{ret.sale.id}</span>
-                                                                <span className="text-muted-foreground">{ret.sale.branch.branch_name}</span>
+                                                                <span>Sale #{ret.sale?.id || 'Unknown'}</span>
+                                                                <span className="text-muted-foreground">{ret.sale?.branch?.branch_name || 'Deleted Branch'}</span>
                                                             </div>
                                                         </TableCell>
-                                                        <TableCell className="text-sm">{ret.returned_by.name}</TableCell>
+                                                        <TableCell className="text-sm">{ret.returned_by?.name || 'Deleted User'}</TableCell>
                                                         <TableCell className="text-right font-bold">{ret.quantity}</TableCell>
                                                     </TableRow>
                                                 ))}
