@@ -530,7 +530,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 <div className="flex items-center gap-4">
                                                     <div className="flex items-center gap-2">
                                                         {/* Editable Product Code */}
-                                                        <div className="flex flex-col items-end mr-2">
+                                                        <div className="flex flex-col items-start mr-2">
                                                             <span className="text-[10px] text-muted-foreground mb-0.5">Code</span>
                                                             <Input
                                                                 type="text"
