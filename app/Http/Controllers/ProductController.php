@@ -609,7 +609,7 @@ class ProductController extends Controller
         return redirect()->route('products.show', $product->id)->with('success', 'Product added successfully.');
     }
 
-    public function edit(Product $product)
+    public function edit(Request $request, Product $product)
     {
         $user = auth()->user();
         $isSystemAdmin = $user->hasRole('System Administrator');
@@ -658,6 +658,7 @@ class ProductController extends Controller
                 'branch_name' => $currentBranch->branch_name,
             ] : null,
             'notInBranch' => $notInBranch,
+            'filters' => $request->only(['search', 'branch', 'brand', 'category', 'stock', 'status', 'clearance', 'page']),
         ]);
     }
 
@@ -838,7 +839,12 @@ class ProductController extends Controller
             $this->updateOutOfStockTimestamp($product->fresh());
         });
 
-        return redirect()->route('products.show', $product->id)->with('success', 'Product updated successfully.');
+        $filters = array_filter(
+            $request->only(['search', 'branch', 'brand', 'category', 'stock', 'status', 'clearance', 'page']),
+            fn($value) => !is_null($value) && $value !== ''
+        );
+
+        return redirect()->route('products.index', $filters)->with('success', 'Product updated successfully.');
     }
 
     public function toggleStatus(Product $product)

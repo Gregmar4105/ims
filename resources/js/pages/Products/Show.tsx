@@ -327,7 +327,7 @@ export default function Show({ product }: Props) {
 
                     <div className="flex gap-2">
                         {!isEmployee && (
-                            <Link href={`/products/${product.id}/edit`}>
+                            <Link href={`/products/${product.id}/edit${window.location.search}`}>
                                 <Button className="bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black">
                                     <Edit className="mr-2 h-4 w-4" /> Edit Product
                                 </Button>
@@ -357,7 +357,7 @@ export default function Show({ product }: Props) {
                     </h1>
                     <div className="flex flex-col items-end gap-1.5 shrink-0 mt-0.5">
                         {!isEmployee && (
-                            <Link href={`/products/${product.id}/edit`}>
+                            <Link href={`/products/${product.id}/edit${window.location.search}`}>
                                 <Button size="sm" className="text-xs font-semibold flex items-center gap-1.5 h-8 px-2.5 rounded-lg border-0 bg-black text-white dark:bg-white dark:text-black shadow-sm hover:bg-gray-900 dark:hover:bg-gray-100">
                                     <Edit className="h-3.5 w-3.5" />
                                     <span>Edit</span>

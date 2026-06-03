@@ -1199,7 +1199,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                     )}
                                                 </div>
                                             ) : (
-                                                <Link href={`/products/${product.id}`} className="block h-full w-full">
+                                                <Link href={`/products/${product.id}${window.location.search}`} className="block h-full w-full">
                                                     {product.image_path ? (
                                                         <img
                                                             className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
@@ -1264,7 +1264,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                             <ScanBarcode className="w-4 h-4 mr-2" /> View Codes
                                                         </Button>
                                                         {!isEmployee && (
-                                                            <Link href={`/products/${product.id}/edit`}>
+                                                            <Link href={`/products/${product.id}/edit${window.location.search}`}>
                                                                 <Button variant="default" size="sm" className="w-32 shadow-lg bg-blue-600 hover:bg-blue-700 text-white font-bold border-0">
                                                                     Edit Product
                                                                 </Button>
@@ -1304,7 +1304,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                                             </h3>
                                                         </div>
                                                     ) : (
-                                                        <Link href={`/products/${product.id}`} className="hover:underline flex-1">
+                                                        <Link href={`/products/${product.id}${window.location.search}`} className="hover:underline flex-1">
                                                             {isOnClearance(product) && (
                                                                 <div className="bg-yellow-400 text-black text-[9px] font-bold px-1.5 py-0.5 self-start uppercase mb-1 inline-block">
                                                                     Clearance Sale

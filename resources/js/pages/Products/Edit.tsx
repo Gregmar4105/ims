@@ -88,6 +88,7 @@ interface Props {
     isSystemAdmin: boolean;
     currentBranch: { id: number; branch_name: string } | null;
     notInBranch: boolean;
+    filters?: any;
 }
 
 const normalizeVariations = (variations: any): Variation[] => {
@@ -133,7 +134,7 @@ const normalizeVariations = (variations: any): Variation[] => {
     });
 };
 
-export default function Edit({ product, brands, categories, suppliers, isSystemAdmin, currentBranch, notInBranch }: Props) {
+export default function Edit({ product, brands, categories, suppliers, isSystemAdmin, currentBranch, notInBranch, filters }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
         name: product.name,
@@ -304,7 +305,15 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
             }
         }
 
-        post(`/products/${product.id}`);
+        const filteredParams = Object.entries(filters || {}).reduce((acc, [key, val]) => {
+            if (val !== undefined && val !== null && val !== '') {
+                acc[key] = String(val);
+            }
+            return acc;
+        }, {} as Record<string, string>);
+        const queryString = new URLSearchParams(filteredParams).toString();
+
+        post(`/products/${product.id}${queryString ? `?${queryString}` : ''}`);
     }
 
     return (

@@ -64,7 +64,7 @@ interface Props {
 
 export default function RequestOrders({ products, filters, options, requestingBranch, isSystemAdmin }: Props) {
     const productList = products?.data || [];
-    
+
     // Filters State
     const [search, setSearch] = useState<string>(filters?.search || "");
     const [brand, setBrand] = useState<string>(filters?.brand || "all");
@@ -214,7 +214,7 @@ export default function RequestOrders({ products, filters, options, requestingBr
             <Head title="Request Orders" />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 w-full max-w-none">
-                
+
                 {/* Header Banner - Matches System style */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-800 border p-6 rounded-xl shadow-sm">
                     <div>
@@ -233,10 +233,10 @@ export default function RequestOrders({ products, filters, options, requestingBr
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start w-full">
-                    
+
                     {/* Left Column: Product List Table (Span 3) - EXACT UX/UI match of /reorders */}
                     <div className="lg:col-span-3 space-y-6">
-                        
+
                         {/* Filters Container - Matching /reorders page search & filters */}
                         <div className="bg-white dark:bg-gray-800 rounded-xl border shadow-sm flex flex-col">
                             <div className="p-4 border-b flex flex-col md:flex-row gap-4 items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
@@ -249,7 +249,7 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                         className="pl-9"
                                     />
                                     {search && (
-                                        <button 
+                                        <button
                                             onClick={() => { setSearch(''); updateParams({ search: '' }); }}
                                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                         >
@@ -308,11 +308,10 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                                 const inCart = cart.find(item => item.product.id === product.id);
 
                                                 return (
-                                                    <TableRow 
-                                                        key={product.id} 
-                                                        className={`hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors ${
-                                                            inCart ? 'bg-violet-500/[0.04] dark:bg-violet-500/[0.02]' : ''
-                                                        }`}
+                                                    <TableRow
+                                                        key={product.id}
+                                                        className={`hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors ${inCart ? 'bg-violet-500/[0.04] dark:bg-violet-500/[0.02]' : ''
+                                                            }`}
                                                     >
                                                         <TableCell>
                                                             {product.image_path ? (
@@ -347,25 +346,24 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                                                     Out of Stock
                                                                 </Badge>
                                                             ) : (
-                                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold ${
-                                                                    product.quantity <= 5 
+                                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold ${product.quantity <= 5
                                                                         ? 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/10 dark:bg-amber-400/10 dark:text-amber-400'
                                                                         : 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/10 dark:bg-emerald-400/10 dark:text-emerald-400'
-                                                                }`}>
+                                                                    }`}>
                                                                     {product.quantity} units
                                                                 </span>
                                                             )}
                                                         </TableCell>
-                                                        <TableCell className="text-right font-medium text-emerald-600 dark:text-emerald-400 font-mono">
+                                                        <TableCell className="text-right font-medium font-mono">
                                                             ₱{product.price ? Number(product.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
                                                         </TableCell>
                                                         <TableCell className="text-right pr-6">
                                                             {inCart ? (
                                                                 <div className="flex items-center justify-end gap-1.5 inline-flex">
                                                                     <div className="flex items-center gap-1 border rounded-full bg-violet-50/50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-800 p-0.5">
-                                                                        <Button 
-                                                                            size="icon" 
-                                                                            variant="ghost" 
+                                                                        <Button
+                                                                            size="icon"
+                                                                            variant="ghost"
                                                                             className="h-7 w-7 rounded-full text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/40"
                                                                             onClick={() => updateQuantity(product.id, -1)}
                                                                         >
@@ -374,9 +372,9 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                                                         <span className="w-6 text-center text-xs font-bold font-mono text-violet-900 dark:text-violet-100">
                                                                             {inCart.quantity}
                                                                         </span>
-                                                                        <Button 
-                                                                            size="icon" 
-                                                                            variant="ghost" 
+                                                                        <Button
+                                                                            size="icon"
+                                                                            variant="ghost"
                                                                             className="h-7 w-7 rounded-full text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/40"
                                                                             onClick={() => updateQuantity(product.id, 1)}
                                                                             disabled={inCart.quantity >= product.quantity}
@@ -430,7 +428,7 @@ export default function RequestOrders({ products, filters, options, requestingBr
 
                     {/* Right Column: Sticky Cart Container (Span 1) - Persistent Basket Container */}
                     <div className="lg:col-span-1 sticky top-6">
-                        <Card className="border shadow-md overflow-hidden bg-white dark:bg-gray-800 border-violet-500/10 rounded-xl">
+                        <Card className="border shadow-md overflow-hidden bg-white dark:bg-gray-800 border-violet-500/10 rounded-xl py-0">
                             <CardHeader className="bg-violet-500/5 dark:bg-violet-950/15 border-b p-4 flex flex-row items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <ShoppingCart className="w-4 h-4 text-violet-500" />
@@ -438,9 +436,9 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                 </div>
                                 <Badge className="bg-violet-600 text-white text-xs px-2.5 py-0.5 rounded-full font-bold">{cart.length} items</Badge>
                             </CardHeader>
-                            
+
                             <CardContent className="p-4 space-y-4">
-                                
+
                                 {cart.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-12 text-center">
                                         <ShoppingCart className="w-10 h-10 text-gray-300 dark:text-gray-600 stroke-[1.2] mb-3" />
@@ -467,9 +465,9 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                                     <div className="flex items-center gap-1.5 shrink-0 col-span-1">
                                                         {/* Quantity selector */}
                                                         <div className="flex items-center gap-1 border rounded-full bg-white dark:bg-gray-800 p-0.5 shadow-sm border-gray-200 dark:border-gray-700 font-mono">
-                                                            <Button 
-                                                                size="icon" 
-                                                                variant="ghost" 
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
                                                                 className="h-5 w-5 rounded-full text-gray-600 dark:text-gray-405"
                                                                 onClick={() => updateQuantity(item.product.id, -1)}
                                                             >
@@ -478,9 +476,9 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                                             <span className="w-5 text-center text-xs font-bold text-gray-900 dark:text-gray-100">
                                                                 {item.quantity}
                                                             </span>
-                                                            <Button 
-                                                                size="icon" 
-                                                                variant="ghost" 
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
                                                                 className="h-5 w-5 rounded-full text-gray-600 dark:text-gray-405"
                                                                 onClick={() => updateQuantity(item.product.id, 1)}
                                                                 disabled={item.quantity >= item.product.quantity}
@@ -488,7 +486,7 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                                                 <Plus className="w-2.5 h-2.5" />
                                                             </Button>
                                                         </div>
-                                                        
+
                                                         {/* Remove button */}
                                                         <Button
                                                             size="icon"
