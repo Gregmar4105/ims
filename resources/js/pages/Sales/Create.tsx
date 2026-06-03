@@ -233,6 +233,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
     };
 
     const addToCart = (product: Product) => {
+        if (product.available_quantity <= 0) {
+            toast.error(`Cannot add. ${product.name} is out of stock.`);
+            return;
+        }
         setCart(prev => {
             const existing = prev.find(item => item.product_id === product.id);
             if (existing) {
@@ -378,8 +382,16 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 {searchResults.map((product) => (
                                                     <div 
                                                         key={product.id}
-                                                        className="flex items-center justify-between p-3 hover:bg-accent cursor-pointer border-b last:border-0 transition-colors"
+                                                        className={`flex items-center justify-between p-3 border-b last:border-0 transition-colors ${
+                                                            product.available_quantity <= 0 
+                                                                ? 'bg-destructive/5 text-destructive cursor-not-allowed' 
+                                                                : 'hover:bg-accent cursor-pointer'
+                                                        }`}
                                                         onClick={() => {
+                                                            if (product.available_quantity <= 0) {
+                                                                toast.error(`Cannot add. ${product.name} is out of stock.`);
+                                                                return;
+                                                            }
                                                             addToCart(product);
                                                             setScannedCode('');
                                                             setSearchResults([]);
@@ -387,18 +399,25 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                         }}
                                                     >
                                                         <div className="flex flex-col">
-                                                            <span className="font-semibold text-sm">{product.name}</span>
+                                                            <span className={`font-semibold text-sm ${product.available_quantity <= 0 ? 'text-destructive' : ''}`}>{product.name}</span>
                                                             <div className="flex items-center gap-2 mt-0.5">
-                                                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal">
+                                                                <Badge 
+                                                                    variant="outline" 
+                                                                    className={`text-[10px] h-4 px-1 font-normal ${
+                                                                        product.available_quantity <= 0 
+                                                                            ? 'border-destructive/30 text-destructive bg-destructive/10' 
+                                                                            : ''
+                                                                    }`}
+                                                                >
                                                                     {product.barcode || product.qr_code || 'No Code'}
                                                                 </Badge>
-                                                                <span className="text-[10px] text-muted-foreground">
-                                                                    Stock: {product.available_quantity}
+                                                                <span className={`text-[10px] ${product.available_quantity <= 0 ? 'text-destructive/80 font-medium' : 'text-muted-foreground'}`}>
+                                                                    Stock: {product.available_quantity} {product.available_quantity <= 0 ? '(Out of Stock)' : ''}
                                                                 </span>
                                                             </div>
                                                         </div>
                                                         <div className="text-right">
-                                                            <span className="font-bold text-primary">₱{Number(product.price).toFixed(2)}</span>
+                                                            <span className={`font-bold ${product.available_quantity <= 0 ? 'text-destructive' : 'text-primary'}`}>₱{Number(product.price).toFixed(2)}</span>
                                                         </div>
                                                     </div>
                                                 ))}

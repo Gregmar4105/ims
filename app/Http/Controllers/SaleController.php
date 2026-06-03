@@ -201,7 +201,7 @@ class SaleController extends Controller
         $products = DB::table('products')
             ->join('branch_products', 'products.id', '=', 'branch_products.product_id')
             ->where('branch_products.branch_id', $branchId)
-            ->where('branch_products.quantity', '>', 0)
+            ->where('branch_products.quantity', '>=', 0)
             ->select(
                 'products.id',
                 'products.name',
