@@ -162,22 +162,21 @@ export default function Show({ product }: Props) {
                     }
                     @page {
                         size: ${printWidth}mm ${printHeight}mm;
-                        margin: 0;
+                        margin: 0 0 0 1mm;
                     }
                     html, body {
                         margin: 0 !important;
                         padding: 0 !important;
                         background: white !important;
-                        width: ${printWidth}mm !important;
-                        height: ${printHeight}mm !important;
+                        width: 100% !important;
+                        height: 100% !important;
                     }
                 }
                 
                 .label-container {
-                    width: ${printWidth}mm;
-                    height: ${printHeight}mm;
+                    width: 100%;
+                    height: 100%;
                     margin: 0;
-                    margin-left: 1mm;
                     padding: 0.5mm 1mm;
                     font-family: 'Arial', sans-serif;
                     overflow: hidden;
@@ -229,8 +228,8 @@ export default function Show({ product }: Props) {
                     width: 100%;
                     display: flex;
                     flex-direction: column;
-                    align-items: center;
-                    text-align: center;
+                    align-items: flex-start;
+                    text-align: left;
                     margin-top: auto;
                     border-top: 0.1mm solid transparent;
                 }
@@ -884,7 +883,6 @@ export default function Show({ product }: Props) {
                         <div id="native-print-label" style={{
                             width: `${printWidth}mm`,
                             height: `${printHeight}mm`,
-                            marginLeft: '1mm',
                             background: 'white',
                             color: 'black',
                             fontFamily: 'Arial, sans-serif',
@@ -905,7 +903,7 @@ export default function Show({ product }: Props) {
                                     <div style={{ fontSize: supplierSize, whiteSpace: 'nowrap', overflow: 'hidden', lineHeight: 1.1 }}>{product.supplier?.name || '-'}</div>
                                 </div>
                             </div>
-                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginTop: 'auto' }}>
+                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', marginTop: 'auto' }}>
                                 <div style={{ fontSize: skuSize, fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%', lineHeight: 1 }}>{skuStr}</div>
                                 <div style={{ fontSize: priceSize, fontWeight: 'normal', lineHeight: 1, marginTop: '0.5mm' }}>
                                     ₱{product.price ? Number(product.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}

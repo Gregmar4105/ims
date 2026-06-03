@@ -541,22 +541,21 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     }
                     @page {
                         size: 28mm 20mm;
-                        margin: 0;
+                        margin: 0 0 0 1mm;
                     }
                     html, body {
                         margin: 0 !important;
                         padding: 0 !important;
                         background: white !important;
-                        width: 28mm !important;
-                        height: 20mm !important;
+                        width: 100% !important;
+                        height: 100% !important;
                     }
                 }
                 
                 .label-container {
-                    width: 28mm;
-                    height: 20mm;
+                    width: 100%;
+                    height: 100%;
                     margin: 0;
-                    margin-left: 1mm;
                     padding: 0.5mm 1mm;
                     font-family: 'Arial', sans-serif;
                     overflow: hidden;
@@ -608,8 +607,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     width: 100%;
                     display: flex;
                     flex-direction: column;
-                    align-items: center;
-                    text-align: center;
+                    align-items: flex-start;
+                    text-align: left;
                     margin-top: auto;
                     border-top: 0.1mm solid transparent;
                 }
@@ -1537,7 +1536,6 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 <div id="native-print-label" style={{
                                     width: '28mm',
                                     height: '20mm',
-                                    marginLeft: '1mm',
                                     background: 'white',
                                     color: 'black',
                                     fontFamily: 'Arial, sans-serif',
@@ -1558,7 +1556,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             <div style={{ fontSize: supplierSize, whiteSpace: 'nowrap', overflow: 'hidden', lineHeight: 1.1 }}>{viewCodeProduct.supplier?.name || '-'}</div>
                                         </div>
                                     </div>
-                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginTop: 'auto' }}>
+                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', marginTop: 'auto' }}>
                                         <div style={{ fontSize: skuSize, fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%', lineHeight: 1 }}>{skuStr}</div>
                                         <div style={{ fontSize: '10pt', fontWeight: 'normal', lineHeight: 1, marginTop: '0.5mm' }}>
                                             {viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
