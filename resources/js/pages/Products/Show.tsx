@@ -177,7 +177,7 @@ export default function Show({ product }: Props) {
                     width: ${printWidth}mm;
                     height: ${printHeight}mm;
                     margin: 0;
-                    margin-left: 1.5mm;
+                    margin-left: 1mm;
                     padding: 0.5mm 1mm;
                     font-family: 'Arial', sans-serif;
                     overflow: hidden;
@@ -884,7 +884,7 @@ export default function Show({ product }: Props) {
                         <div id="native-print-label" style={{
                             width: `${printWidth}mm`,
                             height: `${printHeight}mm`,
-                            marginLeft: '1.5mm',
+                            marginLeft: '1mm',
                             background: 'white',
                             color: 'black',
                             fontFamily: 'Arial, sans-serif',
