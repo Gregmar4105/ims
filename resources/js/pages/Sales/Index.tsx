@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import Pagination from '@/components/Pagination';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+
 
 interface SaleItem {
     id: number;
@@ -82,6 +84,7 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
     const [dateFrom, setDateFrom] = useState(filters.date_from || '');
     const [dateTo, setDateTo] = useState(filters.date_to || '');
     const [statusFilter, setStatusFilter] = useState(filters.status_filter || 'all');
+    const [activeProofSale, setActiveProofSale] = useState<Sale | null>(null);
 
     // Revenue Visibility Toggles
     const [showWeekly, setShowWeekly] = useState(() => {
@@ -375,14 +378,13 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                                                             E-Wallet: {sale.ewallet_provider}
                                                         </span>
                                                         {sale.proof_of_payment_path && (
-                                                            <a 
-                                                                href={`/storage/${sale.proof_of_payment_path}`} 
-                                                                target="_blank" 
-                                                                rel="noopener noreferrer"
-                                                                className="text-xs text-primary hover:underline font-semibold flex items-center gap-1"
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => setActiveProofSale(sale)}
+                                                                className="text-xs text-primary hover:underline font-semibold flex items-center gap-1 bg-transparent border-none cursor-pointer p-0"
                                                             >
                                                                 <Image className="w-3.5 h-3.5" /> View Proof
-                                                            </a>
+                                                            </button>
                                                         )}
                                                     </div>
                                                 )}
@@ -478,6 +480,49 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                 {sales.data.length > 0 && sales.last_page > 1 && (
                     <Pagination links={sales.links} />
                 )}
+
+                <Dialog open={!!activeProofSale} onOpenChange={(open) => !open && setActiveProofSale(null)}>
+                    <DialogContent className="max-w-md sm:max-w-lg p-6 rounded-2xl border border-primary/10 shadow-2xl bg-white dark:bg-zinc-950">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                                <Image className="w-5 h-5 text-primary" />
+                                Proof of Payment
+                            </DialogTitle>
+                            {activeProofSale && (
+                                <DialogDescription className="text-sm text-muted-foreground mt-1">
+                                    Sale <span className="font-mono font-semibold text-foreground">#{activeProofSale.id}</span> paid via <span className="font-semibold text-primary">{activeProofSale.ewallet_provider}</span>
+                                </DialogDescription>
+                            )}
+                        </DialogHeader>
+                        {activeProofSale?.proof_of_payment_path && (
+                            <div className="mt-4 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-900 border rounded-xl overflow-hidden p-2 relative group min-h-[300px]">
+                                <img
+                                    src={`/storage/${activeProofSale.proof_of_payment_path}`}
+                                    alt={`Proof of payment for sale #${activeProofSale.id}`}
+                                    className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-md transition-transform duration-200 hover:scale-[1.02]"
+                                />
+                                <a 
+                                    href={`/storage/${activeProofSale.proof_of_payment_path}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="absolute bottom-4 right-4 bg-zinc-900/80 hover:bg-zinc-900 text-white text-xs px-3 py-1.5 rounded-lg shadow-lg font-medium transition-colors flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                >
+                                    Open original image
+                                </a>
+                            </div>
+                        )}
+                        <DialogFooter className="mt-6 flex justify-end">
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                onClick={() => setActiveProofSale(null)}
+                                className="w-full sm:w-auto"
+                            >
+                                Close
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );
