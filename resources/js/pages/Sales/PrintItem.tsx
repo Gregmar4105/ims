@@ -23,6 +23,10 @@ interface Sale {
         product: { name: string; barcode: string; qr_code: string; code: string | null };
         custom_code: string | null;
     }>;
+    payment_method?: string | null;
+    ewallet_provider?: string | null;
+    cash_received?: number | null;
+    change_amount?: number | null;
 }
 
 export default function PrintItem({ sale }: { sale: Sale }) {
@@ -154,6 +158,26 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                             <span>Total</span>
                             <span>₱{totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
+                        {sale.payment_method && (
+                            <div className="border-t border-dashed border-gray-200 pt-2 space-y-1 text-sm text-gray-600">
+                                <div className="flex justify-between">
+                                    <span>Payment Method</span>
+                                    <span className="capitalize">{sale.payment_method === 'e-wallet' ? `E-Wallet (${sale.ewallet_provider})` : 'Cash'}</span>
+                                </div>
+                                {sale.payment_method === 'cash' && (
+                                    <>
+                                        <div className="flex justify-between">
+                                            <span>Cash Tendered</span>
+                                            <span>₱{Number(sale.cash_received).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                        <div className="flex justify-between font-semibold text-black">
+                                            <span>Change</span>
+                                            <span>₱{Number(sale.change_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 

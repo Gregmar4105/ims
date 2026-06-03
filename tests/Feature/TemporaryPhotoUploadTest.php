@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    $this->seed(RoleSeeder::class);
+});
+
 test('guest is redirected to login', function () {
     $this->get(route('products.temporary-upload'))
         ->assertRedirect(route('login'));

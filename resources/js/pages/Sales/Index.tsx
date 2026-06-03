@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, CheckCircle, XCircle, Clock, User, ArrowRight, Barcode, QrCode, Store, Search, DollarSign, Briefcase, Printer, Settings2 } from 'lucide-react';
+import { Package, CheckCircle, XCircle, Clock, User, ArrowRight, Barcode, QrCode, Store, Search, DollarSign, Briefcase, Printer, Settings2, Image } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,11 @@ interface Sale {
         name: string;
     } | null;
     items: SaleItem[];
+    payment_method?: string | null;
+    ewallet_provider?: string | null;
+    proof_of_payment_path?: string | null;
+    cash_received?: number | null;
+    change_amount?: number | null;
 }
 
 interface PaginatedData<T> {
@@ -338,8 +343,13 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                                                 <Badge variant="outline" className="text-xs">
                                                     {sale.branch?.branch_name}
                                                 </Badge>
+                                                {sale.payment_method && (
+                                                    <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary capitalize font-normal text-xs">
+                                                        {sale.payment_method === 'e-wallet' ? `E-Wallet (${sale.ewallet_provider})` : 'Cash'}
+                                                    </Badge>
+                                                )}
                                             </div>
-                                            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 text-sm text-muted-foreground">
                                                 <span className="flex items-center gap-1.5">
                                                     <Clock className="w-4 h-4" />
                                                     {formatDate(sale.updated_at)}
@@ -353,6 +363,28 @@ export default function Index({ sales, stats, filters }: { sales: PaginatedData<
                                                         <CheckCircle className="w-4 h-4" />
                                                         Approved by: {sale.approved_by.name}
                                                     </span>
+                                                )}
+                                                {sale.payment_method === 'cash' && (
+                                                    <span className="text-xs bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/30 px-2 py-0.5 rounded">
+                                                        Cash Received: ₱{Number(sale.cash_received).toFixed(2)} | Change: ₱{Number(sale.change_amount).toFixed(2)}
+                                                    </span>
+                                                )}
+                                                {sale.payment_method === 'e-wallet' && (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/30 px-2 py-0.5 rounded">
+                                                            E-Wallet: {sale.ewallet_provider}
+                                                        </span>
+                                                        {sale.proof_of_payment_path && (
+                                                            <a 
+                                                                href={`/storage/${sale.proof_of_payment_path}`} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer"
+                                                                className="text-xs text-primary hover:underline font-semibold flex items-center gap-1"
+                                                            >
+                                                                <Image className="w-3.5 h-3.5" /> View Proof
+                                                            </a>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>

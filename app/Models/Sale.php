@@ -12,6 +12,11 @@ class Sale extends Model
         'readied_by',
         'approved_by',
         'notes',
+        'payment_method',
+        'ewallet_provider',
+        'proof_of_payment_path',
+        'cash_received',
+        'change_amount',
     ];
 
     public function branch()

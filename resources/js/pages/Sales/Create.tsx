@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, Plus, Trash2, Scan, ShoppingCart, Check, X, AlertCircle, Loader2, Barcode, Camera, TicketPercent } from 'lucide-react';
+import { Package, Plus, Trash2, Scan, ShoppingCart, Check, X, AlertCircle, Loader2, Barcode, Camera, TicketPercent, Wallet, Upload, CircleDollarSign } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -45,6 +45,7 @@ interface PendingSale {
     items: {
         id: number;
         quantity: number;
+        price: number;
         custom_code?: string | null;
         product: {
             name: string;
@@ -337,9 +338,122 @@ export default function Create({ products, pendingSales }: { products: Product[]
         });
     };
 
-    const handleApprove = (saleId: number) => {
-        router.post(`/sales/${saleId}/approve`, {}, {
-            onSuccess: () => toast.success('Sale approved and inventory updated'),
+    const [approveModalOpen, setApproveModalOpen] = useState(false);
+    const [selectedSaleForApproval, setSelectedSaleForApproval] = useState<PendingSale | null>(null);
+    const approveForm = useForm({
+        payment_method: 'cash' as 'cash' | 'e-wallet',
+        ewallet_provider: 'GCash',
+        proof_of_payment: null as File | null,
+        cash_received: '',
+        change_amount: 0,
+    });
+
+    const [useWebcam, setUseWebcam] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null);
+    const [proofPreview, setProofPreview] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!approveModalOpen) {
+            stopWebcam();
+        }
+    }, [approveModalOpen]);
+
+    useEffect(() => {
+        if (approveForm.data.proof_of_payment) {
+            const url = URL.createObjectURL(approveForm.data.proof_of_payment);
+            setProofPreview(url);
+            return () => URL.revokeObjectURL(url);
+        } else {
+            setProofPreview(null);
+        }
+    }, [approveForm.data.proof_of_payment]);
+
+    const startWebcam = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            setWebcamStream(stream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+            setUseWebcam(true);
+        } catch (err) {
+            console.error('Error accessing camera:', err);
+            toast.error('Could not access camera. Please upload a file instead.');
+        }
+    };
+
+    const stopWebcam = () => {
+        if (webcamStream) {
+            webcamStream.getTracks().forEach(track => track.stop());
+            setWebcamStream(null);
+        }
+        setUseWebcam(false);
+    };
+
+    const capturePhoto = () => {
+        if (videoRef.current) {
+            const video = videoRef.current;
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const file = new File([blob], 'captured_proof.jpg', { type: 'image/jpeg' });
+                        approveForm.setData('proof_of_payment', file);
+                        stopWebcam();
+                    }
+                }, 'image/jpeg', 0.85);
+            }
+        }
+    };
+
+    const handleCashReceivedChange = (value: string) => {
+        approveForm.setData(data => {
+            const cash = parseFloat(value) || 0;
+            const total = selectedSaleForApproval ? selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0) : 0;
+            const change = Math.max(0, cash - total);
+            return {
+                ...data,
+                cash_received: value,
+                change_amount: change,
+            };
+        });
+    };
+
+    const handleApproveSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedSaleForApproval) return;
+        
+        const total = selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0);
+        
+        if (approveForm.data.payment_method === 'cash') {
+            const cash = parseFloat(approveForm.data.cash_received) || 0;
+            if (cash < total) {
+                toast.error(`Cash received must be at least ₱${total.toFixed(2)}`);
+                return;
+            }
+        } else {
+            if (!approveForm.data.proof_of_payment) {
+                toast.error('Proof of payment is required for E-wallet transactions');
+                return;
+            }
+        }
+
+        approveForm.post(`/sales/${selectedSaleForApproval.id}/approve`, {
+            onSuccess: () => {
+                toast.success('Sale approved successfully');
+                setApproveModalOpen(false);
+                setSelectedSaleForApproval(null);
+                approveForm.reset();
+            },
+            onError: (err) => {
+                const errMsg = Object.values(err)[0] || 'Failed to approve sale';
+                toast.error(errMsg as string);
+            }
         });
     };
 
@@ -674,7 +788,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 <div className="flex gap-2 pt-2">
                                                     <Button
                                                         className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700"
-                                                        onClick={() => handleApprove(sale.id)}
+                                                        onClick={() => {
+                                                            setSelectedSaleForApproval(sale);
+                                                            setApproveModalOpen(true);
+                                                        }}
                                                     >
                                                         Approve
                                                     </Button>
@@ -734,6 +851,212 @@ export default function Create({ products, pendingSales }: { products: Product[]
                             <Button variant="outline" onClick={() => setDiscountModalOpen(false)}>Cancel</Button>
                             <Button onClick={handleApplyDiscount}>Apply New Price</Button>
                         </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Approve Sale Modal */}
+                <Dialog open={approveModalOpen} onOpenChange={(open) => {
+                    setApproveModalOpen(open);
+                    if (!open) {
+                        setSelectedSaleForApproval(null);
+                        approveForm.reset();
+                    }
+                }}>
+                    <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <Check className="w-5 h-5 text-green-600" />
+                                Approve Sale #{selectedSaleForApproval?.id}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Select a payment method and record transaction details.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        {selectedSaleForApproval && (
+                            <form onSubmit={handleApproveSubmit} className="space-y-4 py-2">
+                                {/* Total Amount display */}
+                                <div className="bg-primary/5 border rounded-lg p-4 flex justify-between items-center">
+                                    <span className="font-semibold text-sm text-muted-foreground">Total Sale Amount:</span>
+                                    <span className="text-2xl font-bold text-primary">
+                                        ₱{selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0).toFixed(2)}
+                                    </span>
+                                </div>
+
+                                {/* Payment Method Select */}
+                                <div className="space-y-2">
+                                    <Label>Payment Method</Label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => approveForm.setData('payment_method', 'cash')}
+                                            className={`flex items-center justify-center gap-2 py-3 rounded-lg border-2 text-sm font-semibold transition-all ${
+                                                approveForm.data.payment_method === 'cash'
+                                                    ? 'border-primary bg-primary/5 text-primary'
+                                                    : 'border-muted hover:bg-accent'
+                                            }`}
+                                        >
+                                            <CircleDollarSign className="w-4 h-4" />
+                                            Cash
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => approveForm.setData('payment_method', 'e-wallet')}
+                                            className={`flex items-center justify-center gap-2 py-3 rounded-lg border-2 text-sm font-semibold transition-all ${
+                                                approveForm.data.payment_method === 'e-wallet'
+                                                    ? 'border-primary bg-primary/5 text-primary'
+                                                    : 'border-muted hover:bg-accent'
+                                            }`}
+                                        >
+                                            <Wallet className="w-4 h-4" />
+                                            E-Wallet
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Conditional Render based on Payment Method */}
+                                {approveForm.data.payment_method === 'cash' ? (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="cash-received">Cash Received</Label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₱</span>
+                                                <Input
+                                                    id="cash-received"
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    className="pl-7"
+                                                    value={approveForm.data.cash_received}
+                                                    onChange={(e) => handleCashReceivedChange(e.target.value)}
+                                                    placeholder="Enter amount given"
+                                                    required
+                                                    autoFocus
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-lg text-emerald-800 dark:text-emerald-300 font-semibold">
+                                            <span className="text-sm">Change to Give:</span>
+                                            <span className="text-xl font-bold font-mono">
+                                                ₱{approveForm.data.change_amount.toFixed(2)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="ewallet-provider">E-Wallet Provider</Label>
+                                            <select
+                                                id="ewallet-provider"
+                                                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                value={approveForm.data.ewallet_provider}
+                                                onChange={(e) => approveForm.setData('ewallet_provider', e.target.value)}
+                                            >
+                                                <option value="GCash">GCash</option>
+                                                <option value="Maya">Maya</option>
+                                                <option value="GrabPay">GrabPay</option>
+                                                <option value="ShopeePay">ShopeePay</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <Label>Proof of Payment</Label>
+                                            
+                                            {/* Webcam Capture Area */}
+                                            {useWebcam ? (
+                                                <div className="border rounded-lg overflow-hidden bg-black relative flex flex-col items-center">
+                                                    <video ref={videoRef} autoPlay playsInline className="w-full h-48 object-cover" />
+                                                    <div className="flex gap-2 p-2 w-full bg-muted/90 backdrop-blur justify-center">
+                                                        <Button type="button" size="sm" onClick={capturePhoto} className="gap-1 bg-green-600 hover:bg-green-700">
+                                                            <Camera className="w-3.5 h-3.5" /> Capture
+                                                        </Button>
+                                                        <Button type="button" size="sm" variant="outline" onClick={stopWebcam}>
+                                                            Cancel
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : proofPreview ? (
+                                                <div className="relative border rounded-lg overflow-hidden bg-accent group">
+                                                    <img src={proofPreview} alt="Proof preview" className="w-full h-48 object-contain" />
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                        <Button 
+                                                            type="button" 
+                                                            variant="destructive" 
+                                                            size="sm" 
+                                                            onClick={() => approveForm.setData('proof_of_payment', null)}
+                                                        >
+                                                            <Trash2 className="w-4 h-4 mr-1" /> Delete
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        className="h-24 flex flex-col gap-2 border-dashed border-2 hover:border-primary"
+                                                        onClick={startWebcam}
+                                                    >
+                                                        <Camera className="w-6 h-6 text-muted-foreground" />
+                                                        <span className="text-xs">Take Photo</span>
+                                                    </Button>
+                                                    <div className="relative">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                            onChange={(e) => {
+                                                                if (e.target.files && e.target.files[0]) {
+                                                                    approveForm.setData('proof_of_payment', e.target.files[0]);
+                                                                }
+                                                            }}
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            className="w-full h-24 flex flex-col gap-2 border-dashed border-2 hover:border-primary"
+                                                        >
+                                                            <Upload className="w-6 h-6 text-muted-foreground" />
+                                                            <span className="text-xs">Upload File</span>
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <DialogFooter className="pt-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            setApproveModalOpen(false);
+                                            setSelectedSaleForApproval(null);
+                                            approveForm.reset();
+                                        }}
+                                        disabled={approveForm.processing}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={
+                                            approveForm.processing ||
+                                            (approveForm.data.payment_method === 'cash' && 
+                                                (parseFloat(approveForm.data.cash_received) || 0) < selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0)
+                                            ) ||
+                                            (approveForm.data.payment_method === 'e-wallet' && !approveForm.data.proof_of_payment)
+                                        }
+                                        className="gap-2"
+                                    >
+                                        {approveForm.processing && <Loader2 className="w-4 h-4 animate-spin" />}
+                                        Approve Sale
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        )}
                     </DialogContent>
                 </Dialog>
 

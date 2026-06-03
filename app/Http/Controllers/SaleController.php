@@ -384,7 +384,7 @@ class SaleController extends Controller
     /**
      * Approve a sale - deduct inventory
      */
-    public function approve(Sale $sale, \App\Services\OneSignalService $oneSignal)
+    public function approve(Sale $sale, Request $request, \App\Services\OneSignalService $oneSignal)
     {
         $user = auth()->user();
         
@@ -396,8 +396,16 @@ class SaleController extends Controller
         if ($sale->status !== 'readied') {
             return redirect()->back()->with('error', 'Sale is not in readied status');
         }
+
+        $request->validate([
+            'payment_method' => 'required|in:cash,e-wallet',
+            'ewallet_provider' => 'required_if:payment_method,e-wallet|nullable|string',
+            'proof_of_payment' => 'required_if:payment_method,e-wallet|nullable|image|max:5120', // 5MB max
+            'cash_received' => 'required_if:payment_method,cash|nullable|numeric|min:0',
+            'change_amount' => 'required_if:payment_method,cash|nullable|numeric|min:0',
+        ]);
         
-        DB::transaction(function () use ($sale, $user) {
+        DB::transaction(function () use ($sale, $user, $request) {
             // Deduct inventory for each item
             foreach ($sale->items as $item) {
                 DB::table('branch_products')
@@ -406,10 +414,24 @@ class SaleController extends Controller
                     ->decrement('quantity', $item->quantity);
             }
             
-            $sale->update([
+            $updateData = [
                 'status' => 'completed',
                 'approved_by' => $user->id,
-            ]);
+                'payment_method' => $request->payment_method,
+            ];
+
+            if ($request->payment_method === 'e-wallet') {
+                $updateData['ewallet_provider'] = $request->ewallet_provider;
+                if ($request->hasFile('proof_of_payment')) {
+                    $path = $request->file('proof_of_payment')->store('proofs', 'public');
+                    $updateData['proof_of_payment_path'] = $path;
+                }
+            } else {
+                $updateData['cash_received'] = $request->cash_received;
+                $updateData['change_amount'] = $request->change_amount;
+            }
+
+            $sale->update($updateData);
         });
         
         // Notify the user who readied the sale
