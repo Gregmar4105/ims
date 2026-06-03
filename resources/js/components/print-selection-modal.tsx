@@ -11,6 +11,7 @@ interface PrintSelectionModalProps {
     onPrintSystem: () => void;
     elementId: string; // The ID of the element to print via Bluetooth
     title?: string;
+    hideBluetooth?: boolean;
 }
 
 export function PrintSelectionModal({
@@ -18,13 +19,14 @@ export function PrintSelectionModal({
     onClose,
     onPrintSystem,
     elementId,
-    title = "Select Print Method"
+    title = "Select Print Method",
+    hideBluetooth = false
 }: PrintSelectionModalProps) {
     const bt = useBluetoothPrinterContext();
 
     // Scan for devices whenever the modal opens and Bluetooth is supported
     useEffect(() => {
-        if (isOpen && bt.isSupported) {
+        if (isOpen && bt.isSupported && !hideBluetooth) {
             const enabled = bt.checkBluetoothEnabled();
             if (!enabled) {
                 bt.requestBluetoothEnable();
@@ -32,7 +34,7 @@ export function PrintSelectionModal({
                 bt.scan();
             }
         }
-    }, [isOpen, bt.isSupported]);
+    }, [isOpen, bt.isSupported, hideBluetooth]);
 
     const handleBluetoothPrint = async () => {
         const ok = await bt.printElement(elementId);
@@ -65,7 +67,8 @@ export function PrintSelectionModal({
                 <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 text-left max-h-[60vh] sm:max-h-[70vh] overflow-y-auto scrollbar-thin">
                     
                     {/* Option 1: Bluetooth Thermal Printer */}
-                    <div className="space-y-3 sm:space-y-4">
+                    {!hideBluetooth && (
+                        <div className="space-y-3 sm:space-y-4">
                         <div className="flex items-center justify-between">
                             <h4 className="text-[10px] sm:text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
                                 <Bluetooth className="w-3.5 h-3.5 text-blue-500" />
@@ -314,8 +317,9 @@ export function PrintSelectionModal({
                             </div>
                         )}
                     </div>
+                    )}
 
-                    <Separator className="bg-gray-100 dark:bg-gray-800" />
+                    {!hideBluetooth && <Separator className="bg-gray-100 dark:bg-gray-800" />}
 
                     {/* Option 2: System / Wi-Fi Printer */}
                     <div className="space-y-3">
