@@ -130,7 +130,7 @@ export default function Show({ product }: Props) {
         };
 
         // Dynamic font sizes based on active dimensions
-        const skuSize = getDynamicSize(product.sku || product.name || '', 6, 12, 3, 0.5);
+        const skuSize = getDynamicSize(product.sku || product.name || '', 7.5, 10, 3, 0.6);
         const codeSize = getDynamicSize((product.code || '') + (product.code_2 || ''), 7.5, 10, 3.5, 0.6);
         const supplierSize = getDynamicSize(product.supplier?.name || '', 7, 10, 3.5, 0.6);
         const barcodeSize = `${6 * Math.min(2, printWidth / 28) - 1}pt`;
@@ -162,7 +162,7 @@ export default function Show({ product }: Props) {
                     }
                     @page {
                         size: ${printWidth}mm ${printHeight}mm;
-                        margin: 0 0 0 1mm;
+                        margin: 0 0 0 0.2mm;
                     }
                     html, body {
                         margin: 0 !important;
@@ -177,7 +177,7 @@ export default function Show({ product }: Props) {
                     width: 100%;
                     height: 100%;
                     margin: 0;
-                    padding: 0.5mm 1mm;
+                    padding: 0.5mm 0.6mm;
                     font-family: 'Arial', sans-serif;
                     overflow: hidden;
                     display: flex;
@@ -229,7 +229,6 @@ export default function Show({ product }: Props) {
                     display: flex;
                     flex-direction: column;
                     align-items: flex-start;
-                    text-align: left;
                     margin-top: auto;
                     border-top: 0.1mm solid transparent;
                 }
@@ -241,6 +240,7 @@ export default function Show({ product }: Props) {
                     overflow: hidden;
                     width: 100%;
                     line-height: 1;
+                    text-align: left;
                 }
 
                 .price {
@@ -248,6 +248,8 @@ export default function Show({ product }: Props) {
                     font-weight: normal;
                     line-height: 1;
                     margin-top: 0.5mm;
+                    width: 100%;
+                    text-align: center;
                 }
             </style>
             <div class="label-container">
@@ -869,7 +871,7 @@ export default function Show({ product }: Props) {
                 const codesStr = (product.code || '') + (product.code_2 || '');
                 const supplierStr = product.supplier?.name || '';
 
-                const skuSize = getDynamicSize(skuStr, 6, 12, 3, 0.5);
+                const skuSize = getDynamicSize(skuStr, 7.5, 10, 3, 0.6);
                 const codeSize = getDynamicSize(codesStr, 7.5, 10, 3.5, 0.6);
                 const supplierSize = getDynamicSize(supplierStr, 7, 10, 3.5, 0.6);
                 const barcodeSize = `${6 * Math.min(2, printWidth / 28) - 1}pt`;
@@ -889,7 +891,7 @@ export default function Show({ product }: Props) {
                             display: 'flex',
                             flexDirection: 'column',
                             boxSizing: 'border-box',
-                            padding: '0.5mm 1mm'
+                            padding: '0.5mm 0.6mm'
                         }}>
                             <div style={{ display: 'flex', width: '100%', height: upperHeight, alignItems: 'center' }}>
                                 <div style={{ width: qrSize, height: qrSize, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -903,9 +905,9 @@ export default function Show({ product }: Props) {
                                     <div style={{ fontSize: supplierSize, whiteSpace: 'nowrap', overflow: 'hidden', lineHeight: 1.1 }}>{product.supplier?.name || '-'}</div>
                                 </div>
                             </div>
-                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', marginTop: 'auto' }}>
-                                <div style={{ fontSize: skuSize, fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%', lineHeight: 1 }}>{skuStr}</div>
-                                <div style={{ fontSize: priceSize, fontWeight: 'normal', lineHeight: 1, marginTop: '0.5mm' }}>
+                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: 'auto' }}>
+                                <div style={{ fontSize: skuSize, fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%', lineHeight: 1, textAlign: 'left' }}>{skuStr}</div>
+                                <div style={{ fontSize: priceSize, fontWeight: 'normal', lineHeight: 1, marginTop: '0.5mm', width: '100%', textAlign: 'center' }}>
                                     ₱{product.price ? Number(product.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
                                 </div>
                             </div>

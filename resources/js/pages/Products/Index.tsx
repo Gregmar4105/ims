@@ -507,7 +507,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
 
         // Ultra-aggressive thresholds for 28x20mm landscape
         // Given ~16mm space for info-stack
-        const skuSize = getDynamicSize(viewCodeProduct.sku || viewCodeProduct.name || '', 9, 12, 4, 0.5);
+        const skuSize = getDynamicSize(viewCodeProduct.sku || viewCodeProduct.name || '', 7.5, 10, 3, 0.6);
         const codeSize = getDynamicSize((viewCodeProduct.code || '') + (viewCodeProduct.code_2 || ''), 7.5, 10, 3.5, 0.6);
         const supplierSize = getDynamicSize(viewCodeProduct.supplier?.name || '', 7, 10, 3.5, 0.6);
 
@@ -541,7 +541,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     }
                     @page {
                         size: 28mm 20mm;
-                        margin: 0 0 0 1mm;
+                        margin: 0 0 0 0.2mm;
                     }
                     html, body {
                         margin: 0 !important;
@@ -556,7 +556,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     width: 100%;
                     height: 100%;
                     margin: 0;
-                    padding: 0.5mm 1mm;
+                    padding: 0.5mm 0.6mm;
                     font-family: 'Arial', sans-serif;
                     overflow: hidden;
                     display: flex;
@@ -608,7 +608,6 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     display: flex;
                     flex-direction: column;
                     align-items: flex-start;
-                    text-align: left;
                     margin-top: auto;
                     border-top: 0.1mm solid transparent;
                 }
@@ -620,13 +619,16 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                     overflow: hidden;
                     width: 100%;
                     line-height: 1;
+                    text-align: left;
                 }
-
+                
                 .price {
                     font-size: 10pt;
                     font-weight: normal;
                     line-height: 1;
                     margin-top: 0.5mm;
+                    width: 100%;
+                    text-align: center;
                 }
             </style>
             <div class="label-container">
@@ -646,7 +648,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                 <div class="bottom-section">
                     <div class="product-sku" style="font-size: ${skuSize}">${viewCodeProduct.sku || viewCodeProduct.name || '-'}</div>
                     <div class="price">
-                        ${viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
+                        ₱${viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
                     </div>
                 </div>
             </div>
@@ -1524,9 +1526,8 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                         const skuStr = viewCodeProduct.sku || viewCodeProduct.name || '';
                         const codesStr = (viewCodeProduct.code || '') + (viewCodeProduct.code_2 || '');
                         const supplierStr = viewCodeProduct.supplier?.name || '';
-                        const barcodeStr = viewCodeProduct.barcode || '';
 
-                        const skuSize = getDynamicSize(skuStr, 9, 12, 4, 0.5);
+                        const skuSize = getDynamicSize(skuStr, 7.5, 10, 3, 0.6);
                         const codeSize = getDynamicSize(codesStr, 7.5, 10, 3.5, 0.6);
                         const supplierSize = getDynamicSize(supplierStr, 7, 10, 3.5, 0.6);
                         const barcodeSize = '5.5pt';
@@ -1542,7 +1543,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     display: 'flex',
                                     flexDirection: 'column',
                                     boxSizing: 'border-box',
-                                    padding: '0.5mm 1mm'
+                                    padding: '0.5mm 0.6mm'
                                 }}>
                                     <div style={{ display: 'flex', width: '100%', height: '13mm', alignItems: 'center' }}>
                                         <div style={{ width: '8mm', height: '8mm', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -1556,10 +1557,10 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             <div style={{ fontSize: supplierSize, whiteSpace: 'nowrap', overflow: 'hidden', lineHeight: 1.1 }}>{viewCodeProduct.supplier?.name || '-'}</div>
                                         </div>
                                     </div>
-                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', marginTop: 'auto' }}>
-                                        <div style={{ fontSize: skuSize, fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%', lineHeight: 1 }}>{skuStr}</div>
-                                        <div style={{ fontSize: '10pt', fontWeight: 'normal', lineHeight: 1, marginTop: '0.5mm' }}>
-                                            {viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
+                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: 'auto' }}>
+                                        <div style={{ fontSize: skuSize, fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%', lineHeight: 1, textAlign: 'left' }}>{skuStr}</div>
+                                        <div style={{ fontSize: '10pt', fontWeight: 'normal', lineHeight: 1, marginTop: '0.5mm', width: '100%', textAlign: 'center' }}>
+                                            ₱{viewCodeProduct.price ? Number(viewCodeProduct.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
                                         </div>
                                     </div>
                                 </div>
