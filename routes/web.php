@@ -189,6 +189,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('expense-tracker', [\App\Http\Controllers\ExpenseController::class, 'store'])->name('expenses.store');
     Route::delete('expense-tracker/{expense}', [\App\Http\Controllers\ExpenseController::class, 'destroy'])->name('expenses.destroy');
 
+    // Service Fee routes
+    Route::get('service-fees', [\App\Http\Controllers\ServiceFeeController::class, 'index'])->name('service-fees.index');
+    Route::post('service-fees', [\App\Http\Controllers\ServiceFeeController::class, 'store'])->name('service-fees.store');
+    Route::delete('service-fees/{serviceFee}', [\App\Http\Controllers\ServiceFeeController::class, 'destroy'])->name('service-fees.destroy');
+
     // Chat Routes
     Route::get('/chats/total-unread', [App\Http\Controllers\ChatController::class, 'totalUnreadCount'])->name('chats.total-unread');
     Route::get('/chats/branches/status', [App\Http\Controllers\ChatController::class, 'branchesStatus'])->name('chats.branches-status');
