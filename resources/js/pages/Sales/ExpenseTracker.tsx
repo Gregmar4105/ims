@@ -59,6 +59,28 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
     const [dateFrom, setDateFrom] = useState(filters.date_from || '');
     const [dateTo, setDateTo] = useState(filters.date_to || '');
 
+    // Helper to group expenses by date
+    const groupExpensesByDate = (expensesList: Expense[]) => {
+        const groups: { [key: string]: { expenses: Expense[]; total: number } } = {};
+        
+        expensesList.forEach((expense) => {
+            const dateObj = new Date(expense.created_at);
+            const dateKey = dateObj.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            });
+            
+            if (!groups[dateKey]) {
+                groups[dateKey] = { expenses: [], total: 0 };
+            }
+            groups[dateKey].expenses.push(expense);
+            groups[dateKey].total += Number(expense.amount);
+        });
+        
+        return groups;
+    };
+
     // Form for logging a new expense
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
@@ -165,7 +187,8 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
 
                     {/* Left Column - Historical Logs (2/3 width) */}
                     <div className="lg:col-span-2 space-y-6 flex flex-col">
-                        <Card className="flex-1 flex flex-col border shadow-sm">
+                        {/* Search and Filters Card */}
+                        <Card className="border shadow-sm">
                             <CardHeader className="pb-4 border-b">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
@@ -180,7 +203,7 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
                             </CardHeader>
 
                             {/* Search and Filters Section */}
-                            <div className="p-4 bg-muted/20 border-b flex flex-col md:flex-row gap-4 items-end">
+                            <div className="p-4 bg-muted/20 flex flex-col md:flex-row gap-4 items-end">
                                 <div className="relative flex-1 w-full">
                                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
@@ -223,60 +246,77 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
                                     )}
                                 </div>
                             </div>
-
-                            <CardContent className="p-0 flex-1">
-                                {expenses.data.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                                        <Wallet className="w-12 h-12 mb-4 opacity-20" />
-                                        <p className="font-medium text-sm">No expenses found</p>
-                                        <p className="text-xs text-muted-foreground mt-1">Try adjusting your filters or log a new expense.</p>
-                                    </div>
-                                ) : (
-                                    <div className="overflow-x-auto">
-                                        <Table>
-                                            <TableHeader className="bg-muted/10">
-                                                <TableRow>
-                                                    <TableHead className="pl-6">Expense Name / Description</TableHead>
-                                                    <TableHead>Logged By</TableHead>
-                                                    <TableHead>Date & Time</TableHead>
-                                                    <TableHead className="text-right pr-6">Amount</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {expenses.data.map((expense) => (
-                                                    <TableRow key={expense.id} className="hover:bg-muted/5">
-                                                        <TableCell className="font-medium pl-6">
-                                                            {expense.name}
-                                                        </TableCell>
-                                                        <TableCell className="text-muted-foreground text-sm">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <User className="w-3.5 h-3.5 text-muted-foreground" />
-                                                                {expense.creator?.name || 'Unknown'}
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell className="text-muted-foreground text-sm">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                                                                {formatDate(expense.created_at)}
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell className="text-right pr-6 font-bold text-gray-900 dark:text-gray-100">
-                                                            ₱{Number(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </div>
-                                )}
-                            </CardContent>
-
-                            {expenses.data.length > 0 && expenses.last_page > 1 && (
-                                <CardFooter className="border-t bg-muted/10 py-4 px-6 flex justify-center">
-                                    <Pagination links={expenses.links} />
-                                </CardFooter>
-                            )}
                         </Card>
+
+                        {/* Grouped Containers List */}
+                        {expenses.data.length === 0 ? (
+                            <Card className="border shadow-sm py-20">
+                                <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                    <Wallet className="w-12 h-12 mb-4 opacity-20" />
+                                    <p className="font-medium text-sm">No expenses found</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Try adjusting your filters or log a new expense.</p>
+                                </div>
+                            </Card>
+                        ) : (
+                            <div className="space-y-4">
+                                {Object.entries(groupExpensesByDate(expenses.data)).map(([date, group]) => (
+                                    <Card key={date} className="border shadow-sm overflow-hidden">
+                                        <CardHeader className="bg-muted/30 py-2.5 px-4 flex flex-row items-center justify-between border-b">
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="w-4 h-4 text-primary" />
+                                                <span className="font-bold text-sm text-gray-800 dark:text-gray-200">{date}</span>
+                                            </div>
+                                            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-bold text-xs">
+                                                Daily Total: ₱{group.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </Badge>
+                                        </CardHeader>
+                                        <CardContent className="p-0">
+                                            <Table>
+                                                <TableHeader className="bg-muted/10">
+                                                    <TableRow>
+                                                        <TableHead className="pl-6">Expense Name / Description</TableHead>
+                                                        <TableHead>Logged By</TableHead>
+                                                        <TableHead>Time</TableHead>
+                                                        <TableHead className="text-right pr-6">Amount</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {group.expenses.map((expense) => (
+                                                        <TableRow key={expense.id} className="hover:bg-muted/5">
+                                                            <TableCell className="font-medium pl-6">
+                                                                {expense.name}
+                                                            </TableCell>
+                                                            <TableCell className="text-muted-foreground text-sm">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <User className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                    {expense.creator?.name || 'Unknown'}
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="text-muted-foreground text-sm">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                    {formatTimeOnly(expense.created_at)}
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="text-right pr-6 font-bold text-gray-900 dark:text-gray-100">
+                                                                ₱{Number(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Pagination footer */}
+                        {expenses.data.length > 0 && expenses.last_page > 1 && (
+                            <div className="flex justify-center py-4 px-6 bg-muted/10 rounded-lg border">
+                                <Pagination links={expenses.links} />
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Column - Log Expense & Today's Daily Activity (1/3 width) */}
@@ -328,7 +368,7 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
                                     </div>
                                 </CardContent>
                                 <CardFooter className="pt-2 flex justify-end">
-                                    <Button type="submit" disabled={processing} className="w-full sm:w-auto">
+                                    <Button type="submit" disabled={processing} className="w-full mt-2 sm:w-auto">
                                         {processing ? (
                                             <>
                                                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
