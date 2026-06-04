@@ -3,7 +3,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Head, Link, usePage, router } from '@inertiajs/react';
-import { Plus, Pencil, ArchiveX, Search, Building } from 'lucide-react';
+import { Plus, Pencil, ArchiveX, Search, Building, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Pagination from '@/components/Pagination';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -162,18 +162,20 @@ export default function Index({ branches }: any) {
                                 <TableHead>Branch Name</TableHead>
                                 <TableHead>Location</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Last Sheet Sync</TableHead>
                                 <TableHead>Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filteredBranches.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                                         {search ? "No branches found matching your search." : "No branches found."}
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredBranches.map(({ id, branch_name, location, branch_status }: any) => (
+                                filteredBranches.map(({ id, branch_name, location, branch_status, last_sheet_sync_at }: any) => {
+                                    return (
                                     <TableRow key={id}>
                                         <TableCell className="font-medium">{id}</TableCell>
                                         <TableCell className="font-medium">{branch_name}</TableCell>
@@ -182,6 +184,30 @@ export default function Index({ branches }: any) {
                                             <Badge variant={branch_status === 'Active' ? 'default' : 'destructive'}>
                                                 {branch_status}
                                             </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            {last_sheet_sync_at ? (
+                                                <div className="flex items-center gap-1.5" title={new Date(last_sheet_sync_at).toLocaleString()}>
+                                                    <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {(() => {
+                                                            const now = new Date();
+                                                            const syncDate = new Date(last_sheet_sync_at);
+                                                            const diffMs = now.getTime() - syncDate.getTime();
+                                                            const diffMins = Math.floor(diffMs / 60000);
+                                                            const diffHours = Math.floor(diffMs / 3600000);
+                                                            const diffDays = Math.floor(diffMs / 86400000);
+                                                            if (diffMins < 1) return 'Just now';
+                                                            if (diffMins < 60) return `${diffMins}m ago`;
+                                                            if (diffHours < 24) return `${diffHours}h ago`;
+                                                            if (diffDays < 7) return `${diffDays}d ago`;
+                                                            return syncDate.toLocaleDateString();
+                                                        })()}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground/50 italic">Never</span>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
@@ -202,7 +228,8 @@ export default function Index({ branches }: any) {
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ))
+                                    );
+                                })
                             )}
                         </TableBody>
                     </Table>

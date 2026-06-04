@@ -108,7 +108,7 @@ class GoogleSheetsSyncController extends Controller
                 if (!empty($freshRows)) {
                     array_shift($freshRows); // Remove header row
                     $snapshot = $this->buildSheetSnapshot($freshRows);
-                    $branch->update(['sheet_snapshot' => $snapshot]);
+                    $branch->update(['sheet_snapshot' => $snapshot, 'last_sheet_sync_at' => now()]);
                 }
             }
 
@@ -893,7 +893,7 @@ class GoogleSheetsSyncController extends Controller
             if (!empty($freshRows)) {
                 array_shift($freshRows); // Remove header row
                 $snapshot = $this->buildSheetSnapshot($freshRows);
-                $branch->update(['sheet_snapshot' => $snapshot]);
+                $branch->update(['sheet_snapshot' => $snapshot, 'last_sheet_sync_at' => now()]);
             }
 
             return response()->json([

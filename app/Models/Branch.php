@@ -19,10 +19,16 @@ class Branch extends Model
         'google_maps_embed_code',
         'profile_photo_path',
         'sheet_snapshot',
+        'last_sheet_sync_at',
     ];
 
     protected $casts = [
         'sheet_snapshot' => 'array',
+        'last_sheet_sync_at' => 'datetime',
+    ];
+
+    protected $hidden = [
+        'sheet_snapshot',
     ];
 
     
