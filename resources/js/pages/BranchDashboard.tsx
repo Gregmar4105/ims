@@ -229,8 +229,6 @@ const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueTy
             <div className="max-h-[100px] overflow-y-auto scrollbar-thin px-6 pb-6 mt-2">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
                     {data.map((entry, index) => {
-                        const total = data.reduce((acc, curr) => acc + curr.value, 0);
-                        const percentage = total > 0 ? ((entry.value / total) * 100).toFixed(0) : 0;
                         return (
                             <div key={`legend-${index}`} className="flex items-center justify-between gap-2 border-b border-muted/30 pb-1">
                                 <div className="flex items-center gap-2 truncate">
@@ -242,7 +240,7 @@ const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueTy
                                         {entry.name}
                                     </span>
                                 </div>
-                                <span className="font-medium text-foreground shrink-0">{percentage}%</span>
+                                <span className="font-medium text-foreground shrink-0">{entry.value.toLocaleString()}</span>
                             </div>
                         );
                     })}
