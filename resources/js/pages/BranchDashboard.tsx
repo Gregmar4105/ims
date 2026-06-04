@@ -64,7 +64,7 @@ interface DashboardProps {
         cash_on_hand: number;
     };
     chartData: { name: string; sales: number }[];
-    pieData: { name: string; value: number }[];
+    pieData: { name: string; value: number; count?: number }[];
     productData: { name: string; value: number }[];
     leaderboard: {
         id: number;
@@ -163,7 +163,7 @@ const MiniSparkline = ({ data, color, gradientId }: SparklineProps) => {
     );
 };
 
-const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueType = 'currency', headerExtra }: { title: string; subtitle: string; data: { name: string; value: number }[]; totalLabel?: string; valueType?: 'currency' | 'number'; headerExtra?: React.ReactNode }) => {
+const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueType = 'currency', headerExtra, legendKey = 'value' }: { title: string; subtitle: string; data: { name: string; value: number; count?: number }[]; totalLabel?: string; valueType?: 'currency' | 'number'; headerExtra?: React.ReactNode; legendKey?: 'value' | 'count' }) => {
     return (
         <Card className="flex flex-col">
             <CardHeader className="pb-0 flex flex-row items-start justify-between space-y-0">
@@ -229,6 +229,7 @@ const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueTy
             <div className="max-h-[100px] overflow-y-auto scrollbar-thin px-6 pb-6 mt-2">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
                     {data.map((entry, index) => {
+                        const legendValue = legendKey === 'count' ? (entry.count ?? 0) : entry.value;
                         return (
                             <div key={`legend-${index}`} className="flex items-center justify-between gap-2 border-b border-muted/30 pb-1">
                                 <div className="flex items-center gap-2 truncate">
@@ -240,7 +241,7 @@ const DistributionCard = ({ title, subtitle, data, totalLabel = "Sales", valueTy
                                         {entry.name}
                                     </span>
                                 </div>
-                                <span className="font-medium text-foreground shrink-0">{entry.value.toLocaleString()}</span>
+                                <span className="font-medium text-foreground shrink-0">{legendValue.toLocaleString()}</span>
                             </div>
                         );
                     })}
@@ -749,7 +750,8 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                         <DistributionCard 
                             title="Sales by Category" 
                             subtitle={getPeriodSubLabel("Revenue per Category")} 
-                            data={pieData} 
+                            data={pieData}
+                            legendKey="count"
                         />
 
                         <DistributionCard 

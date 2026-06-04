@@ -301,7 +301,11 @@ class BranchDashboardController extends Controller
         $salesDistribution = $salesDistributionQuery->get()
             ->groupBy(fn($item) => $item->product?->category?->name ?? 'Uncategorized')
             ->map(function ($items, $categoryName) {
-                return ['name' => $categoryName, 'value' => (float)$items->sum(fn($item) => $item->quantity * $item->price)];
+                return [
+                    'name'  => $categoryName,
+                    'value' => (float)$items->sum(fn($item) => $item->quantity * $item->price),
+                    'count' => (int)$items->sum('quantity'),
+                ];
             })
             ->values()
             ->all();
