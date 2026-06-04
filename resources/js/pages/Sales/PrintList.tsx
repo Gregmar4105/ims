@@ -74,12 +74,18 @@ export default function PrintList({ sales, filters }: { sales: Sale[], filters: 
                 </div>
 
                 {/* Filters Context */}
-                {(filters.date_from || filters.date_to || (filters.status_filter && filters.status_filter !== 'all')) && (
+                {(filters.date_from || filters.date_to || (filters.status_filter && filters.status_filter !== 'all') || (filters.payment_method && filters.payment_method !== 'all') || (filters.date_preset && filters.date_preset !== 'today')) && (
                     <div className="mb-6 p-4 bg-gray-50 rounded-lg text-sm text-gray-700 print:break-inside-avoid">
                         <strong className="block mb-2 font-semibold">Active Report Filters:</strong>
                         <ul className="list-disc pl-5 space-y-1">
                             {filters.status_filter && filters.status_filter !== 'all' && (
                                 <li>Status: <span className="capitalize">{filters.status_filter}</span></li>
+                            )}
+                            {filters.payment_method && filters.payment_method !== 'all' && (
+                                <li>Payment Method: <span className="capitalize">{filters.payment_method === 'home_credit' ? 'Home Credit' : filters.payment_method}</span></li>
+                            )}
+                            {filters.date_preset && (
+                                <li>Date Range: <span className="capitalize">{filters.date_preset === 'today' ? 'Today' : filters.date_preset === 'weekly' ? 'This Week' : filters.date_preset === 'monthly' ? 'This Month' : filters.date_preset === 'ytd' ? 'Year To Date' : filters.date_preset === 'all' ? 'All Time' : 'Custom Range'}</span></li>
                             )}
                             {filters.date_from && <li>From: {formatDate(filters.date_from)}</li>}
                             {filters.date_to && <li>To: {formatDate(filters.date_to)}</li>}

@@ -120,7 +120,14 @@ export default function Index({
 }: { 
     sales: PaginatedData<Sale>, 
     stats: Stats, 
-    filters: { search?: string, date_from?: string, date_to?: string, status_filter?: string },
+    filters: { 
+        search?: string; 
+        date_from?: string; 
+        date_to?: string; 
+        status_filter?: string;
+        payment_method?: string;
+        date_preset?: string;
+    },
     todaySales?: Sale[],
     todayExpenses?: Expense[],
     todayServiceFees?: ServiceFee[]
@@ -132,8 +139,42 @@ export default function Index({
     const [dateFrom, setDateFrom] = useState(filters.date_from || '');
     const [dateTo, setDateTo] = useState(filters.date_to || '');
     const [statusFilter, setStatusFilter] = useState(filters.status_filter || 'all');
+    const [paymentMethod, setPaymentMethod] = useState(filters.payment_method || 'all');
+    const [datePreset, setDatePreset] = useState(filters.date_preset || 'today');
     const [activeProofSale, setActiveProofSale] = useState<Sale | null>(null);
     const [showDelegation, setShowDelegation] = useState(false);
+
+    const getPeriodStart = () => {
+        if (datePreset === 'today') {
+            const d = new Date();
+            d.setHours(0, 0, 0, 0);
+            return d;
+        } else if (datePreset === 'weekly') {
+            const d = new Date();
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            const monday = new Date(d.setDate(diff));
+            monday.setHours(0, 0, 0, 0);
+            return monday;
+        } else if (datePreset === 'monthly') {
+            const d = new Date();
+            const firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
+            firstDay.setHours(0, 0, 0, 0);
+            return firstDay;
+        } else if (datePreset === 'ytd') {
+            const d = new Date();
+            const firstDay = new Date(d.getFullYear(), 0, 1);
+            firstDay.setHours(0, 0, 0, 0);
+            return firstDay;
+        } else if (datePreset === 'custom' && dateFrom) {
+            const d = new Date(dateFrom);
+            d.setHours(0, 0, 0, 0);
+            return d;
+        }
+        return null;
+    };
+
+    const periodStart = getPeriodStart();
 
     const pureCashSales = todaySales.filter(s => s.payment_method === 'cash');
     const pureCashSalesTotal = pureCashSales.reduce((sum, sale) => {
@@ -145,14 +186,11 @@ export default function Index({
     const totalHomeCreditDownpayment = homeCreditSales.reduce((sum, s) => sum + Number(s.downpayment || 0), 0);
     const totalHomeCreditLeft = totalHomeCreditSales - totalHomeCreditDownpayment;
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
     const reservationSales = todaySales.filter(s => s.payment_method === 'reservation');
     const totalReservationSales = stats.today_reservation_sales;
     const totalReservationDownpayment = reservationSales.reduce((sum, s) => {
         const saleCreatedAt = new Date(s.created_at);
-        if (s.status === 'reserved' || saleCreatedAt >= todayStart) {
+        if (s.status === 'reserved' || !periodStart || saleCreatedAt >= periodStart) {
             return sum + Number(s.downpayment || 0);
         }
         return sum;
@@ -214,7 +252,7 @@ export default function Index({
                     });
                 }
             } else if (sale.status === 'completed') {
-                if (saleCreatedAt >= todayStart) {
+                if (!periodStart || saleCreatedAt >= periodStart) {
                     if (Number(sale.downpayment) > 0) {
                         cashSalesEntries.push({
                             id: sale.id,
@@ -243,7 +281,7 @@ export default function Index({
                     }
                 }
             } else if (sale.status === 'cancelled') {
-                if (saleCreatedAt >= todayStart) {
+                if (!periodStart || saleCreatedAt >= periodStart) {
                     if (Number(sale.downpayment) > 0) {
                         cashSalesEntries.push({
                             id: sale.id,
@@ -281,16 +319,40 @@ export default function Index({
             search,
             date_from: dateFrom,
             date_to: dateTo,
-            status_filter: statusFilter
+            status_filter: statusFilter,
+            payment_method: paymentMethod,
+            date_preset: datePreset
         }, { preserveState: true, replace: true, preserveScroll: true });
     };
 
     // Filter change handler
     useEffect(() => {
-        if (dateFrom !== (filters.date_from || '') || dateTo !== (filters.date_to || '') || statusFilter !== (filters.status_filter || 'all')) {
+        if (
+            dateFrom !== (filters.date_from || '') || 
+            dateTo !== (filters.date_to || '') || 
+            statusFilter !== (filters.status_filter || 'all') ||
+            paymentMethod !== (filters.payment_method || 'all') ||
+            datePreset !== (filters.date_preset || 'today')
+        ) {
             performSearch();
         }
-    }, [dateFrom, dateTo, statusFilter]);
+    }, [dateFrom, dateTo, statusFilter, paymentMethod, datePreset]);
+
+    const handlePresetChange = (preset: string) => {
+        setDatePreset(preset);
+        setDateFrom('');
+        setDateTo('');
+    };
+
+    const handleDateFromChange = (val: string) => {
+        setDateFrom(val);
+        setDatePreset('custom');
+    };
+
+    const handleDateToChange = (val: string) => {
+        setDateTo(val);
+        setDatePreset('custom');
+    };
 
     const buildPrintUrl = () => {
         const params = new URLSearchParams();
@@ -298,6 +360,8 @@ export default function Index({
         if (dateFrom) params.append('date_from', dateFrom);
         if (dateTo) params.append('date_to', dateTo);
         if (statusFilter && statusFilter !== 'all') params.append('status_filter', statusFilter);
+        if (paymentMethod && paymentMethod !== 'all') params.append('payment_method', paymentMethod);
+        if (datePreset) params.append('date_preset', datePreset);
 
         return `/sales-list/print?${params.toString()}`;
     };
@@ -369,7 +433,9 @@ export default function Index({
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card className="border shadow-sm">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                            <CardTitle className="text-sm font-semibold text-muted-foreground">Today's Total Sales</CardTitle>
+                            <CardTitle className="text-sm font-semibold text-muted-foreground">
+                                {datePreset === 'today' ? "Today's" : datePreset === 'weekly' ? "Weekly" : datePreset === 'monthly' ? "Monthly" : datePreset === 'ytd' ? "YTD" : datePreset === 'all' ? "All-Time" : "Period's"} Total Sales
+                            </CardTitle>
                             <Store className="h-4 w-4 text-emerald-500" />
                         </CardHeader>
                         <CardContent>
@@ -384,7 +450,9 @@ export default function Index({
 
                     <Card className="border shadow-sm">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                            <CardTitle className="text-sm font-semibold text-muted-foreground">Today's Total Expenses</CardTitle>
+                            <CardTitle className="text-sm font-semibold text-muted-foreground">
+                                {datePreset === 'today' ? "Today's" : datePreset === 'weekly' ? "Weekly" : datePreset === 'monthly' ? "Monthly" : datePreset === 'ytd' ? "YTD" : datePreset === 'all' ? "All-Time" : "Period's"} Total Expenses
+                            </CardTitle>
                             <Wallet className="h-4 w-4 text-red-500" />
                         </CardHeader>
                         <CardContent>
@@ -395,7 +463,9 @@ export default function Index({
 
                     <Card className="border shadow-sm">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                            <CardTitle className="text-sm font-semibold text-muted-foreground">Today's Total Service Fees</CardTitle>
+                            <CardTitle className="text-sm font-semibold text-muted-foreground">
+                                {datePreset === 'today' ? "Today's" : datePreset === 'weekly' ? "Weekly" : datePreset === 'monthly' ? "Monthly" : datePreset === 'ytd' ? "YTD" : datePreset === 'all' ? "All-Time" : "Period's"} Total Service Fees
+                            </CardTitle>
                             <Percent className="h-4 w-4 text-teal-500" />
                         </CardHeader>
                         <CardContent>
@@ -406,7 +476,9 @@ export default function Index({
 
                     <Card className="border shadow-sm border-l-4 border-l-emerald-500">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                            <CardTitle className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Cash on Hand</CardTitle>
+                            <CardTitle className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                                {datePreset === 'today' ? "Cash" : datePreset === 'weekly' ? "Weekly Cash" : datePreset === 'monthly' ? "Monthly Cash" : datePreset === 'ytd' ? "YTD Cash" : datePreset === 'all' ? "All-Time Cash" : "Period Cash"} on Hand
+                            </CardTitle>
                             <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                         </CardHeader>
                         <CardContent className="pb-3">
@@ -431,14 +503,14 @@ export default function Index({
                 {showDelegation ? (
                     <div className="space-y-6 animate-in fade-in-50 duration-200">
                         {/* Delegation Header */}
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-emerald-50/50 dark:bg-emerald-950/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-emerald-50/50 dark:bg-emerald-955/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
                             <div>
                                 <h2 className="text-xl font-bold text-emerald-955 dark:text-emerald-50 flex items-center gap-2">
                                     <ClipboardList className="w-5.5 h-5.5 text-emerald-600 dark:text-emerald-400" />
-                                    Daily Sales & Cash Delegation
+                                    {datePreset === 'today' ? "Daily" : datePreset === 'weekly' ? "Weekly" : datePreset === 'monthly' ? "Monthly" : datePreset === 'ytd' ? "YTD" : datePreset === 'all' ? "All-Time" : "Selected Period"} Sales & Cash Delegation
                                 </h2>
                                 <p className="text-xs text-emerald-700/80 dark:text-emerald-300/80 mt-0.5">
-                                    Itemized breakdown of today's completed cash sales, e-wallet transactions, service fees, and logged expenses.
+                                    Itemized breakdown of {datePreset === 'today' ? "today's" : datePreset === 'weekly' ? "this week's" : datePreset === 'monthly' ? "this month's" : datePreset === 'ytd' ? "this year's" : "the selected period's"} completed cash sales, e-wallet transactions, service fees, and logged expenses.
                                 </p>
                             </div>
                             <Button 
@@ -866,60 +938,118 @@ export default function Index({
                 ) : (
                     <>
                         {/* Search Bar & Filters */}
-                        <div className="flex flex-col md:flex-row items-end md:items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
-                            <div className="relative flex-1 w-full min-w-[300px]">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    type="search"
-                                    placeholder="Search by ID, Branch..."
-                                    className="pl-8"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                />
+                        <div className="flex flex-col gap-4">
+                            {/* Date Preset Toggles */}
+                            <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-zinc-950 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                                <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg w-full sm:w-auto overflow-x-auto">
+                                    {[
+                                        { value: 'today', label: 'Today' },
+                                        { value: 'weekly', label: 'Weekly' },
+                                        { value: 'monthly', label: 'Monthly' },
+                                        { value: 'ytd', label: 'YTD' },
+                                        { value: 'all', label: 'All Time' }
+                                    ].map((preset) => (
+                                        <button
+                                            key={preset.value}
+                                            type="button"
+                                            onClick={() => handlePresetChange(preset.value)}
+                                            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
+                                                datePreset === preset.value
+                                                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm border border-zinc-200/50 dark:border-zinc-700'
+                                                    : 'text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-850'
+                                            }`}
+                                        >
+                                            {preset.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="text-xs text-muted-foreground font-medium px-1">
+                                    {datePreset === 'today' && "Showing stats and sales for today"}
+                                    {datePreset === 'weekly' && "Showing stats and sales for this week (Mon-Sun)"}
+                                    {datePreset === 'monthly' && "Showing stats and sales for this month"}
+                                    {datePreset === 'ytd' && "Showing stats and sales for this year (YTD)"}
+                                    {datePreset === 'all' && "Showing stats and sales for all time"}
+                                    {datePreset === 'custom' && "Showing stats and sales for custom date range"}
+                                </div>
                             </div>
 
-                            <div className="flex gap-2 w-full md:w-auto overflow-x-auto">
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="w-[140px]">
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Statuses</SelectItem>
-                                        <SelectItem value="completed">Completed</SelectItem>
-                                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                                        <SelectItem value="reserved">Reserved</SelectItem>
-                                    </SelectContent>
-                                </Select>
-
-                                <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-md border">
-                                    <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">From:</span>
-                                    <input
-                                        type="date"
-                                        className="bg-transparent border-none text-sm outline-none w-[110px]"
-                                        value={dateFrom}
-                                        onChange={(e) => setDateFrom(e.target.value)}
+                            {/* Main Filters Row */}
+                            <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-4 bg-white dark:bg-zinc-950 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                                <div className="relative flex-1 w-full min-w-[260px]">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        type="search"
+                                        placeholder="Search by ID, Branch..."
+                                        className="pl-8"
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
                                     />
                                 </div>
 
-                                <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-md border">
-                                    <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">To:</span>
-                                    <input
-                                        type="date"
-                                        className="bg-transparent border-none text-sm outline-none w-[110px]"
-                                        value={dateTo}
-                                        onChange={(e) => setDateTo(e.target.value)}
-                                    />
-                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                        <SelectTrigger className="w-[130px] bg-transparent">
+                                            <SelectValue placeholder="Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Statuses</SelectItem>
+                                            <SelectItem value="completed">Completed</SelectItem>
+                                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                                            <SelectItem value="reserved">Reserved</SelectItem>
+                                        </SelectContent>
+                                    </Select>
 
-                                {(dateFrom || dateTo || statusFilter !== 'all') && (
-                                    <Button variant="ghost" size="icon" onClick={() => {
-                                        setDateFrom('');
-                                        setDateTo('');
-                                        setStatusFilter('all');
-                                    }}>
-                                        <XCircle className="w-4 h-4 text-muted-foreground" />
-                                    </Button>
-                                )}
+                                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                                        <SelectTrigger className="w-[160px] bg-transparent">
+                                            <SelectValue placeholder="Payment Method" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Payments</SelectItem>
+                                            <SelectItem value="cash">Cash</SelectItem>
+                                            <SelectItem value="e-wallet">E-Wallet</SelectItem>
+                                            <SelectItem value="home_credit">Home Credit</SelectItem>
+                                            <SelectItem value="reservation">Reservation</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    <div className="flex items-center gap-2 bg-muted/20 px-3 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-850">
+                                        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">From:</span>
+                                        <input
+                                            type="date"
+                                            className="bg-transparent border-none text-sm outline-none w-[110px] dark:text-zinc-100"
+                                            value={dateFrom}
+                                            onChange={(e) => handleDateFromChange(e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center gap-2 bg-muted/20 px-3 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-850">
+                                        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">To:</span>
+                                        <input
+                                            type="date"
+                                            className="bg-transparent border-none text-sm outline-none w-[110px] dark:text-zinc-100"
+                                            value={dateTo}
+                                            onChange={(e) => handleDateToChange(e.target.value)}
+                                        />
+                                    </div>
+
+                                    {(dateFrom || dateTo || statusFilter !== 'all' || paymentMethod !== 'all' || datePreset !== 'today') && (
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            onClick={() => {
+                                                setDateFrom('');
+                                                setDateTo('');
+                                                setStatusFilter('all');
+                                                setPaymentMethod('all');
+                                                setDatePreset('today');
+                                            }}
+                                            className="flex items-center gap-1 h-9 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-955/20 font-semibold"
+                                        >
+                                            <XCircle className="w-4 h-4" />
+                                            Clear Filters
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

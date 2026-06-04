@@ -34,16 +34,47 @@ class SaleController extends Controller
         } else {
             $query->whereIn('status', ['completed', 'cancelled', 'reserved']);
         }
-            
-        // Date Filters
-        $dateFrom = $request->query('date_from');
-        $dateTo = $request->query('date_to');
-        
-        if ($dateFrom) {
-            $query->where('created_at', '>=', Carbon::parse($dateFrom)->startOfDay());
+
+        // Payment Method Filter
+        $paymentMethodFilter = $request->query('payment_method', 'all');
+        if ($paymentMethodFilter !== 'all') {
+            $query->where('payment_method', $paymentMethodFilter);
         }
-        if ($dateTo) {
-            $query->where('created_at', '<=', Carbon::parse($dateTo)->endOfDay());
+            
+        // Date Preset / Range Calculation
+        $datePreset = $request->query('date_preset', 'today');
+        
+        $startDate = null;
+        $endDate = null;
+
+        if ($datePreset === 'today') {
+            $startDate = Carbon::today();
+            $endDate = Carbon::today()->endOfDay();
+        } elseif ($datePreset === 'weekly') {
+            $startDate = Carbon::now()->startOfWeek();
+            $endDate = Carbon::now()->endOfDay();
+        } elseif ($datePreset === 'monthly') {
+            $startDate = Carbon::now()->startOfMonth();
+            $endDate = Carbon::now()->endOfDay();
+        } elseif ($datePreset === 'ytd') {
+            $startDate = Carbon::now()->startOfYear();
+            $endDate = Carbon::now()->endOfDay();
+        } elseif ($datePreset === 'custom') {
+            $dateFrom = $request->query('date_from');
+            $dateTo = $request->query('date_to');
+            if ($dateFrom) {
+                $startDate = Carbon::parse($dateFrom)->startOfDay();
+            }
+            if ($dateTo) {
+                $endDate = Carbon::parse($dateTo)->endOfDay();
+            }
+        }
+        
+        if ($startDate) {
+            $query->where('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->where('created_at', '<=', $endDate);
         }
         
         $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
@@ -66,10 +97,9 @@ class SaleController extends Controller
             });
         }
  
-        // Compute daily stats (Cash sales, E-Wallet sales, Expenses, Service Fees, and Cash on Hand)
-        $todayStart = Carbon::today();
+        // Compute stats (Cash sales, E-Wallet sales, Expenses, Service Fees, and Cash on Hand)
  
-        // 1. Today's Completed, Reserved, and Cancelled Reservation Sales (polled by updated_at to ensure completion/cancellation records on the exact day)
+        // 1. Completed, Reserved, and Cancelled Reservation Sales (polled by updated_at to ensure completion/cancellation records on the exact period)
         $todaySalesQuery = Sale::where(function($q) {
             $q->whereIn('status', ['completed', 'reserved'])
               ->orWhere(function($sub) {
@@ -77,9 +107,15 @@ class SaleController extends Controller
                       ->where('payment_method', 'reservation');
               });
         })
-            ->where('updated_at', '>=', $todayStart)
             ->with(['items.product', 'branch', 'readiedBy', 'approvedBy']);
  
+        if ($startDate) {
+            $todaySalesQuery->where('updated_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $todaySalesQuery->where('updated_at', '<=', $endDate);
+        }
+
         if ($branchId) {
             $todaySalesQuery->where('branch_id', $branchId);
         } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
@@ -116,19 +152,19 @@ class SaleController extends Controller
                     $todayReservationSalesSum += $saleRevenue;
                     $todaySalesSum += $saleRevenue;
                     if ($sale->ewallet_provider) {
-                        if ($sale->created_at >= $todayStart) {
+                        if (!$startDate || $sale->created_at >= $startDate) {
                             $todayCashSalesSum += $sale->downpayment;
                         }
                         $todayEwalletSalesSum += ($saleRevenue - $sale->downpayment);
                     } else {
-                        if ($sale->created_at >= $todayStart) {
+                        if (!$startDate || $sale->created_at >= $startDate) {
                             $todayCashSalesSum += $saleRevenue;
                         } else {
                             $todayCashSalesSum += ($saleRevenue - $sale->downpayment);
                         }
                     }
                 } elseif ($sale->status === 'cancelled') {
-                    if ($sale->created_at >= $todayStart) {
+                    if (!$startDate || $sale->created_at >= $startDate) {
                         $todayReservationSalesSum += $sale->downpayment;
                         $todaySalesSum += $sale->downpayment;
                         $todayCashSalesSum += $sale->downpayment;
@@ -137,9 +173,15 @@ class SaleController extends Controller
             }
         }
  
-        // 2. Today's Expenses
-        $todayExpensesQuery = Expense::where('created_at', '>=', $todayStart)
-            ->with('creator');
+        // 2. Expenses
+        $todayExpensesQuery = Expense::query();
+        if ($startDate) {
+            $todayExpensesQuery->where('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $todayExpensesQuery->where('created_at', '<=', $endDate);
+        }
+        $todayExpensesQuery->with('creator');
  
         if ($branchId) {
             $todayExpensesQuery->where('branch_id', $branchId);
@@ -149,9 +191,15 @@ class SaleController extends Controller
         $todayExpenses = $todayExpensesQuery->get();
         $todayExpensesSum = $todayExpenses->sum('amount');
  
-        // 3. Today's Service Fees
-        $todayServiceFeesQuery = ServiceFee::where('created_at', '>=', $todayStart)
-            ->with('creator');
+        // 3. Service Fees
+        $todayServiceFeesQuery = ServiceFee::query();
+        if ($startDate) {
+            $todayServiceFeesQuery->where('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $todayServiceFeesQuery->where('created_at', '<=', $endDate);
+        }
+        $todayServiceFeesQuery->with('creator');
  
         if ($branchId) {
             $todayServiceFeesQuery->where('branch_id', $branchId);
@@ -180,7 +228,7 @@ class SaleController extends Controller
         return Inertia::render('Sales/Index', [
             'sales' => $sales,
             'stats' => $stats,
-            'filters' => $request->only(['search', 'date_from', 'date_to', 'status_filter']),
+            'filters' => $request->only(['search', 'date_from', 'date_to', 'status_filter', 'payment_method', 'date_preset']),
             'todaySales' => $todaySales,
             'todayExpenses' => $todayExpenses,
             'todayServiceFees' => $todayServiceFees,
@@ -204,15 +252,47 @@ class SaleController extends Controller
         } else {
             $query->whereIn('status', ['completed', 'cancelled', 'reserved']);
         }
-            
-        $dateFrom = $request->query('date_from');
-        $dateTo = $request->query('date_to');
-        
-        if ($dateFrom) {
-            $query->where('created_at', '>=', Carbon::parse($dateFrom)->startOfDay());
+
+        // Payment Method Filter
+        $paymentMethodFilter = $request->query('payment_method', 'all');
+        if ($paymentMethodFilter !== 'all') {
+            $query->where('payment_method', $paymentMethodFilter);
         }
-        if ($dateTo) {
-            $query->where('created_at', '<=', Carbon::parse($dateTo)->endOfDay());
+            
+        // Date Preset / Range Calculation
+        $datePreset = $request->query('date_preset', 'today');
+        
+        $startDate = null;
+        $endDate = null;
+
+        if ($datePreset === 'today') {
+            $startDate = Carbon::today();
+            $endDate = Carbon::today()->endOfDay();
+        } elseif ($datePreset === 'weekly') {
+            $startDate = Carbon::now()->startOfWeek();
+            $endDate = Carbon::now()->endOfDay();
+        } elseif ($datePreset === 'monthly') {
+            $startDate = Carbon::now()->startOfMonth();
+            $endDate = Carbon::now()->endOfDay();
+        } elseif ($datePreset === 'ytd') {
+            $startDate = Carbon::now()->startOfYear();
+            $endDate = Carbon::now()->endOfDay();
+        } elseif ($datePreset === 'custom') {
+            $dateFrom = $request->query('date_from');
+            $dateTo = $request->query('date_to');
+            if ($dateFrom) {
+                $startDate = Carbon::parse($dateFrom)->startOfDay();
+            }
+            if ($dateTo) {
+                $endDate = Carbon::parse($dateTo)->endOfDay();
+            }
+        }
+        
+        if ($startDate) {
+            $query->where('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->where('created_at', '<=', $endDate);
         }
         
         $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
@@ -238,7 +318,7 @@ class SaleController extends Controller
         
         return Inertia::render('Sales/PrintList', [
             'sales' => $sales,
-            'filters' => $request->only(['search', 'date_from', 'date_to', 'status_filter']),
+            'filters' => $request->only(['search', 'date_from', 'date_to', 'status_filter', 'payment_method', 'date_preset']),
         ]);
     }
 
