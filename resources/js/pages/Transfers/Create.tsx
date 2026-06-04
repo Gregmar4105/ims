@@ -49,7 +49,7 @@ interface Product {
 }
 
 const breadcrumbs = [
-    { title: 'Outgoing Transfers', href: '/transfers/outgoing' },
+    { title: 'Outgoing Transfers', href: '/outgoing' },
     { title: 'Create Transfer', href: '/transfers/create' },
 ];
 
@@ -252,9 +252,8 @@ export default function Create({ products, branches }: { products: Product[]; br
                                                 return (
                                                     <TableRow
                                                         key={product.id}
-                                                        className={`hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors ${
-                                                            inBasket ? 'bg-blue-500/[0.04] dark:bg-blue-500/[0.02]' : ''
-                                                        }`}
+                                                        className={`hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors ${inBasket ? 'bg-blue-500/[0.04] dark:bg-blue-500/[0.02]' : ''
+                                                            }`}
                                                     >
                                                         <TableCell>
                                                             {product.image_path ? (
@@ -284,11 +283,10 @@ export default function Create({ products, branches }: { products: Product[]; br
                                                             <div className="text-xs text-muted-foreground mt-1">{product.brand_name || 'No Brand'}</div>
                                                         </TableCell>
                                                         <TableCell className="text-right">
-                                                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold ${
-                                                                product.quantity <= 5
+                                                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold ${product.quantity <= 5
                                                                     ? 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/10 dark:bg-amber-400/10 dark:text-amber-400'
                                                                     : 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/10 dark:bg-emerald-400/10 dark:text-emerald-400'
-                                                            }`}>
+                                                                }`}>
                                                                 {product.quantity} units
                                                             </span>
                                                         </TableCell>
