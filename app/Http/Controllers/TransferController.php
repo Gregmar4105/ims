@@ -52,14 +52,22 @@ class TransferController extends Controller
         // Fetch products available in the user's branch via the pivot table
         $products = DB::table('products')
             ->join('branch_products', 'products.id', '=', 'branch_products.product_id')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
             ->where('branch_products.branch_id', $branchId)
             ->where('branch_products.quantity', '>', 0)
             ->select(
-                'products.id', 
-                'products.name', 
-                'branch_products.quantity', 
-                'products.barcode', 
-                'products.qr_code'
+                'products.id',
+                'products.name',
+                'branch_products.quantity',
+                'products.barcode',
+                'products.qr_code',
+                'products.image_path',
+                'products.price',
+                'products.code',
+                'products.sku',
+                'categories.name as category_name',
+                'brands.name as brand_name'
             )
             ->get();
 
