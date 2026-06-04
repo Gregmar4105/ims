@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\SaleReturn;
+use App\Models\Expense;
+use App\Models\ServiceFee;
 use App\Models\Product;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -64,41 +66,68 @@ class SaleController extends Controller
             });
         }
 
-        // Stats queries (respecting current user branch filters but NOT search/date filters to show global totals)
-        $statsQuery = Sale::where('status', 'completed');
-        if ($branchId) {
-            $statsQuery->where('branch_id', $branchId);
-        } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
-            $statsQuery->where('branch_id', $user->branch_id);
-        }
-        
-        $todayStart = now()->startOfDay();
-        $weekStart = now()->startOfWeek();
-        $monthStart = now()->startOfMonth();
+        // Compute daily stats (Cash sales, E-Wallet sales, Expenses, Service Fees, and Cash on Hand)
+        $todayStart = Carbon::today();
 
-        // Calculate revenues efficiently
-        $completedSales = $statsQuery->with('items')->get();
-        
-        $totalRevenue = 0;
-        $todayRevenue = 0;
-        $weeklyRevenue = 0;
-        $monthlyRevenue = 0;
-        
-        foreach ($completedSales as $sale) {
-            $saleRevenue = $sale->items->sum(fn($item) => $item->quantity * $item->price);
-            $totalRevenue += $saleRevenue;
-            
-            if ($sale->created_at >= $todayStart) $todayRevenue += $saleRevenue;
-            if ($sale->created_at >= $weekStart) $weeklyRevenue += $saleRevenue;
-            if ($sale->created_at >= $monthStart) $monthlyRevenue += $saleRevenue;
+        // 1. Today's Completed Sales
+        $todaySalesQuery = Sale::where('status', 'completed')
+            ->where('created_at', '>=', $todayStart)
+            ->with(['items.product', 'branch', 'readiedBy', 'approvedBy']);
+
+        if ($branchId) {
+            $todaySalesQuery->where('branch_id', $branchId);
+        } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
+            $todaySalesQuery->where('branch_id', $user->branch_id);
         }
+        $todaySales = $todaySalesQuery->get();
+
+        $todayCashSalesSum = 0;
+        $todayEwalletSalesSum = 0;
+
+        foreach ($todaySales as $sale) {
+            $saleRevenue = $sale->items->sum(fn($item) => $item->quantity * $item->price);
+            if ($sale->payment_method === 'cash') {
+                $todayCashSalesSum += $saleRevenue;
+            } elseif ($sale->payment_method === 'e-wallet') {
+                $todayEwalletSalesSum += $saleRevenue;
+            }
+        }
+        $todaySalesSum = $todayCashSalesSum + $todayEwalletSalesSum;
+
+        // 2. Today's Expenses
+        $todayExpensesQuery = Expense::where('created_at', '>=', $todayStart)
+            ->with('creator');
+
+        if ($branchId) {
+            $todayExpensesQuery->where('branch_id', $branchId);
+        } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
+            $todayExpensesQuery->where('branch_id', $user->branch_id);
+        }
+        $todayExpenses = $todayExpensesQuery->get();
+        $todayExpensesSum = $todayExpenses->sum('amount');
+
+        // 3. Today's Service Fees
+        $todayServiceFeesQuery = ServiceFee::where('created_at', '>=', $todayStart)
+            ->with('creator');
+
+        if ($branchId) {
+            $todayServiceFeesQuery->where('branch_id', $branchId);
+        } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
+            $todayServiceFeesQuery->where('branch_id', $user->branch_id);
+        }
+        $todayServiceFees = $todayServiceFeesQuery->get();
+        $todayServiceFeesSum = $todayServiceFees->sum('amount');
+
+        // 4. Cash on Hand
+        $cashOnHand = $todayCashSalesSum + $todayServiceFeesSum - $todayExpensesSum;
 
         $stats = [
-            'total_sales' => $completedSales->count(), // All time completed
-            'total_revenue' => $totalRevenue,
-            'today_revenue' => $todayRevenue,
-            'weekly_revenue' => $weeklyRevenue,
-            'monthly_revenue' => $monthlyRevenue,
+            'today_sales' => (float)$todaySalesSum,
+            'today_cash_sales' => (float)$todayCashSalesSum,
+            'today_ewallet_sales' => (float)$todayEwalletSalesSum,
+            'today_expenses' => (float)$todayExpensesSum,
+            'today_service_fees' => (float)$todayServiceFeesSum,
+            'cash_on_hand' => (float)$cashOnHand,
         ];
         
         $sales = $query->paginate(10)->withQueryString();
@@ -107,6 +136,9 @@ class SaleController extends Controller
             'sales' => $sales,
             'stats' => $stats,
             'filters' => $request->only(['search', 'date_from', 'date_to', 'status_filter']),
+            'todaySales' => $todaySales,
+            'todayExpenses' => $todayExpenses,
+            'todayServiceFees' => $todayServiceFees,
         ]);
     }
 
