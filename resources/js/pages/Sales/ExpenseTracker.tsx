@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trash2, Plus, Calendar, DollarSign, Search, ListFilter, ClipboardList, Wallet, User, Clock, Loader2, XCircle } from 'lucide-react';
+import { Trash2, Plus, Calendar, DollarSign, Search, ListFilter, ClipboardList, Wallet, User, Clock, Loader2, XCircle, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import Pagination from '@/components/Pagination';
@@ -99,7 +99,7 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
 
     const handleSubmitExpense = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         post('/expense-tracker', {
             onSuccess: () => {
                 reset();
@@ -146,7 +146,7 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Expense Tracker" />
             <div className="flex h-full flex-1 flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
-                
+
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
@@ -162,7 +162,7 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
 
                 {/* Two-Column Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
+
                     {/* Left Column - Historical Logs (2/3 width) */}
                     <div className="lg:col-span-2 space-y-6 flex flex-col">
                         <Card className="flex-1 flex flex-col border shadow-sm">
@@ -178,7 +178,7 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
                                     Browse, search, and filter all historical entries for this branch.
                                 </CardDescription>
                             </CardHeader>
-                            
+
                             {/* Search and Filters Section */}
                             <div className="p-4 bg-muted/20 border-b flex flex-col md:flex-row gap-4 items-end">
                                 <div className="relative flex-1 w-full">
@@ -211,9 +211,9 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
                                         />
                                     </div>
                                     {(search || dateFrom || dateTo) && (
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
                                             onClick={handleClearFilters}
                                             title="Clear filters"
                                             className="shrink-0"
@@ -281,7 +281,7 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
 
                     {/* Right Column - Log Expense & Today's Daily Activity (1/3 width) */}
                     <div className="space-y-6">
-                        
+
                         {/* Log Expense Form Container */}
                         <Card className="border shadow-sm">
                             <CardHeader>
@@ -327,7 +327,7 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
                                         )}
                                     </div>
                                 </CardContent>
-                                <CardFooter className="pt-2 border-t bg-muted/5 flex justify-end">
+                                <CardFooter className="pt-2 flex justify-end">
                                     <Button type="submit" disabled={processing} className="w-full sm:w-auto">
                                         {processing ? (
                                             <>
@@ -336,8 +336,8 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
                                             </>
                                         ) : (
                                             <>
-                                                <Plus className="w-4 h-4 mr-2" />
                                                 Log Expense
+                                                <Check className="w-4 h-4 ml-2" />
                                             </>
                                         )}
                                     </Button>
@@ -361,7 +361,7 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
                                     Expenses logged today. Automatically resets after 11:59 PM daily.
                                 </CardDescription>
                             </CardHeader>
-                            
+
                             <CardContent className="p-0 flex-1 overflow-y-auto max-h-[350px]">
                                 {todayExpenses.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-14 text-muted-foreground px-4 text-center">
@@ -405,7 +405,7 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
                                     </div>
                                 )}
                             </CardContent>
-                            
+
                             <CardFooter className="bg-muted/20 border-t p-4 flex justify-between items-center mt-auto shrink-0">
                                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Today's Total</span>
                                 <span className="text-lg font-bold text-primary">
@@ -413,11 +413,11 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
                                 </span>
                             </CardFooter>
                         </Card>
-                        
+
                     </div>
-                    
+
                 </div>
-                
+
             </div>
         </AppLayout>
     );

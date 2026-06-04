@@ -18,7 +18,7 @@ import {
 
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowLeftRight, ArrowLeftToLine, ArrowRightFromLine, ArrowUpDown, BellRing, BookOpen, Brush, ChevronRight, Download, Folder, Frown, GalleryVertical, GalleryVerticalEnd, IdCardLanyard, LayoutDashboard, LayoutGrid, ListChecks, Mail, MapPlus, MessagesSquare, MonitorCog, NotebookText, PackageOpen, QrCode, ScanQrCode, Settings, ShoppingBag, ShoppingBasket, Sparkles, ScanBarcode, Settings2, Split, SquareTerminal, Tag, Store, TriangleAlert, UserCog, UserLock, UserPen, Users, Wallet, ShoppingCart, Plus, RotateCcw, FileImage } from 'lucide-react';
+import { ArrowLeftRight, ArrowLeftToLine, ArrowRightFromLine, ArrowUpDown, BellRing, BookOpen, Brush, ChevronRight, Download, Folder, Frown, GalleryVertical, GalleryVerticalEnd, IdCardLanyard, LayoutDashboard, LayoutGrid, ListChecks, Mail, MapPlus, MessagesSquare, MonitorCog, NotebookText, PackageOpen, QrCode, ScanQrCode, Settings, ShoppingBag, ShoppingBasket, Sparkles, ScanBarcode, Settings2, Split, SquareTerminal, Tag, Store, TriangleAlert, UserCog, UserLock, UserPen, Users, Wallet, ShoppingCart, Plus, RotateCcw, FileImage, Cog } from 'lucide-react';
 import AppLogo from './app-logo';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@radix-ui/react-collapsible';
 import { usePermission } from '@/hooks/usePermission';
@@ -52,8 +52,9 @@ const Sales = {
     items: [
         { title: "Sales History", url: "/sales-list", icon: ListChecks },
         { title: "New Sales", url: "/new-sales", icon: BellRing },
+        { title: "Expenses", url: "/expense-tracker", icon: Wallet },
+        { title: "Service Fee", url: "/service-fees", icon: Cog },
         { title: "Return Items", url: "/return-items", icon: RotateCcw },
-        { title: "Expense Tracker", url: "/expense-tracker", icon: Wallet },
     ],
 }
 
