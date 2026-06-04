@@ -219,6 +219,11 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                                                     </>
                                                 )}
                                             </>
+                                        ) : sale.status === 'cancelled' ? (
+                                            <div className="flex justify-between text-red-600 font-semibold pt-1 border-t border-dashed">
+                                                <span>Reservation Status</span>
+                                                <span className="text-red-650 font-bold">Cancelled (Forfeited)</span>
+                                            </div>
                                         ) : (
                                             <div className="flex justify-between text-blue-600 font-semibold pt-1 border-t border-dashed">
                                                 <span>Remaining Balance</span>

@@ -69,8 +69,14 @@ class SaleController extends Controller
         // Compute daily stats (Cash sales, E-Wallet sales, Expenses, Service Fees, and Cash on Hand)
         $todayStart = Carbon::today();
  
-        // 1. Today's Completed and Reserved Sales (polled by updated_at to ensure completion records on the exact day)
-        $todaySalesQuery = Sale::whereIn('status', ['completed', 'reserved'])
+        // 1. Today's Completed, Reserved, and Cancelled Reservation Sales (polled by updated_at to ensure completion/cancellation records on the exact day)
+        $todaySalesQuery = Sale::where(function($q) {
+            $q->whereIn('status', ['completed', 'reserved'])
+              ->orWhere(function($sub) {
+                  $sub->where('status', 'cancelled')
+                      ->where('payment_method', 'reservation');
+              });
+        })
             ->where('updated_at', '>=', $todayStart)
             ->with(['items.product', 'branch', 'readiedBy', 'approvedBy']);
  
@@ -102,11 +108,13 @@ class SaleController extends Controller
                     $todayCashSalesSum += $sale->downpayment;
                 }
             } elseif ($sale->payment_method === 'reservation') {
-                $todayReservationSalesSum += $saleRevenue;
-                $todaySalesSum += $saleRevenue;
                 if ($sale->status === 'reserved') {
+                    $todayReservationSalesSum += $saleRevenue;
+                    $todaySalesSum += $saleRevenue;
                     $todayCashSalesSum += $sale->downpayment;
                 } elseif ($sale->status === 'completed') {
+                    $todayReservationSalesSum += $saleRevenue;
+                    $todaySalesSum += $saleRevenue;
                     if ($sale->ewallet_provider) {
                         if ($sale->created_at >= $todayStart) {
                             $todayCashSalesSum += $sale->downpayment;
@@ -118,6 +126,12 @@ class SaleController extends Controller
                         } else {
                             $todayCashSalesSum += ($saleRevenue - $sale->downpayment);
                         }
+                    }
+                } elseif ($sale->status === 'cancelled') {
+                    if ($sale->created_at >= $todayStart) {
+                        $todayReservationSalesSum += $sale->downpayment;
+                        $todaySalesSum += $sale->downpayment;
+                        $todayCashSalesSum += $sale->downpayment;
                     }
                 }
             }

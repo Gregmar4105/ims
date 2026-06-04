@@ -20,6 +20,8 @@ interface Sale {
         price: number;
         product: { name: string; barcode: string; qr_code: string };
     }>;
+    payment_method?: string | null;
+    downpayment?: number | null;
 }
 
 export default function PrintList({ sales, filters }: { sales: Sale[], filters: any }) {
@@ -142,9 +144,16 @@ export default function PrintList({ sales, filters }: { sales: Sale[], filters: 
                         <div className="text-right">
                             <p className="text-sm text-gray-500 uppercase tracking-widest font-semibold mb-1">Total Report Revenue</p>
                             <p className="text-3xl font-bold text-gray-900">
-                                ₱{sales.filter(s => s.status === 'completed' || s.status === 'reserved').reduce((sum, sale) => sum + calculateTotal(sale), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                ₱{sales.reduce((sum, sale) => {
+                                    if (sale.status === 'completed' || sale.status === 'reserved') {
+                                        return sum + calculateTotal(sale);
+                                    } else if (sale.status === 'cancelled' && sale.payment_method === 'reservation') {
+                                        return sum + Number(sale.downpayment || 0);
+                                    }
+                                    return sum;
+                                }, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </p>
-                            <p className="text-xs text-gray-400 mt-1">Sum of completed and reserved transactions</p>
+                            <p className="text-xs text-gray-400 mt-1">Sum of completed, reserved, and forfeited cancelled reservation amounts</p>
                         </div>
                     </div>
                 )}

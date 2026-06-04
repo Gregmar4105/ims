@@ -167,7 +167,7 @@ export default function Index({
 
     const cashSalesEntries: Array<{
         id: number;
-        type: 'cash_sale' | 'home_credit_downpayment' | 'reservation_downpayment' | 'reservation_remaining_cash';
+        type: 'cash_sale' | 'home_credit_downpayment' | 'reservation_downpayment' | 'reservation_remaining_cash' | 'reservation_forfeited_downpayment';
         description: string;
         branchName: string;
         time: string;
@@ -238,6 +238,20 @@ export default function Index({
                             branchName: sale.branch?.branch_name,
                             time: sale.updated_at,
                             amount: remainingAmount,
+                            sale: sale
+                        });
+                    }
+                }
+            } else if (sale.status === 'cancelled') {
+                if (saleCreatedAt >= todayStart) {
+                    if (Number(sale.downpayment) > 0) {
+                        cashSalesEntries.push({
+                            id: sale.id,
+                            type: 'reservation_forfeited_downpayment',
+                            description: `Forfeited Downpayment for Cancelled Reservation (Customer: ${sale.customer_name})`,
+                            branchName: sale.branch?.branch_name,
+                            time: sale.updated_at,
+                            amount: Number(sale.downpayment),
                             sale: sale
                         });
                     }
@@ -446,8 +460,8 @@ export default function Index({
                                 <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-950/5">
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Cash Sales</CardTitle>
-                                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border-emerald-200 font-bold text-[11px]">
-                                            ₱{pureCashSalesTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-955/20 dark:text-emerald-400 border-emerald-200 font-bold text-[11px]">
+                                            ₱{stats.today_cash_sales.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </Badge>
                                     </div>
                                 </CardHeader>
@@ -760,6 +774,10 @@ export default function Index({
                                                                         <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-yellow-50 text-yellow-700 border-none leading-none font-bold">
                                                                             Reserved
                                                                         </Badge>
+                                                                    ) : sale.status === 'cancelled' ? (
+                                                                        <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-red-50 text-red-700 border-none leading-none font-bold">
+                                                                            Cancelled
+                                                                        </Badge>
                                                                     ) : (
                                                                         <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-green-50 text-green-700 border-none leading-none font-bold">
                                                                             Completed
@@ -783,6 +801,10 @@ export default function Index({
                                                                     {sale.status === 'reserved' ? (
                                                                         <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-blue-50 text-blue-700 border-none leading-none">
                                                                             Left: ₱{(saleTotal - Number(sale.downpayment || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                        </Badge>
+                                                                    ) : sale.status === 'cancelled' ? (
+                                                                        <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-red-50 text-red-700 border-none leading-none font-medium">
+                                                                            Forfeited (Non-refundable)
                                                                         </Badge>
                                                                     ) : (
                                                                         <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-gray-100 text-gray-700 border-none leading-none font-medium">
@@ -991,6 +1013,10 @@ export default function Index({
                                                                 {sale.status === 'completed' ? (
                                                                     <span className="text-xs bg-green-50 dark:bg-green-955/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800/30 px-2 py-0.5 rounded font-semibold">
                                                                         Remaining Paid via: {sale.ewallet_provider ? `E-Wallet (${sale.ewallet_provider})` : 'Cash'}
+                                                                    </span>
+                                                                ) : sale.status === 'cancelled' ? (
+                                                                    <span className="text-xs bg-red-50 dark:bg-red-955/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/30 px-2 py-0.5 rounded font-semibold">
+                                                                        Forfeited (Non-refundable)
                                                                     </span>
                                                                 ) : sale.reservation_buy_date ? (
                                                                     <span className="text-xs bg-zinc-50 dark:bg-zinc-900 text-foreground border border-zinc-200 dark:border-zinc-800 px-2 py-0.5 rounded font-semibold">
