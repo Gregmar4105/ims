@@ -83,6 +83,7 @@ class SaleController extends Controller
 
         $todayCashSalesSum = 0;
         $todayEwalletSalesSum = 0;
+        $todayHomeCreditSalesSum = 0;
 
         foreach ($todaySales as $sale) {
             $saleRevenue = $sale->items->sum(fn($item) => $item->quantity * $item->price);
@@ -91,12 +92,13 @@ class SaleController extends Controller
             } elseif ($sale->payment_method === 'e-wallet') {
                 $todayEwalletSalesSum += $saleRevenue;
             } elseif ($sale->payment_method === 'home_credit') {
+                $todayHomeCreditSalesSum += $saleRevenue;
                 if ($sale->downpayment > 0) {
                     $todayCashSalesSum += $sale->downpayment;
                 }
             }
         }
-        $todaySalesSum = $todayCashSalesSum + $todayEwalletSalesSum;
+        $todaySalesSum = ($todayCashSalesSum - $todaySales->where('payment_method', 'home_credit')->sum('downpayment')) + $todayEwalletSalesSum + $todayHomeCreditSalesSum;
 
         // 2. Today's Expenses
         $todayExpensesQuery = Expense::where('created_at', '>=', $todayStart)
@@ -129,6 +131,7 @@ class SaleController extends Controller
             'today_sales' => (float)$todaySalesSum,
             'today_cash_sales' => (float)$todayCashSalesSum,
             'today_ewallet_sales' => (float)$todayEwalletSalesSum,
+            'today_home_credit_sales' => (float)$todayHomeCreditSalesSum,
             'today_expenses' => (float)$todayExpensesSum,
             'today_service_fees' => (float)$todayServiceFeesSum,
             'cash_on_hand' => (float)$cashOnHand,

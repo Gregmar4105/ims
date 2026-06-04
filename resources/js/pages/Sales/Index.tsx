@@ -94,6 +94,7 @@ interface Stats {
     today_sales: number;
     today_cash_sales: number;
     today_ewallet_sales: number;
+    today_home_credit_sales: number;
     today_expenses: number;
     today_service_fees: number;
     cash_on_hand: number;
@@ -346,8 +347,8 @@ export default function Index({
                             </Button>
                         </div>
 
-                        {/* Four Columns Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {/* Five Columns Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                             
                             {/* Column 1: Cash Sales */}
                             <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 min-h-[300px]">
@@ -362,7 +363,7 @@ export default function Index({
                                 <CardContent className="p-0 flex-1 overflow-y-auto max-h-[350px]">
                                     {cashSalesEntries.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-14 text-muted-foreground px-4 text-center">
-                                            <DollarSign className="w-8 h-8 mb-2 text-emerald-350 dark:text-emerald-855 opacity-40" />
+                                            <DollarSign className="w-8 h-8 mb-2 text-emerald-355 dark:text-emerald-855 opacity-40" />
                                             <p className="text-xs font-semibold">No cash sales today</p>
                                         </div>
                                     ) : (
@@ -460,9 +461,67 @@ export default function Index({
                                 </CardContent>
                             </Card>
 
-                            {/* Column 3: Expenses */}
+                            {/* Column 3: Home Credit */}
                             <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 min-h-[300px]">
                                 <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-950/5">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Home Credit</CardTitle>
+                                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border-emerald-200 font-bold text-[11px]">
+                                            ₱{stats.today_home_credit_sales.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </Badge>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-0 flex-1 overflow-y-auto max-h-[350px]">
+                                    {todaySales.filter(s => s.payment_method === 'home_credit').length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-14 text-muted-foreground px-4 text-center">
+                                            <Percent className="w-8 h-8 mb-2 text-emerald-355 dark:text-emerald-855 opacity-40" />
+                                            <p className="text-xs font-semibold">No Home Credit today</p>
+                                        </div>
+                                    ) : (
+                                        <div className="divide-y divide-emerald-100/50 dark:divide-emerald-900/10">
+                                            {todaySales.filter(s => s.payment_method === 'home_credit').map((sale) => {
+                                                const saleTotal = sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                                                return (
+                                                    <div key={sale.id} className="p-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/5 transition-colors">
+                                                        <div className="flex justify-between items-start gap-2">
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                                    <span className="font-mono font-bold text-xs text-emerald-800 dark:text-emerald-350">#{sale.id}</span>
+                                                                    <span className="text-[9px] text-muted-foreground truncate">({sale.branch?.branch_name})</span>
+                                                                </div>
+                                                                <p className="text-[10px] font-semibold text-gray-900 dark:text-gray-100 mt-1 truncate">
+                                                                    {sale.home_credited_name || 'Bikes and Accessories'}
+                                                                </p>
+                                                                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                                                                    {sale.items.map(i => `${i.product?.name} (x${i.quantity})`).join(', ')}
+                                                                </p>
+                                                                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                                                    <span className="text-[9px] text-muted-foreground flex items-center gap-1">
+                                                                        <Clock className="w-3 h-3" />
+                                                                        {formatTimeOnly(sale.updated_at)}
+                                                                    </span>
+                                                                    {Number(sale.downpayment) > 0 && (
+                                                                        <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-emerald-50 text-emerald-700 border-none leading-none">
+                                                                            DP: ₱{Number(sale.downpayment).toFixed(0)}
+                                                                        </Badge>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <span className="font-bold text-xs text-emerald-700 dark:text-emerald-400 shrink-0">
+                                                                ₱{saleTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {/* Column 4: Expenses */}
+                            <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 min-h-[300px]">
+                                <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-955/5">
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Expenses</CardTitle>
                                         <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400 border-red-200 font-bold text-[11px]">
@@ -505,9 +564,9 @@ export default function Index({
                                 </CardContent>
                             </Card>
 
-                            {/* Column 4: Service Fees */}
+                            {/* Column 5: Service Fees */}
                             <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 min-h-[300px]">
-                                <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-950/5">
+                                <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-955/5">
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Service Fees</CardTitle>
                                         <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border-emerald-200 font-bold text-[11px]">
@@ -554,7 +613,7 @@ export default function Index({
 
                         {/* Summary Panel */}
                         <div className="bg-emerald-50/30 dark:bg-emerald-950/5 border border-emerald-150 dark:border-emerald-900/30 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-6 mt-6">
-                            <div className="flex flex-col sm:flex-row gap-6 sm:gap-12 w-full md:w-auto">
+                            <div className="flex flex-col sm:flex-row gap-6 sm:gap-12 w-full md:w-auto flex-wrap">
                                 <div>
                                     <span className="text-xs font-semibold uppercase tracking-wider text-emerald-700/80 dark:text-emerald-350/80">Cash Sales (A)</span>
                                     <div className="text-xl font-bold text-emerald-955 dark:text-emerald-50 mt-1">₱{stats.today_cash_sales.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
@@ -570,6 +629,10 @@ export default function Index({
                                 <div className="border-t sm:border-t-0 sm:border-l border-emerald-200/50 dark:border-emerald-800/30 pt-4 sm:pt-0 sm:pl-8">
                                     <span className="text-xs font-semibold uppercase tracking-wider text-blue-600/80 dark:text-blue-400/80">E-Wallet Sales (Digital)</span>
                                     <div className="text-xl font-bold text-blue-600 dark:text-blue-400 mt-1">₱{stats.today_ewallet_sales.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                </div>
+                                <div className="border-t sm:border-t-0 sm:border-l border-emerald-200/50 dark:border-emerald-800/30 pt-4 sm:pt-0 sm:pl-8">
+                                    <span className="text-xs font-semibold uppercase tracking-wider text-purple-650/80 dark:text-purple-405/80">Home Credit Sales</span>
+                                    <div className="text-xl font-bold text-purple-600 dark:text-purple-400 mt-1">₱{stats.today_home_credit_sales.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                                 </div>
                             </div>
                             <div className="bg-white dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-800 px-6 py-4 rounded-xl shadow-sm text-center md:text-right w-full md:w-auto min-w-[240px]">
