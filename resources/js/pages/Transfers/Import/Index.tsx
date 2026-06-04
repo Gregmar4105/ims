@@ -444,6 +444,70 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
         );
     };
 
+    const handleUpdatePullItemQuantityMode = (index: number, mode: 'overwrite' | 'add') => {
+        const updated = [...pullItems];
+        updated[index] = {
+            ...updated[index],
+            quantity_mode: mode
+        };
+        setPullItems(updated);
+    };
+
+    const renderQuantityModeCell = (index: number) => {
+        const item = pullItems[index];
+        // Only show mode selector for existing items where the backend flagged quantity_mode = 'choose'
+        if (!item.quantity_mode || item.quantity_mode === null) {
+            return (
+                <td className="p-0 border text-center min-w-[120px]">
+                    <span className="text-[9px] text-muted-foreground italic px-1">N/A</span>
+                </td>
+            );
+        }
+
+        // Default to 'overwrite' if not yet chosen
+        const currentMode = item.quantity_mode === 'choose' ? 'overwrite' : item.quantity_mode;
+        const dbQty = item.db_values?.quantity;
+        const sheetQty = item.values?.quantity ?? 0;
+
+        return (
+            <td className={`p-0 border min-w-[180px] ${item.is_rejected ? 'bg-muted/40' : ''}`}>
+                <div className="flex flex-col items-center gap-0.5 px-1 py-0.5">
+                    <div className="flex items-center gap-0.5 w-full">
+                        <button
+                            type="button"
+                            disabled={item.is_rejected}
+                            onClick={() => handleUpdatePullItemQuantityMode(index, 'overwrite')}
+                            className={`flex-1 text-[9px] font-bold px-1 py-0.5 rounded-l border transition-all ${
+                                currentMode === 'overwrite'
+                                    ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
+                                    : 'bg-muted/30 text-muted-foreground border-muted-foreground/20 hover:bg-muted/50'
+                            }`}
+                        >
+                            Set to {sheetQty}
+                        </button>
+                        <button
+                            type="button"
+                            disabled={item.is_rejected}
+                            onClick={() => handleUpdatePullItemQuantityMode(index, 'add')}
+                            className={`flex-1 text-[9px] font-bold px-1 py-0.5 rounded-r border transition-all ${
+                                currentMode === 'add'
+                                    ? 'bg-indigo-500 text-white border-indigo-600 shadow-sm'
+                                    : 'bg-muted/30 text-muted-foreground border-muted-foreground/20 hover:bg-muted/50'
+                            }`}
+                        >
+                            +{sheetQty} Add
+                        </button>
+                    </div>
+                    {dbQty !== undefined && (
+                        <span className="text-[8px] text-muted-foreground font-semibold">
+                            Current: {dbQty} → {currentMode === 'add' ? (dbQty + sheetQty) : sheetQty}
+                        </span>
+                    )}
+                </div>
+            </td>
+        );
+    };
+
     useEffect(() => {
         // Check both prop (from render) and flash (fallback)
         const result = analysis_result || flash?.analysis_result;
@@ -1622,6 +1686,7 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                                         <th className="px-3 py-1.5 border border-emerald-700 text-xs font-bold text-left min-w-[100px]">2Code</th>
                                         <th className="px-3 py-1.5 border border-emerald-700 text-xs font-bold text-right min-w-[100px]">Price (₱)</th>
                                         <th className="px-3 py-1.5 border border-emerald-700 text-xs font-bold text-right min-w-[100px]">Quantity</th>
+                                        <th className="px-3 py-1.5 border border-emerald-700 text-xs font-bold text-center min-w-[180px]">Qty Mode</th>
                                         <th className="px-3 py-1.5 border border-emerald-700 text-xs font-bold text-right min-w-[100px]">Reorder Lvl</th>
                                         <th className="px-3 py-1.5 border border-emerald-700 text-xs font-bold text-left min-w-[140px]">Brand</th>
                                         <th className="px-3 py-1.5 border border-emerald-700 text-xs font-bold text-left min-w-[140px]">Category</th>
@@ -1745,6 +1810,7 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                                                 {renderInputCell(idx, 'code_2')}
                                                 {renderInputCell(idx, 'price', 'number')}
                                                 {renderInputCell(idx, 'quantity', 'number')}
+                                                {renderQuantityModeCell(idx)}
                                                 {renderInputCell(idx, 'reorder_level', 'number')}
                                                 {renderInputCell(idx, 'brand_name')}
                                                 {renderInputCell(idx, 'category_name')}

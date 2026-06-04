@@ -18,6 +18,41 @@ class GoogleSheetsSyncController extends Controller
     }
 
     /**
+     * Build a deterministic snapshot key from a raw sheet row's data cells.
+     * Used to detect whether the user modified a row in Google Sheets since the last sync.
+     */
+    protected function buildRowSnapshotKey(array $row): string
+    {
+        // Normalize each cell: trim, lowercase, collapse whitespace, treat null/empty/'null' as empty
+        $normalized = array_map(function ($cell) {
+            $val = trim((string)($cell ?? ''));
+            if (strtolower($val) === 'null' || $val === '') {
+                return '';
+            }
+            return strtolower(preg_replace('/\s+/', ' ', $val));
+        }, $row);
+
+        return md5(implode('|', $normalized));
+    }
+
+    /**
+     * Build a complete snapshot map for a branch's sheet rows.
+     * Returns an associative array keyed by sheet_row_index => snapshot_hash.
+     */
+    protected function buildSheetSnapshot(array $rows, int $startIndex = 2): array
+    {
+        $snapshot = [];
+        foreach ($rows as $index => $row) {
+            if (empty($row) || (count($row) === 1 && trim($row[0]) === '')) {
+                continue;
+            }
+            $rowIndex = $index + $startIndex; // 1-indexed plus header row offset
+            $snapshot[(string)$rowIndex] = $this->buildRowSnapshotKey($row);
+        }
+        return $snapshot;
+    }
+
+    /**
      * Perform a full sync of all branches and their products to Google Sheets.
      */
     public function syncAll()
@@ -67,6 +102,14 @@ class GoogleSheetsSyncController extends Controller
                 }
 
                 $this->sheetsService->updateSheetContent($branch->branch_name, array_values($rows));
+
+                // Store snapshot for this branch after syncing
+                $freshRows = $this->sheetsService->getSheetContent($branch->branch_name);
+                if (!empty($freshRows)) {
+                    array_shift($freshRows); // Remove header row
+                    $snapshot = $this->buildSheetSnapshot($freshRows);
+                    $branch->update(['sheet_snapshot' => $snapshot]);
+                }
             }
 
             // --- Reorders Tab Sync ---
@@ -203,6 +246,9 @@ class GoogleSheetsSyncController extends Controller
             if ($headers && strtolower($headers[0]) !== 'id' && strtolower($headers[0]) !== 'product name' && strtolower($headers[0]) !== 'product') {
                 array_unshift($rows, $headers);
             }
+
+            // Load the stored snapshot for this branch (last-known sheet state after previous sync)
+            $storedSnapshot = $branch->sheet_snapshot ?? [];
 
             // Load all database products for this branch in memory for fast lookup
             $branchProducts = BranchProduct::where('branch_id', $branchId)
@@ -357,23 +403,35 @@ class GoogleSheetsSyncController extends Controller
                     $seenSheetSkus[$sheetSku][] = $sheetSupplierClean;
                 }
 
+                // --- Snapshot-based change detection ---
+                $sheetRowIndex = $index + 2; // 1-indexed plus header row offset
+                $currentRowHash = $this->buildRowSnapshotKey($row);
+                $storedRowHash = $storedSnapshot[(string)$sheetRowIndex] ?? null;
+
+                // If the row's hash matches the stored snapshot, the user didn't touch it
+                // in Google Sheets since the last sync → skip entirely
+                if ($storedRowHash !== null && $currentRowHash === $storedRowHash) {
+                    continue;
+                }
+
+                // --- DB comparison for display values and change highlighting ---
                 $status = 'new';
                 $changes = [];
                 $dbValues = [];
+                $quantityMode = null; // null for new items, 'choose' for existing items with qty change
 
                 if ($matchedBp) {
-                    $status = 'unchanged';
+                    $status = 'modified'; // If it wasn't skipped by snapshot, it's been modified
                     $p = $matchedBp->product;
 
                     // Always populate db_values with original quantity and barcode for comparison / display
                     $dbValues['quantity'] = (int)$matchedBp->quantity;
                     $dbValues['barcode'] = $p->barcode;
 
-                    $checkDiff = function($field, $sheetVal, $dbVal) use (&$changes, &$dbValues, &$status) {
+                    $checkDiff = function($field, $sheetVal, $dbVal) use (&$changes, &$dbValues) {
                         if ($sheetVal != $dbVal) {
                             $changes[] = $field;
                             $dbValues[$field] = $dbVal;
-                            $status = 'modified';
                         }
                     };
 
@@ -394,7 +452,6 @@ class GoogleSheetsSyncController extends Controller
                     if ($sheetVarCleanStr !== $dbVarCleanStr) {
                         $changes[] = 'variations';
                         $dbValues['variations'] = $matchedBp->variations ?? $p->variations;
-                        $status = 'modified';
                     }
 
                     $checkDiff('physical_location', $sheetPhysLoc, $matchedBp->physical_location);
@@ -403,10 +460,22 @@ class GoogleSheetsSyncController extends Controller
                     $checkDiff('reorder_level', (int)$sheetReorder, (int)$matchedBp->reorder_level);
                     $checkDiff('price', (float)$sheetPrice, (float)$p->price);
                     $checkDiff('quantity', (int)$sheetQty, (int)$matchedBp->quantity);
+
+                    // If quantity changed, let the user choose how to handle it
+                    if (in_array('quantity', $changes)) {
+                        $quantityMode = 'choose'; // Frontend will show overwrite vs add options
+                    }
+
+                    // If nothing actually differs from DB, it could be a snapshot-only change
+                    // (e.g., whitespace normalization). Still show it but mark as no changes.
+                    if (empty($changes)) {
+                        $status = 'unchanged';
+                    }
                 }
 
                 if ($isPossibleReorder) {
                     $status = 'possible_reorder';
+                    $quantityMode = 'choose';
                 } elseif ($isDuplicate) {
                     $status = 'duplicate';
                 }
@@ -416,13 +485,14 @@ class GoogleSheetsSyncController extends Controller
                 }
 
                 $comparedItems[] = [
-                    'sheet_row_index' => $index + 2, // 1-indexed plus header row offset
+                    'sheet_row_index' => $sheetRowIndex,
                     'status' => $status,
                     'is_rejected' => false,
                     'original_id' => $matchedBp ? $matchedBp->product_id : null,
                     'db_values' => $dbValues,
                     'changes' => $changes,
                     'warnings' => $warnings,
+                    'quantity_mode' => $quantityMode, // 'choose' = let user pick overwrite vs add
                     'values' => [
                         'id' => $sheetId ?: ($matchedBp ? (string)$matchedBp->product_id : ''),
                         'name' => $sheetName,
@@ -586,7 +656,8 @@ class GoogleSheetsSyncController extends Controller
                                         ]);
 
                                         $bpQuantity = $values['quantity'];
-                                        if (($itemData['status'] ?? '') === 'possible_reorder') {
+                                        $quantityMode = $itemData['quantity_mode'] ?? 'overwrite';
+                                        if ($quantityMode === 'add') {
                                             $existingBp = BranchProduct::where([
                                                 'branch_id' => $branchId,
                                                 'product_id' => $product->id,
@@ -666,7 +737,8 @@ class GoogleSheetsSyncController extends Controller
                                         }
 
                                         $bpQuantity = $values['quantity'];
-                                        if (($itemData['status'] ?? '') === 'possible_reorder') {
+                                        $quantityMode = $itemData['quantity_mode'] ?? 'overwrite';
+                                        if ($quantityMode === 'add') {
                                             $existingBp = BranchProduct::where([
                                                 'branch_id' => $branchId,
                                                 'product_id' => $product->id,
@@ -812,6 +884,16 @@ class GoogleSheetsSyncController extends Controller
                     ];
                 }
                 $this->sheetsService->updateSheetContent('Transfers', array_values($transferRows));
+            }
+
+            // Always rebuild and store the sheet snapshot for this branch
+            // This ensures the snapshot is up-to-date even if no items were modified
+            $branch = Branch::findOrFail($branchId);
+            $freshRows = $this->sheetsService->getSheetContent($branch->branch_name);
+            if (!empty($freshRows)) {
+                array_shift($freshRows); // Remove header row
+                $snapshot = $this->buildSheetSnapshot($freshRows);
+                $branch->update(['sheet_snapshot' => $snapshot]);
             }
 
             return response()->json([

@@ -18,6 +18,11 @@ class Branch extends Model
         'branch_status',
         'google_maps_embed_code',
         'profile_photo_path',
+        'sheet_snapshot',
+    ];
+
+    protected $casts = [
+        'sheet_snapshot' => 'array',
     ];
 
     
