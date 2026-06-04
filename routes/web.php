@@ -184,6 +184,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('return-items', [\App\Http\Controllers\SaleController::class, 'returns'])->name('sales.returns');
     Route::post('sale-returns', [\App\Http\Controllers\SaleController::class, 'storeReturn'])->name('sales.storeReturn');
 
+    // Expense Tracker routes
+    Route::get('expense-tracker', [\App\Http\Controllers\ExpenseController::class, 'index'])->name('expenses.index');
+    Route::post('expense-tracker', [\App\Http\Controllers\ExpenseController::class, 'store'])->name('expenses.store');
+    Route::delete('expense-tracker/{expense}', [\App\Http\Controllers\ExpenseController::class, 'destroy'])->name('expenses.destroy');
+
     // Chat Routes
     Route::get('/chats/total-unread', [App\Http\Controllers\ChatController::class, 'totalUnreadCount'])->name('chats.total-unread');
     Route::get('/chats/branches/status', [App\Http\Controllers\ChatController::class, 'branchesStatus'])->name('chats.branches-status');
