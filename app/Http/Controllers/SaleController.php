@@ -43,6 +43,9 @@ class SaleController extends Controller
             
         // Date Preset / Range Calculation
         $datePreset = $request->query('date_preset', 'today');
+        if ($user->hasRole('Branch Administrator') && !$user->hasRole('System Administrator')) {
+            $datePreset = 'today';
+        }
         
         $startDate = null;
         $endDate = null;
@@ -261,6 +264,9 @@ class SaleController extends Controller
             
         // Date Preset / Range Calculation
         $datePreset = $request->query('date_preset', 'today');
+        if ($user->hasRole('Branch Administrator') && !$user->hasRole('System Administrator')) {
+            $datePreset = 'today';
+        }
         
         $startDate = null;
         $endDate = null;

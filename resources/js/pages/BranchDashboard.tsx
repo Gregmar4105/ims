@@ -258,9 +258,9 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
     const isBranchAdmin = auth.roles.includes('Branch Administrator') && !isSystemAdmin;
 
     // --- Date Preset and Custom Date States ---
-    const [datePreset, setDatePreset] = useState(filters.date_preset || 'today');
-    const [dateFrom, setDateFrom] = useState(filters.date_from || '');
-    const [dateTo, setDateTo] = useState(filters.date_to || '');
+    const [datePreset, setDatePreset] = useState(isBranchAdmin ? 'today' : (filters.date_preset || 'today'));
+    const [dateFrom, setDateFrom] = useState(isBranchAdmin ? '' : (filters.date_from || ''));
+    const [dateTo, setDateTo] = useState(isBranchAdmin ? '' : (filters.date_to || ''));
 
     const performSearch = () => {
         router.get('/branch-dashboard', {
@@ -483,54 +483,56 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                 </div>
 
                 {/* Date Preset Toggles & Custom Date Range */}
-                <div className="flex flex-row items-center flex-wrap gap-3 bg-white dark:bg-zinc-950 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm w-fit">
-                    <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg overflow-x-auto">
-                        {[
-                            { value: 'today', label: 'Today' },
-                            { value: 'weekly', label: 'Weekly' },
-                            { value: 'monthly', label: 'Monthly' },
-                            { value: 'ytd', label: 'YTD' },
-                            { value: 'all', label: 'All Time' }
-                        ].map((preset) => (
-                            <button
-                                key={preset.value}
-                                type="button"
-                                onClick={() => handlePresetChange(preset.value)}
-                                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
-                                    datePreset === preset.value
-                                        ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm border border-zinc-200/50 dark:border-zinc-700'
-                                        : 'text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-850'
-                                }`}
-                            >
-                                {preset.label}
-                            </button>
-                        ))}
-                    </div>
-                    
-                    <div className="hidden sm:block h-6 w-px bg-zinc-200 dark:bg-zinc-850" />
-
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2 bg-muted/20 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                            <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">From:</span>
-                            <input
-                                type="date"
-                                className="bg-transparent border-none text-xs outline-none w-[110px] dark:text-zinc-100"
-                                value={dateFrom}
-                                onChange={(e) => handleDateFromChange(e.target.value)}
-                            />
+                {!isBranchAdmin && (
+                    <div className="flex flex-row items-center flex-wrap gap-3 bg-white dark:bg-zinc-950 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm w-fit">
+                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg overflow-x-auto">
+                            {[
+                                { value: 'today', label: 'Today' },
+                                { value: 'weekly', label: 'Weekly' },
+                                { value: 'monthly', label: 'Monthly' },
+                                { value: 'ytd', label: 'YTD' },
+                                { value: 'all', label: 'All Time' }
+                            ].map((preset) => (
+                                <button
+                                    key={preset.value}
+                                    type="button"
+                                    onClick={() => handlePresetChange(preset.value)}
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
+                                        datePreset === preset.value
+                                            ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm border border-zinc-200/50 dark:border-zinc-700'
+                                            : 'text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-850'
+                                    }`}
+                                >
+                                    {preset.label}
+                                </button>
+                            ))}
                         </div>
+                        
+                        <div className="hidden sm:block h-6 w-px bg-zinc-200 dark:bg-zinc-850" />
 
-                        <div className="flex items-center gap-2 bg-muted/20 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                            <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">To:</span>
-                            <input
-                                type="date"
-                                className="bg-transparent border-none text-xs outline-none w-[110px] dark:text-zinc-100"
-                                value={dateTo}
-                                onChange={(e) => handleDateToChange(e.target.value)}
-                            />
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 bg-muted/20 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                                <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">From:</span>
+                                <input
+                                    type="date"
+                                    className="bg-transparent border-none text-xs outline-none w-[110px] dark:text-zinc-100"
+                                    value={dateFrom}
+                                    onChange={(e) => handleDateFromChange(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-2 bg-muted/20 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                                <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">To:</span>
+                                <input
+                                    type="date"
+                                    className="bg-transparent border-none text-xs outline-none w-[110px] dark:text-zinc-100"
+                                    value={dateTo}
+                                    onChange={(e) => handleDateToChange(e.target.value)}
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">

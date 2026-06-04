@@ -39,6 +39,9 @@ class BranchDashboardController extends Controller
 
         // --- Date Preset / Range Calculation ---
         $datePreset = $request->input('date_preset', 'today');
+        if ($user->hasRole('Branch Administrator') && !$user->hasRole('System Administrator')) {
+            $datePreset = 'today';
+        }
         
         $startDate = null;
         $endDate = null;
