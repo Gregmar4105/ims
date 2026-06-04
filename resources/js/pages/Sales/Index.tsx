@@ -142,7 +142,7 @@ export default function Index({
     const [paymentMethod, setPaymentMethod] = useState(filters.payment_method || 'all');
     const [datePreset, setDatePreset] = useState(filters.date_preset || 'today');
     const [activeProofSale, setActiveProofSale] = useState<Sale | null>(null);
-    const [showDelegation, setShowDelegation] = useState(false);
+    const [showDelegation, setShowDelegation] = useState(typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('show_delegation') === 'true' : false);
 
     const getPeriodStart = () => {
         if (datePreset === 'today') {

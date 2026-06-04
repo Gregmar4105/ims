@@ -16,6 +16,9 @@ import {
     ArrowRightLeft,
     Layers,
     Router,
+    Wallet,
+    Percent,
+    DollarSign,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import {
@@ -55,6 +58,10 @@ interface DashboardProps {
         weeklyTrend?: { name: string; sales: number }[];
         monthlyTrend?: { name: string; sales: number }[];
         ytdTrend?: { name: string; sales: number }[];
+        today_sales: number;
+        today_expenses: number;
+        today_service_fees: number;
+        cash_on_hand: number;
     };
     chartData: { name: string; sales: number }[];
     pieData: { name: string; value: number }[];
@@ -527,21 +534,24 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                    <Card className={`overflow-hidden flex flex-col justify-between ${isBranchAdmin ? 'h-full' : 'h-auto md:h-full pt-3 pb-0 px-0 md:pt-6 md:pb-0 md:px-0 gap-1 md:gap-4'} ${!isSystemAdmin ? 'col-span-2 lg:col-span-1' : ''}`}>
+                    {/* Card 1: Sales */}
+                    <Card className="overflow-hidden flex flex-col justify-between h-full pt-3 pb-0 px-0 md:pt-6 md:pb-0 md:px-0 gap-1 md:gap-4">
                         <div>
-                            <CardHeader className={`flex flex-row items-center justify-between space-y-0 ${isBranchAdmin ? 'p-6 pb-2' : 'p-3 px-4 pb-1 md:p-6 md:pb-2'}`}>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 px-4 pb-1 md:p-6 md:pb-2">
                                 <CardTitle className="text-sm font-medium">
-                                    {datePreset === 'today' ? "Daily" : datePreset === 'weekly' ? "Weekly" : datePreset === 'monthly' ? "Monthly" : datePreset === 'ytd' ? "YTD" : datePreset === 'all' ? "All-Time" : "Period"} Revenue
+                                    {datePreset === 'today' ? "Daily" : datePreset === 'weekly' ? "Weekly" : datePreset === 'monthly' ? "Monthly" : datePreset === 'ytd' ? "YTD" : datePreset === 'all' ? "All-Time" : "Period"} Sales
                                 </CardTitle>
-                                <PhilippinePeso className="text-muted-foreground h-4 w-4" />
+                                <ShoppingBag className="text-muted-foreground h-4 w-4 text-emerald-500" />
                             </CardHeader>
-                            <CardContent className={isBranchAdmin ? 'pb-0' : 'p-4 pt-0 pb-0 md:p-6 md:pt-0 md:pb-0'}>
-                                <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.daily)}>
-                                    {formatCurrency(stats.daily)}
+                            <CardContent className="p-4 pt-0 pb-0 md:p-6 md:pt-0 md:pb-0">
+                                <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.today_sales)}>
+                                    {formatCurrency(stats.today_sales)}
                                 </div>
-                                <p className="text-muted-foreground text-[10px] sm:text-xs">
-                                    {datePreset === 'today' ? "Revenue today" : datePreset === 'weekly' ? "Revenue this week" : datePreset === 'monthly' ? "Revenue this month" : datePreset === 'ytd' ? "Revenue this year" : datePreset === 'all' ? "Total revenue all-time" : "Revenue for selected period"}
-                                </p>
+                                <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground">
+                                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">Cash: {formatCurrency(stats.today_cash_sales)}</span>
+                                    <span>|</span>
+                                    <span className="font-semibold text-blue-600 dark:text-blue-400">E-Wallet: {formatCurrency(stats.today_ewallet_sales)}</span>
+                                </div>
                             </CardContent>
                         </div>
                         {stats.dailyTrend && (
@@ -554,79 +564,66 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                             </div>
                         )}
                     </Card>
-                    {isSystemAdmin && (
-                        <>
-                            <Card className="overflow-hidden flex flex-col justify-between h-auto md:h-full pt-3 pb-0 px-0 md:pt-6 md:pb-0 md:px-0 gap-1 md:gap-4">
-                                <div>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 px-4 pb-1 md:p-6 md:pb-2">
-                                        <CardTitle className="text-sm font-medium">Weekly Revenue</CardTitle>
-                                        <Users className="text-muted-foreground h-4 w-4" />
-                                    </CardHeader>
-                                    <CardContent className="p-4 pt-0 pb-0 md:p-6 md:pt-0 md:pb-0">
-                                        <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.weekly)}>
-                                            {formatCurrency(stats.weekly)}
-                                        </div>
-                                        <p className="text-muted-foreground text-[10px] sm:text-xs">Revenue this week</p>
-                                    </CardContent>
+
+                    {/* Card 2: Expenses */}
+                    <Card className="overflow-hidden flex flex-col justify-between h-full pt-3 pb-3 px-0 md:pt-6 md:pb-6 md:px-0 gap-1 md:gap-4">
+                        <div>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 px-4 pb-1 md:p-6 md:pb-2">
+                                <CardTitle className="text-sm font-medium">
+                                    {datePreset === 'today' ? "Daily" : datePreset === 'weekly' ? "Weekly" : datePreset === 'monthly' ? "Monthly" : datePreset === 'ytd' ? "YTD" : datePreset === 'all' ? "All-Time" : "Period"} Expenses
+                                </CardTitle>
+                                <Wallet className="text-muted-foreground h-4 w-4 text-red-500" />
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0 pb-0 md:p-6 md:pt-0 md:pb-0">
+                                <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-red-650 dark:text-red-400 truncate" title={formatCurrency(stats.today_expenses)}>
+                                    {formatCurrency(stats.today_expenses)}
                                 </div>
-                                {stats.weeklyTrend && (
-                                    <div className="block">
-                                        <MiniSparkline 
-                                            data={stats.weeklyTrend} 
-                                            color="#3b82f6" 
-                                            gradientId="sparklineWeekly" 
-                                        />
-                                    </div>
-                                )}
-                            </Card>
-                            <Card className="overflow-hidden flex flex-col justify-between h-auto md:h-full pt-3 pb-0 px-0 md:pt-6 md:pb-0 md:px-0 gap-1 md:gap-4">
-                                <div>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 px-4 pb-1 md:p-6 md:pb-2">
-                                        <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-                                        <CreditCard className="text-muted-foreground h-4 w-4" />
-                                    </CardHeader>
-                                    <CardContent className="p-4 pt-0 pb-0 md:p-6 md:pt-0 md:pb-0">
-                                        <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.monthly)}>
-                                            {formatCurrency(stats.monthly)}
-                                        </div>
-                                        <p className="text-muted-foreground text-[10px] sm:text-xs">Revenue this month</p>
-                                    </CardContent>
+                                <p className="text-muted-foreground text-[10px] sm:text-xs mt-1">Logged operational payouts</p>
+                            </CardContent>
+                        </div>
+                    </Card>
+
+                    {/* Card 3: Service Fees */}
+                    <Card className="overflow-hidden flex flex-col justify-between h-full pt-3 pb-3 px-0 md:pt-6 md:pb-6 md:px-0 gap-1 md:gap-4">
+                        <div>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 px-4 pb-1 md:p-6 md:pb-2">
+                                <CardTitle className="text-sm font-medium">
+                                    {datePreset === 'today' ? "Daily" : datePreset === 'weekly' ? "Weekly" : datePreset === 'monthly' ? "Monthly" : datePreset === 'ytd' ? "YTD" : datePreset === 'all' ? "All-Time" : "Period"} Service Fees
+                                </CardTitle>
+                                <Percent className="text-muted-foreground h-4 w-4 text-teal-500" />
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0 pb-0 md:p-6 md:pt-0 md:pb-0">
+                                <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-teal-650 dark:text-teal-400 truncate" title={formatCurrency(stats.today_service_fees)}>
+                                    {formatCurrency(stats.today_service_fees)}
                                 </div>
-                                {stats.monthlyTrend && (
-                                    <div className="block">
-                                        <MiniSparkline 
-                                            data={stats.monthlyTrend} 
-                                            color="#8b5cf6" 
-                                            gradientId="sparklineMonthly" 
-                                        />
-                                    </div>
-                                )}
-                            </Card>
-                            <Card className="overflow-hidden flex flex-col justify-between h-auto md:h-full pt-3 pb-0 px-0 md:pt-6 md:pb-0 md:px-0 gap-1 md:gap-4">
-                                <div>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 px-4 pb-1 md:p-6 md:pb-2">
-                                        <CardTitle className="text-sm font-medium">YTD Revenue</CardTitle>
-                                        <Activity className="text-muted-foreground h-4 w-4" />
-                                    </CardHeader>
-                                    <CardContent className="p-4 pt-0 pb-0 md:p-6 md:pt-0 md:pb-0">
-                                        <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.ytd)}>
-                                            {formatCurrency(stats.ytd)}
-                                        </div>
-                                        <p className="text-muted-foreground text-[10px] sm:text-xs">Total revenue this year</p>
-                                    </CardContent>
+                                <p className="text-muted-foreground text-[10px] sm:text-xs mt-1">Logged service & extra charges</p>
+                            </CardContent>
+                        </div>
+                    </Card>
+
+                    {/* Card 4: Cash on Hand */}
+                    <Card className="overflow-hidden flex flex-col justify-between h-full pt-3 pb-3 px-0 md:pt-6 md:pb-6 md:px-0 gap-1 md:gap-4 border-l-4 border-l-emerald-500">
+                        <div>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 px-4 pb-1 md:p-6 md:pb-2">
+                                <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                                    {datePreset === 'today' ? "Cash" : datePreset === 'weekly' ? "Weekly Cash" : datePreset === 'monthly' ? "Monthly Cash" : datePreset === 'ytd' ? "YTD Cash" : datePreset === 'all' ? "All-Time Cash" : "Period Cash"} on Hand
+                                </CardTitle>
+                                <DollarSign className="text-muted-foreground h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0 pb-0 md:p-6 md:pt-0 md:pb-0">
+                                <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-emerald-700 dark:text-emerald-400 truncate" title={formatCurrency(stats.cash_on_hand)}>
+                                    {formatCurrency(stats.cash_on_hand)}
                                 </div>
-                                {stats.ytdTrend && (
-                                    <div className="block">
-                                        <MiniSparkline 
-                                            data={stats.ytdTrend} 
-                                            color="#ec4899" 
-                                            gradientId="sparklineYtd" 
-                                        />
-                                    </div>
-                                )}
-                            </Card>
-                        </>
-                    )}
+                                <a 
+                                    href={`/sales-list?date_preset=${datePreset}&date_from=${dateFrom}&date_to=${dateTo}&show_delegation=true`}
+                                    className="mt-2 text-xs font-bold text-emerald-650 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 flex items-center gap-1 transition-colors group/link w-fit"
+                                >
+                                    <span>View Delegation</span>
+                                    <ArrowUpRight className="w-3.5 h-3.5 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
+                                </a>
+                            </CardContent>
+                        </div>
+                    </Card>
                 </div>
 
                 {/* Mobile Quick Action Buttons - Single Row */}

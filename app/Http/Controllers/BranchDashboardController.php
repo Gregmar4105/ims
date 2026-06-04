@@ -78,6 +78,99 @@ class BranchDashboardController extends Controller
         }
         $dailySales = (float)$periodSalesQuery->sum(DB::raw('quantity * price'));
 
+        // --- Stats Calculations matching SaleController ---
+        $todaySalesQuery = Sale::where(function($q) {
+            $q->whereIn('status', ['completed', 'reserved'])
+              ->orWhere(function($sub) {
+                  $sub->where('status', 'cancelled')
+                      ->where('payment_method', 'reservation');
+              });
+        })
+            ->where('branch_id', $branchId)
+            ->with(['items.product']);
+
+        if ($startDate) {
+            $todaySalesQuery->where('updated_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $todaySalesQuery->where('updated_at', '<=', $endDate);
+        }
+
+        $todaySales = $todaySalesQuery->get();
+
+        $todaySalesSum = 0;
+        $todayCashSalesSum = 0;
+        $todayEwalletSalesSum = 0;
+        $todayHomeCreditSalesSum = 0;
+        $todayReservationSalesSum = 0;
+
+        foreach ($todaySales as $sale) {
+            $saleRevenue = $sale->items->sum(fn($item) => $item->quantity * $item->price);
+            if ($sale->payment_method === 'cash') {
+                $todayCashSalesSum += $saleRevenue;
+                $todaySalesSum += $saleRevenue;
+            } elseif ($sale->payment_method === 'e-wallet') {
+                $todayEwalletSalesSum += $saleRevenue;
+                $todaySalesSum += $saleRevenue;
+            } elseif ($sale->payment_method === 'home_credit') {
+                $todayHomeCreditSalesSum += $saleRevenue;
+                $todaySalesSum += $saleRevenue;
+                if ($sale->downpayment > 0) {
+                    $todayCashSalesSum += $sale->downpayment;
+                }
+            } elseif ($sale->payment_method === 'reservation') {
+                if ($sale->status === 'reserved') {
+                    $todayReservationSalesSum += $saleRevenue;
+                    $todaySalesSum += $saleRevenue;
+                    $todayCashSalesSum += $sale->downpayment;
+                } elseif ($sale->status === 'completed') {
+                    $todayReservationSalesSum += $saleRevenue;
+                    $todaySalesSum += $saleRevenue;
+                    if ($sale->ewallet_provider) {
+                        if (!$startDate || $sale->created_at >= $startDate) {
+                            $todayCashSalesSum += $sale->downpayment;
+                        }
+                        $todayEwalletSalesSum += ($saleRevenue - $sale->downpayment);
+                    } else {
+                        if (!$startDate || $sale->created_at >= $startDate) {
+                            $todayCashSalesSum += $saleRevenue;
+                        } else {
+                            $todayCashSalesSum += ($saleRevenue - $sale->downpayment);
+                        }
+                    }
+                } elseif ($sale->status === 'cancelled') {
+                    if (!$startDate || $sale->created_at >= $startDate) {
+                        $todayReservationSalesSum += $sale->downpayment;
+                        $todaySalesSum += $sale->downpayment;
+                        $todayCashSalesSum += $sale->downpayment;
+                    }
+                }
+            }
+        }
+
+        // Expenses
+        $todayExpensesQuery = \App\Models\Expense::where('branch_id', $branchId);
+        if ($startDate) {
+            $todayExpensesQuery->where('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $todayExpensesQuery->where('created_at', '<=', $endDate);
+        }
+        $todayExpensesSum = $todayExpensesQuery->sum('amount');
+
+        // Service Fees
+        $todayServiceFeesQuery = \App\Models\ServiceFee::where('branch_id', $branchId);
+        if ($startDate) {
+            $todayServiceFeesQuery->where('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $todayServiceFeesQuery->where('created_at', '<=', $endDate);
+        }
+        $todayServiceFeesSum = $todayServiceFeesQuery->sum('amount');
+
+        // Cash on Hand
+        $cashOnHand = $todayCashSalesSum + $todayServiceFeesSum - $todayExpensesSum;
+
         $weeklySales = $salesQuery(SaleItem::query())
             ->whereHas('sale', fn($q) => $q->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]))
             ->sum(DB::raw('quantity * price'));
@@ -90,7 +183,7 @@ class BranchDashboardController extends Controller
             ->whereHas('sale', fn($q) => $q->whereYear('created_at', Carbon::now()->year))
             ->sum(DB::raw('quantity * price'));
 
-        $selectedDateSales = $dailySales;
+        $selectedDateSales = $todaySalesSum;
 
         // --- Charts ---
         $salesTrend = [];
@@ -306,6 +399,14 @@ class BranchDashboardController extends Controller
                 'weeklyTrend' => $weeklyTrend,
                 'monthlyTrend' => $monthlyTrend,
                 'ytdTrend' => $ytdTrend,
+                'today_sales' => (float)$todaySalesSum,
+                'today_cash_sales' => (float)$todayCashSalesSum,
+                'today_ewallet_sales' => (float)$todayEwalletSalesSum,
+                'today_home_credit_sales' => (float)$todayHomeCreditSalesSum,
+                'today_reservation_sales' => (float)$todayReservationSalesSum,
+                'today_expenses' => (float)$todayExpensesSum,
+                'today_service_fees' => (float)$todayServiceFeesSum,
+                'cash_on_hand' => (float)$cashOnHand,
             ],
             'chartData' => $salesTrend,
             'pieData' => $salesDistribution,
