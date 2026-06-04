@@ -132,6 +132,16 @@ export default function Index({
     const [activeProofSale, setActiveProofSale] = useState<Sale | null>(null);
     const [showDelegation, setShowDelegation] = useState(false);
 
+    const pureCashSales = todaySales.filter(s => s.payment_method === 'cash');
+    const pureCashSalesTotal = pureCashSales.reduce((sum, sale) => {
+        return sum + sale.items.reduce((s, i) => s + (i.price * i.quantity), 0);
+    }, 0);
+
+    const homeCreditSales = todaySales.filter(s => s.payment_method === 'home_credit');
+    const totalHomeCreditSales = stats.today_home_credit_sales;
+    const totalHomeCreditDownpayment = homeCreditSales.reduce((sum, s) => sum + Number(s.downpayment || 0), 0);
+    const totalHomeCreditLeft = totalHomeCreditSales - totalHomeCreditDownpayment;
+
     const cashSalesEntries: Array<{
         id: number;
         type: 'cash_sale' | 'home_credit_downpayment';
@@ -152,16 +162,6 @@ export default function Index({
                 branchName: sale.branch?.branch_name,
                 time: sale.updated_at,
                 amount: saleTotal,
-                sale: sale
-            });
-        } else if (sale.payment_method === 'home_credit' && Number(sale.downpayment) > 0) {
-            cashSalesEntries.push({
-                id: sale.id,
-                type: 'home_credit_downpayment',
-                description: 'Downpayment in Home Credit',
-                branchName: sale.branch?.branch_name,
-                time: sale.updated_at,
-                amount: Number(sale.downpayment),
                 sale: sale
             });
         }
@@ -347,20 +347,20 @@ export default function Index({
                             </Button>
                         </div>
 
-                        {/* Five Columns Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                        {/* Three Columns Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             
                             {/* Column 1: Cash Sales */}
-                            <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 min-h-[300px]">
+                            <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 h-[380px]">
                                 <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-950/5">
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Cash Sales</CardTitle>
                                         <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border-emerald-200 font-bold text-[11px]">
-                                            ₱{stats.today_cash_sales.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            ₱{pureCashSalesTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </Badge>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="p-0 flex-1 overflow-y-auto max-h-[350px]">
+                                <CardContent className="p-0 flex-1 overflow-y-auto">
                                     {cashSalesEntries.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-14 text-muted-foreground px-4 text-center">
                                             <DollarSign className="w-8 h-8 mb-2 text-emerald-355 dark:text-emerald-855 opacity-40" />
@@ -376,11 +376,6 @@ export default function Index({
                                                                 <div className="flex items-center gap-1.5 flex-wrap">
                                                                     <span className="font-mono font-bold text-xs text-emerald-800 dark:text-emerald-350">#{entry.id}</span>
                                                                     <span className="text-[9px] text-muted-foreground truncate">({entry.branchName})</span>
-                                                                    {entry.type === 'home_credit_downpayment' && (
-                                                                        <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-300 border-purple-200 border-none leading-none capitalize">
-                                                                            Home Credit
-                                                                        </Badge>
-                                                                    )}
                                                                 </div>
                                                                 <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
                                                                     {entry.description}
@@ -403,7 +398,7 @@ export default function Index({
                             </Card>
 
                             {/* Column 2: E-Wallet Sales */}
-                            <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 min-h-[300px]">
+                            <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 h-[380px]">
                                 <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-950/5">
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="text-sm font-bold text-emerald-900 dark:text-emerald-100">E-Wallet Sales</CardTitle>
@@ -412,7 +407,7 @@ export default function Index({
                                         </Badge>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="p-0 flex-1 overflow-y-auto max-h-[350px]">
+                                <CardContent className="p-0 flex-1 overflow-y-auto">
                                     {todaySales.filter(s => s.payment_method === 'e-wallet').length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-14 text-muted-foreground px-4 text-center">
                                             <Wallet className="w-8 h-8 mb-2 text-emerald-355 dark:text-emerald-855 opacity-40" />
@@ -462,16 +457,26 @@ export default function Index({
                             </Card>
 
                             {/* Column 3: Home Credit */}
-                            <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 min-h-[300px]">
-                                <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-950/5">
+                            <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 h-[380px]">
+                                <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-955/5">
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Home Credit</CardTitle>
                                         <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border-emerald-200 font-bold text-[11px]">
-                                            ₱{stats.today_home_credit_sales.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            ₱{totalHomeCreditSales.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </Badge>
                                     </div>
+                                    <div className="flex flex-col gap-0.5 mt-1.5 text-[10px] text-muted-foreground border-t border-dashed border-emerald-100/50 dark:border-emerald-900/20 pt-1.5">
+                                        <div className="flex justify-between">
+                                            <span>Cash (DP):</span>
+                                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">₱{totalHomeCreditDownpayment.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>To Receive:</span>
+                                            <span className="font-semibold text-purple-600 dark:text-purple-400">₱{totalHomeCreditLeft.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                    </div>
                                 </CardHeader>
-                                <CardContent className="p-0 flex-1 overflow-y-auto max-h-[350px]">
+                                <CardContent className="p-0 flex-1 overflow-y-auto">
                                     {todaySales.filter(s => s.payment_method === 'home_credit').length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-14 text-muted-foreground px-4 text-center">
                                             <Percent className="w-8 h-8 mb-2 text-emerald-355 dark:text-emerald-855 opacity-40" />
@@ -482,7 +487,7 @@ export default function Index({
                                             {todaySales.filter(s => s.payment_method === 'home_credit').map((sale) => {
                                                 const saleTotal = sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                                                 return (
-                                                    <div key={sale.id} className="p-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/5 transition-colors">
+                                                    <div key={sale.id} className="p-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-955/5 transition-colors">
                                                         <div className="flex justify-between items-start gap-2">
                                                             <div className="min-w-0 flex-1">
                                                                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -505,6 +510,9 @@ export default function Index({
                                                                             DP: ₱{Number(sale.downpayment).toFixed(0)}
                                                                         </Badge>
                                                                     )}
+                                                                    <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-purple-50 text-purple-700 border-none leading-none">
+                                                                        Left: ₱{(saleTotal - Number(sale.downpayment || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                    </Badge>
                                                                 </div>
                                                             </div>
                                                             <span className="font-bold text-xs text-emerald-700 dark:text-emerald-400 shrink-0">
@@ -520,7 +528,7 @@ export default function Index({
                             </Card>
 
                             {/* Column 4: Expenses */}
-                            <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 min-h-[300px]">
+                            <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 h-[380px]">
                                 <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-955/5">
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Expenses</CardTitle>
@@ -529,7 +537,7 @@ export default function Index({
                                         </Badge>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="p-0 flex-1 overflow-y-auto max-h-[350px]">
+                                <CardContent className="p-0 flex-1 overflow-y-auto">
                                     {todayExpenses.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-14 text-muted-foreground px-4 text-center">
                                             <XCircle className="w-8 h-8 mb-2 text-red-300 dark:text-red-805 opacity-40" />
@@ -538,7 +546,7 @@ export default function Index({
                                     ) : (
                                         <div className="divide-y divide-emerald-100/50 dark:divide-emerald-900/10">
                                             {todayExpenses.map((expense) => (
-                                                <div key={expense.id} className="p-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/5 transition-colors">
+                                                <div key={expense.id} className="p-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-955/5 transition-colors">
                                                     <div className="flex justify-between items-start gap-2">
                                                         <div className="min-w-0 flex-1">
                                                             <p className="font-semibold text-xs text-gray-900 dark:text-gray-100 truncate">{expense.name}</p>
@@ -553,7 +561,7 @@ export default function Index({
                                                                 {formatTimeOnly(expense.created_at)}
                                                             </span>
                                                         </div>
-                                                        <span className="font-bold text-xs text-red-650 dark:text-red-400 shrink-0">
+                                                        <span className="font-bold text-xs text-red-655 dark:text-red-450 shrink-0">
                                                             ₱{Number(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                         </span>
                                                     </div>
@@ -565,7 +573,7 @@ export default function Index({
                             </Card>
 
                             {/* Column 5: Service Fees */}
-                            <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 min-h-[300px]">
+                            <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 h-[380px]">
                                 <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-955/5">
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Service Fees</CardTitle>
@@ -574,7 +582,7 @@ export default function Index({
                                         </Badge>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="p-0 flex-1 overflow-y-auto max-h-[350px]">
+                                <CardContent className="p-0 flex-1 overflow-y-auto">
                                     {todayServiceFees.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-14 text-muted-foreground px-4 text-center">
                                             <Briefcase className="w-8 h-8 mb-2 text-emerald-355 dark:text-emerald-855 opacity-40" />
