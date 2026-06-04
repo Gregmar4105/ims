@@ -15,6 +15,8 @@ class Sale extends Model
         'payment_method',
         'ewallet_provider',
         'proof_of_payment_path',
+        'home_credited_name',
+        'downpayment',
         'cash_received',
         'change_amount',
     ];

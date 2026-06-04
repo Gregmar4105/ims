@@ -25,6 +25,8 @@ interface Sale {
     }>;
     payment_method?: string | null;
     ewallet_provider?: string | null;
+    home_credited_name?: string | null;
+    downpayment?: number | null;
     cash_received?: number | null;
     change_amount?: number | null;
 }
@@ -162,7 +164,10 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                             <div className="border-t border-dashed border-gray-200 pt-2 space-y-1 text-sm text-gray-600">
                                 <div className="flex justify-between">
                                     <span>Payment Method</span>
-                                    <span className="capitalize">{sale.payment_method === 'e-wallet' ? `E-Wallet (${sale.ewallet_provider})` : 'Cash'}</span>
+                                    <span className="capitalize">
+                                        {sale.payment_method === 'e-wallet' ? `E-Wallet (${sale.ewallet_provider})` : 
+                                         sale.payment_method === 'home_credit' ? `Home Credit (${sale.home_credited_name || 'Bikes and Accessories'})` : 'Cash'}
+                                    </span>
                                 </div>
                                 {sale.payment_method === 'cash' && (
                                     <>
@@ -175,6 +180,12 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                                             <span>₱{Number(sale.change_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                         </div>
                                     </>
+                                )}
+                                {sale.payment_method === 'home_credit' && Number(sale.downpayment) > 0 && (
+                                    <div className="flex justify-between font-semibold text-black">
+                                        <span>Downpayment</span>
+                                        <span>₱{Number(sale.downpayment).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                    </div>
                                 )}
                             </div>
                         )}

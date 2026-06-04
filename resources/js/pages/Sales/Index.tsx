@@ -48,6 +48,8 @@ interface Sale {
     payment_method?: string | null;
     ewallet_provider?: string | null;
     proof_of_payment_path?: string | null;
+    home_credited_name?: string | null;
+    downpayment?: number | null;
     cash_received?: number | null;
     change_amount?: number | null;
 }
@@ -128,6 +130,41 @@ export default function Index({
     const [statusFilter, setStatusFilter] = useState(filters.status_filter || 'all');
     const [activeProofSale, setActiveProofSale] = useState<Sale | null>(null);
     const [showDelegation, setShowDelegation] = useState(false);
+
+    const cashSalesEntries: Array<{
+        id: number;
+        type: 'cash_sale' | 'home_credit_downpayment';
+        description: string;
+        branchName: string;
+        time: string;
+        amount: number;
+        sale: Sale;
+    }> = [];
+
+    todaySales.forEach(sale => {
+        if (sale.payment_method === 'cash') {
+            const saleTotal = sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            cashSalesEntries.push({
+                id: sale.id,
+                type: 'cash_sale',
+                description: sale.items.map(i => `${i.product?.name} (x${i.quantity})`).join(', '),
+                branchName: sale.branch?.branch_name,
+                time: sale.updated_at,
+                amount: saleTotal,
+                sale: sale
+            });
+        } else if (sale.payment_method === 'home_credit' && Number(sale.downpayment) > 0) {
+            cashSalesEntries.push({
+                id: sale.id,
+                type: 'home_credit_downpayment',
+                description: 'Downpayment in Home Credit',
+                branchName: sale.branch?.branch_name,
+                time: sale.updated_at,
+                amount: Number(sale.downpayment),
+                sale: sale
+            });
+        }
+    });
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -323,33 +360,37 @@ export default function Index({
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-0 flex-1 overflow-y-auto max-h-[350px]">
-                                    {todaySales.filter(s => s.payment_method === 'cash').length === 0 ? (
+                                    {cashSalesEntries.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-14 text-muted-foreground px-4 text-center">
                                             <DollarSign className="w-8 h-8 mb-2 text-emerald-350 dark:text-emerald-855 opacity-40" />
                                             <p className="text-xs font-semibold">No cash sales today</p>
                                         </div>
                                     ) : (
                                         <div className="divide-y divide-emerald-100/50 dark:divide-emerald-900/10">
-                                            {todaySales.filter(s => s.payment_method === 'cash').map((sale) => {
-                                                const saleTotal = sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                                            {cashSalesEntries.map((entry) => {
                                                 return (
-                                                    <div key={sale.id} className="p-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/5 transition-colors">
+                                                    <div key={`${entry.type}-${entry.id}`} className="p-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/5 transition-colors">
                                                         <div className="flex justify-between items-start gap-2">
                                                             <div className="min-w-0 flex-1">
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <span className="font-mono font-bold text-xs text-emerald-800 dark:text-emerald-350">#{sale.id}</span>
-                                                                    <span className="text-[9px] text-muted-foreground truncate">({sale.branch?.branch_name})</span>
+                                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                                    <span className="font-mono font-bold text-xs text-emerald-800 dark:text-emerald-350">#{entry.id}</span>
+                                                                    <span className="text-[9px] text-muted-foreground truncate">({entry.branchName})</span>
+                                                                    {entry.type === 'home_credit_downpayment' && (
+                                                                        <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-300 border-purple-200 border-none leading-none capitalize">
+                                                                            Home Credit
+                                                                        </Badge>
+                                                                    )}
                                                                 </div>
                                                                 <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                                                                    {sale.items.map(i => `${i.product?.name} (x${i.quantity})`).join(', ')}
+                                                                    {entry.description}
                                                                 </p>
                                                                 <span className="text-[9px] text-muted-foreground flex items-center gap-1 mt-1">
                                                                     <Clock className="w-3 h-3" />
-                                                                    {formatTimeOnly(sale.updated_at)}
+                                                                    {formatTimeOnly(entry.time)}
                                                                 </span>
                                                             </div>
                                                             <span className="font-bold text-xs text-emerald-700 dark:text-emerald-400 shrink-0">
-                                                                ₱{saleTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                ₱{entry.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -621,7 +662,8 @@ export default function Index({
                                                         </Badge>
                                                         {sale.payment_method && (
                                                             <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary capitalize font-normal text-xs">
-                                                                {sale.payment_method === 'e-wallet' ? `E-Wallet (${sale.ewallet_provider})` : 'Cash'}
+                                                                {sale.payment_method === 'e-wallet' ? `E-Wallet (${sale.ewallet_provider})` : 
+                                                                 sale.payment_method === 'home_credit' ? 'Home Credit' : 'Cash'}
                                                             </Badge>
                                                         )}
                                                     </div>
@@ -658,6 +700,18 @@ export default function Index({
                                                                     >
                                                                         <Image className="w-3.5 h-3.5" /> View Proof
                                                                     </button>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        {sale.payment_method === 'home_credit' && (
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <span className="text-xs bg-purple-50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/30 px-2 py-0.5 rounded">
+                                                                    Home Credit: {sale.home_credited_name}
+                                                                </span>
+                                                                {Number(sale.downpayment) > 0 && (
+                                                                    <span className="text-xs bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/30 px-2 py-0.5 rounded">
+                                                                        Downpayment: ₱{Number(sale.downpayment).toFixed(2)}
+                                                                    </span>
                                                                 )}
                                                             </div>
                                                         )}

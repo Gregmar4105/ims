@@ -53,6 +53,16 @@ interface PendingSale {
     }[];
 }
 
+const generateDefaultHomeCredited = (items: any[]) => {
+    if (!items || items.length === 0) return '';
+    const names = items.map(item => item.product.name);
+    const hasBike = names.some(name => name.toLowerCase().includes('bike'));
+    if (hasBike && names.length > 1) {
+        return 'Bikes and Accessories';
+    }
+    return names.join(', ');
+};
+
 export default function Create({ products, pendingSales }: { products: Product[], pendingSales: PendingSale[] }) {
     const { can } = usePermission();
     const [scannedCode, setScannedCode] = useState('');
@@ -341,12 +351,29 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const [approveModalOpen, setApproveModalOpen] = useState(false);
     const [selectedSaleForApproval, setSelectedSaleForApproval] = useState<PendingSale | null>(null);
     const approveForm = useForm({
-        payment_method: 'cash' as 'cash' | 'e-wallet',
+        payment_method: 'cash' as 'cash' | 'e-wallet' | 'home_credit',
         ewallet_provider: 'GCash',
         proof_of_payment: null as File | null,
         cash_received: '',
         change_amount: 0,
+        home_credited_name: '',
+        downpayment: '',
     });
+
+    useEffect(() => {
+        if (selectedSaleForApproval) {
+            const defaultName = generateDefaultHomeCredited(selectedSaleForApproval.items);
+            approveForm.setData({
+                payment_method: 'cash',
+                ewallet_provider: 'GCash',
+                proof_of_payment: null,
+                cash_received: '',
+                change_amount: 0,
+                home_credited_name: defaultName,
+                downpayment: '',
+            });
+        }
+    }, [selectedSaleForApproval]);
 
     const [useWebcam, setUseWebcam] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -436,9 +463,14 @@ export default function Create({ products, pendingSales }: { products: Product[]
                 toast.error(`Cash received must be at least ₱${total.toFixed(2)}`);
                 return;
             }
-        } else {
+        } else if (approveForm.data.payment_method === 'e-wallet') {
             if (!approveForm.data.proof_of_payment) {
                 toast.error('Proof of payment is required for E-wallet transactions');
+                return;
+            }
+        } else if (approveForm.data.payment_method === 'home_credit') {
+            if (!approveForm.data.home_credited_name || !approveForm.data.home_credited_name.trim()) {
+                toast.error('Home Credited Name is required');
                 return;
             }
         }
@@ -886,7 +918,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                 {/* Payment Method Select */}
                                 <div className="space-y-2">
                                     <Label>Payment Method</Label>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-3 gap-3">
                                         <button
                                             type="button"
                                             onClick={() => approveForm.setData('payment_method', 'cash')}
@@ -911,11 +943,23 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                             <Wallet className="w-4 h-4" />
                                             E-Wallet
                                         </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => approveForm.setData('payment_method', 'home_credit')}
+                                            className={`flex items-center justify-center gap-2 py-3 rounded-lg border-2 text-sm font-semibold transition-all ${
+                                                approveForm.data.payment_method === 'home_credit'
+                                                    ? 'border-primary bg-primary/5 text-primary'
+                                                    : 'border-muted hover:bg-accent'
+                                            }`}
+                                        >
+                                            <TicketPercent className="w-4 h-4" />
+                                            Home Credit
+                                        </button>
                                     </div>
                                 </div>
 
                                 {/* Conditional Render based on Payment Method */}
-                                {approveForm.data.payment_method === 'cash' ? (
+                                {approveForm.data.payment_method === 'cash' && (
                                     <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
                                         <div className="space-y-2">
                                             <Label htmlFor="cash-received">Cash Received</Label>
@@ -943,7 +987,9 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                             </span>
                                         </div>
                                     </div>
-                                ) : (
+                                )}
+                                
+                                {approveForm.data.payment_method === 'e-wallet' && (
                                     <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
                                         <div className="space-y-2">
                                             <Label htmlFor="ewallet-provider">E-Wallet Provider</Label>
@@ -1027,6 +1073,39 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                     </div>
                                 )}
 
+                                {approveForm.data.payment_method === 'home_credit' && (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="home-credited-name">Home Credited Name</Label>
+                                            <Input
+                                                id="home-credited-name"
+                                                type="text"
+                                                value={approveForm.data.home_credited_name}
+                                                onChange={(e) => approveForm.setData('home_credited_name', e.target.value)}
+                                                placeholder="e.g. Bikes and Accessories"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="downpayment">Downpayment (Optional)</Label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₱</span>
+                                                <Input
+                                                    id="downpayment"
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    className="pl-7"
+                                                    value={approveForm.data.downpayment}
+                                                    onChange={(e) => approveForm.setData('downpayment', e.target.value)}
+                                                    placeholder="Enter downpayment amount (if any)"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <DialogFooter className="pt-2">
                                     <Button
                                         type="button"
@@ -1047,7 +1126,8 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                             (approveForm.data.payment_method === 'cash' && 
                                                 (parseFloat(approveForm.data.cash_received) || 0) < selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0)
                                             ) ||
-                                            (approveForm.data.payment_method === 'e-wallet' && !approveForm.data.proof_of_payment)
+                                            (approveForm.data.payment_method === 'e-wallet' && !approveForm.data.proof_of_payment) ||
+                                            (approveForm.data.payment_method === 'home_credit' && !approveForm.data.home_credited_name.trim())
                                         }
                                         className="gap-2"
                                     >

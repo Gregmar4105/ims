@@ -90,6 +90,10 @@ class SaleController extends Controller
                 $todayCashSalesSum += $saleRevenue;
             } elseif ($sale->payment_method === 'e-wallet') {
                 $todayEwalletSalesSum += $saleRevenue;
+            } elseif ($sale->payment_method === 'home_credit') {
+                if ($sale->downpayment > 0) {
+                    $todayCashSalesSum += $sale->downpayment;
+                }
             }
         }
         $todaySalesSum = $todayCashSalesSum + $todayEwalletSalesSum;
@@ -430,11 +434,13 @@ class SaleController extends Controller
         }
 
         $request->validate([
-            'payment_method' => 'required|in:cash,e-wallet',
+            'payment_method' => 'required|in:cash,e-wallet,home_credit',
             'ewallet_provider' => 'required_if:payment_method,e-wallet|nullable|string',
             'proof_of_payment' => 'required_if:payment_method,e-wallet|nullable|image|max:5120', // 5MB max
             'cash_received' => 'required_if:payment_method,cash|nullable|numeric|min:0',
             'change_amount' => 'required_if:payment_method,cash|nullable|numeric|min:0',
+            'home_credited_name' => 'required_if:payment_method,home_credit|nullable|string',
+            'downpayment' => 'nullable|numeric|min:0',
         ]);
         
         DB::transaction(function () use ($sale, $user, $request) {
@@ -458,6 +464,9 @@ class SaleController extends Controller
                     $path = $request->file('proof_of_payment')->store('proofs', 'public');
                     $updateData['proof_of_payment_path'] = $path;
                 }
+            } elseif ($request->payment_method === 'home_credit') {
+                $updateData['home_credited_name'] = $request->home_credited_name;
+                $updateData['downpayment'] = $request->downpayment;
             } else {
                 $updateData['cash_received'] = $request->cash_received;
                 $updateData['change_amount'] = $request->change_amount;
