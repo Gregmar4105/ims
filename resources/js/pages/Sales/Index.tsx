@@ -31,7 +31,7 @@ interface SaleItem {
 interface Sale {
     id: number;
     branch_id: number;
-    status: 'readied' | 'completed' | 'cancelled';
+    status: 'readied' | 'completed' | 'cancelled' | 'reserved';
     notes: string | null;
     created_at: string;
     updated_at: string;
@@ -52,6 +52,8 @@ interface Sale {
     downpayment?: number | null;
     cash_received?: number | null;
     change_amount?: number | null;
+    customer_name?: string | null;
+    reservation_buy_date?: string | null;
 }
 
 interface PaginatedData<T> {
@@ -95,6 +97,7 @@ interface Stats {
     today_cash_sales: number;
     today_ewallet_sales: number;
     today_home_credit_sales: number;
+    today_reservation_sales: number;
     today_expenses: number;
     today_service_fees: number;
     cash_on_hand: number;
@@ -142,9 +145,29 @@ export default function Index({
     const totalHomeCreditDownpayment = homeCreditSales.reduce((sum, s) => sum + Number(s.downpayment || 0), 0);
     const totalHomeCreditLeft = totalHomeCreditSales - totalHomeCreditDownpayment;
 
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const reservationSales = todaySales.filter(s => s.payment_method === 'reservation');
+    const totalReservationSales = stats.today_reservation_sales;
+    const totalReservationDownpayment = reservationSales.reduce((sum, s) => {
+        const saleCreatedAt = new Date(s.created_at);
+        if (s.status === 'reserved' || saleCreatedAt >= todayStart) {
+            return sum + Number(s.downpayment || 0);
+        }
+        return sum;
+    }, 0);
+    const totalReservationLeft = reservationSales.reduce((sum, s) => {
+        if (s.status === 'reserved') {
+            const saleTotal = s.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            return sum + (saleTotal - Number(s.downpayment || 0));
+        }
+        return sum;
+    }, 0);
+
     const cashSalesEntries: Array<{
         id: number;
-        type: 'cash_sale' | 'home_credit_downpayment';
+        type: 'cash_sale' | 'home_credit_downpayment' | 'reservation_downpayment' | 'reservation_remaining_cash';
         description: string;
         branchName: string;
         time: string;
@@ -153,8 +176,8 @@ export default function Index({
     }> = [];
 
     todaySales.forEach(sale => {
+        const saleTotal = sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         if (sale.payment_method === 'cash') {
-            const saleTotal = sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             cashSalesEntries.push({
                 id: sale.id,
                 type: 'cash_sale',
@@ -164,7 +187,69 @@ export default function Index({
                 amount: saleTotal,
                 sale: sale
             });
+        } else if (sale.payment_method === 'home_credit') {
+            if (Number(sale.downpayment) > 0) {
+                cashSalesEntries.push({
+                    id: sale.id,
+                    type: 'home_credit_downpayment',
+                    description: `Downpayment for Home Credit (Customer: ${sale.home_credited_name || 'Bikes and Accessories'})`,
+                    branchName: sale.branch?.branch_name,
+                    time: sale.updated_at,
+                    amount: Number(sale.downpayment),
+                    sale: sale
+                });
+            }
+        } else if (sale.payment_method === 'reservation') {
+            const saleCreatedAt = new Date(sale.created_at);
+            if (sale.status === 'reserved') {
+                if (Number(sale.downpayment) > 0) {
+                    cashSalesEntries.push({
+                        id: sale.id,
+                        type: 'reservation_downpayment',
+                        description: `Downpayment for Reservation (Customer: ${sale.customer_name})`,
+                        branchName: sale.branch?.branch_name,
+                        time: sale.updated_at,
+                        amount: Number(sale.downpayment),
+                        sale: sale
+                    });
+                }
+            } else if (sale.status === 'completed') {
+                if (saleCreatedAt >= todayStart) {
+                    if (Number(sale.downpayment) > 0) {
+                        cashSalesEntries.push({
+                            id: sale.id,
+                            type: 'reservation_downpayment',
+                            description: `Downpayment for Reservation (Customer: ${sale.customer_name})`,
+                            branchName: sale.branch?.branch_name,
+                            time: sale.created_at,
+                            amount: Number(sale.downpayment),
+                            sale: sale
+                        });
+                    }
+                }
+                
+                if (!sale.ewallet_provider) {
+                    const remainingAmount = saleTotal - Number(sale.downpayment || 0);
+                    if (remainingAmount > 0) {
+                        cashSalesEntries.push({
+                            id: sale.id,
+                            type: 'reservation_remaining_cash',
+                            description: `Remaining balance for Reservation (Customer: ${sale.customer_name})`,
+                            branchName: sale.branch?.branch_name,
+                            time: sale.updated_at,
+                            amount: remainingAmount,
+                            sale: sale
+                        });
+                    }
+                }
+            }
         }
+    });
+
+    const ewalletSalesFilter = todaySales.filter(s => {
+        if (s.payment_method === 'e-wallet') return true;
+        if (s.payment_method === 'reservation' && s.status === 'completed' && s.ewallet_provider) return true;
+        return false;
     });
 
     useEffect(() => {
@@ -233,6 +318,12 @@ export default function Index({
                 return (
                     <Badge variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800">
                         <XCircle className="w-3.5 h-3.5 mr-1.5" /> Cancelled
+                    </Badge>
+                );
+            case 'reserved':
+                return (
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 border-blue-200 dark:border-blue-800 font-bold">
+                        <Clock className="w-3.5 h-3.5 mr-1.5" /> Reserved
                     </Badge>
                 );
             default:
@@ -399,7 +490,7 @@ export default function Index({
 
                             {/* Column 2: E-Wallet Sales */}
                             <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 h-[380px]">
-                                <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-950/5">
+                                <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-955/5">
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="text-sm font-bold text-emerald-900 dark:text-emerald-100">E-Wallet Sales</CardTitle>
                                         <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border-emerald-200 font-bold text-[11px]">
@@ -408,15 +499,18 @@ export default function Index({
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-0 flex-1 overflow-y-auto">
-                                    {todaySales.filter(s => s.payment_method === 'e-wallet').length === 0 ? (
+                                    {ewalletSalesFilter.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-14 text-muted-foreground px-4 text-center">
                                             <Wallet className="w-8 h-8 mb-2 text-emerald-355 dark:text-emerald-855 opacity-40" />
                                             <p className="text-xs font-semibold">No e-wallet sales today</p>
                                         </div>
                                     ) : (
                                         <div className="divide-y divide-emerald-100/50 dark:divide-emerald-900/10">
-                                            {todaySales.filter(s => s.payment_method === 'e-wallet').map((sale) => {
+                                            {ewalletSalesFilter.map((sale) => {
                                                 const saleTotal = sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                                                const displayAmount = sale.payment_method === 'reservation' 
+                                                    ? (saleTotal - Number(sale.downpayment || 0))
+                                                    : saleTotal;
                                                 return (
                                                     <div key={sale.id} className="p-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/5 transition-colors">
                                                         <div className="flex justify-between items-start gap-2">
@@ -426,6 +520,11 @@ export default function Index({
                                                                     <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-none leading-none capitalize">
                                                                         {sale.ewallet_provider}
                                                                     </Badge>
+                                                                    {sale.payment_method === 'reservation' && (
+                                                                        <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-yellow-50 text-yellow-700 border-none leading-none font-bold">
+                                                                            Reservation Bal.
+                                                                        </Badge>
+                                                                    )}
                                                                     {sale.proof_of_payment_path && (
                                                                         <button 
                                                                             type="button" 
@@ -445,7 +544,7 @@ export default function Index({
                                                                 </span>
                                                             </div>
                                                             <span className="font-bold text-xs text-emerald-700 dark:text-emerald-400 shrink-0">
-                                                                ₱{saleTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                ₱{displayAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -617,10 +716,97 @@ export default function Index({
                                 </CardContent>
                             </Card>
 
+                            {/* Column 6: Reservations */}
+                            <Card className="border border-emerald-100 dark:border-emerald-900/30 shadow-sm flex flex-col bg-white dark:bg-zinc-950 h-[380px]">
+                                <CardHeader className="pb-3 border-b border-emerald-100/50 dark:border-emerald-900/20 bg-emerald-50/10 dark:bg-emerald-955/5">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="text-sm font-bold text-emerald-900 dark:text-emerald-100 flex items-center gap-1">
+                                            <Clock className="w-4 h-4 text-blue-500" />
+                                            Reservations
+                                        </CardTitle>
+                                        <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 border-blue-200 font-bold text-[11px]">
+                                            ₱{totalReservationSales.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex flex-col gap-0.5 mt-1.5 text-[10px] text-muted-foreground border-t border-dashed border-emerald-100/50 dark:border-emerald-900/20 pt-1.5">
+                                        <div className="flex justify-between">
+                                            <span>Cash (DP):</span>
+                                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">₱{totalReservationDownpayment.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>To Receive:</span>
+                                            <span className="font-semibold text-blue-600 dark:text-blue-400">₱{totalReservationLeft.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-0 flex-1 overflow-y-auto">
+                                    {todaySales.filter(s => s.payment_method === 'reservation').length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-14 text-muted-foreground px-4 text-center">
+                                            <Clock className="w-8 h-8 mb-2 text-emerald-355 dark:text-emerald-855 opacity-40" />
+                                            <p className="text-xs font-semibold">No reservations today</p>
+                                        </div>
+                                    ) : (
+                                        <div className="divide-y divide-emerald-100/50 dark:divide-emerald-900/10">
+                                            {todaySales.filter(s => s.payment_method === 'reservation').map((sale) => {
+                                                const saleTotal = sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                                                return (
+                                                    <div key={sale.id} className="p-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-955/5 transition-colors">
+                                                        <div className="flex justify-between items-start gap-2">
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                                    <span className="font-mono font-bold text-xs text-emerald-800 dark:text-emerald-350">#{sale.id}</span>
+                                                                    <span className="text-[9px] text-muted-foreground truncate">({sale.branch?.branch_name})</span>
+                                                                    {sale.status === 'reserved' ? (
+                                                                        <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-yellow-50 text-yellow-700 border-none leading-none font-bold">
+                                                                            Reserved
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-green-50 text-green-700 border-none leading-none font-bold">
+                                                                            Completed
+                                                                        </Badge>
+                                                                    )}
+                                                                </div>
+                                                                <p className="text-[10px] font-semibold text-gray-900 dark:text-gray-100 mt-1 truncate">
+                                                                    {sale.customer_name}
+                                                                </p>
+                                                                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                                                                    {sale.items.map(i => `${i.product?.name} (x${i.quantity})`).join(', ')}
+                                                                </p>
+                                                                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                                                    <span className="text-[9px] text-muted-foreground flex items-center gap-1">
+                                                                        <Clock className="w-3 h-3" />
+                                                                        {formatTimeOnly(sale.updated_at)}
+                                                                    </span>
+                                                                    <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-emerald-50 text-emerald-700 border-none leading-none">
+                                                                        DP: ₱{Number(sale.downpayment).toFixed(0)}
+                                                                    </Badge>
+                                                                    {sale.status === 'reserved' ? (
+                                                                        <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-blue-50 text-blue-700 border-none leading-none">
+                                                                            Left: ₱{(saleTotal - Number(sale.downpayment || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-gray-100 text-gray-700 border-none leading-none font-medium">
+                                                                            Paid ({sale.ewallet_provider ? 'E-Wallet' : 'Cash'})
+                                                                        </Badge>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <span className="font-bold text-xs text-emerald-700 dark:text-emerald-400 shrink-0">
+                                                                ₱{saleTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
                         </div>
 
                         {/* Summary Panel */}
-                        <div className="bg-emerald-50/30 dark:bg-emerald-950/5 border border-emerald-150 dark:border-emerald-900/30 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-6 mt-6">
+                        <div className="bg-emerald-50/30 dark:bg-emerald-955/5 border border-emerald-150 dark:border-emerald-900/30 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-6 mt-6">
                             <div className="flex flex-col sm:flex-row gap-6 sm:gap-12 w-full md:w-auto flex-wrap">
                                 <div>
                                     <span className="text-xs font-semibold uppercase tracking-wider text-emerald-700/80 dark:text-emerald-350/80">Cash Sales (A)</span>
@@ -641,6 +827,10 @@ export default function Index({
                                 <div className="border-t sm:border-t-0 sm:border-l border-emerald-200/50 dark:border-emerald-800/30 pt-4 sm:pt-0 sm:pl-8">
                                     <span className="text-xs font-semibold uppercase tracking-wider text-purple-650/80 dark:text-purple-405/80">Home Credit Sales</span>
                                     <div className="text-xl font-bold text-purple-600 dark:text-purple-400 mt-1">₱{stats.today_home_credit_sales.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                </div>
+                                <div className="border-t sm:border-t-0 sm:border-l border-emerald-200/50 dark:border-emerald-800/30 pt-4 sm:pt-0 sm:pl-8">
+                                    <span className="text-xs font-semibold uppercase tracking-wider text-blue-650/80 dark:text-blue-405/80">Reservation Sales</span>
+                                    <div className="text-xl font-bold text-blue-600 dark:text-blue-400 mt-1">₱{stats.today_reservation_sales.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                                 </div>
                             </div>
                             <div className="bg-white dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-800 px-6 py-4 rounded-xl shadow-sm text-center md:text-right w-full md:w-auto min-w-[240px]">
@@ -675,6 +865,7 @@ export default function Index({
                                         <SelectItem value="all">All Statuses</SelectItem>
                                         <SelectItem value="completed">Completed</SelectItem>
                                         <SelectItem value="cancelled">Cancelled</SelectItem>
+                                        <SelectItem value="reserved">Reserved</SelectItem>
                                     </SelectContent>
                                 </Select>
 
@@ -734,7 +925,8 @@ export default function Index({
                                                         {sale.payment_method && (
                                                             <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary capitalize font-normal text-xs">
                                                                 {sale.payment_method === 'e-wallet' ? `E-Wallet (${sale.ewallet_provider})` : 
-                                                                 sale.payment_method === 'home_credit' ? 'Home Credit' : 'Cash'}
+                                                                 sale.payment_method === 'home_credit' ? 'Home Credit' : 
+                                                                 sale.payment_method === 'reservation' ? 'Reservation' : 'Cash'}
                                                             </Badge>
                                                         )}
                                                     </div>
@@ -784,6 +976,27 @@ export default function Index({
                                                                         Downpayment: ₱{Number(sale.downpayment).toFixed(2)}
                                                                     </span>
                                                                 )}
+                                                            </div>
+                                                        )}
+                                                        {sale.payment_method === 'reservation' && (
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <span className="text-xs bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/30 px-2 py-0.5 rounded font-semibold">
+                                                                    Customer: {sale.customer_name}
+                                                                </span>
+                                                                {Number(sale.downpayment) > 0 && (
+                                                                    <span className="text-xs bg-emerald-50 dark:bg-emerald-955/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/30 px-2 py-0.5 rounded font-semibold">
+                                                                        Downpayment: ₱{Number(sale.downpayment).toFixed(2)}
+                                                                    </span>
+                                                                )}
+                                                                {sale.status === 'completed' ? (
+                                                                    <span className="text-xs bg-green-50 dark:bg-green-955/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800/30 px-2 py-0.5 rounded font-semibold">
+                                                                        Remaining Paid via: {sale.ewallet_provider ? `E-Wallet (${sale.ewallet_provider})` : 'Cash'}
+                                                                    </span>
+                                                                ) : sale.reservation_buy_date ? (
+                                                                    <span className="text-xs bg-zinc-50 dark:bg-zinc-900 text-foreground border border-zinc-200 dark:border-zinc-800 px-2 py-0.5 rounded font-semibold">
+                                                                        Target Buy Date: {sale.reservation_buy_date}
+                                                                    </span>
+                                                                ) : null}
                                                             </div>
                                                         )}
                                                     </div>

@@ -32,7 +32,7 @@ class SaleController extends Controller
         if ($statusFilter !== 'all') {
             $query->where('status', $statusFilter);
         } else {
-            $query->whereIn('status', ['completed', 'cancelled']);
+            $query->whereIn('status', ['completed', 'cancelled', 'reserved']);
         }
             
         // Date Filters
@@ -49,7 +49,7 @@ class SaleController extends Controller
         $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
             ? session('active_branch_id')
             : null;
-
+ 
         // System Admin sees all, others see their branch only
         if ($branchId) {
             $query->where('branch_id', $branchId);
@@ -65,45 +65,68 @@ class SaleController extends Controller
                   ->orWhereHas('branch', fn($q) => $q->where('branch_name', 'like', "%{$search}%"));
             });
         }
-
+ 
         // Compute daily stats (Cash sales, E-Wallet sales, Expenses, Service Fees, and Cash on Hand)
         $todayStart = Carbon::today();
-
-        // 1. Today's Completed Sales
-        $todaySalesQuery = Sale::where('status', 'completed')
-            ->where('created_at', '>=', $todayStart)
+ 
+        // 1. Today's Completed and Reserved Sales (polled by updated_at to ensure completion records on the exact day)
+        $todaySalesQuery = Sale::whereIn('status', ['completed', 'reserved'])
+            ->where('updated_at', '>=', $todayStart)
             ->with(['items.product', 'branch', 'readiedBy', 'approvedBy']);
-
+ 
         if ($branchId) {
             $todaySalesQuery->where('branch_id', $branchId);
         } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
             $todaySalesQuery->where('branch_id', $user->branch_id);
         }
         $todaySales = $todaySalesQuery->get();
-
+ 
+        $todaySalesSum = 0;
         $todayCashSalesSum = 0;
         $todayEwalletSalesSum = 0;
         $todayHomeCreditSalesSum = 0;
-
+        $todayReservationSalesSum = 0;
+ 
         foreach ($todaySales as $sale) {
             $saleRevenue = $sale->items->sum(fn($item) => $item->quantity * $item->price);
             if ($sale->payment_method === 'cash') {
                 $todayCashSalesSum += $saleRevenue;
+                $todaySalesSum += $saleRevenue;
             } elseif ($sale->payment_method === 'e-wallet') {
                 $todayEwalletSalesSum += $saleRevenue;
+                $todaySalesSum += $saleRevenue;
             } elseif ($sale->payment_method === 'home_credit') {
                 $todayHomeCreditSalesSum += $saleRevenue;
+                $todaySalesSum += $saleRevenue;
                 if ($sale->downpayment > 0) {
                     $todayCashSalesSum += $sale->downpayment;
                 }
+            } elseif ($sale->payment_method === 'reservation') {
+                $todayReservationSalesSum += $saleRevenue;
+                $todaySalesSum += $saleRevenue;
+                if ($sale->status === 'reserved') {
+                    $todayCashSalesSum += $sale->downpayment;
+                } elseif ($sale->status === 'completed') {
+                    if ($sale->ewallet_provider) {
+                        if ($sale->created_at >= $todayStart) {
+                            $todayCashSalesSum += $sale->downpayment;
+                        }
+                        $todayEwalletSalesSum += ($saleRevenue - $sale->downpayment);
+                    } else {
+                        if ($sale->created_at >= $todayStart) {
+                            $todayCashSalesSum += $saleRevenue;
+                        } else {
+                            $todayCashSalesSum += ($saleRevenue - $sale->downpayment);
+                        }
+                    }
+                }
             }
         }
-        $todaySalesSum = ($todayCashSalesSum - $todaySales->where('payment_method', 'home_credit')->sum('downpayment')) + $todayEwalletSalesSum + $todayHomeCreditSalesSum;
-
+ 
         // 2. Today's Expenses
         $todayExpensesQuery = Expense::where('created_at', '>=', $todayStart)
             ->with('creator');
-
+ 
         if ($branchId) {
             $todayExpensesQuery->where('branch_id', $branchId);
         } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
@@ -111,11 +134,11 @@ class SaleController extends Controller
         }
         $todayExpenses = $todayExpensesQuery->get();
         $todayExpensesSum = $todayExpenses->sum('amount');
-
+ 
         // 3. Today's Service Fees
         $todayServiceFeesQuery = ServiceFee::where('created_at', '>=', $todayStart)
             ->with('creator');
-
+ 
         if ($branchId) {
             $todayServiceFeesQuery->where('branch_id', $branchId);
         } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
@@ -123,15 +146,16 @@ class SaleController extends Controller
         }
         $todayServiceFees = $todayServiceFeesQuery->get();
         $todayServiceFeesSum = $todayServiceFees->sum('amount');
-
+ 
         // 4. Cash on Hand
         $cashOnHand = $todayCashSalesSum + $todayServiceFeesSum - $todayExpensesSum;
-
+ 
         $stats = [
             'today_sales' => (float)$todaySalesSum,
             'today_cash_sales' => (float)$todayCashSalesSum,
             'today_ewallet_sales' => (float)$todayEwalletSalesSum,
             'today_home_credit_sales' => (float)$todayHomeCreditSalesSum,
+            'today_reservation_sales' => (float)$todayReservationSalesSum,
             'today_expenses' => (float)$todayExpensesSum,
             'today_service_fees' => (float)$todayServiceFeesSum,
             'cash_on_hand' => (float)$cashOnHand,
@@ -164,7 +188,7 @@ class SaleController extends Controller
         if ($statusFilter !== 'all') {
             $query->where('status', $statusFilter);
         } else {
-            $query->whereIn('status', ['completed', 'cancelled']);
+            $query->whereIn('status', ['completed', 'cancelled', 'reserved']);
         }
             
         $dateFrom = $request->query('date_from');
@@ -253,10 +277,10 @@ class SaleController extends Controller
             )
             ->get();
         
-        // Get readied sales pending approval (for branch admins)
+        // Get readied or reserved sales pending approval (for branch admins)
         $pendingSales = Sale::with(['items.product', 'readiedBy'])
             ->where('branch_id', $branchId)
-            ->where('status', 'readied')
+            ->whereIn('status', ['readied', 'reserved'])
             ->latest()
             ->get();
         
@@ -432,50 +456,93 @@ class SaleController extends Controller
             abort(403, 'Only administrators can approve sales');
         }
         
-        if ($sale->status !== 'readied') {
-            return redirect()->back()->with('error', 'Sale is not in readied status');
+        if ($sale->status !== 'readied' && $sale->status !== 'reserved') {
+            return redirect()->back()->with('error', 'Sale is not in a status that can be approved');
         }
 
-        $request->validate([
-            'payment_method' => 'required|in:cash,e-wallet,home_credit',
+        $isCompleting = $request->input('is_completing_reservation') === true || $request->input('is_completing_reservation') === 'true' || $sale->status === 'reserved';
+
+        $rules = [
+            'payment_method' => 'required|in:cash,e-wallet,home_credit,reservation',
             'ewallet_provider' => 'required_if:payment_method,e-wallet|nullable|string',
             'proof_of_payment' => 'required_if:payment_method,e-wallet|nullable|image|max:5120', // 5MB max
             'cash_received' => 'required_if:payment_method,cash|nullable|numeric|min:0',
             'change_amount' => 'required_if:payment_method,cash|nullable|numeric|min:0',
             'home_credited_name' => 'required_if:payment_method,home_credit|nullable|string',
             'downpayment' => 'nullable|numeric|min:0',
-        ]);
+        ];
+
+        if ($isCompleting) {
+            $rules['reservation_final_method'] = 'required|in:cash,e-wallet';
+            $rules['reservation_cash_received'] = 'required_if:reservation_final_method,cash|nullable|numeric|min:0';
+            $rules['reservation_change_amount'] = 'required_if:reservation_final_method,cash|nullable|numeric|min:0';
+            $rules['reservation_ewallet_provider'] = 'required_if:reservation_final_method,e-wallet|nullable|string';
+            $rules['reservation_proof_of_payment'] = 'required_if:reservation_final_method,e-wallet|nullable|image|max:5120';
+        } else {
+            $rules['customer_name'] = 'required_if:payment_method,reservation|nullable|string';
+            $rules['reservation_buy_date'] = 'nullable|date';
+            $rules['downpayment'] = 'required_if:payment_method,reservation|nullable|numeric|min:0';
+        }
+
+        $request->validate($rules);
         
-        DB::transaction(function () use ($sale, $user, $request) {
-            // Deduct inventory for each item
-            foreach ($sale->items as $item) {
-                DB::table('branch_products')
-                    ->where('branch_id', $sale->branch_id)
-                    ->where('product_id', $item->product_id)
-                    ->decrement('quantity', $item->quantity);
-            }
-            
-            $updateData = [
-                'status' => 'completed',
-                'approved_by' => $user->id,
-                'payment_method' => $request->payment_method,
-            ];
+        DB::transaction(function () use ($sale, $user, $request, $isCompleting) {
+            if ($isCompleting) {
+                $updateData = [
+                    'status' => 'completed',
+                    'approved_by' => $user->id,
+                ];
 
-            if ($request->payment_method === 'e-wallet') {
-                $updateData['ewallet_provider'] = $request->ewallet_provider;
-                if ($request->hasFile('proof_of_payment')) {
-                    $path = $request->file('proof_of_payment')->store('proofs', 'public');
-                    $updateData['proof_of_payment_path'] = $path;
+                if ($request->reservation_final_method === 'e-wallet') {
+                    $updateData['ewallet_provider'] = $request->reservation_ewallet_provider;
+                    if ($request->hasFile('reservation_proof_of_payment')) {
+                        $path = $request->file('reservation_proof_of_payment')->store('proofs', 'public');
+                        $updateData['proof_of_payment_path'] = $path;
+                    }
+                } else {
+                    $updateData['cash_received'] = $request->reservation_cash_received;
+                    $updateData['change_amount'] = $request->reservation_change_amount;
                 }
-            } elseif ($request->payment_method === 'home_credit') {
-                $updateData['home_credited_name'] = $request->home_credited_name;
-                $updateData['downpayment'] = $request->downpayment;
-            } else {
-                $updateData['cash_received'] = $request->cash_received;
-                $updateData['change_amount'] = $request->change_amount;
-            }
 
-            $sale->update($updateData);
+                $sale->update($updateData);
+            } else {
+                // Deduct inventory for each item
+                foreach ($sale->items as $item) {
+                    DB::table('branch_products')
+                        ->where('branch_id', $sale->branch_id)
+                        ->where('product_id', $item->product_id)
+                        ->decrement('quantity', $item->quantity);
+                }
+                
+                $updateData = [
+                    'approved_by' => $user->id,
+                    'payment_method' => $request->payment_method,
+                ];
+
+                if ($request->payment_method === 'reservation') {
+                    $updateData['status'] = 'reserved';
+                    $updateData['customer_name'] = $request->customer_name;
+                    $updateData['downpayment'] = $request->downpayment;
+                    $updateData['reservation_buy_date'] = $request->reservation_buy_date;
+                } elseif ($request->payment_method === 'e-wallet') {
+                    $updateData['status'] = 'completed';
+                    $updateData['ewallet_provider'] = $request->ewallet_provider;
+                    if ($request->hasFile('proof_of_payment')) {
+                        $path = $request->file('proof_of_payment')->store('proofs', 'public');
+                        $updateData['proof_of_payment_path'] = $path;
+                    }
+                } elseif ($request->payment_method === 'home_credit') {
+                    $updateData['status'] = 'completed';
+                    $updateData['home_credited_name'] = $request->home_credited_name;
+                    $updateData['downpayment'] = $request->downpayment;
+                } else {
+                    $updateData['status'] = 'completed';
+                    $updateData['cash_received'] = $request->cash_received;
+                    $updateData['change_amount'] = $request->change_amount;
+                }
+
+                $sale->update($updateData);
+            }
         });
         
         // Notify the user who readied the sale
@@ -492,7 +559,7 @@ class SaleController extends Controller
             \Illuminate\Support\Facades\Log::error("Failed to send sale approval notification: " . $e->getMessage());
         }
 
-        return redirect()->back()->with('success', 'Sale approved and inventory updated.');
+        return redirect()->back()->with('success', 'Sale approved successfully.');
     }
 
     /**
@@ -500,11 +567,22 @@ class SaleController extends Controller
      */
     public function cancel(Sale $sale, \App\Services\OneSignalService $oneSignal)
     {
-        if ($sale->status !== 'readied') {
-            return redirect()->back()->with('error', 'Only readied sales can be cancelled');
+        if ($sale->status !== 'readied' && $sale->status !== 'reserved') {
+            return redirect()->back()->with('error', 'Only readied or reserved sales can be cancelled');
         }
         
-        $sale->update(['status' => 'cancelled']);
+        DB::transaction(function () use ($sale) {
+            // Restore inventory if it was reserved
+            if ($sale->status === 'reserved') {
+                foreach ($sale->items as $item) {
+                    DB::table('branch_products')
+                        ->where('branch_id', $sale->branch_id)
+                        ->where('product_id', $item->product_id)
+                        ->increment('quantity', $item->quantity);
+                }
+            }
+            $sale->update(['status' => 'cancelled']);
+        });
         
         // Notify the user who readied the sale
         try {

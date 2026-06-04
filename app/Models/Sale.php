@@ -19,6 +19,8 @@ class Sale extends Model
         'downpayment',
         'cash_received',
         'change_amount',
+        'customer_name',
+        'reservation_buy_date',
     ];
 
     public function branch()

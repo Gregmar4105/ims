@@ -10,7 +10,7 @@ import { PrintSelectionModal } from '@/components/print-selection-modal';
 interface Sale {
     id: number;
     branch_id: number;
-    status: 'readied' | 'completed' | 'cancelled';
+    status: 'readied' | 'completed' | 'cancelled' | 'reserved';
     created_at: string;
     branch: { branch_name: string, address?: string, phone?: string };
     readied_by: { name: string };
@@ -29,6 +29,8 @@ interface Sale {
     downpayment?: number | null;
     cash_received?: number | null;
     change_amount?: number | null;
+    customer_name?: string | null;
+    reservation_buy_date?: string | null;
 }
 
 export default function PrintItem({ sale }: { sale: Sale }) {
@@ -166,7 +168,8 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                                     <span>Payment Method</span>
                                     <span className="capitalize">
                                         {sale.payment_method === 'e-wallet' ? `E-Wallet (${sale.ewallet_provider})` : 
-                                         sale.payment_method === 'home_credit' ? `Home Credit (${sale.home_credited_name || 'Bikes and Accessories'})` : 'Cash'}
+                                         sale.payment_method === 'home_credit' ? `Home Credit (${sale.home_credited_name || 'Bikes and Accessories'})` : 
+                                         sale.payment_method === 'reservation' ? 'Reservation' : 'Cash'}
                                     </span>
                                 </div>
                                 {sale.payment_method === 'cash' && (
@@ -186,6 +189,43 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                                         <span>Downpayment</span>
                                         <span>₱{Number(sale.downpayment).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                     </div>
+                                )}
+                                {sale.payment_method === 'reservation' && (
+                                    <>
+                                        <div className="flex justify-between">
+                                            <span>Customer Name</span>
+                                            <span className="font-semibold text-black">{sale.customer_name}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Downpayment</span>
+                                            <span>₱{Number(sale.downpayment).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                        {sale.status === 'completed' ? (
+                                            <>
+                                                <div className="flex justify-between">
+                                                    <span>Remaining Paid via</span>
+                                                    <span className="font-semibold text-black">{sale.ewallet_provider ? `E-Wallet (${sale.ewallet_provider})` : 'Cash'}</span>
+                                                </div>
+                                                {!sale.ewallet_provider && sale.cash_received && (
+                                                    <>
+                                                        <div className="flex justify-between">
+                                                            <span>Remaining Cash Tendered</span>
+                                                            <span>₱{Number(sale.cash_received).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                                        </div>
+                                                        <div className="flex justify-between font-semibold text-black">
+                                                            <span>Change</span>
+                                                            <span>₱{Number(sale.change_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="flex justify-between text-blue-600 font-semibold pt-1 border-t border-dashed">
+                                                <span>Remaining Balance</span>
+                                                <span>₱{(totalRevenue - Number(sale.downpayment || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         )}

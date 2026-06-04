@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 interface Sale {
     id: number;
     branch_id: number;
-    status: 'readied' | 'completed' | 'cancelled';
+    status: 'readied' | 'completed' | 'cancelled' | 'reserved';
     created_at: string;
     branch: { branch_name: string };
     readied_by: { name: string };
@@ -109,8 +109,10 @@ export default function PrintList({ sales, filters }: { sales: Sale[], filters: 
                                             {sale.status === 'completed' && <CheckCircle className="w-3.5 h-3.5 text-green-600" />}
                                             {sale.status === 'cancelled' && <XCircle className="w-3.5 h-3.5 text-red-600" />}
                                             {sale.status === 'readied' && <Clock className="w-3.5 h-3.5 text-yellow-600" />}
+                                            {sale.status === 'reserved' && <Clock className="w-3.5 h-3.5 text-blue-600" />}
                                             <span className={`capitalize ${sale.status === 'completed' ? 'text-green-700' :
-                                                sale.status === 'cancelled' ? 'text-red-700' : 'text-gray-700'
+                                                sale.status === 'cancelled' ? 'text-red-700' :
+                                                sale.status === 'reserved' ? 'text-blue-700 font-bold' : 'text-gray-700'
                                                 }`}>
                                                 {sale.status}
                                             </span>
@@ -140,9 +142,9 @@ export default function PrintList({ sales, filters }: { sales: Sale[], filters: 
                         <div className="text-right">
                             <p className="text-sm text-gray-500 uppercase tracking-widest font-semibold mb-1">Total Report Revenue</p>
                             <p className="text-3xl font-bold text-gray-900">
-                                ₱{sales.filter(s => s.status === 'completed').reduce((sum, sale) => sum + calculateTotal(sale), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                ₱{sales.filter(s => s.status === 'completed' || s.status === 'reserved').reduce((sum, sale) => sum + calculateTotal(sale), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </p>
-                            <p className="text-xs text-gray-400 mt-1">Sum of completed transactions only</p>
+                            <p className="text-xs text-gray-400 mt-1">Sum of completed and reserved transactions</p>
                         </div>
                     </div>
                 )}
