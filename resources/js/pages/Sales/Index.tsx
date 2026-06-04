@@ -429,6 +429,40 @@ export default function Index({
                     </a>
                 </div>
 
+                {/* Date Preset Toggles */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-white dark:bg-zinc-950 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm w-fit">
+                    <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg overflow-x-auto">
+                        {[
+                            { value: 'today', label: 'Today' },
+                            { value: 'weekly', label: 'Weekly' },
+                            { value: 'monthly', label: 'Monthly' },
+                            { value: 'ytd', label: 'YTD' },
+                            { value: 'all', label: 'All Time' }
+                        ].map((preset) => (
+                            <button
+                                key={preset.value}
+                                type="button"
+                                onClick={() => handlePresetChange(preset.value)}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
+                                    datePreset === preset.value
+                                        ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm border border-zinc-200/50 dark:border-zinc-700'
+                                        : 'text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-850'
+                                }`}
+                            >
+                                {preset.label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="text-xs text-muted-foreground font-medium px-2 hidden sm:block">
+                        {datePreset === 'today' && "Showing stats and sales for today"}
+                        {datePreset === 'weekly' && "Showing stats and sales for this week (Mon-Sun)"}
+                        {datePreset === 'monthly' && "Showing stats and sales for this month"}
+                        {datePreset === 'ytd' && "Showing stats and sales for this year (YTD)"}
+                        {datePreset === 'all' && "Showing stats and sales for all time"}
+                        {datePreset === 'custom' && "Showing stats and sales for custom date range"}
+                    </div>
+                </div>
+
                 {/* Summary Stats */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card className="border shadow-sm">
@@ -939,40 +973,6 @@ export default function Index({
                     <>
                         {/* Search Bar & Filters */}
                         <div className="flex flex-col gap-4">
-                            {/* Date Preset Toggles */}
-                            <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-zinc-950 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-                                <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg w-full sm:w-auto overflow-x-auto">
-                                    {[
-                                        { value: 'today', label: 'Today' },
-                                        { value: 'weekly', label: 'Weekly' },
-                                        { value: 'monthly', label: 'Monthly' },
-                                        { value: 'ytd', label: 'YTD' },
-                                        { value: 'all', label: 'All Time' }
-                                    ].map((preset) => (
-                                        <button
-                                            key={preset.value}
-                                            type="button"
-                                            onClick={() => handlePresetChange(preset.value)}
-                                            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
-                                                datePreset === preset.value
-                                                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm border border-zinc-200/50 dark:border-zinc-700'
-                                                    : 'text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-850'
-                                            }`}
-                                        >
-                                            {preset.label}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="text-xs text-muted-foreground font-medium px-1">
-                                    {datePreset === 'today' && "Showing stats and sales for today"}
-                                    {datePreset === 'weekly' && "Showing stats and sales for this week (Mon-Sun)"}
-                                    {datePreset === 'monthly' && "Showing stats and sales for this month"}
-                                    {datePreset === 'ytd' && "Showing stats and sales for this year (YTD)"}
-                                    {datePreset === 'all' && "Showing stats and sales for all time"}
-                                    {datePreset === 'custom' && "Showing stats and sales for custom date range"}
-                                </div>
-                            </div>
-
                             {/* Main Filters Row */}
                             <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-4 bg-white dark:bg-zinc-950 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
                                 <div className="relative flex-1 w-full min-w-[260px]">
