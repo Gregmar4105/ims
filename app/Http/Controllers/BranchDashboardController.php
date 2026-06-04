@@ -37,11 +37,47 @@ class BranchDashboardController extends Controller
             });
         };
 
-        // --- Stats Cards (Based on Revenue) ---
-        $dailySales = $salesQuery(SaleItem::query())
-            ->whereHas('sale', fn($q) => $q->whereDate('created_at', Carbon::today()))
-            ->sum(DB::raw('quantity * price'));
+        // --- Date Preset / Range Calculation ---
+        $datePreset = $request->input('date_preset', 'today');
         
+        $startDate = null;
+        $endDate = null;
+
+        if ($datePreset === 'today') {
+            $startDate = Carbon::today();
+            $endDate = Carbon::today()->endOfDay();
+        } elseif ($datePreset === 'weekly') {
+            $startDate = Carbon::now()->startOfWeek();
+            $endDate = Carbon::now()->endOfDay();
+        } elseif ($datePreset === 'monthly') {
+            $startDate = Carbon::now()->startOfMonth();
+            $endDate = Carbon::now()->endOfDay();
+        } elseif ($datePreset === 'ytd') {
+            $startDate = Carbon::now()->startOfYear();
+            $endDate = Carbon::now()->endOfDay();
+        } elseif ($datePreset === 'custom') {
+            $dateFrom = $request->input('date_from');
+            $dateTo = $request->input('date_to');
+            if ($dateFrom) {
+                $startDate = Carbon::parse($dateFrom)->startOfDay();
+            }
+            if ($dateTo) {
+                $endDate = Carbon::parse($dateTo)->endOfDay();
+            }
+        }
+
+        // --- Stats Cards (Based on Revenue) ---
+        // Overwrite "daily" sales with the selected period's sales
+        $periodSalesQuery = SaleItem::query();
+        $periodSalesQuery = $salesQuery($periodSalesQuery);
+        if ($startDate) {
+            $periodSalesQuery->whereHas('sale', fn($q) => $q->where('created_at', '>=', $startDate));
+        }
+        if ($endDate) {
+            $periodSalesQuery->whereHas('sale', fn($q) => $q->where('created_at', '<=', $endDate));
+        }
+        $dailySales = (float)$periodSalesQuery->sum(DB::raw('quantity * price'));
+
         $weeklySales = $salesQuery(SaleItem::query())
             ->whereHas('sale', fn($q) => $q->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]))
             ->sum(DB::raw('quantity * price'));
@@ -54,35 +90,77 @@ class BranchDashboardController extends Controller
             ->whereHas('sale', fn($q) => $q->whereYear('created_at', Carbon::now()->year))
             ->sum(DB::raw('quantity * price'));
 
-        // --- Manual Date Tracking ---
-        // Handle Range: start_date to end_date
-        $startDate = $request->input('start_date') ? Carbon::parse($request->input('start_date')) : null;
-        $endDate = $request->input('end_date') ? Carbon::parse($request->input('end_date'))->endOfDay() : null;
-        
-        $selectedDateSales = 0;
-        if ($startDate && $endDate) {
-             $selectedDateSales = $salesQuery(SaleItem::query())
-                ->whereHas('sale', fn($q) => $q->whereBetween('created_at', [$startDate, $endDate]))
-                ->sum(DB::raw('quantity * price'));
-        } elseif ($startDate) {
-             // Fallback if only start date provided (though frontend should enforce both or handle logic)
-             $selectedDateSales = $salesQuery(SaleItem::query())
-                ->whereHas('sale', fn($q) => $q->whereDate('created_at', $startDate))
-                ->sum(DB::raw('quantity * price'));
-        }
+        $selectedDateSales = $dailySales;
 
         // --- Charts ---
-        // Sales Trend (Last 7 Days)
         $salesTrend = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $day = Carbon::today()->subDays($i);
-            $revenue = $salesQuery(SaleItem::query())
-                ->whereHas('sale', fn($q) => $q->whereDate('created_at', $day))
-                ->sum(DB::raw('quantity * price'));
-            $salesTrend[] = ['name' => $day->format('M d'), 'sales' => (float)$revenue];
+        $ytdTrend = [];
+
+        if ($datePreset === 'today') {
+            for ($i = 6; $i >= 0; $i--) {
+                $day = Carbon::today()->subDays($i);
+                $revenue = $salesQuery(SaleItem::query())
+                    ->whereHas('sale', fn($q) => $q->whereDate('created_at', $day))
+                    ->sum(DB::raw('quantity * price'));
+                $salesTrend[] = ['name' => $day->format('M d'), 'sales' => (float)$revenue];
+            }
+        } elseif ($datePreset === 'weekly') {
+            $start = Carbon::now()->startOfWeek();
+            for ($i = 0; $i < 7; $i++) {
+                $day = $start->copy()->addDays($i);
+                $revenue = $salesQuery(SaleItem::query())
+                    ->whereHas('sale', fn($q) => $q->whereDate('created_at', $day))
+                    ->sum(DB::raw('quantity * price'));
+                $salesTrend[] = ['name' => $day->format('D'), 'sales' => (float)$revenue];
+            }
+        } elseif ($datePreset === 'monthly') {
+            $start = Carbon::now()->startOfMonth();
+            $daysInMonth = Carbon::now()->daysInMonth;
+            for ($i = 0; $i < $daysInMonth; $i++) {
+                $day = $start->copy()->addDays($i);
+                if ($day->gt(Carbon::today())) {
+                    continue;
+                }
+                $revenue = $salesQuery(SaleItem::query())
+                    ->whereHas('sale', fn($q) => $q->whereDate('created_at', $day))
+                    ->sum(DB::raw('quantity * price'));
+                $salesTrend[] = ['name' => $day->format('d'), 'sales' => (float)$revenue];
+            }
+        } elseif ($datePreset === 'custom') {
+            if ($startDate && $endDate) {
+                $diffInDays = $startDate->diffInDays($endDate);
+                if ($diffInDays <= 31) {
+                    for ($i = 0; $i <= $diffInDays; $i++) {
+                        $day = $startDate->copy()->addDays($i);
+                        $revenue = $salesQuery(SaleItem::query())
+                            ->whereHas('sale', fn($q) => $q->whereDate('created_at', $day))
+                            ->sum(DB::raw('quantity * price'));
+                        $salesTrend[] = ['name' => $day->format('M d'), 'sales' => (float)$revenue];
+                    }
+                } else {
+                    $diffInMonths = $startDate->diffInMonths($endDate);
+                    for ($i = 0; $i <= $diffInMonths; $i++) {
+                        $month = $startDate->copy()->addMonths($i);
+                        $revenue = $salesQuery(SaleItem::query())
+                            ->whereHas('sale', fn($q) => $q->whereMonth('created_at', $month->month)->whereYear('created_at', $month->year))
+                            ->sum(DB::raw('quantity * price'));
+                        $salesTrend[] = ['name' => $month->format('M Y'), 'sales' => (float)$revenue];
+                    }
+                }
+            }
+        } else {
+            // 'ytd' or 'all'
+            $currentMonth = Carbon::now()->month;
+            for ($i = 1; $i <= $currentMonth; $i++) {
+                $month = Carbon::create(Carbon::now()->year, $i, 1);
+                $revenue = $salesQuery(SaleItem::query())
+                    ->whereHas('sale', fn($q) => $q->whereMonth('created_at', $i)->whereYear('created_at', Carbon::now()->year))
+                    ->sum(DB::raw('quantity * price'));
+                $salesTrend[] = ['name' => $month->format('M'), 'sales' => (float)$revenue];
+            }
         }
 
-        // Weekly Trend (Last 4 Weeks)
+        // Static trends for sparklines
         $weeklyTrend = [];
         for ($i = 3; $i >= 0; $i--) {
             $start = Carbon::now()->subWeeks($i)->startOfWeek();
@@ -93,7 +171,6 @@ class BranchDashboardController extends Controller
             $weeklyTrend[] = ['name' => 'Wk ' . (4 - $i), 'sales' => (float)$revenue];
         }
 
-        // Monthly Trend (Last 6 Months)
         $monthlyTrend = [];
         for ($i = 5; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i);
@@ -103,8 +180,7 @@ class BranchDashboardController extends Controller
             $monthlyTrend[] = ['name' => $month->format('M'), 'sales' => (float)$revenue];
         }
 
-        // YTD Trend (Monthly Sales of current year)
-        $ytdTrend = [];
+        // Build static YTD trend for card sparkline
         $currentMonth = Carbon::now()->month;
         for ($i = 1; $i <= $currentMonth; $i++) {
             $month = Carbon::create(Carbon::now()->year, $i, 1);
@@ -114,15 +190,19 @@ class BranchDashboardController extends Controller
             $ytdTrend[] = ['name' => $month->format('M'), 'sales' => (float)$revenue];
         }
 
-        // Sales Distribution (By Category) - Eloquent Collection approaches for reliability
-        // Only select what we need to avoid memory issues, though usually acceptable for small datasets
-        $salesDistribution = SaleItem::with(['product.category'])
-            ->whereHas('sale', function ($query) use ($branchId) {
+        // Sales Distribution (By Category) - filtered by selected period
+        $salesDistributionQuery = SaleItem::with(['product.category'])
+            ->whereHas('sale', function ($query) use ($branchId, $startDate, $endDate) {
                 $query->where('branch_id', $branchId)
-                      ->where('status', 'completed')
-                      ->whereYear('created_at', Carbon::now()->year);
-            })
-            ->get()
+                      ->where('status', 'completed');
+                if ($startDate) {
+                    $query->where('created_at', '>=', $startDate);
+                }
+                if ($endDate) {
+                    $query->where('created_at', '<=', $endDate);
+                }
+            });
+        $salesDistribution = $salesDistributionQuery->get()
             ->groupBy(fn($item) => $item->product?->category?->name ?? 'Uncategorized')
             ->map(function ($items, $categoryName) {
                 return ['name' => $categoryName, 'value' => (float)$items->sum(fn($item) => $item->quantity * $item->price)];
@@ -130,14 +210,19 @@ class BranchDashboardController extends Controller
             ->values()
             ->all();
 
-        // Product Distribution
-        $productDistribution = SaleItem::with(['product'])
-            ->whereHas('sale', function ($query) use ($branchId) {
+        // Product Distribution - filtered by selected period
+        $productDistributionQuery = SaleItem::with(['product'])
+            ->whereHas('sale', function ($query) use ($branchId, $startDate, $endDate) {
                 $query->where('branch_id', $branchId)
-                      ->where('status', 'completed')
-                      ->whereYear('created_at', Carbon::now()->year);
-            })
-            ->get()
+                      ->where('status', 'completed');
+                if ($startDate) {
+                    $query->where('created_at', '>=', $startDate);
+                }
+                if ($endDate) {
+                    $query->where('created_at', '<=', $endDate);
+                }
+            });
+        $productDistribution = $productDistributionQuery->get()
             ->groupBy(fn($item) => $item->product?->name ?? 'Unknown Product')
             ->map(function ($items, $productName) {
                 return ['name' => $productName, 'value' => (float)$items->sum('quantity')];
@@ -165,16 +250,12 @@ class BranchDashboardController extends Controller
             $monthly = $getUserRevenue(SaleItem::whereHas('sale', fn($q) => $q->whereMonth('created_at', Carbon::now()->month)->whereYear('created_at', Carbon::now()->year)));
             $total = $getUserRevenue(SaleItem::query());
             
-            // Outgoing Transfers (count remains count?)
-            // Usually dashboard counts items, but maybe revenue too? 
-            // The prompt asks for "sales dashboard", usually transfers are internal operations.
-            // I'll keep outgoing as count for now as it's not "sales revenue".
             $outgoing = 0;
-             if (class_exists(\App\Models\Transfer::class)) {
+            if (class_exists(\App\Models\Transfer::class)) {
                 $outgoing = \App\Models\Transfer::where('source_branch_id', $branchId)
                             ->where('readied_by', $employee->id)
                             ->count();
-             }
+            }
 
             return [
                 'id' => $employee->id,
@@ -231,6 +312,9 @@ class BranchDashboardController extends Controller
             'productData' => $productDistribution,
             'leaderboard' => $leaderboard,
             'filters' => [
+                'date_preset' => $datePreset,
+                'date_from' => $request->input('date_from'),
+                'date_to' => $request->input('date_to'),
                 'start_date' => $startDate ? $startDate->format('Y-m-d') : null,
                 'end_date' => $endDate ? $endDate->format('Y-m-d') : null,
                 'selectedDateSales' => (float)$selectedDateSales,

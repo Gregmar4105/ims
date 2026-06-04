@@ -72,6 +72,9 @@ interface DashboardProps {
         outgoing: number;
     }[];
     filters: {
+        date_preset?: string;
+        date_from?: string;
+        date_to?: string;
         start_date?: string;
         end_date?: string;
         selectedDateSales?: number;
@@ -247,6 +250,57 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
     const isSystemAdmin = auth.roles.includes('System Administrator');
     const isBranchAdmin = auth.roles.includes('Branch Administrator') && !isSystemAdmin;
 
+    // --- Date Preset and Custom Date States ---
+    const [datePreset, setDatePreset] = useState(filters.date_preset || 'today');
+    const [dateFrom, setDateFrom] = useState(filters.date_from || '');
+    const [dateTo, setDateTo] = useState(filters.date_to || '');
+
+    const performSearch = () => {
+        router.get('/branch-dashboard', {
+            date_preset: datePreset,
+            date_from: dateFrom,
+            date_to: dateTo
+        }, { preserveState: true, replace: true, preserveScroll: true });
+    };
+
+    useEffect(() => {
+        if (
+            datePreset !== (filters.date_preset || 'today') ||
+            dateFrom !== (filters.date_from || '') ||
+            dateTo !== (filters.date_to || '')
+        ) {
+            performSearch();
+        }
+    }, [datePreset, dateFrom, dateTo]);
+
+    const handlePresetChange = (preset: string) => {
+        setDatePreset(preset);
+        setDateFrom('');
+        setDateTo('');
+    };
+
+    const handleDateFromChange = (val: string) => {
+        setDateFrom(val);
+        setDatePreset('custom');
+    };
+
+    const handleDateToChange = (val: string) => {
+        setDateTo(val);
+        setDatePreset('custom');
+    };
+
+    const getPeriodSubLabel = (baseText: string) => {
+        switch (datePreset) {
+            case 'today': return `Today's ${baseText}`;
+            case 'weekly': return `This week's ${baseText}`;
+            case 'monthly': return `This month's ${baseText}`;
+            case 'ytd': return `YTD ${baseText}`;
+            case 'all': return `All-time ${baseText}`;
+            case 'custom': return `Selected period's ${baseText}`;
+            default: return `${baseText}`;
+        }
+    };
+
     // --- Pending Counts State & Real-time Polling ---
     const [counts, setCounts] = useState({
         sales: pendingCounts?.sales ?? 0,
@@ -289,9 +343,15 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
     const [isSearching, setIsSearching] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
     const [stockDistribution, setStockDistribution] = useState<any[]>(productData);
-    const [stockTitle, setStockTitle] = useState("Sales by Product");
-    const [stockSubtitle, setStockSubtitle] = useState("Year to Date Total Quantity Sold per Product");
+    const stockTitle = selectedProduct ? `Stock: ${selectedProduct.name}` : "Sales by Product";
+    const stockSubtitle = selectedProduct ? "Current inventory across all branches" : getPeriodSubLabel("Total Quantity Sold per Product");
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+    useEffect(() => {
+        if (!selectedProduct) {
+            setStockDistribution(productData);
+        }
+    }, [productData, selectedProduct]);
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
@@ -324,8 +384,6 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
             const data = await response.json();
             setStockDistribution(data.distribution);
             setSelectedProduct(product);
-            setStockTitle(`Stock: ${product.name}`);
-            setStockSubtitle(`Current inventory across all branches`);
             setIsSearchOpen(false);
             setSearchQuery('');
         } catch (error) {
@@ -336,8 +394,6 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
     const resetToSales = () => {
         setStockDistribution(productData);
         setSelectedProduct(null);
-        setStockTitle("Sales by Product");
-        setStockSubtitle("Year to Date Total Quantity Sold per Product");
     };
     
     const [greeting] = useState(() => {
@@ -419,19 +475,73 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                     </p>
                 </div>
 
+                {/* Date Preset Toggles & Custom Date Range */}
+                <div className="flex flex-row items-center flex-wrap gap-3 bg-white dark:bg-zinc-950 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm w-fit">
+                    <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg overflow-x-auto">
+                        {[
+                            { value: 'today', label: 'Today' },
+                            { value: 'weekly', label: 'Weekly' },
+                            { value: 'monthly', label: 'Monthly' },
+                            { value: 'ytd', label: 'YTD' },
+                            { value: 'all', label: 'All Time' }
+                        ].map((preset) => (
+                            <button
+                                key={preset.value}
+                                type="button"
+                                onClick={() => handlePresetChange(preset.value)}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
+                                    datePreset === preset.value
+                                        ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm border border-zinc-200/50 dark:border-zinc-700'
+                                        : 'text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-850'
+                                }`}
+                            >
+                                {preset.label}
+                            </button>
+                        ))}
+                    </div>
+                    
+                    <div className="hidden sm:block h-6 w-px bg-zinc-200 dark:bg-zinc-850" />
+
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 bg-muted/20 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                            <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">From:</span>
+                            <input
+                                type="date"
+                                className="bg-transparent border-none text-xs outline-none w-[110px] dark:text-zinc-100"
+                                value={dateFrom}
+                                onChange={(e) => handleDateFromChange(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-muted/20 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                            <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">To:</span>
+                            <input
+                                type="date"
+                                className="bg-transparent border-none text-xs outline-none w-[110px] dark:text-zinc-100"
+                                value={dateTo}
+                                onChange={(e) => handleDateToChange(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                </div>
+
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                     <Card className={`overflow-hidden flex flex-col justify-between ${isBranchAdmin ? 'h-full' : 'h-auto md:h-full pt-3 pb-0 px-0 md:pt-6 md:pb-0 md:px-0 gap-1 md:gap-4'} ${!isSystemAdmin ? 'col-span-2 lg:col-span-1' : ''}`}>
                         <div>
                             <CardHeader className={`flex flex-row items-center justify-between space-y-0 ${isBranchAdmin ? 'p-6 pb-2' : 'p-3 px-4 pb-1 md:p-6 md:pb-2'}`}>
-                                <CardTitle className="text-sm font-medium">Daily Revenue</CardTitle>
+                                <CardTitle className="text-sm font-medium">
+                                    {datePreset === 'today' ? "Daily" : datePreset === 'weekly' ? "Weekly" : datePreset === 'monthly' ? "Monthly" : datePreset === 'ytd' ? "YTD" : datePreset === 'all' ? "All-Time" : "Period"} Revenue
+                                </CardTitle>
                                 <PhilippinePeso className="text-muted-foreground h-4 w-4" />
                             </CardHeader>
                             <CardContent className={isBranchAdmin ? 'pb-0' : 'p-4 pt-0 pb-0 md:p-6 md:pt-0 md:pb-0'}>
                                 <div className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" title={formatCurrency(stats.daily)}>
                                     {formatCurrency(stats.daily)}
                                 </div>
-                                <p className="text-muted-foreground text-[10px] sm:text-xs">Revenue today</p>
+                                <p className="text-muted-foreground text-[10px] sm:text-xs">
+                                    {datePreset === 'today' ? "Revenue today" : datePreset === 'weekly' ? "Revenue this week" : datePreset === 'monthly' ? "Revenue this month" : datePreset === 'ytd' ? "Revenue this year" : datePreset === 'all' ? "Total revenue all-time" : "Revenue for selected period"}
+                                </p>
                             </CardContent>
                         </div>
                         {stats.dailyTrend && (
@@ -582,12 +692,15 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                 </div>
 
                 {/* Graphs Layout */}
-                <div className="grid gap-4 lg:grid-cols-3">
-                    {/* Left: Annual Trend (Broad) */}
+                <div className="grid gap-4 lg:grid-cols-3">                    {/* Left: Annual Trend (Broad) */}
                     <Card className="lg:col-span-2 flex flex-col">
                         <CardHeader>
-                            <CardTitle>Daily Sales Trend</CardTitle>
-                            <p className="text-sm text-muted-foreground">Revenue generated per day in the selected period</p>
+                            <CardTitle>
+                                {datePreset === 'today' ? "Daily Sales Trend" : datePreset === 'weekly' ? "Weekly Sales Trend" : datePreset === 'monthly' ? "Monthly Sales Trend" : datePreset === 'ytd' ? "YTD Sales Trend" : datePreset === 'all' ? "All-Time Sales Trend" : "Period Sales Trend"}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                                {datePreset === 'today' ? "Revenue generated per day (past 7 days)" : "Revenue generated per interval in the selected period"}
+                            </p>
                         </CardHeader>
                         <CardContent className="pl-2 flex-1 min-h-[220px] sm:min-h-[300px] md:min-h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
@@ -633,12 +746,12 @@ export default function BranchDashboard({ branchLocation, stats, chartData, pieD
                             </ResponsiveContainer>
                         </CardContent>
                     </Card>
-
+ 
                     {/* Right Column: Distribution Charts */}
                     <div className="flex flex-col gap-4">
                         <DistributionCard 
                             title="Sales by Category" 
-                            subtitle="Year to Date Revenue per Category" 
+                            subtitle={getPeriodSubLabel("Revenue per Category")} 
                             data={pieData} 
                         />
 

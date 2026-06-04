@@ -429,8 +429,8 @@ export default function Index({
                     </a>
                 </div>
 
-                {/* Date Preset Toggles */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-white dark:bg-zinc-950 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm w-fit">
+                {/* Date Preset Toggles & Custom Date Range */}
+                <div className="flex flex-row items-center flex-wrap gap-3 bg-white dark:bg-zinc-950 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm w-fit">
                     <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg overflow-x-auto">
                         {[
                             { value: 'today', label: 'Today' },
@@ -453,13 +453,29 @@ export default function Index({
                             </button>
                         ))}
                     </div>
-                    <div className="text-xs text-muted-foreground font-medium px-2 hidden sm:block">
-                        {datePreset === 'today' && "Showing stats and sales for today"}
-                        {datePreset === 'weekly' && "Showing stats and sales for this week (Mon-Sun)"}
-                        {datePreset === 'monthly' && "Showing stats and sales for this month"}
-                        {datePreset === 'ytd' && "Showing stats and sales for this year (YTD)"}
-                        {datePreset === 'all' && "Showing stats and sales for all time"}
-                        {datePreset === 'custom' && "Showing stats and sales for custom date range"}
+                    
+                    <div className="hidden sm:block h-6 w-px bg-zinc-200 dark:bg-zinc-850" />
+
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 bg-muted/20 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                            <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">From:</span>
+                            <input
+                                type="date"
+                                className="bg-transparent border-none text-xs outline-none w-[110px] dark:text-zinc-100"
+                                value={dateFrom}
+                                onChange={(e) => handleDateFromChange(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-muted/20 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                            <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">To:</span>
+                            <input
+                                type="date"
+                                className="bg-transparent border-none text-xs outline-none w-[110px] dark:text-zinc-100"
+                                value={dateTo}
+                                onChange={(e) => handleDateToChange(e.target.value)}
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -1012,25 +1028,7 @@ export default function Index({
                                         </SelectContent>
                                     </Select>
 
-                                    <div className="flex items-center gap-2 bg-muted/20 px-3 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-850">
-                                        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">From:</span>
-                                        <input
-                                            type="date"
-                                            className="bg-transparent border-none text-sm outline-none w-[110px] dark:text-zinc-100"
-                                            value={dateFrom}
-                                            onChange={(e) => handleDateFromChange(e.target.value)}
-                                        />
-                                    </div>
 
-                                    <div className="flex items-center gap-2 bg-muted/20 px-3 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-850">
-                                        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">To:</span>
-                                        <input
-                                            type="date"
-                                            className="bg-transparent border-none text-sm outline-none w-[110px] dark:text-zinc-100"
-                                            value={dateTo}
-                                            onChange={(e) => handleDateToChange(e.target.value)}
-                                        />
-                                    </div>
 
                                     {(dateFrom || dateTo || statusFilter !== 'all' || paymentMethod !== 'all' || datePreset !== 'today') && (
                                         <Button 
