@@ -998,6 +998,7 @@ class SaleController extends Controller
         // 2. Validate request
         $request->validate([
             'password' => 'required|string',
+            'type' => 'required|in:sales,transfers',
         ]);
 
         // 3. Verify password
@@ -1011,30 +1012,39 @@ class SaleController extends Controller
             return back()->withErrors(['error' => 'No active branch selected. Please select a branch first.']);
         }
 
-        // 5. Delete historical records in database without triggering event listeners
-        DB::transaction(function () use ($branchId) {
-            // Delete historical Sales (completed, cancelled)
-            Sale::withoutEvents(function () use ($branchId) {
-                Sale::where('branch_id', $branchId)
-                    ->whereIn('status', ['completed', 'cancelled'])
-                    ->delete();
-            });
+        $type = $request->type;
 
-            // Delete historical Transfers (completed, rejected)
-            \App\Models\Transfer::withoutEvents(function () use ($branchId) {
-                \App\Models\Transfer::where(function ($query) use ($branchId) {
-                    $query->where('source_branch_id', $branchId)
-                          ->orWhere('destination_branch_id', $branchId);
-                })
-                ->whereIn('status', ['completed', 'rejected'])
-                ->delete();
-            });
+        // 5. Delete historical records in database without triggering event listeners
+        DB::transaction(function () use ($branchId, $type) {
+            if ($type === 'sales') {
+                // Delete historical Sales (completed, cancelled)
+                Sale::withoutEvents(function () use ($branchId) {
+                    Sale::where('branch_id', $branchId)
+                        ->whereIn('status', ['completed', 'cancelled'])
+                        ->delete();
+                });
+            } else if ($type === 'transfers') {
+                // Delete historical Transfers (completed, rejected)
+                \App\Models\Transfer::withoutEvents(function () use ($branchId) {
+                    \App\Models\Transfer::where(function ($query) use ($branchId) {
+                        $query->where('source_branch_id', $branchId)
+                              ->orWhere('destination_branch_id', $branchId);
+                    })
+                    ->whereIn('status', ['completed', 'rejected'])
+                    ->delete();
+                });
+            }
         });
 
-        // 6. Bulk rewrite the Sales and Transfers sheets to Google Sheets to clear deleted items
-        $sheetsService->syncSalesSheet();
-        $sheetsService->syncTransfersSheet();
+        // 6. Bulk rewrite the corresponding sheet to Google Sheets to clear deleted items
+        if ($type === 'sales') {
+            $sheetsService->syncSalesSheet();
+            $successMsg = 'Historical sales for the active branch have been successfully cleared.';
+        } else {
+            $sheetsService->syncTransfersSheet();
+            $successMsg = 'Historical transfers for the active branch have been successfully cleared.';
+        }
 
-        return redirect()->back()->with('success', 'Historical sales and transfers for the active branch have been successfully cleared.');
+        return redirect()->back()->with('success', $successMsg);
     }
 }

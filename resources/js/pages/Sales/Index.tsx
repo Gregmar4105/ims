@@ -166,7 +166,8 @@ export default function Index({
         setIsDeleting(true);
 
         router.post('/history/delete-branch-history', {
-            password: confirmPassword
+            password: confirmPassword,
+            type: 'sales'
         }, {
             onSuccess: () => {
                 setShowDeleteHistoryModal(false);
@@ -1409,14 +1410,14 @@ export default function Index({
                     <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
                             <DialogTitle className="text-red-650 flex items-center gap-2">
-                                <Trash2 className="w-5 h-5 text-red-500" /> Delete Branch History
+                                <Trash2 className="w-5 h-5 text-red-500" /> Delete Sales History
                             </DialogTitle>
                             <DialogDescription className="text-zinc-600 dark:text-zinc-400 mt-2">
-                                You are about to permanently delete **all historical sales and transfers** that are either complete, cancelled, or rejected for the active branch <strong className="text-zinc-900 dark:text-zinc-100">{current_branch?.branch_name}</strong>.
+                                You are about to permanently delete **all historical sales** that are either complete or cancelled for the active branch <strong className="text-zinc-900 dark:text-zinc-100">{current_branch?.branch_name}</strong>.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 p-3.5 rounded-xl text-xs text-red-800 dark:text-red-300 font-medium">
-                            <strong>Warning:</strong> This action is irreversible. It will also permanently remove these records from Google Sheets.
+                            <strong>Warning:</strong> This action is irreversible. It will also permanently remove these records from the Google Sheets **Sales** tab.
                         </div>
                         <form onSubmit={handleDeleteHistory} className="space-y-4">
                             <div className="space-y-2">
