@@ -234,6 +234,10 @@ class SaleController extends Controller
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
             'reason' => 'nullable|string',
+            'return_type' => 'nullable|in:refund,exchange',
+            'replacement_product_id' => 'required_if:return_type,exchange|nullable|exists:products,id',
+            'replacement_quantity' => 'required_if:return_type,exchange|nullable|integer|min:1',
+            'restored_to_inventory' => 'nullable|boolean',
         ]);
 
         $user = $request->user();
@@ -259,19 +263,41 @@ class SaleController extends Controller
             return response()->json(['message' => 'Return quantity exceeds available amount.'], 422);
         }
 
-        DB::transaction(function () use ($request, $sale, $user) {
+        $returnType = $request->input('return_type', 'refund');
+        $restoredToInventory = $request->input('restored_to_inventory', true);
+
+        $refundAmount = 0.00;
+        if ($returnType === 'refund') {
+            $refundAmount = $request->quantity * $saleItem->price;
+        }
+
+        DB::transaction(function () use ($request, $sale, $user, $returnType, $restoredToInventory, $refundAmount) {
             SaleReturn::create([
                 'sale_id' => $sale->id,
                 'product_id' => $request->product_id,
                 'quantity' => $request->quantity,
                 'returned_by' => $user->id,
                 'reason' => $request->reason,
+                'return_type' => $returnType,
+                'replacement_product_id' => $returnType === 'exchange' ? $request->replacement_product_id : null,
+                'replacement_quantity' => $returnType === 'exchange' ? $request->replacement_quantity : null,
+                'refund_amount' => $refundAmount,
+                'restored_to_inventory' => (bool)$restoredToInventory,
             ]);
 
-            DB::table('branch_products')
-                ->where('branch_id', $sale->branch_id)
-                ->where('product_id', $request->product_id)
-                ->increment('quantity', $request->quantity);
+            if ($restoredToInventory) {
+                DB::table('branch_products')
+                    ->where('branch_id', $sale->branch_id)
+                    ->where('product_id', $request->product_id)
+                    ->increment('quantity', $request->quantity);
+            }
+
+            if ($returnType === 'exchange') {
+                DB::table('branch_products')
+                    ->where('branch_id', $sale->branch_id)
+                    ->where('product_id', $request->replacement_product_id)
+                    ->decrement('quantity', $request->replacement_quantity);
+            }
         });
 
         return response()->json(['message' => 'Return processed successfully.']);

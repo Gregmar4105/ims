@@ -171,8 +171,19 @@ class BranchDashboardController extends Controller
         }
         $todayServiceFeesSum = $todayServiceFeesQuery->sum('amount');
 
+        // Returns (for Cash on Hand deduction)
+        $todayReturnsQuery = \App\Models\SaleReturn::where('return_type', 'refund')
+            ->whereHas('sale', fn($q) => $q->where('branch_id', $branchId));
+        if ($startDate) {
+            $todayReturnsQuery->where('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $todayReturnsQuery->where('created_at', '<=', $endDate);
+        }
+        $todayReturnsSum = $todayReturnsQuery->sum('refund_amount');
+
         // Cash on Hand
-        $cashOnHand = $todayCashSalesSum + $todayServiceFeesSum - $todayExpensesSum;
+        $cashOnHand = $todayCashSalesSum + $todayServiceFeesSum - $todayExpensesSum - $todayReturnsSum;
 
         $weeklySales = $salesQuery(SaleItem::query())
             ->whereHas('sale', fn($q) => $q->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]))
@@ -413,6 +424,7 @@ class BranchDashboardController extends Controller
                 'today_reservation_sales' => (float)$todayReservationSalesSum,
                 'today_expenses' => (float)$todayExpensesSum,
                 'today_service_fees' => (float)$todayServiceFeesSum,
+                'today_returns_sum' => (float)$todayReturnsSum,
                 'cash_on_hand' => (float)$cashOnHand,
             ],
             'chartData' => $salesTrend,

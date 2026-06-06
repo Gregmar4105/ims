@@ -24,7 +24,7 @@ class SaleController extends Controller
     {
         $user = auth()->user();
         
-        $query = Sale::with(['items.product', 'branch', 'readiedBy', 'approvedBy'])
+        $query = Sale::with(['items.product', 'branch', 'readiedBy', 'approvedBy', 'returns.product', 'returns.replacementProduct'])
             ->latest();
             
         // Status Filter
@@ -212,8 +212,23 @@ class SaleController extends Controller
         $todayServiceFees = $todayServiceFeesQuery->get();
         $todayServiceFeesSum = $todayServiceFees->sum('amount');
  
-        // 4. Cash on Hand
-        $cashOnHand = $todayCashSalesSum + $todayServiceFeesSum - $todayExpensesSum;
+        // 4. Returns (for Cash on Hand deduction)
+        $todayReturnsQuery = SaleReturn::where('return_type', 'refund');
+        if ($startDate) {
+            $todayReturnsQuery->where('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $todayReturnsQuery->where('created_at', '<=', $endDate);
+        }
+        if ($branchId) {
+            $todayReturnsQuery->whereHas('sale', fn($q) => $q->where('branch_id', $branchId));
+        } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
+            $todayReturnsQuery->whereHas('sale', fn($q) => $q->where('branch_id', $user->branch_id));
+        }
+        $todayReturnsSum = $todayReturnsQuery->sum('refund_amount');
+
+        // 5. Cash on Hand
+        $cashOnHand = $todayCashSalesSum + $todayServiceFeesSum - $todayExpensesSum - $todayReturnsSum;
  
         $stats = [
             'today_sales' => (float)$todaySalesSum,
@@ -223,6 +238,7 @@ class SaleController extends Controller
             'today_reservation_sales' => (float)$todayReservationSalesSum,
             'today_expenses' => (float)$todayExpensesSum,
             'today_service_fees' => (float)$todayServiceFeesSum,
+            'today_returns_sum' => (float)$todayReturnsSum,
             'cash_on_hand' => (float)$cashOnHand,
         ];
         
@@ -422,9 +438,9 @@ class SaleController extends Controller
         if (!$search) return response()->json([]);
         
         $user = auth()->user();
-        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+        $branchId = $request->query('branch_id') ?: (($user->hasRole('System Administrator') && session()->has('active_branch_id'))
             ? session('active_branch_id')
-            : $user->branch_id;
+            : $user->branch_id);
         if (!$branchId) {
             return response()->json(['error' => 'User does not belong to a branch or active branch not selected'], 403);
         }
@@ -738,7 +754,7 @@ class SaleController extends Controller
             ->where('status', 'completed')
             ->latest();
         
-        $returnsQuery = SaleReturn::with(['sale.branch', 'product', 'returnedBy'])->latest();
+        $returnsQuery = SaleReturn::with(['sale.branch', 'product', 'replacementProduct', 'returnedBy'])->latest();
 
         $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
             ? session('active_branch_id')
@@ -755,6 +771,45 @@ class SaleController extends Controller
             $returnsQuery->whereHas('sale', function ($q) use ($user) {
                 $q->where('branch_id', $user->branch_id);
             });
+        }
+
+        // Date Preset / Range Calculation for RETURNS
+        $datePreset = $request->query('date_preset', 'today');
+        if ($user->hasRole('Branch Administrator') && !$user->hasRole('System Administrator')) {
+            $datePreset = 'today';
+        }
+        
+        $startDate = null;
+        $endDate = null;
+
+        if ($datePreset === 'today') {
+            $startDate = Carbon::today();
+            $endDate = Carbon::today()->endOfDay();
+        } elseif ($datePreset === 'weekly') {
+            $startDate = Carbon::now()->startOfWeek();
+            $endDate = Carbon::now()->endOfDay();
+        } elseif ($datePreset === 'monthly') {
+            $startDate = Carbon::now()->startOfMonth();
+            $endDate = Carbon::now()->endOfDay();
+        } elseif ($datePreset === 'ytd') {
+            $startDate = Carbon::now()->startOfYear();
+            $endDate = Carbon::now()->endOfDay();
+        } elseif ($datePreset === 'custom') {
+            $dateFrom = $request->query('date_from');
+            $dateTo = $request->query('date_to');
+            if ($dateFrom) {
+                $startDate = Carbon::parse($dateFrom)->startOfDay();
+            }
+            if ($dateTo) {
+                $endDate = Carbon::parse($dateTo)->endOfDay();
+            }
+        }
+
+        if ($startDate) {
+            $returnsQuery->where('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $returnsQuery->where('created_at', '<=', $endDate);
         }
         
         // Search Filter
@@ -780,7 +835,7 @@ class SaleController extends Controller
         return Inertia::render('Sales/Returns', [
             'completedSales' => $completedSales,
             'recentReturns' => $recentReturns,
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search', 'date_preset', 'date_from', 'date_to']),
         ]);
     }
 
@@ -794,6 +849,10 @@ class SaleController extends Controller
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
             'reason' => 'nullable|string',
+            'return_type' => 'required|in:refund,exchange',
+            'replacement_product_id' => 'required_if:return_type,exchange|nullable|exists:products,id',
+            'replacement_quantity' => 'required_if:return_type,exchange|nullable|integer|min:1',
+            'restored_to_inventory' => 'required|boolean',
         ]);
         
         $user = auth()->user();
@@ -817,7 +876,13 @@ class SaleController extends Controller
             return redirect()->back()->with('error', 'Return quantity exceeds available amount');
         }
         
-        DB::transaction(function () use ($request, $sale, $user) {
+        // Calculate refund amount if type is refund
+        $refundAmount = 0.00;
+        if ($request->return_type === 'refund') {
+            $refundAmount = $request->quantity * $saleItem->price;
+        }
+
+        DB::transaction(function () use ($request, $sale, $user, $refundAmount) {
             // Create return record
             SaleReturn::create([
                 'sale_id' => $sale->id,
@@ -825,13 +890,28 @@ class SaleController extends Controller
                 'quantity' => $request->quantity,
                 'returned_by' => $user->id,
                 'reason' => $request->reason,
+                'return_type' => $request->return_type,
+                'replacement_product_id' => $request->return_type === 'exchange' ? $request->replacement_product_id : null,
+                'replacement_quantity' => $request->return_type === 'exchange' ? $request->replacement_quantity : null,
+                'refund_amount' => $refundAmount,
+                'restored_to_inventory' => (bool)$request->restored_to_inventory,
             ]);
             
-            // Restore inventory
-            DB::table('branch_products')
-                ->where('branch_id', $sale->branch_id)
-                ->where('product_id', $request->product_id)
-                ->increment('quantity', $request->quantity);
+            // Restore original item to inventory if specified
+            if ($request->restored_to_inventory) {
+                DB::table('branch_products')
+                    ->where('branch_id', $sale->branch_id)
+                    ->where('product_id', $request->product_id)
+                    ->increment('quantity', $request->quantity);
+            }
+
+            // Deduct replacement item inventory if exchange
+            if ($request->return_type === 'exchange') {
+                DB::table('branch_products')
+                    ->where('branch_id', $sale->branch_id)
+                    ->where('product_id', $request->replacement_product_id)
+                    ->decrement('quantity', $request->replacement_quantity);
+            }
         });
         
         // Notify Branch Administrators about the return
@@ -847,16 +927,30 @@ class SaleController extends Controller
                 $product = \App\Models\Product::find($request->product_id);
                 $productName = $product ? $product->name : 'A product';
                 
+                $message = "Return processed for Sale #{$sale->id}: {$request->quantity}x {$productName}";
+                if ($request->return_type === 'exchange') {
+                    $replacement = \App\Models\Product::find($request->replacement_product_id);
+                    $replacementName = $replacement ? $replacement->name : 'replacement';
+                    $message .= " exchanged for {$request->replacement_quantity}x {$replacementName}";
+                } else {
+                    $message .= " refunded (₱" . number_format($refundAmount, 2) . " cash)";
+                }
+                $message .= " by {$user->name}.";
+
                 $oneSignal->sendNotification(
-                    "Return processed for Sale #{$sale->id}: {$request->quantity}x {$productName} by {$user->name}.",
+                    $message,
                     $adminPlayerIds,
-                    "Return Processed"
+                    "Return/Exchange Processed"
                 );
             }
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Failed to send return notification: " . $e->getMessage());
         }
 
-        return redirect()->back()->with('success', 'Return processed and inventory restored.');
+        $successMsg = $request->return_type === 'exchange' 
+            ? 'Exchange processed successfully and inventory updated.' 
+            : 'Return processed and cash refund recorded.';
+
+        return redirect()->back()->with('success', $successMsg);
     }
 }

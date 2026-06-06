@@ -12,6 +12,11 @@ class SaleReturn extends Model
         'quantity',
         'returned_by',
         'reason',
+        'return_type',
+        'replacement_product_id',
+        'replacement_quantity',
+        'refund_amount',
+        'restored_to_inventory',
     ];
 
     public function sale()
@@ -22,6 +27,11 @@ class SaleReturn extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function replacementProduct()
+    {
+        return $this->belongsTo(Product::class, 'replacement_product_id');
     }
 
     public function returnedBy()

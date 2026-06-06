@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, CheckCircle, XCircle, Clock, User, ArrowRight, Barcode, QrCode, Store, Search, DollarSign, Briefcase, Printer, Settings2, Image, Wallet, Percent, ClipboardList, ArrowLeft } from 'lucide-react';
+import { Package, CheckCircle, XCircle, Clock, User, ArrowRight, Barcode, QrCode, Store, Search, DollarSign, Briefcase, Printer, Settings2, Image, Wallet, Percent, ClipboardList, ArrowLeft, RotateCcw } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,23 @@ interface Sale {
     change_amount?: number | null;
     customer_name?: string | null;
     reservation_buy_date?: string | null;
+    returns?: Array<{
+        id: number;
+        product_id: number;
+        quantity: number;
+        reason: string | null;
+        return_type: 'refund' | 'exchange';
+        replacement_product_id?: number | null;
+        replacement_quantity?: number | null;
+        refund_amount: number;
+        restored_to_inventory: boolean;
+        product?: {
+            name: string;
+        } | null;
+        replacement_product?: {
+            name: string;
+        } | null;
+    }>;
 }
 
 interface PaginatedData<T> {
@@ -967,6 +984,10 @@ export default function Index({
                                     <span className="text-xs font-semibold uppercase tracking-wider text-red-650/80 dark:text-red-450/80">Expenses (C)</span>
                                     <div className="text-xl font-bold text-red-600 dark:text-red-400 mt-1">₱{stats.today_expenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                                 </div>
+                                <div>
+                                    <span className="text-xs font-semibold uppercase tracking-wider text-red-600 dark:text-red-400">Returns (D)</span>
+                                    <div className="text-xl font-bold text-red-605 dark:text-red-400 mt-1">₱{stats.today_returns_sum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                </div>
                                 <div className="border-t sm:border-t-0 sm:border-l border-emerald-200/50 dark:border-emerald-800/30 pt-4 sm:pt-0 sm:pl-8">
                                     <span className="text-xs font-semibold uppercase tracking-wider text-blue-600/80 dark:text-blue-400/80">E-Wallet Sales (Digital)</span>
                                     <div className="text-xl font-bold text-blue-600 dark:text-blue-400 mt-1">₱{stats.today_ewallet_sales.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
@@ -981,7 +1002,7 @@ export default function Index({
                                 </div>
                             </div>
                             <div className="bg-white dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-800 px-6 py-4 rounded-xl shadow-sm text-center md:text-right w-full md:w-auto min-w-[240px]">
-                                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Net Cash on Hand (A + B - C)</span>
+                                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Net Cash on Hand (A + B - C - D)</span>
                                 <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
                                     ₱{stats.cash_on_hand.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </div>
@@ -1239,6 +1260,47 @@ export default function Index({
                                                     </TableBody>
                                                 </Table>
                                             </div>
+                                            {sale.returns && sale.returns.length > 0 && (
+                                                <div className="border-t border-dashed p-4 bg-red-50/10 dark:bg-red-955/5">
+                                                    <h4 className="text-xs font-bold text-red-800 dark:text-red-400 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <RotateCcw className="w-3.5 h-3.5" /> Returns & Exchanges
+                                                    </h4>
+                                                    <div className="space-y-1.5">
+                                                        {sale.returns.map((ret) => (
+                                                            <div key={ret.id} className="text-xs flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800/50 pb-1.5 last:border-0 last:pb-0">
+                                                                <div>
+                                                                    <span className="font-semibold">{ret.quantity}x {ret.product?.name || 'Deleted Product'}</span>
+                                                                    <span className="mx-1.5 text-muted-foreground">•</span>
+                                                                    <span className={`capitalize inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                                                        ret.return_type === 'exchange'
+                                                                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                                                                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                                                                    }`}>
+                                                                        {ret.return_type === 'exchange' ? 'Exchange' : 'Refund'}
+                                                                    </span>
+                                                                    {ret.return_type === 'exchange' && ret.replacement_product && (
+                                                                        <>
+                                                                            <span className="mx-1.5 text-muted-foreground">exchanged for</span>
+                                                                            <span className="font-semibold text-blue-600 dark:text-blue-400">{ret.replacement_quantity}x {ret.replacement_product.name}</span>
+                                                                        </>
+                                                                    )}
+                                                                    <span className="text-[10px] text-muted-foreground ml-2">
+                                                                        ({ret.restored_to_inventory ? 'Restocked original' : 'Discarded original'})
+                                                                    </span>
+                                                                    {ret.reason && (
+                                                                        <span className="ml-2 text-muted-foreground italic">("{ret.reason}")</span>
+                                                                    )}
+                                                                </div>
+                                                                {ret.return_type === 'refund' && (
+                                                                    <span className="font-bold text-red-650 dark:text-red-400">
+                                                                        -₱{Number(ret.refund_amount).toFixed(2)}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 ))}
