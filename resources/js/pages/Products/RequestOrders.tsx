@@ -62,6 +62,68 @@ interface Props {
     isSystemAdmin: boolean;
 }
 
+interface QuantityInputProps {
+    value: number;
+    max: number;
+    onChange: (newValue: number) => void;
+    className?: string;
+}
+
+function QuantityInput({ value, max, onChange, className }: QuantityInputProps) {
+    const [localValue, setLocalValue] = useState(value.toString());
+
+    useEffect(() => {
+        setLocalValue(value.toString());
+    }, [value]);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        if (/^\d*$/.test(val)) {
+            setLocalValue(val);
+            const parsed = parseInt(val, 10);
+            if (!isNaN(parsed) && parsed > 0) {
+                if (parsed > max) {
+                    toast.warning(`Cannot exceed available stock of ${max}.`);
+                    onChange(max);
+                    setLocalValue(max.toString());
+                } else {
+                    onChange(parsed);
+                }
+            }
+        }
+    };
+
+    const handleBlur = () => {
+        const parsed = parseInt(localValue, 10);
+        if (isNaN(parsed) || parsed <= 0) {
+            onChange(1);
+            setLocalValue("1");
+        } else if (parsed > max) {
+            onChange(max);
+            setLocalValue(max.toString());
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.currentTarget.blur();
+        }
+    };
+
+    return (
+        <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={localValue}
+            onChange={handleInputChange}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className={className}
+        />
+    );
+}
+
 export default function RequestOrders({ products, filters, options, requestingBranch, isSystemAdmin }: Props) {
     const productList = products?.data || [];
 
@@ -172,6 +234,25 @@ export default function RequestOrders({ products, filters, options, requestingBr
                 return item;
             }).filter(Boolean) as Array<{ product: Product; quantity: number }>;
         });
+    };
+
+    const setQuantityDirectly = (productId: number, qty: number) => {
+        setCart(prev =>
+            prev.map(item => {
+                if (item.product.id === productId) {
+                    const available = item.product.quantity;
+                    let newQty = qty;
+                    if (newQty > available) {
+                        newQty = available;
+                    }
+                    if (newQty < 1) {
+                        newQty = 1;
+                    }
+                    return { ...item, quantity: newQty };
+                }
+                return item;
+            })
+        );
     };
 
     const removeFromCart = (productId: number) => {
@@ -369,9 +450,12 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                                                         >
                                                                             <Minus className="w-3.5 h-3.5" />
                                                                         </Button>
-                                                                        <span className="w-6 text-center text-xs font-bold font-mono text-violet-900 dark:text-violet-100">
-                                                                            {inCart.quantity}
-                                                                        </span>
+                                                                        <QuantityInput
+                                                                            value={inCart.quantity}
+                                                                            max={product.quantity}
+                                                                            onChange={(newQty) => setQuantityDirectly(product.id, newQty)}
+                                                                            className="w-10 text-center text-xs font-bold font-mono text-violet-900 dark:text-violet-100 bg-transparent border-0 focus:outline-none focus:ring-0 p-0"
+                                                                        />
                                                                         <Button
                                                                             size="icon"
                                                                             variant="ghost"
@@ -473,9 +557,12 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                                             >
                                                                 <Minus className="w-2.5 h-2.5" />
                                                             </Button>
-                                                            <span className="w-5 text-center text-xs font-bold text-gray-900 dark:text-gray-100">
-                                                                {item.quantity}
-                                                            </span>
+                                                            <QuantityInput
+                                                                value={item.quantity}
+                                                                max={item.product.quantity}
+                                                                onChange={(newQty) => setQuantityDirectly(item.product.id, newQty)}
+                                                                className="w-8 text-center text-xs font-bold text-gray-900 dark:text-gray-100 bg-transparent border-0 focus:outline-none focus:ring-0 p-0"
+                                                            />
                                                             <Button
                                                                 size="icon"
                                                                 variant="ghost"

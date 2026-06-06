@@ -391,6 +391,29 @@ class SaleController extends Controller
     }
 
     /**
+     * Get pending sales for the branch (polled by UI)
+     */
+    public function getPendingSales()
+    {
+        $user = auth()->user();
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+        
+        if (!$branchId) {
+            return response()->json(['error' => 'User does not belong to a branch or active branch not selected'], 403);
+        }
+        
+        $pendingSales = Sale::with(['items.product', 'readiedBy'])
+            ->where('branch_id', $branchId)
+            ->whereIn('status', ['readied', 'reserved'])
+            ->latest()
+            ->get();
+            
+        return response()->json($pendingSales);
+    }
+
+    /**
      * Search products in branch inventory
      */
     public function search(Request $request)

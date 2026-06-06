@@ -73,8 +73,8 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const [isProcessing, setIsProcessing] = useState(false);
     const [showScanner, setShowScanner] = useState(false);
     const [scannerError, setScannerError] = useState<string | null>(null);
-    const [searchResults, setSearchResults] = useState<Product[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [pendingSalesList, setPendingSalesList] = useState<PendingSale[]>(pendingSales);
 
     const debouncedSearch = useDebounce(scannedCode, 300);
     const scannerInputRef = useRef<HTMLInputElement>(null);
@@ -96,6 +96,25 @@ export default function Create({ products, pendingSales }: { products: Product[]
             scannerInputRef.current?.focus();
         }
     }, [cart.length, showScanner]);
+
+    // Synchronize pendingSales prop and setup 2-second polling
+    useEffect(() => {
+        setPendingSalesList(pendingSales);
+    }, [pendingSales]);
+
+    useEffect(() => {
+        const fetchPendingSales = async () => {
+            try {
+                const response = await axios.get('/api/sales/pending');
+                setPendingSalesList(response.data);
+            } catch (error) {
+                console.error("Error polling pending sales:", error);
+            }
+        };
+
+        const interval = setInterval(fetchPendingSales, 2000);
+        return () => clearInterval(interval);
+    }, []);
 
     // Initialize/Cleanup Scanner
     useEffect(() => {
@@ -151,9 +170,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
 
     // Handle debounced search
     useEffect(() => {
+        let active = true;
         const fetchResults = async () => {
             if (debouncedSearch.trim().length < 1) {
-                setSearchResults([]);
+                if (active) setSearchResults([]);
                 return;
             }
 
@@ -162,15 +182,26 @@ export default function Create({ products, pendingSales }: { products: Product[]
                 const response = await axios.get('/api/sales/search-products', {
                     params: { search: debouncedSearch }
                 });
-                setSearchResults(response.data);
+                if (active) {
+                    // If scannedCode is empty, ignore the search results
+                    if (!scannerInputRef.current?.value.trim()) {
+                        setSearchResults([]);
+                    } else {
+                        setSearchResults(response.data);
+                    }
+                }
             } catch (error) {
                 console.error("Error searching products:", error);
             } finally {
-                setIsSearching(false);
+                if (active) setIsSearching(false);
             }
         };
 
         fetchResults();
+
+        return () => {
+            active = false;
+        };
     }, [debouncedSearch]);
 
     const normalizeCode = (code: string | null) => {
@@ -179,6 +210,8 @@ export default function Create({ products, pendingSales }: { products: Product[]
     };
 
     const findProduct = (code: string) => {
+        if (!code.trim()) return undefined;
+
         // Try parsing as JSON first (e.g. {"id":2,...})
         try {
             const json = JSON.parse(code);
@@ -191,13 +224,15 @@ export default function Create({ products, pendingSales }: { products: Product[]
         }
 
         const normalizedInput = normalizeCode(code);
+        if (!normalizedInput) return undefined;
 
         // Fallback to standard barcode/QR code match with normalization
         return products.find(p => {
-            const normalizedBarcode = normalizeCode(p.barcode);
-            const normalizedQr = normalizeCode(p.qr_code);
+            const normalizedBarcode = p.barcode ? normalizeCode(p.barcode) : '';
+            const normalizedQr = p.qr_code ? normalizeCode(p.qr_code) : '';
 
-            return normalizedBarcode === normalizedInput || normalizedQr === normalizedInput;
+            return (normalizedBarcode && normalizedBarcode === normalizedInput) || 
+                   (normalizedQr && normalizedQr === normalizedInput);
         });
     };
 
@@ -592,7 +627,18 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                     <Input
                                         ref={scannerInputRef}
                                         value={scannedCode}
-                                        onChange={(e) => setScannedCode(e.target.value)}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setScannedCode(val);
+                                            if (val.trim()) {
+                                                const product = findProduct(val);
+                                                if (product) {
+                                                    addToCart(product);
+                                                    setScannedCode('');
+                                                    setSearchResults([]);
+                                                }
+                                            }
+                                        }}
                                         placeholder="Scan barcode or QR code here..."
                                         className="pl-9 h-12 text-lg"
                                         autoFocus
@@ -855,10 +901,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                 <CardDescription>Sales waiting for admin approval</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {pendingSales.length === 0 ? (
+                                {pendingSalesList.length === 0 ? (
                                     <p className="text-sm text-muted-foreground text-center py-8">No pending sales.</p>
                                 ) : (
-                                    pendingSales.map((sale) => (
+                                    pendingSalesList.map((sale) => (
                                         <div
                                             key={sale.id}
                                             className={`p-4 border rounded-lg space-y-3 transition-colors ${sale.status === 'reserved'

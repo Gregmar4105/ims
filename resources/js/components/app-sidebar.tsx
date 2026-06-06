@@ -54,8 +54,8 @@ const Sales = {
         { title: "New Sales", url: "/new-sales", icon: BellRing },
         { title: "Expenses", url: "/expense-tracker", icon: Wallet },
         { title: "Service Fee", url: "/service-fees", icon: Cog },
-        { title: "Return Items", url: "/return-items", icon: RotateCcw },
         { title: "End of Day", url: "/end-of-day", icon: Banknote },
+        { title: "Return Items", url: "/return-items", icon: RotateCcw },
     ],
 }
 

@@ -53,6 +53,68 @@ const breadcrumbs = [
     { title: 'Create Transfer', href: '/transfers/create' },
 ];
 
+interface QuantityInputProps {
+    value: number;
+    max: number;
+    onChange: (newValue: number) => void;
+    className?: string;
+}
+
+function QuantityInput({ value, max, onChange, className }: QuantityInputProps) {
+    const [localValue, setLocalValue] = useState(value.toString());
+
+    useEffect(() => {
+        setLocalValue(value.toString());
+    }, [value]);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        if (/^\d*$/.test(val)) {
+            setLocalValue(val);
+            const parsed = parseInt(val, 10);
+            if (!isNaN(parsed) && parsed > 0) {
+                if (parsed > max) {
+                    toast.warning(`Cannot exceed available stock of ${max}.`);
+                    onChange(max);
+                    setLocalValue(max.toString());
+                } else {
+                    onChange(parsed);
+                }
+            }
+        }
+    };
+
+    const handleBlur = () => {
+        const parsed = parseInt(localValue, 10);
+        if (isNaN(parsed) || parsed <= 0) {
+            onChange(1);
+            setLocalValue("1");
+        } else if (parsed > max) {
+            onChange(max);
+            setLocalValue(max.toString());
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.currentTarget.blur();
+        }
+    };
+
+    return (
+        <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={localValue}
+            onChange={handleInputChange}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className={className}
+        />
+    );
+}
+
 export default function Create({ products, branches }: { products: Product[]; branches: Branch[] }) {
     const { auth, current_branch } = usePage<SharedData>().props;
     const currentBranchName = current_branch?.branch_name || auth.user?.branch?.branch_name || 'Selected Branch';
@@ -127,6 +189,25 @@ export default function Create({ products, branches }: { products: Product[]; br
                     return item;
                 })
                 .filter(Boolean) as Array<{ product: Product; quantity: number }>
+        );
+    };
+
+    const setQuantityDirectly = (productId: number, qty: number) => {
+        setBasket((prev) =>
+            prev.map((item) => {
+                if (item.product.id === productId) {
+                    const available = item.product.quantity;
+                    let newQty = qty;
+                    if (newQty > available) {
+                        newQty = available;
+                    }
+                    if (newQty < 1) {
+                        newQty = 1;
+                    }
+                    return { ...item, quantity: newQty };
+                }
+                return item;
+            })
         );
     };
 
@@ -305,9 +386,12 @@ export default function Create({ products, branches }: { products: Product[]; br
                                                                         >
                                                                             <Minus className="w-3.5 h-3.5" />
                                                                         </Button>
-                                                                        <span className="w-6 text-center text-xs font-bold font-mono text-blue-900 dark:text-blue-100">
-                                                                            {inBasket.quantity}
-                                                                        </span>
+                                                                        <QuantityInput
+                                                                            value={inBasket.quantity}
+                                                                            max={product.quantity}
+                                                                            onChange={(newQty) => setQuantityDirectly(product.id, newQty)}
+                                                                            className="w-10 text-center text-xs font-bold font-mono text-blue-900 dark:text-blue-100 bg-transparent border-0 focus:outline-none focus:ring-0 p-0"
+                                                                        />
                                                                         <Button
                                                                             size="icon"
                                                                             variant="ghost"
@@ -428,9 +512,12 @@ export default function Create({ products, branches }: { products: Product[]; br
                                                             >
                                                                 <Minus className="w-2.5 h-2.5" />
                                                             </Button>
-                                                            <span className="w-5 text-center text-xs font-bold text-gray-900 dark:text-gray-100">
-                                                                {item.quantity}
-                                                            </span>
+                                                            <QuantityInput
+                                                                value={item.quantity}
+                                                                max={item.product.quantity}
+                                                                onChange={(newQty) => setQuantityDirectly(item.product.id, newQty)}
+                                                                className="w-8 text-center text-xs font-bold text-gray-900 dark:text-gray-100 bg-transparent border-0 focus:outline-none focus:ring-0 p-0"
+                                                            />
                                                             <Button
                                                                 size="icon"
                                                                 variant="ghost"

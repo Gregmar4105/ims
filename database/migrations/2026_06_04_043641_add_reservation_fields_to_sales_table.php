@@ -17,7 +17,9 @@ return new class extends Migration
         });
 
         // Update the status enum column in mysql
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE sales MODIFY COLUMN status ENUM('readied', 'completed', 'cancelled', 'reserved') NOT NULL DEFAULT 'readied'");
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'mysql') {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE sales MODIFY COLUMN status ENUM('readied', 'completed', 'cancelled', 'reserved') NOT NULL DEFAULT 'readied'");
+        }
     }
 
     /**
@@ -29,6 +31,8 @@ return new class extends Migration
             $table->dropColumn(['customer_name', 'reservation_buy_date']);
         });
 
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE sales MODIFY COLUMN status ENUM('readied', 'completed', 'cancelled') NOT NULL DEFAULT 'readied'");
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'mysql') {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE sales MODIFY COLUMN status ENUM('readied', 'completed', 'cancelled') NOT NULL DEFAULT 'readied'");
+        }
     }
 };
