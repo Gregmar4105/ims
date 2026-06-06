@@ -68,9 +68,9 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
     const [query, setQuery] = useState('');
 
     // Date filters state
-    const [dateFrom, setDateFrom] = useState(isBranchAdmin ? '' : (filters.date_from || ''));
-    const [dateTo, setDateTo] = useState(isBranchAdmin ? '' : (filters.date_to || ''));
-    const [datePreset, setDatePreset] = useState(isBranchAdmin ? 'today' : (filters.date_preset || 'today'));
+    const [dateFrom, setDateFrom] = useState(filters.date_from || '');
+    const [dateTo, setDateTo] = useState(filters.date_to || '');
+    const [datePreset, setDatePreset] = useState(filters.date_preset || 'today');
 
     // Exchange states
     const [replacementSearchQuery, setReplacementSearchQuery] = useState('');
@@ -203,62 +203,60 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
                         <p className="text-muted-foreground mt-1">Manage customer sales returns and product exchanges.</p>
                     </div>
                     {/* Date Preset Toggles & Custom Date Range */}
-                    {!isBranchAdmin && (
-                        <div className="flex flex-row items-center flex-wrap gap-3 bg-white dark:bg-zinc-950 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm w-fit">
-                            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg overflow-x-auto">
-                                {[
-                                    { value: 'today', label: 'Today' },
-                                    { value: 'weekly', label: 'Weekly' },
-                                    { value: 'monthly', label: 'Monthly' },
-                                    { value: 'ytd', label: 'YTD' },
-                                    { value: 'all', label: 'All Time' }
-                                ].map((preset) => (
-                                    <button
-                                        key={preset.value}
-                                        type="button"
-                                        onClick={() => handlePresetChange(preset.value)}
-                                        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
-                                            datePreset === preset.value
-                                                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm border border-zinc-200/50 dark:border-zinc-700'
-                                                : 'text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-850'
-                                        }`}
-                                    >
-                                        {preset.label}
-                                    </button>
-                                ))}
+                    <div className="flex flex-row items-center flex-wrap gap-3 bg-white dark:bg-zinc-950 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm w-fit">
+                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg overflow-x-auto">
+                            {[
+                                { value: 'today', label: 'Today' },
+                                { value: 'weekly', label: 'Weekly' },
+                                { value: 'monthly', label: 'Monthly' },
+                                { value: 'ytd', label: 'YTD' },
+                                { value: 'all', label: 'All Time' }
+                            ].map((preset) => (
+                                <button
+                                    key={preset.value}
+                                    type="button"
+                                    onClick={() => handlePresetChange(preset.value)}
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
+                                        datePreset === preset.value
+                                            ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm border border-zinc-200/50 dark:border-zinc-700'
+                                            : 'text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-850'
+                                    }`}
+                                >
+                                    {preset.label}
+                                </button>
+                            ))}
+                        </div>
+                        
+                        <div className="hidden sm:block h-6 w-px bg-zinc-200 dark:bg-zinc-800" />
+
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 bg-muted/20 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                                <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">From:</span>
+                                <input
+                                    type="date"
+                                    className="bg-transparent border-none text-xs outline-none w-[110px] dark:text-zinc-100"
+                                    value={dateFrom}
+                                    onChange={(e) => {
+                                        setDateFrom(e.target.value);
+                                        setDatePreset('custom');
+                                    }}
+                                />
                             </div>
-                            
-                            <div className="hidden sm:block h-6 w-px bg-zinc-200 dark:bg-zinc-800" />
 
-                            <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-2 bg-muted/20 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                                    <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">From:</span>
-                                    <input
-                                        type="date"
-                                        className="bg-transparent border-none text-xs outline-none w-[110px] dark:text-zinc-100"
-                                        value={dateFrom}
-                                        onChange={(e) => {
-                                            setDateFrom(e.target.value);
-                                            setDatePreset('custom');
-                                        }}
-                                    />
-                                </div>
-
-                                <div className="flex items-center gap-2 bg-muted/20 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                                    <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">To:</span>
-                                    <input
-                                        type="date"
-                                        className="bg-transparent border-none text-xs outline-none w-[110px] dark:text-zinc-100"
-                                        value={dateTo}
-                                        onChange={(e) => {
-                                            setDateTo(e.target.value);
-                                            setDatePreset('custom');
-                                        }}
-                                    />
-                                </div>
+                            <div className="flex items-center gap-2 bg-muted/20 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                                <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">To:</span>
+                                <input
+                                    type="date"
+                                    className="bg-transparent border-none text-xs outline-none w-[110px] dark:text-zinc-100"
+                                    value={dateTo}
+                                    onChange={(e) => {
+                                        setDateTo(e.target.value);
+                                        setDatePreset('custom');
+                                    }}
+                                />
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

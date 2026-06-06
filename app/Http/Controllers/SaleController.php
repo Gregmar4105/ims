@@ -773,11 +773,8 @@ class SaleController extends Controller
             });
         }
 
-        // Date Preset / Range Calculation for RETURNS
+        // Date Preset / Range Calculation for selecting a sale in returns
         $datePreset = $request->query('date_preset', 'today');
-        if ($user->hasRole('Branch Administrator') && !$user->hasRole('System Administrator')) {
-            $datePreset = 'today';
-        }
         
         $startDate = null;
         $endDate = null;
@@ -806,10 +803,10 @@ class SaleController extends Controller
         }
 
         if ($startDate) {
-            $returnsQuery->where('created_at', '>=', $startDate);
+            $query->where('created_at', '>=', $startDate);
         }
         if ($endDate) {
-            $returnsQuery->where('created_at', '<=', $endDate);
+            $query->where('created_at', '<=', $endDate);
         }
         
         // Search Filter
