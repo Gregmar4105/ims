@@ -819,6 +819,97 @@ class GoogleSheetsService
     }
 
     /**
+     * Rewrite the entire Sales sheet content with all sales from the database.
+     */
+    public function syncSalesSheet(): bool
+    {
+        try {
+            $this->ensureSalesSheet();
+            $salesHeaders = ['Sale ID', 'Branch', 'Status', 'Date', 'Readied By', 'Approved By', 'Items', 'Total Price', 'Notes'];
+            $salesRows = [$salesHeaders];
+            
+            $allSales = \App\Models\Sale::with(['branch', 'readiedBy', 'approvedBy', 'items.product'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            foreach ($allSales as $sale) {
+                $itemsSummary = $sale->items->map(function($item) {
+                    return '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity . ' @ ' . $item->price;
+                })->implode("\n");
+
+                $total = $sale->items->sum(function($item) {
+                    return $item->price * $item->quantity;
+                });
+
+                $salesRows[] = [
+                    $sale->id,
+                    $sale->branch?->branch_name,
+                    $sale->status,
+                    $sale->created_at->format('Y-m-d H:i'),
+                    $sale->readiedBy?->name,
+                    $sale->approvedBy?->name,
+                    $itemsSummary,
+                    $total,
+                    $sale->notes,
+                ];
+            }
+            
+            $this->updateSheetContent('Sales', array_values($salesRows));
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Google Sheets syncSalesSheet error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Rewrite the entire Transfers sheet content with all transfers from the database.
+     */
+    public function syncTransfersSheet(): bool
+    {
+        try {
+            $this->ensureTransfersSheet();
+            $transferHeaders = ['Transfer ID', 'Source Branch', 'Destination', 'Status', 'Date', 'Readied By', 'Approved By', 'Received By', 'Items', 'Notes'];
+            $transferRows = [$transferHeaders];
+            
+            $allTransfers = \App\Models\Transfer::with(['sourceBranch', 'destinationBranch', 'supplier', 'readiedBy', 'approvedBy', 'receivedBy', 'items.product'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            foreach ($allTransfers as $transfer) {
+                $itemsSummary = $transfer->items->map(function($item) {
+                    $summary = '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
+                    if ($item->received_quantity !== null) {
+                        $summary .= " [Rec: {$item->received_quantity}]";
+                    }
+                    return $summary;
+                })->implode("\n");
+
+                $destination = $transfer->destinationBranch?->branch_name ?? $transfer->supplier?->name ?? 'Unknown';
+
+                $transferRows[] = [
+                    $transfer->id,
+                    $transfer->sourceBranch?->branch_name,
+                    $destination,
+                    $transfer->status,
+                    $transfer->created_at->format('Y-m-d H:i'),
+                    $transfer->readiedBy?->name,
+                    $transfer->approvedBy?->name,
+                    $transfer->received_by_name ?? $transfer->receivedBy?->name,
+                    $itemsSummary,
+                    $transfer->notes,
+                ];
+            }
+            
+            $this->updateSheetContent('Transfers', array_values($transferRows));
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Google Sheets syncTransfersSheet error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Delete a specific row by its index from a sheet (tab).
      */
     public function deleteRowFromSheet(string $sheetName, int $rowIndex): bool

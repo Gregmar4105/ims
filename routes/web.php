@@ -174,6 +174,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Sales routes
     Route::get('sales-list', [\App\Http\Controllers\SaleController::class, 'index'])->name('sales.index');
     Route::get('sales-list/print', [\App\Http\Controllers\SaleController::class, 'printList'])->name('sales.printList');
+    Route::post('history/delete-branch-history', [\App\Http\Controllers\SaleController::class, 'deleteBranchHistory'])
+        ->name('history.delete-branch-history')
+        ->middleware('role:System Administrator');
     Route::get('sales/{sale}/print', [\App\Http\Controllers\SaleController::class, 'printItem'])->name('sales.printItem');
     Route::get('new-sales', [\App\Http\Controllers\SaleController::class, 'create'])->name('sales.create');
     Route::post('sales', [\App\Http\Controllers\SaleController::class, 'store'])->name('sales.store');

@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, CheckCircle, Clock, User, ArrowRight, Barcode, QrCode, Search, XCircle, Truck, DollarSign, Settings2, Printer } from 'lucide-react';
+import { Package, CheckCircle, Clock, User, ArrowRight, Barcode, QrCode, Search, XCircle, Truck, DollarSign, Settings2, Printer, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -78,8 +79,40 @@ const breadcrumbs = [
 ];
 
 export default function Index({ transfers, stats, filters }: { transfers: PaginatedData<Transfer>, stats: Stats, filters: { search?: string, date_from?: string, date_to?: string, status_filter?: string } }) {
-    const { auth } = usePage<SharedData>().props;
+    const { auth, current_branch } = usePage<SharedData>().props;
     const userId = auth.user.id;
+    const isSystemAdmin = auth.roles.includes('System Administrator');
+
+    const [showDeleteHistoryModal, setShowDeleteHistoryModal] = useState(false);
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [deleteError, setDeleteError] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDeleteHistory = (e: React.FormEvent) => {
+        e.preventDefault();
+        setDeleteError('');
+        setIsDeleting(true);
+
+        router.post('/history/delete-branch-history', {
+            password: confirmPassword
+        }, {
+            onSuccess: () => {
+                setShowDeleteHistoryModal(false);
+                setConfirmPassword('');
+                setIsDeleting(false);
+            },
+            onError: (errors) => {
+                setIsDeleting(false);
+                if (errors.password) {
+                    setDeleteError(errors.password);
+                } else if (errors.error) {
+                    setDeleteError(errors.error);
+                } else {
+                    setDeleteError('An error occurred. Please try again.');
+                }
+            }
+        });
+    };
 
     const [search, setSearch] = useState(filters.search || '');
     const [dateFrom, setDateFrom] = useState(filters.date_from || '');
@@ -190,11 +223,26 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                         </div>
                         <p className="text-muted-foreground mt-1">View all completed and rejected transfers.</p>
                     </div>
-                    <a href={buildPrintUrl()} target="_blank" rel="noopener noreferrer">
-                        <Button className="flex gap-2">
-                            <Printer className="w-4 h-4" /> Print List
-                        </Button>
-                    </a>
+                    <div className="flex items-center gap-2">
+                        {isSystemAdmin && current_branch && (
+                            <Button 
+                                variant="destructive" 
+                                onClick={() => {
+                                    setConfirmPassword('');
+                                    setDeleteError('');
+                                    setShowDeleteHistoryModal(true);
+                                }}
+                                className="flex gap-2 bg-red-650 hover:bg-red-700 text-white border-transparent animate-in fade-in zoom-in-95 duration-150"
+                            >
+                                <Trash2 className="w-4 h-4" /> Delete History
+                            </Button>
+                        )}
+                        <a href={buildPrintUrl()} target="_blank" rel="noopener noreferrer">
+                            <Button className="flex gap-2">
+                                <Printer className="w-4 h-4" /> Print List
+                            </Button>
+                        </a>
+                    </div>
                 </div>
 
                 {/* Summary Stats */}
@@ -405,6 +453,59 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                 {transfers.data.length > 0 && transfers.last_page > 1 && (
                     <Pagination links={transfers.links} />
                 )}
+                {/* Delete Branch History Confirmation Modal */}
+                <Dialog open={showDeleteHistoryModal} onOpenChange={setShowDeleteHistoryModal}>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle className="text-red-650 flex items-center gap-2">
+                                <Trash2 className="w-5 h-5 text-red-500" /> Delete Branch History
+                            </DialogTitle>
+                            <DialogDescription className="text-zinc-600 dark:text-zinc-400 mt-2">
+                                You are about to permanently delete **all historical sales and transfers** that are either complete, cancelled, or rejected for the active branch <strong className="text-zinc-900 dark:text-zinc-100">{current_branch?.branch_name}</strong>.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 p-3.5 rounded-xl text-xs text-red-800 dark:text-red-300 font-medium">
+                            <strong>Warning:</strong> This action is irreversible. It will also permanently remove these records from Google Sheets.
+                        </div>
+                        <form onSubmit={handleDeleteHistory} className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                                    Enter your account password to confirm
+                                </label>
+                                <Input 
+                                    type="password" 
+                                    placeholder="Enter your password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    required
+                                    className="w-full"
+                                />
+                                {deleteError && (
+                                    <p className="text-xs text-red-650 font-medium text-red-550">{deleteError}</p>
+                                )}
+                            </div>
+                            <DialogFooter className="mt-6 gap-2">
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    onClick={() => setShowDeleteHistoryModal(false)}
+                                    className="w-full sm:w-auto"
+                                    disabled={isDeleting}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button 
+                                    type="submit" 
+                                    variant="destructive"
+                                    className="w-full sm:w-auto bg-red-650 hover:bg-red-700 text-white border-transparent"
+                                    disabled={isDeleting}
+                                >
+                                    {isDeleting ? 'Deleting...' : 'Delete Permanently'}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );

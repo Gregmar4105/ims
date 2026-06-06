@@ -982,4 +982,59 @@ class SaleController extends Controller
 
         return response()->json($sales);
     }
+
+    /**
+     * Delete all historical sales and transfers for the active branch and sync with Google Sheets.
+     */
+    public function deleteBranchHistory(Request $request, \App\Services\GoogleSheetsService $sheetsService)
+    {
+        $user = auth()->user();
+
+        // 1. Double check role limit (even with middleware)
+        if (!$user->hasRole('System Administrator')) {
+            abort(403, 'Unauthorized. Only System Administrators can perform this action.');
+        }
+
+        // 2. Validate request
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        // 3. Verify password
+        if (!\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+            return back()->withErrors(['password' => 'The provided password is incorrect.']);
+        }
+
+        // 4. Retrieve active branch ID
+        $branchId = session('active_branch_id');
+        if (!$branchId) {
+            return back()->withErrors(['error' => 'No active branch selected. Please select a branch first.']);
+        }
+
+        // 5. Delete historical records in database without triggering event listeners
+        DB::transaction(function () use ($branchId) {
+            // Delete historical Sales (completed, cancelled)
+            Sale::withoutEvents(function () use ($branchId) {
+                Sale::where('branch_id', $branchId)
+                    ->whereIn('status', ['completed', 'cancelled'])
+                    ->delete();
+            });
+
+            // Delete historical Transfers (completed, rejected)
+            \App\Models\Transfer::withoutEvents(function () use ($branchId) {
+                \App\Models\Transfer::where(function ($query) use ($branchId) {
+                    $query->where('source_branch_id', $branchId)
+                          ->orWhere('destination_branch_id', $branchId);
+                })
+                ->whereIn('status', ['completed', 'rejected'])
+                ->delete();
+            });
+        });
+
+        // 6. Bulk rewrite the Sales and Transfers sheets to Google Sheets to clear deleted items
+        $sheetsService->syncSalesSheet();
+        $sheetsService->syncTransfersSheet();
+
+        return redirect()->back()->with('success', 'Historical sales and transfers for the active branch have been successfully cleared.');
+    }
 }
