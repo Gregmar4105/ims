@@ -73,6 +73,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const [isProcessing, setIsProcessing] = useState(false);
     const [showScanner, setShowScanner] = useState(false);
     const [scannerError, setScannerError] = useState<string | null>(null);
+    const [searchResults, setSearchResults] = useState<Product[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [pendingSalesList, setPendingSalesList] = useState<PendingSale[]>(pendingSales);
 
