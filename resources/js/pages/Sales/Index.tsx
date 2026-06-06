@@ -482,7 +482,7 @@ export default function Index({
                                     setDeleteError('');
                                     setShowDeleteHistoryModal(true);
                                 }}
-                                className="flex gap-2 bg-red-650 hover:bg-red-700 text-white border-transparent animate-in fade-in zoom-in-95 duration-150"
+                                className="flex gap-2 animate-in fade-in zoom-in-95 duration-150"
                             >
                                 <Trash2 className="w-4 h-4" /> Delete History
                             </Button>
@@ -1448,7 +1448,7 @@ export default function Index({
                                 <Button 
                                     type="submit" 
                                     variant="destructive"
-                                    className="w-full sm:w-auto bg-red-650 hover:bg-red-700 text-white border-transparent"
+                                    className="w-full sm:w-auto"
                                     disabled={isDeleting}
                                 >
                                     {isDeleting ? 'Deleting...' : 'Delete Permanently'}
