@@ -179,6 +179,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('sales', [\App\Http\Controllers\SaleController::class, 'store'])->name('sales.store');
     Route::get('api/sales/search-products', [\App\Http\Controllers\SaleController::class, 'search'])->name('api.sales.search');
     Route::get('api/sales/pending', [\App\Http\Controllers\SaleController::class, 'getPendingSales'])->name('api.sales.pending');
+    Route::get('api/sales/completed', [\App\Http\Controllers\SaleController::class, 'getCompletedSales'])->name('api.sales.completed');
     Route::post('sales/lookup', [\App\Http\Controllers\SaleController::class, 'lookup'])->name('sales.lookup');
     Route::post('sales/{sale}/approve', [\App\Http\Controllers\SaleController::class, 'approve'])->name('sales.approve');
     Route::post('sales/{sale}/cancel', [\App\Http\Controllers\SaleController::class, 'cancel'])->name('sales.cancel');

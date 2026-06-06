@@ -804,9 +804,11 @@ class SaleController extends Controller
 
         if ($startDate) {
             $query->where('created_at', '>=', $startDate);
+            $returnsQuery->where('created_at', '>=', $startDate);
         }
         if ($endDate) {
             $query->where('created_at', '<=', $endDate);
+            $returnsQuery->where('created_at', '<=', $endDate);
         }
         
         // Search Filter
@@ -949,5 +951,35 @@ class SaleController extends Controller
             : 'Return processed and cash refund recorded.';
 
         return redirect()->back()->with('success', $successMsg);
+    }
+
+    /**
+     * Get completed sales for the active branch filtered by a specific date
+     */
+    public function getCompletedSales(Request $request)
+    {
+        $user = auth()->user();
+        
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : null;
+            
+        $query = Sale::with(['items.product', 'branch', 'readiedBy', 'approvedBy'])
+            ->where('status', 'completed')
+            ->latest();
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        if ($request->has('date') && $request->date) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        $sales = $query->take(100)->get();
+
+        return response()->json($sales);
     }
 }

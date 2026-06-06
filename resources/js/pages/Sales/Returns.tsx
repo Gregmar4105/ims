@@ -17,6 +17,7 @@ interface Sale {
     id: number;
     branch_id: number;
     created_at: string;
+    customer_name?: string | null;
     items: {
         id: number;
         product_id: number;
@@ -67,10 +68,21 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
     const [search, setSearch] = useState(filters.search || '');
     const [query, setQuery] = useState('');
 
-    // Date filters state
+    // Date filters state for returns history table
     const [dateFrom, setDateFrom] = useState(filters.date_from || '');
     const [dateTo, setDateTo] = useState(filters.date_to || '');
     const [datePreset, setDatePreset] = useState(filters.date_preset || 'today');
+
+    // Date for sale selection form card
+    const getTodayString = () => {
+        const d = new Date();
+        const offset = d.getTimezoneOffset();
+        const localDate = new Date(d.getTime() - (offset * 60 * 1000));
+        return localDate.toISOString().split('T')[0];
+    };
+    const [saleDate, setSaleDate] = useState<string>(getTodayString());
+    const [salesForDate, setSalesForDate] = useState<Sale[]>([]);
+    const [loadingSales, setLoadingSales] = useState<boolean>(false);
 
     // Exchange states
     const [replacementSearchQuery, setReplacementSearchQuery] = useState('');
@@ -87,7 +99,7 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
         }, { preserveState: true, replace: true, preserveScroll: true });
     };
 
-    // Debounced search trigger
+    // Debounced search trigger for page filters
     useEffect(() => {
         const timer = setTimeout(() => {
             if (search !== (filters.search || '')) {
@@ -114,18 +126,45 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
         setDateTo('');
     };
 
-    // Sync query with search to allow typing in combobox to trigger server search
+    // Fetch completed sales for the selected sale date
     useEffect(() => {
-        setSearch(query);
-    }, [query]);
+        if (!saleDate) {
+            setSalesForDate([]);
+            return;
+        }
+
+        const fetchSales = async () => {
+            setLoadingSales(true);
+            try {
+                const res = await fetch(`/api/sales/completed?date=${saleDate}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setSalesForDate(data);
+                }
+            } catch (err) {
+                console.error('Failed to fetch sales for date:', err);
+                toast.error('Failed to load sales for the selected date');
+            } finally {
+                setLoadingSales(false);
+            }
+        };
+
+        fetchSales();
+    }, [saleDate]);
 
     // Update selected sale if sales list changes (and current selection is still valid)
     useEffect(() => {
         if (selectedSale) {
-            const updated = completedSales.find(s => s.id === selectedSale.id);
-            if (updated) setSelectedSale(updated);
+            const updated = salesForDate.find(s => s.id === selectedSale.id);
+            if (updated) {
+                setSelectedSale(updated);
+            } else {
+                setSelectedSale(null);
+                setData('sale_id', '');
+                setSelectedProductId('');
+            }
         }
-    }, [completedSales]);
+    }, [salesForDate]);
 
     const { data, setData, post, processing, reset, errors } = useForm({
         sale_id: '',
@@ -154,7 +193,7 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
             return;
         }
 
-        const activeSale = completedSales.find(s => s.id.toString() === data.sale_id);
+        const activeSale = salesForDate.find(s => s.id.toString() === data.sale_id);
         const branchId = activeSale?.branch_id;
 
         const delayDebounce = setTimeout(async () => {
@@ -191,6 +230,14 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
             }
         });
     };
+
+    const filteredSales = query === ''
+        ? salesForDate
+        : salesForDate.filter((sale) => {
+            return sale.id.toString().includes(query) ||
+                (sale.branch?.branch_name || '').toLowerCase().includes(query.toLowerCase()) ||
+                (sale.customer_name || '').toLowerCase().includes(query.toLowerCase());
+          });
 
     return (
         <AppLayout breadcrumbs={[{ title: 'Return Items', href: '/return-items' }]}>
@@ -275,6 +322,19 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
                             <CardContent>
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div className="space-y-2">
+                                        <Label htmlFor="sale_date">Sale Date</Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="sale_date"
+                                                type="date"
+                                                value={saleDate}
+                                                onChange={(e) => setSaleDate(e.target.value)}
+                                                className="w-full"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
                                         <Label>Select Sale</Label>
                                         <Combobox
                                             value={selectedSale}
@@ -289,9 +349,9 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
                                                 <div className="relative w-full cursor-default overflow-hidden rounded-md border border-input bg-background text-left focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 sm:text-sm">
                                                     <ComboboxInput
                                                         className="w-full border-none py-2 pl-3 pr-10 text-sm leading-5 text-gray-900 focus:ring-0 dark:text-gray-100 bg-transparent focus:outline-none"
-                                                        displayValue={(sale: Sale) => sale ? `Sale #${sale.id} - ${sale.branch?.branch_name || 'Deleted Branch'}` : ''}
+                                                        displayValue={(sale: Sale) => sale ? `Sale #${sale.id} - ${sale.branch?.branch_name || 'Deleted Branch'}${sale.customer_name ? ` (${sale.customer_name})` : ''}` : ''}
                                                         onChange={(event) => setQuery(event.target.value)}
-                                                        placeholder="Search Sale ID..."
+                                                        placeholder={loadingSales ? "Loading sales..." : "Search Sale ID..."}
                                                     />
                                                     <ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-2">
                                                         <ChevronsUpDown
@@ -301,12 +361,20 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
                                                     </ComboboxButton>
                                                 </div>
                                                 <ComboboxOptions className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-popover py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-50 border">
-                                                    {completedSales.length === 0 && query !== '' ? (
+                                                    {loadingSales ? (
                                                         <div className="relative cursor-default select-none py-2 px-4 text-muted-foreground">
-                                                            No sales found.
+                                                            Loading sales...
+                                                        </div>
+                                                    ) : salesForDate.length === 0 ? (
+                                                        <div className="relative cursor-default select-none py-2 px-4 text-muted-foreground">
+                                                            No sales found on this date.
+                                                        </div>
+                                                    ) : filteredSales.length === 0 ? (
+                                                        <div className="relative cursor-default select-none py-2 px-4 text-muted-foreground">
+                                                            No matching sales found.
                                                         </div>
                                                     ) : (
-                                                        completedSales.map((sale) => (
+                                                        filteredSales.map((sale) => (
                                                             <ComboboxOption
                                                                 key={sale.id}
                                                                 className={({ active }) =>
@@ -325,7 +393,7 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
                                                                                 selected ? 'font-medium' : 'font-normal'
                                                                             )}
                                                                         >
-                                                                            Sale #{sale.id} - {new Date(sale.created_at).toLocaleDateString()}
+                                                                            Sale #{sale.id} {sale.customer_name ? `(${sale.customer_name})` : ''} - {new Date(sale.created_at).toLocaleDateString()}
                                                                         </span>
                                                                         {selected ? (
                                                                             <span
