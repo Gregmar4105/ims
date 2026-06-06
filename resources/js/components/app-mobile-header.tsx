@@ -10,7 +10,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { 
     ChevronLeft, Search, Scan,
     LayoutDashboard, MapPlus, Brush, Users, UserPen, TriangleAlert, 
-    MessagesSquare, ListChecks, BellRing, RotateCcw, ArrowLeftRight, 
+    MessagesSquare, ListChecks, BellRing, Banknote, RotateCcw, ArrowLeftRight, 
     ArrowRightFromLine, ArrowLeftToLine, FileImage, PackageOpen, 
     ShoppingBasket, Tag, ScanBarcode, IdCardLanyard, ScanQrCode, Settings
 } from 'lucide-react';
@@ -42,6 +42,7 @@ const allSuggestions: SearchSuggestion[] = [
     { title: "Sales History", url: "/sales-list", description: "View and filter previous sales records", icon: ListChecks, roles: ['Branch Administrator', 'System Administrator', 'Branch Manager', 'Branch'] },
     { title: "New Sales", url: "/new-sales", description: "Create and process a new sale", icon: BellRing, roles: ['Branch Administrator', 'System Administrator', 'Branch Manager', 'Branch'] },
     { title: "Return Items", url: "/return-items", description: "Manage customer sales returns", icon: RotateCcw, roles: ['Branch Administrator', 'System Administrator', 'Branch Manager', 'Branch'] },
+    { title: "End of Day", url: "/end-of-day", description: "Count cash drawer denominations at end of day", icon: Banknote, roles: ['Branch Administrator', 'System Administrator', 'Branch Manager', 'Branch'] },
     { title: "Transfer History", url: "/transfer-list", description: "View record of stock transfers between branches", icon: ListChecks, roles: ['Branch Administrator', 'System Administrator', 'Branch Manager', 'Branch'] },
     { title: "Outgoing Transfers", url: "/outgoing", description: "Manage and create outgoing stock transfers", icon: ArrowRightFromLine, roles: ['Branch Administrator', 'System Administrator', 'Branch Manager', 'Branch'] },
     { title: "Incoming Transfers", url: "/incoming", description: "Receive incoming stock from other branches", icon: ArrowLeftToLine, roles: ['Branch Administrator', 'System Administrator', 'Branch Manager', 'Branch'] },

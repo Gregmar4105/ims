@@ -194,6 +194,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('service-fees', [\App\Http\Controllers\ServiceFeeController::class, 'store'])->name('service-fees.store');
     Route::delete('service-fees/{serviceFee}', [\App\Http\Controllers\ServiceFeeController::class, 'destroy'])->name('service-fees.destroy');
 
+    // End of Day route
+    Route::get('end-of-day', function () {
+        return Inertia::render('Sales/EndOfDay');
+    })->name('end-of-day');
+
     // Chat Routes
     Route::get('/chats/total-unread', [App\Http\Controllers\ChatController::class, 'totalUnreadCount'])->name('chats.total-unread');
     Route::get('/chats/branches/status', [App\Http\Controllers\ChatController::class, 'branchesStatus'])->name('chats.branches-status');

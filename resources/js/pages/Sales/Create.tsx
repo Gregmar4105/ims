@@ -75,7 +75,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const [scannerError, setScannerError] = useState<string | null>(null);
     const [searchResults, setSearchResults] = useState<Product[]>([]);
     const [isSearching, setIsSearching] = useState(false);
-    
+
     const debouncedSearch = useDebounce(scannedCode, 300);
     const scannerInputRef = useRef<HTMLInputElement>(null);
     const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
@@ -318,8 +318,8 @@ export default function Create({ products, pendingSales }: { products: Product[]
             return;
         }
 
-        setCart(prev => prev.map(item => 
-            item.product_id === selectedItemForDiscount.product_id 
+        setCart(prev => prev.map(item =>
+            item.product_id === selectedItemForDiscount.product_id
                 ? { ...item, price: price }
                 : item
         ));
@@ -329,7 +329,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
     };
     const handleReadySale = () => {
         if (cart.length === 0) return;
-        
+
         if (cart.some(item => item.quantity < 1)) {
             toast.error('Please ensure all items have a quantity of at least 1');
             return;
@@ -407,8 +407,8 @@ export default function Create({ products, pendingSales }: { products: Product[]
     }, [approveModalOpen]);
 
     useEffect(() => {
-        const file = approveForm.data.is_completing_reservation 
-            ? approveForm.data.reservation_proof_of_payment 
+        const file = approveForm.data.is_completing_reservation
+            ? approveForm.data.reservation_proof_of_payment
             : approveForm.data.proof_of_payment;
         if (file) {
             const url = URL.createObjectURL(file);
@@ -495,9 +495,9 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const handleApproveSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedSaleForApproval) return;
-        
+
         const total = selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0);
-        
+
         if (approveForm.data.is_completing_reservation) {
             const remaining = total - Number(selectedSaleForApproval.downpayment || 0);
             if (approveForm.data.reservation_final_method === 'cash') {
@@ -609,13 +609,12 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                         <div className="absolute z-50 w-full mt-2 bg-popover border rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
                                             <div className="max-h-[300px] overflow-y-auto">
                                                 {searchResults.map((product) => (
-                                                    <div 
+                                                    <div
                                                         key={product.id}
-                                                        className={`flex items-center justify-between p-3 border-b last:border-0 transition-colors ${
-                                                            product.available_quantity <= 0 
-                                                                ? 'bg-destructive/5 text-destructive cursor-not-allowed' 
+                                                        className={`flex items-center justify-between p-3 border-b last:border-0 transition-colors ${product.available_quantity <= 0
+                                                                ? 'bg-destructive/5 text-destructive cursor-not-allowed'
                                                                 : 'hover:bg-accent cursor-pointer'
-                                                        }`}
+                                                            }`}
                                                         onClick={() => {
                                                             if (product.available_quantity <= 0) {
                                                                 toast.error(`Cannot add. ${product.name} is out of stock.`);
@@ -630,13 +629,12 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                         <div className="flex flex-col">
                                                             <span className={`font-semibold text-sm ${product.available_quantity <= 0 ? 'text-destructive' : ''}`}>{product.name}</span>
                                                             <div className="flex items-center gap-2 mt-0.5">
-                                                                <Badge 
-                                                                    variant="outline" 
-                                                                    className={`text-[10px] h-4 px-1 font-normal ${
-                                                                        product.available_quantity <= 0 
-                                                                            ? 'border-destructive/30 text-destructive bg-destructive/10' 
+                                                                <Badge
+                                                                    variant="outline"
+                                                                    className={`text-[10px] h-4 px-1 font-normal ${product.available_quantity <= 0
+                                                                            ? 'border-destructive/30 text-destructive bg-destructive/10'
                                                                             : ''
-                                                                    }`}
+                                                                        }`}
                                                                 >
                                                                     {product.barcode || product.qr_code || 'No Code'}
                                                                 </Badge>
@@ -665,7 +663,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                     variant="outline"
                                     size="lg"
                                     onClick={() => setShowScanner(!showScanner)}
-                                    className="gap-2"
+                                    className="gap-2 py-1"
                                 >
                                     <Camera className="w-4 h-4" />
                                     {showScanner ? 'Close Camera' : 'Use Camera'}
@@ -723,9 +721,9 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 <div className="flex items-center gap-4">
                                                     <div className="h-10 w-10 rounded bg-primary/10 flex items-center justify-center text-primary overflow-hidden border">
                                                         {item.product.image_path ? (
-                                                            <img 
-                                                                src={`/storage/${item.product.image_path}`} 
-                                                                alt={item.product.name} 
+                                                            <img
+                                                                src={`/storage/${item.product.image_path}`}
+                                                                alt={item.product.name}
                                                                 className="w-full h-full object-cover"
                                                             />
                                                         ) : (
@@ -861,13 +859,12 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                     <p className="text-sm text-muted-foreground text-center py-8">No pending sales.</p>
                                 ) : (
                                     pendingSales.map((sale) => (
-                                        <div 
-                                            key={sale.id} 
-                                            className={`p-4 border rounded-lg space-y-3 transition-colors ${
-                                                sale.status === 'reserved' 
-                                                    ? 'bg-blue-50/40 border-blue-200 dark:bg-blue-955/10 dark:border-blue-800/30' 
+                                        <div
+                                            key={sale.id}
+                                            className={`p-4 border rounded-lg space-y-3 transition-colors ${sale.status === 'reserved'
+                                                    ? 'bg-blue-50/40 border-blue-200 dark:bg-blue-955/10 dark:border-blue-800/30'
                                                     : 'bg-card'
-                                            }`}
+                                                }`}
                                         >
                                             <div className="flex justify-between items-start">
                                                 <div>
@@ -913,11 +910,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                             {(can('branch.admin') || can('system.admin')) && (
                                                 <div className="flex gap-2 pt-2">
                                                     <Button
-                                                        className={`flex-1 h-8 text-xs ${
-                                                            sale.status === 'reserved' 
-                                                                ? 'bg-blue-600 hover:bg-blue-700' 
+                                                        className={`flex-1 h-8 text-xs ${sale.status === 'reserved'
+                                                                ? 'bg-blue-600 hover:bg-blue-700'
                                                                 : 'bg-green-600 hover:bg-green-700'
-                                                        }`}
+                                                            }`}
                                                         onClick={() => {
                                                             setSelectedSaleForApproval(sale);
                                                             setApproveModalOpen(true);
@@ -983,7 +979,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-                       {/* Approve Sale Modal */}
+                {/* Approve Sale Modal */}
                 <Dialog open={approveModalOpen} onOpenChange={(open) => {
                     setApproveModalOpen(open);
                     if (!open) {
@@ -998,7 +994,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                 {approveForm.data.is_completing_reservation ? 'Complete Reservation' : `Approve Sale #${selectedSaleForApproval?.id}`}
                             </DialogTitle>
                             <DialogDescription>
-                                {approveForm.data.is_completing_reservation 
+                                {approveForm.data.is_completing_reservation
                                     ? 'Record the remaining payment details to finalize this reservation.'
                                     : 'Select a payment method and record transaction details.'}
                             </DialogDescription>
@@ -1034,11 +1030,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 <button
                                                     type="button"
                                                     onClick={() => approveForm.setData('reservation_final_method', 'cash')}
-                                                    className={`flex items-center justify-center gap-2 py-3 rounded-lg border-2 text-sm font-semibold transition-all ${
-                                                        approveForm.data.reservation_final_method === 'cash'
+                                                    className={`flex items-center justify-center gap-2 py-3 rounded-lg border-2 text-sm font-semibold transition-all ${approveForm.data.reservation_final_method === 'cash'
                                                             ? 'border-primary bg-primary/5 text-primary'
                                                             : 'border-muted hover:bg-accent'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <CircleDollarSign className="w-4 h-4" />
                                                     Cash
@@ -1046,11 +1041,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 <button
                                                     type="button"
                                                     onClick={() => approveForm.setData('reservation_final_method', 'e-wallet')}
-                                                    className={`flex items-center justify-center gap-2 py-3 rounded-lg border-2 text-sm font-semibold transition-all ${
-                                                        approveForm.data.reservation_final_method === 'e-wallet'
+                                                    className={`flex items-center justify-center gap-2 py-3 rounded-lg border-2 text-sm font-semibold transition-all ${approveForm.data.reservation_final_method === 'e-wallet'
                                                             ? 'border-primary bg-primary/5 text-primary'
                                                             : 'border-muted hover:bg-accent'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <Wallet className="w-4 h-4" />
                                                     E-Wallet
@@ -1123,10 +1117,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                         <div className="relative border rounded-lg overflow-hidden bg-accent group">
                                                             <img src={proofPreview} alt="Proof preview" className="w-full h-48 object-contain" />
                                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                                                <Button 
-                                                                    type="button" 
-                                                                    variant="destructive" 
-                                                                    size="sm" 
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="destructive"
+                                                                    size="sm"
                                                                     onClick={() => approveForm.setData('reservation_proof_of_payment', null)}
                                                                 >
                                                                     <Trash2 className="w-4 h-4 mr-1" /> Delete
@@ -1187,7 +1181,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 type="submit"
                                                 disabled={
                                                     approveForm.processing ||
-                                                    (approveForm.data.reservation_final_method === 'cash' && 
+                                                    (approveForm.data.reservation_final_method === 'cash' &&
                                                         (parseFloat(approveForm.data.reservation_cash_received) || 0) < (selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0) - Number(selectedSaleForApproval.downpayment || 0))
                                                     ) ||
                                                     (approveForm.data.reservation_final_method === 'e-wallet' && !approveForm.data.reservation_proof_of_payment)
@@ -1217,11 +1211,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 <button
                                                     type="button"
                                                     onClick={() => approveForm.setData('payment_method', 'cash')}
-                                                    className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 text-[10px] font-bold transition-all ${
-                                                        approveForm.data.payment_method === 'cash'
+                                                    className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 text-[10px] font-bold transition-all ${approveForm.data.payment_method === 'cash'
                                                             ? 'border-primary bg-primary/5 text-primary'
                                                             : 'border-muted hover:bg-accent'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <CircleDollarSign className="w-4 h-4" />
                                                     Cash
@@ -1229,11 +1222,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 <button
                                                     type="button"
                                                     onClick={() => approveForm.setData('payment_method', 'e-wallet')}
-                                                    className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 text-[10px] font-bold transition-all ${
-                                                        approveForm.data.payment_method === 'e-wallet'
+                                                    className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 text-[10px] font-bold transition-all ${approveForm.data.payment_method === 'e-wallet'
                                                             ? 'border-primary bg-primary/5 text-primary'
                                                             : 'border-muted hover:bg-accent'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <Wallet className="w-4 h-4" />
                                                     E-Wallet
@@ -1241,11 +1233,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 <button
                                                     type="button"
                                                     onClick={() => approveForm.setData('payment_method', 'home_credit')}
-                                                    className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 text-[10px] font-bold transition-all ${
-                                                        approveForm.data.payment_method === 'home_credit'
+                                                    className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 text-[10px] font-bold transition-all ${approveForm.data.payment_method === 'home_credit'
                                                             ? 'border-primary bg-primary/5 text-primary'
                                                             : 'border-muted hover:bg-accent'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <TicketPercent className="w-4 h-4" />
                                                     Home Credit
@@ -1253,11 +1244,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 <button
                                                     type="button"
                                                     onClick={() => approveForm.setData('payment_method', 'reservation')}
-                                                    className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 text-[10px] font-bold transition-all ${
-                                                        approveForm.data.payment_method === 'reservation'
+                                                    className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 text-[10px] font-bold transition-all ${approveForm.data.payment_method === 'reservation'
                                                             ? 'border-primary bg-primary/5 text-primary'
                                                             : 'border-muted hover:bg-accent'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <Clock className="w-4 h-4" />
                                                     Reservation
@@ -1295,7 +1285,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 </div>
                                             </div>
                                         )}
-                                        
+
                                         {approveForm.data.payment_method === 'e-wallet' && (
                                             <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
                                                 <div className="space-y-2">
@@ -1331,10 +1321,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                         <div className="relative border rounded-lg overflow-hidden bg-accent group">
                                                             <img src={proofPreview} alt="Proof preview" className="w-full h-48 object-contain" />
                                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                                                <Button 
-                                                                    type="button" 
-                                                                    variant="destructive" 
-                                                                    size="sm" 
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="destructive"
+                                                                    size="sm"
                                                                     onClick={() => approveForm.setData('proof_of_payment', null)}
                                                                 >
                                                                     <Trash2 className="w-4 h-4 mr-1" /> Delete
@@ -1472,7 +1462,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 type="submit"
                                                 disabled={
                                                     approveForm.processing ||
-                                                    (approveForm.data.payment_method === 'cash' && 
+                                                    (approveForm.data.payment_method === 'cash' &&
                                                         (parseFloat(approveForm.data.cash_received) || 0) < selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0)
                                                     ) ||
                                                     (approveForm.data.payment_method === 'e-wallet' && !approveForm.data.proof_of_payment) ||
@@ -1492,7 +1482,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                     </DialogContent>
                 </Dialog>
 
-             </div>
+            </div>
         </AppLayout>
     );
 }

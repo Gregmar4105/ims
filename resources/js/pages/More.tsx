@@ -14,6 +14,7 @@ import {
     ListChecks,
     BellRing,
     RotateCcw,
+    Banknote,
     ArrowLeftRight,
     ArrowRightFromLine,
     ArrowLeftToLine,
@@ -93,6 +94,7 @@ const categories: CategoryGroup[] = [
             { title: "Sales History", url: "/sales-list", icon: ListChecks, color: "emerald" },
             { title: "New Sale", url: "/new-sales", icon: BellRing, color: "blue" },
             { title: "Return Items", url: "/return-items", icon: RotateCcw, color: "red" },
+            { title: "End of Day", url: "/end-of-day", icon: Banknote, color: "emerald" },
         ]
     },
     {
