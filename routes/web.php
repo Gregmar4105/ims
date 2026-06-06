@@ -89,6 +89,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
     Route::get('branch-dashboard', [\App\Http\Controllers\BranchDashboardController::class, 'index'])
         ->name('branch.dashboard');
+    Route::get('reports-and-analytics', [\App\Http\Controllers\ReportController::class, 'index'])
+        ->name('reports.index')->middleware('role:System Administrator|Branch Administrator');
     Route::get('branch-dashboard/api/products/search', [\App\Http\Controllers\BranchDashboardController::class, 'searchProducts'])->name('branch.dashboard.products.search');
     Route::get('branch-dashboard/api/products/{product}/distribution', [\App\Http\Controllers\BranchDashboardController::class, 'getProductDistribution'])->name('branch.dashboard.products.distribution');
     Route::get('branch-dashboard/api/pending-counts', [\App\Http\Controllers\BranchDashboardController::class, 'getPendingCounts'])->name('branch.dashboard.pending-counts');

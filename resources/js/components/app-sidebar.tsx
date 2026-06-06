@@ -18,7 +18,7 @@ import {
 
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowLeftRight, ArrowLeftToLine, ArrowRightFromLine, ArrowUpDown, Banknote, BellRing, BookOpen, Brush, ChevronRight, Download, Folder, Frown, GalleryVertical, GalleryVerticalEnd, IdCardLanyard, LayoutDashboard, LayoutGrid, ListChecks, Mail, MapPlus, MessagesSquare, MonitorCog, NotebookText, PackageOpen, QrCode, ScanQrCode, Settings, ShoppingBag, ShoppingBasket, Sparkles, ScanBarcode, Settings2, Split, SquareTerminal, Tag, Store, TriangleAlert, UserCog, UserLock, UserPen, Users, Wallet, ShoppingCart, Plus, RotateCcw, FileImage, Cog } from 'lucide-react';
+import { ArrowLeftRight, ArrowLeftToLine, ArrowRightFromLine, ArrowUpDown, Banknote, BellRing, BookOpen, Brush, ChevronRight, Download, Folder, Frown, GalleryVertical, GalleryVerticalEnd, IdCardLanyard, LayoutDashboard, LayoutGrid, ListChecks, Mail, MapPlus, MessagesSquare, MonitorCog, NotebookText, PackageOpen, QrCode, ScanQrCode, Settings, ShoppingBag, ShoppingBasket, Sparkles, ScanBarcode, Settings2, Split, SquareTerminal, Tag, Store, TriangleAlert, UserCog, UserLock, UserPen, Users, Wallet, ShoppingCart, Plus, RotateCcw, FileImage, Cog, TrendingUp } from 'lucide-react';
 import AppLogo from './app-logo';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@radix-ui/react-collapsible';
 import { usePermission } from '@/hooks/usePermission';
@@ -350,6 +350,17 @@ export function AppSidebar() {
                         </CollapsibleContent>
                     </SidebarMenuItem>
                 </Collapsible>
+
+                {(can('system.admin') || can('branch.admin')) && (
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Reports and Analytics">
+                            <TrendingUp />
+                            <a href="/reports-and-analytics">
+                                <span>Reports and Analytics</span>
+                            </a>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                )}
 
 
                 {can('employee') &&
