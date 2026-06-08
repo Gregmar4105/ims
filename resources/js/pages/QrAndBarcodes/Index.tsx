@@ -136,8 +136,12 @@ export default function QrScannerIndex({
                 scannerRef.current = html5QrCode;
 
                 html5QrCode.start(
-                    { facingMode: "environment" },
-                    { fps: 15 },
+                    { 
+                        facingMode: "environment",
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    { fps: 10 },
                     (decodedText) => {
                         onSuccessfulScan(decodedText);
                     },
@@ -218,6 +222,12 @@ export default function QrScannerIndex({
         let boxOpacity = 0.4;
         let isFirstFrame = true;
 
+        // Decoupled Detection State
+        let lastDetectTime = 0;
+        let isDetecting = false;
+        let lastDetectedBox: { x: number; y: number; width: number; height: number } | null = null;
+        let isCodeDetected = false;
+
         const checkFrame = async () => {
             if (!active) return;
 
@@ -244,33 +254,26 @@ export default function QrScannerIndex({
                     const offsetX = (elWidth - renderedWidth) / 2;
                     const offsetY = (elHeight - renderedHeight) / 2;
 
-                    const defaultSize = Math.min(canvas.width, canvas.height) * 0.65;
-                    const targetX = (canvas.width - defaultSize) / 2;
-                    const targetY = (canvas.height - defaultSize) / 2;
-                    const targetW = defaultSize;
-                    const targetH = defaultSize;
-
-                    let targetX_final = targetX;
-                    let targetY_final = targetY;
-                    let targetW_final = targetW;
-                    let targetH_final = targetH;
-                    let targetOpacity = 0.35;
-                    let isCodeDetected = false;
-
-                    if (detector) {
-                        try {
-                            const barcodes = await detector.detect(video);
+                    // Throttled detection: Only run BarcodeDetector.detect() once every 120ms to save CPU
+                    const nowTime = Date.now();
+                    if (detector && !isDetecting && nowTime - lastDetectTime > 120) {
+                        isDetecting = true;
+                        lastDetectTime = nowTime;
+                        
+                        detector.detect(video).then((barcodes: any[]) => {
+                            if (!active) return;
                             if (barcodes && barcodes.length > 0) {
                                 const barcode = barcodes[0];
                                 const box = barcode.boundingBox;
-
-                                targetX_final = box.x * scale + offsetX;
-                                targetY_final = box.y * scale + offsetY;
-                                targetW_final = box.width * scale;
-                                targetH_final = box.height * scale;
-                                targetOpacity = 1.0;
+                                lastDetectedBox = {
+                                    x: box.x * scale + offsetX,
+                                    y: box.y * scale + offsetY,
+                                    width: box.width * scale,
+                                    height: box.height * scale
+                                };
                                 isCodeDetected = true;
 
+                                // Auto-zoom logic
                                 const ratio = box.width / vWidth;
                                 if (ratio < 0.45 && scannerRef.current) {
                                     try {
@@ -282,10 +285,11 @@ export default function QrScannerIndex({
                                             const targetZ = Math.min(maxZ, Math.max(minZ, currentZ * (0.50 / ratio)));
 
                                             if (Math.abs(targetZ - currentZ) > 0.2) {
-                                                await (scannerRef.current as any).applyVideoConstraints({
+                                                (scannerRef.current as any).applyVideoConstraints({
                                                     advanced: [{ zoom: targetZ }]
-                                                });
-                                                setCurrentZoom(targetZ);
+                                                }).then(() => {
+                                                    setCurrentZoom(targetZ);
+                                                }).catch(() => {});
                                             }
                                         }
                                     } catch (zoomErr) {
@@ -296,12 +300,40 @@ export default function QrScannerIndex({
                                 if (barcode.rawValue) {
                                     onSuccessfulScan(barcode.rawValue);
                                 }
+                            } else {
+                                lastDetectedBox = null;
+                                isCodeDetected = false;
                             }
-                        } catch (err) {
+                        }).catch((err: any) => {
                             console.error("BarcodeDetector scan error", err);
-                        }
+                        }).finally(() => {
+                            isDetecting = false;
+                        });
                     }
 
+                    // Default Search Viewfinder Coordinates
+                    const defaultSize = Math.min(canvas.width, canvas.height) * 0.65;
+                    const defaultX = (canvas.width - defaultSize) / 2;
+                    const defaultY = (canvas.height - defaultSize) / 2;
+                    const defaultW = defaultSize;
+                    const defaultH = defaultSize;
+
+                    // Set target variables based on detection results
+                    let targetX_final = defaultX;
+                    let targetY_final = defaultY;
+                    let targetW_final = defaultW;
+                    let targetH_final = defaultH;
+                    let targetOpacity = 0.35;
+
+                    if (isCodeDetected && lastDetectedBox) {
+                        targetX_final = lastDetectedBox.x;
+                        targetY_final = lastDetectedBox.y;
+                        targetW_final = lastDetectedBox.width;
+                        targetH_final = lastDetectedBox.height;
+                        targetOpacity = 1.0;
+                    }
+
+                    // Lerp box values for ultra-smooth UI tracking
                     if (isFirstFrame) {
                         boxX = targetX_final;
                         boxY = targetY_final;
@@ -318,8 +350,10 @@ export default function QrScannerIndex({
                         boxOpacity += (targetOpacity - boxOpacity) * 0.15;
                     }
 
+                    // Clear canvas
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+                    // Draw outer dim overlay
                     ctx.save();
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
                     ctx.beginPath();
@@ -332,6 +366,7 @@ export default function QrScannerIndex({
                     ctx.fill();
                     ctx.restore();
 
+                    // Draw the custom visual tracking border
                     ctx.save();
                     const themeColor = isCodeDetected ? '#10B981' : '#FFFFFF';
                     ctx.strokeStyle = themeColor;
