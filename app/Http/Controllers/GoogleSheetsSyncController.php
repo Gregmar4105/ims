@@ -881,6 +881,217 @@ class GoogleSheetsSyncController extends Controller
     }
 
     /**
+     * Match database quantities with the values from the Google Sheet exactly,
+     * ignoring new products and bypassing transfers/sales/reorder updates.
+     */
+    public function matchQuantity(Request $request)
+    {
+        if (!auth()->user()->hasRole('System Administrator')) {
+            return response()->json(['error' => 'Unauthorized. Only System Administrators can perform this action.'], 403);
+        }
+
+        ini_set('memory_limit', '1024M');
+        set_time_limit(600); // 10 minutes for large syncs
+
+        try {
+            $user = auth()->user();
+            $branchId = session()->has('active_branch_id')
+                ? session('active_branch_id')
+                : $user->branch_id;
+
+            if (!$branchId) {
+                return response()->json(['error' => 'No active branch selected.'], 400);
+            }
+
+            $branch = Branch::findOrFail($branchId);
+            $sheetName = $branch->branch_name;
+
+            $rows = $this->sheetsService->getSheetContent($sheetName);
+            if (empty($rows)) {
+                return response()->json(['error' => "Google Sheet tab for branch '{$sheetName}' is empty or could not be read."], 400);
+            }
+
+            // Exclude header row if first row matches headers
+            $headers = array_shift($rows);
+            if ($headers && strtolower($headers[0]) !== 'id' && strtolower($headers[0]) !== 'product name' && strtolower($headers[0]) !== 'product') {
+                array_unshift($rows, $headers);
+            }
+
+            // Load all database products for this branch in memory for fast lookup
+            $branchProducts = BranchProduct::where('branch_id', $branchId)
+                ->with(['product.brand', 'product.category', 'product.supplier'])
+                ->get();
+            
+            $dbProductsById = [];
+            $dbProductsByBarcode = [];
+            $dbProductsByQrCode = [];
+            $dbProductsBySku = [];
+            $dbProductsByName = [];
+
+            foreach ($branchProducts as $bp) {
+                $p = $bp->product;
+                if (!$p) continue;
+                
+                $dbProductsById[$p->id] = $bp;
+                if ($p->barcode) $dbProductsByBarcode[$p->barcode] = $bp;
+                if ($p->qr_code) $dbProductsByQrCode[$p->qr_code] = $bp;
+                if ($p->sku) {
+                    $dbProductsBySku[$p->sku][] = $bp;
+                }
+                $dbProductsByName[strtolower(trim($p->name))] = $bp;
+            }
+
+            $cleanValue = function($val, $default = null) {
+                if ($val === null || $val === '' || strtolower(trim($val)) === 'null') {
+                    return $default;
+                }
+                return trim($val);
+            };
+
+            $updatedCount = 0;
+
+            // Temporarily disable Google Sheet sync observers to prevent a high volume of
+            // slow synchronous API requests and quota exceptions in the loop.
+            \App\Models\Product::withoutEvents(function() use ($rows, $branchId, $dbProductsById, $dbProductsByBarcode, $dbProductsByQrCode, $dbProductsBySku, $dbProductsByName, $cleanValue, &$updatedCount) {
+                \App\Models\BranchProduct::withoutEvents(function() use ($rows, $branchId, $dbProductsById, $dbProductsByBarcode, $dbProductsByQrCode, $dbProductsBySku, $dbProductsByName, $cleanValue, &$updatedCount) {
+                    \Illuminate\Support\Facades\DB::transaction(function() use ($rows, $branchId, $dbProductsById, $dbProductsByBarcode, $dbProductsByQrCode, $dbProductsBySku, $dbProductsByName, $cleanValue, &$updatedCount) {
+                        
+                        foreach ($rows as $row) {
+                            if (empty($row) || (count($row) === 1 && trim($row[0]) === '')) {
+                                continue;
+                            }
+
+                            $sheetId = $cleanValue($row[0] ?? null);
+                            $sheetPhysLoc = $cleanValue($row[1] ?? null);
+                            $sheetSupplier = $cleanValue($row[2] ?? null);
+                            $sheetBarcode = $cleanValue($row[3] ?? null);
+                            $sheetQrCode = $cleanValue($row[4] ?? null);
+                            $sheetSku = $cleanValue($row[5] ?? null);
+                            $sheetCategory = $cleanValue($row[6] ?? null);
+                            $sheetName = $cleanValue($row[7] ?? null);
+                            $sheetBrand = $cleanValue($row[8] ?? null);
+                            $sheetCode = $cleanValue($row[9] ?? null);
+                            $sheetCode2 = $cleanValue($row[10] ?? null);
+                            $sheetVariations = $cleanValue($row[11] ?? null);
+                            $sheetDesc = $cleanValue($row[12] ?? null);
+                            $sheetSupplierDesc = $cleanValue($row[13] ?? null);
+                            $sheetReorder = $cleanValue($row[14] ?? null, 0);
+                            $sheetPrice = $cleanValue($row[15] ?? null, 0);
+                            $sheetQty = $cleanValue($row[16] ?? null, 0);
+
+                            if (!$sheetName) {
+                                continue;
+                            }
+
+                            // Match with database product in this branch
+                            $matchedBp = null;
+                            if ($sheetId && is_numeric($sheetId) && isset($dbProductsById[(int)$sheetId])) {
+                                $matchedBp = $dbProductsById[(int)$sheetId];
+                              }
+
+                            if (!$matchedBp) {
+                                if ($sheetBarcode && isset($dbProductsByBarcode[$sheetBarcode])) {
+                                    $matchedBp = $dbProductsByBarcode[$sheetBarcode];
+                                } elseif ($sheetQrCode && isset($dbProductsByQrCode[$sheetQrCode])) {
+                                    $matchedBp = $dbProductsByQrCode[$sheetQrCode];
+                                } elseif ($sheetSku && isset($dbProductsBySku[$sheetSku])) {
+                                    $sheetSupplierClean = strtolower(trim($sheetSupplier ?? ''));
+                                    foreach ($dbProductsBySku[$sheetSku] as $bp) {
+                                        $dbSupplierClean = strtolower(trim($bp->product->supplier?->name ?? ''));
+                                        if ($dbSupplierClean === $sheetSupplierClean) {
+                                            $matchedBp = $bp;
+                                            break;
+                                        }
+                                    }
+                                } elseif ($sheetName && isset($dbProductsByName[strtolower($sheetName)])) {
+                                    $matchedBp = $dbProductsByName[strtolower($sheetName)];
+                                }
+                            }
+
+                            $product = null;
+                            if ($matchedBp) {
+                                $product = $matchedBp->product;
+                            } else {
+                                // Double check if product exists globally in the database
+                                if ($sheetId && is_numeric($sheetId)) {
+                                    $product = \App\Models\Product::find((int)$sheetId);
+                                }
+                                if (!$product && $sheetBarcode) {
+                                    $product = \App\Models\Product::where('barcode', $sheetBarcode)->first();
+                                }
+                                if (!$product && $sheetQrCode) {
+                                    $product = \App\Models\Product::where('qr_code', $sheetQrCode)->first();
+                                }
+                                if (!$product && $sheetSku) {
+                                    $product = \App\Models\Product::where('sku', $sheetSku)
+                                        ->whereHas('supplier', function($q) use ($sheetSupplier) {
+                                            $q->where('name', $sheetSupplier);
+                                        })->first();
+                                    if (!$product && empty($sheetSupplier)) {
+                                        $product = \App\Models\Product::where('sku', $sheetSku)
+                                            ->whereNull('supplier_id')
+                                            ->first();
+                                    }
+                                }
+                                if (!$product && $sheetName) {
+                                    $product = \App\Models\Product::where('name', $sheetName)->first();
+                                }
+                            }
+
+                            if ($product) {
+                                // Update BranchProduct quantity and variations, etc. to match exactly
+                                // "all products in db that exists must match exactly as it was in the google sheet"
+                                $variations = $this->sheetsService->parseVariationsString($sheetVariations);
+                                
+                                BranchProduct::updateOrCreate([
+                                    'branch_id' => $branchId,
+                                    'product_id' => $product->id,
+                                ], [
+                                    'quantity' => (int)$sheetQty,
+                                    'physical_location' => $sheetPhysLoc ?: null,
+                                    'reorder_level' => $sheetReorder ?: 0,
+                                    'variations' => $variations,
+                                    'description' => $sheetDesc ?: null,
+                                ]);
+
+                                // Also update core product fields like name/price/barcode/qr/sku/code/code_2 if modified
+                                $product->update([
+                                    'name' => $sheetName,
+                                    'price' => (float)$sheetPrice,
+                                    'barcode' => $sheetBarcode ?: $product->barcode,
+                                    'qr_code' => $sheetQrCode ?: $product->qr_code,
+                                    'sku' => $sheetSku ?: $product->sku,
+                                    'code' => $sheetCode ?: $product->code,
+                                    'code_2' => $sheetCode2 ?: $product->code_2,
+                                ]);
+
+                                $updatedCount++;
+                            }
+                        }
+                    });
+                });
+            });
+
+            // Rebuild and store the sheet snapshot for this branch, so we don't trigger modifications next time
+            $freshRows = $this->sheetsService->getSheetContent($branch->branch_name);
+            if (!empty($freshRows)) {
+                array_shift($freshRows); // Remove header row
+                $snapshot = $this->buildSheetSnapshot($freshRows);
+                $branch->update(['sheet_snapshot' => $snapshot, 'last_sheet_sync_at' => now()]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully matched quantities for {$updatedCount} existing products."
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Google Sheets matchQuantity error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to match quantities: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Reject an item and permanently delete its row from the Google Sheet.
      */
     public function rejectRow(Request $request)

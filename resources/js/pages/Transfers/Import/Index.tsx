@@ -126,6 +126,7 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
     const isSystemAdmin = auth?.user?.roles?.includes('System Administrator') || auth?.roles?.includes('System Administrator');
     const [isPullModalOpen, setIsPullModalOpen] = useState(false);
     const [isFetchingPull, setIsFetchingPull] = useState(false);
+    const [isMatchingQuantity, setIsMatchingQuantity] = useState(false);
     const [pullBranchName, setPullBranchName] = useState('');
     const [pullItems, setPullItems] = useState<any[]>([]);
     const [isSavingPull, setIsSavingPull] = useState(false);
@@ -171,6 +172,28 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
             toast.error(err.response?.data?.error || "Error pulling from Google Sheets.", { id: toastId });
         } finally {
             setIsFetchingPull(false);
+        }
+    };
+
+    const handleMatchQuantityInGoogleSheet = async () => {
+        const confirmMatch = window.confirm("Are you sure you want to match product quantities with the Google Sheet? This will update the database quantities for all existing products in this branch to match the Google Sheet exactly (excluding sales, transfers, and reorders). This only affects the branch tab.");
+        if (!confirmMatch) return;
+
+        setIsMatchingQuantity(true);
+        const toastId = toast.loading("Matching quantities from Google Sheets to database...", { duration: 15000 });
+        try {
+            const response = await axios.post('/google-sheets/match-quantity');
+            if (response.data.success) {
+                toast.success(response.data.message || "Quantities matched successfully!", { id: toastId });
+                router.reload();
+            } else {
+                toast.error(response.data.error || "Failed to match quantities.", { id: toastId });
+            }
+        } catch (err: any) {
+            console.error(err);
+            toast.error(err.response?.data?.error || "Error matching quantities.", { id: toastId });
+        } finally {
+            setIsMatchingQuantity(false);
         }
     };
 
@@ -1046,18 +1069,32 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                         </p>
                     </div>
                     {isSystemAdmin && (
-                        <Button 
-                            onClick={handlePullFromGoogleSheets}
-                            disabled={isFetchingPull}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm flex items-center gap-2"
-                        >
-                            {isFetchingPull ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <FileSpreadsheet className="w-4 h-4" />
-                            )}
-                            Pull from Google Sheet
-                        </Button>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button 
+                                onClick={handleMatchQuantityInGoogleSheet}
+                                disabled={isMatchingQuantity || isFetchingPull}
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm flex items-center gap-2"
+                            >
+                                {isMatchingQuantity ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <FileSpreadsheet className="w-4 h-4" />
+                                )}
+                                Match Quantity in Google Sheet
+                            </Button>
+                            <Button 
+                                onClick={handlePullFromGoogleSheets}
+                                disabled={isFetchingPull || isMatchingQuantity}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm flex items-center gap-2"
+                            >
+                                {isFetchingPull ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <FileSpreadsheet className="w-4 h-4" />
+                                )}
+                                Update Inventory from Google Sheet
+                            </Button>
+                        </div>
                     )}
                 </div>
 
