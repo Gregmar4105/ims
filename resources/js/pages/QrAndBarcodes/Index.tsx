@@ -86,6 +86,9 @@ export default function QrScannerIndex({
     const lastScanRef = useRef<number>(0);
     const [zoomCapability, setZoomCapability] = useState<{ min: number; max: number; step: number } | null>(null);
     const [currentZoom, setCurrentZoom] = useState<number>(1);
+    const [useNativeScanner, setUseNativeScanner] = useState<boolean>(false);
+    const nativeVideoRef = useRef<HTMLVideoElement | null>(null);
+    const nativeStreamRef = useRef<MediaStream | null>(null);
 
     // Cart State
     const [cart, setCart] = useState<Item[]>([]);
@@ -122,12 +125,93 @@ export default function QrScannerIndex({
         handleCodeScanned(decodedText);
     };
 
-    // Moved initialization to useEffect to wait for DOM Rendering
+    // Check for BarcodeDetector support on mount
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+            setUseNativeScanner(true);
+        } else {
+            setUseNativeScanner(false);
+        }
+    }, []);
+
+    // Consolidate zoom application logic
+    const applyZoom = async (zoomVal: number) => {
+        setCurrentZoom(zoomVal);
+        if (useNativeScanner && nativeStreamRef.current) {
+            try {
+                const track = nativeStreamRef.current.getVideoTracks()[0];
+                await track.applyConstraints({
+                    advanced: [{ zoom: zoomVal }] as any
+                });
+            } catch (e) {
+                console.warn("Failed to apply native zoom constraint", e);
+            }
+        } else if (scannerRef.current) {
+            try {
+                await (scannerRef.current as any).applyVideoConstraints({
+                    advanced: [{ zoom: zoomVal }]
+                });
+            } catch (e) {
+                console.warn("Failed to apply html5-qrcode zoom constraint", e);
+            }
+        }
+    };
+
+    // Native Camera Stream Controller Effect
+    useEffect(() => {
+        if (isScanning && useNativeScanner) {
+            let activeStream: MediaStream | null = null;
+            
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: "environment",
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                }
+            }).then(stream => {
+                activeStream = stream;
+                nativeStreamRef.current = stream;
+                if (nativeVideoRef.current) {
+                    nativeVideoRef.current.srcObject = stream;
+                }
+                
+                // Get native capabilities
+                try {
+                    const track = stream.getVideoTracks()[0];
+                    const capabilities = (track as any).getCapabilities();
+                    if (capabilities && capabilities.zoom) {
+                        setZoomCapability({
+                            min: capabilities.zoom.min || 1,
+                            max: capabilities.zoom.max || 1,
+                            step: capabilities.zoom.step || 0.1
+                        });
+                        setCurrentZoom(track.getSettings().zoom || 1);
+                    }
+                } catch (err) {
+                    console.warn("Could not retrieve native track capabilities", err);
+                }
+            }).catch(err => {
+                console.error("Failed to start native camera stream", err);
+                toast.error("Could not start camera");
+                setIsScanning(false);
+            });
+
+            return () => {
+                if (activeStream) {
+                    activeStream.getTracks().forEach(track => track.stop());
+                }
+                nativeStreamRef.current = null;
+                setZoomCapability(null);
+            };
+        }
+    }, [isScanning, useNativeScanner]);
+
+    // Fallback html5-qrcode Scanner Controller Effect
     useEffect(() => {
         let isMounted = true;
         let timer: any = null;
 
-        if (isScanning) {
+        if (isScanning && !useNativeScanner) {
             // Small delay to ensure the #reader div is mounted
             timer = setTimeout(() => {
                 if (!isMounted) return;
@@ -192,7 +276,7 @@ export default function QrScannerIndex({
                 scannerRef.current = null;
             }
         };
-    }, [isScanning]);
+    }, [isScanning, useNativeScanner]);
 
     // Tracking & Auto-Zoom Loop
     useEffect(() => {
@@ -208,7 +292,9 @@ export default function QrScannerIndex({
         if ('BarcodeDetector' in window) {
             try {
                 // @ts-ignore
-                detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+                detector = new window.BarcodeDetector({ 
+                    formats: ['qr_code', 'code_128', 'ean_13', 'ean_8', 'upc_a', 'upc_e'] 
+                });
             } catch (e) {
                 console.warn("BarcodeDetector is in window but failed to instantiate", e);
             }
@@ -225,13 +311,13 @@ export default function QrScannerIndex({
         // Decoupled Detection State
         let lastDetectTime = 0;
         let isDetecting = false;
-        let lastDetectedBox: { x: number; y: number; width: number; height: number } | null = null;
+        let lastDetectedBox: { x: number; y: number; width: number; height: number; format?: string } | null = null;
         let isCodeDetected = false;
 
         const checkFrame = async () => {
             if (!active) return;
 
-            const video = document.querySelector('#reader video') as HTMLVideoElement;
+            const video = (useNativeScanner ? nativeVideoRef.current : document.querySelector('#reader video')) as HTMLVideoElement;
             const canvas = document.getElementById('tracking-canvas') as HTMLCanvasElement;
 
             if (video && video.readyState >= 2 && canvas) {
@@ -254,9 +340,10 @@ export default function QrScannerIndex({
                     const offsetX = (elWidth - renderedWidth) / 2;
                     const offsetY = (elHeight - renderedHeight) / 2;
 
-                    // Throttled detection: Only run BarcodeDetector.detect() once every 120ms to save CPU
+                    // Throttled detection: Only run BarcodeDetector.detect() once every 60ms (native) or 120ms (fallback) to save CPU
                     const nowTime = Date.now();
-                    if (detector && !isDetecting && nowTime - lastDetectTime > 120) {
+                    const detectionInterval = useNativeScanner ? 60 : 120;
+                    if (detector && !isDetecting && nowTime - lastDetectTime > detectionInterval) {
                         isDetecting = true;
                         lastDetectTime = nowTime;
                         
@@ -269,27 +356,30 @@ export default function QrScannerIndex({
                                     x: box.x * scale + offsetX,
                                     y: box.y * scale + offsetY,
                                     width: box.width * scale,
-                                    height: box.height * scale
+                                    height: box.height * scale,
+                                    format: barcode.format
                                 };
                                 isCodeDetected = true;
 
                                 // Auto-zoom logic
                                 const ratio = box.width / vWidth;
-                                if (ratio < 0.45 && scannerRef.current) {
+                                if (ratio < 0.45) {
                                     try {
-                                        const capabilities = (scannerRef.current as any).getRunningTrackCapabilities();
+                                        const capabilities = useNativeScanner 
+                                            ? (nativeStreamRef.current?.getVideoTracks()[0] as any)?.getCapabilities() 
+                                            : (scannerRef.current as any)?.getRunningTrackCapabilities();
+                                            
                                         if (capabilities && capabilities.zoom) {
                                             const minZ = capabilities.zoom.min || 1;
                                             const maxZ = capabilities.zoom.max || 4;
-                                            const currentZ = (scannerRef.current as any).getRunningTrackSettings()?.zoom || 1;
+                                            const currentZ = useNativeScanner
+                                                ? (nativeStreamRef.current?.getVideoTracks()[0] as any)?.getSettings()?.zoom || 1
+                                                : (scannerRef.current as any)?.getRunningTrackSettings()?.zoom || 1;
+                                                
                                             const targetZ = Math.min(maxZ, Math.max(minZ, currentZ * (0.50 / ratio)));
 
                                             if (Math.abs(targetZ - currentZ) > 0.2) {
-                                                (scannerRef.current as any).applyVideoConstraints({
-                                                    advanced: [{ zoom: targetZ }]
-                                                }).then(() => {
-                                                    setCurrentZoom(targetZ);
-                                                }).catch(() => {});
+                                                applyZoom(targetZ);
                                             }
                                         }
                                     } catch (zoomErr) {
@@ -366,66 +456,67 @@ export default function QrScannerIndex({
                     ctx.fill();
                     ctx.restore();
 
-                    // Draw the custom visual tracking border
+                    // Draw the custom visual tracking border (rounded rectangle like Google Lens)
                     ctx.save();
                     const themeColor = isCodeDetected ? '#10B981' : '#FFFFFF';
                     ctx.strokeStyle = themeColor;
-                    ctx.lineWidth = isCodeDetected ? 3.5 : 2;
+                    ctx.lineWidth = 3.5;
                     ctx.globalAlpha = boxOpacity;
 
                     if (isCodeDetected) {
                         ctx.shadowColor = '#10B981';
-                        ctx.shadowBlur = 12;
+                        ctx.shadowBlur = 10;
+                    } else {
+                        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+                        ctx.shadowBlur = 4;
                     }
 
-                    const r = Math.min(12, boxW / 4, boxH / 4);
-                    
                     ctx.beginPath();
-                    ctx.moveTo(boxX + r, boxY);
-                    ctx.arcTo(boxX, boxY, boxX, boxY + r, r);
-                    ctx.lineTo(boxX, boxY + r + 8);
-                    ctx.moveTo(boxX, boxY + r);
-                    ctx.lineTo(boxX + r + 8, boxY);
+                    const borderRadius = Math.min(16, boxW / 4, boxH / 4);
+                    if (ctx.roundRect) {
+                        ctx.roundRect(boxX, boxY, boxW, boxH, borderRadius);
+                    } else {
+                        ctx.rect(boxX, boxY, boxW, boxH);
+                    }
                     ctx.stroke();
+                    ctx.restore();
 
-                    ctx.beginPath();
-                    ctx.moveTo(boxX + boxW - r, boxY);
-                    ctx.arcTo(boxX + boxW, boxY, boxX + boxW, boxY + r, r);
-                    ctx.lineTo(boxX + boxW, boxY + r + 8);
-                    ctx.moveTo(boxX + boxW, boxY + r);
-                    ctx.lineTo(boxX + boxW - r - 8, boxY);
-                    ctx.stroke();
+                    // If code is detected, draw Google Lens label pill above the box
+                    if (isCodeDetected && lastDetectedBox) {
+                        ctx.save();
+                        ctx.globalAlpha = boxOpacity;
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.font = 'bold 11px sans-serif';
+                        ctx.textBaseline = 'middle';
+                        ctx.textAlign = 'center';
+                        
+                        const formatName = lastDetectedBox.format || 'qr_code';
+                        const label = formatName === 'qr_code' ? 'QR Code' : 'Barcode';
+                        
+                        const textWidth = ctx.measureText(label).width;
+                        const pillW = textWidth + 14;
+                        const pillH = 18;
+                        const pillX = boxX + (boxW - pillW) / 2;
+                        const pillY = boxY - pillH - 6;
 
-                    ctx.beginPath();
-                    ctx.moveTo(boxX + r, boxY + boxH);
-                    ctx.arcTo(boxX, boxY + boxH, boxX, boxY + boxH - r, r);
-                    ctx.lineTo(boxX, boxY + boxH - r - 8);
-                    ctx.moveTo(boxX, boxY + boxH - r);
-                    ctx.lineTo(boxX + r + 8, boxY + boxH);
-                    ctx.stroke();
-
-                    ctx.beginPath();
-                    ctx.moveTo(boxX + boxW - r, boxY + boxH);
-                    ctx.arcTo(boxX + boxW, boxY + boxH, boxX + boxW, boxY + boxH - r, r);
-                    ctx.lineTo(boxX + boxW, boxY + boxH - r - 8);
-                    ctx.moveTo(boxX + boxW, boxY + boxH - r);
-                    ctx.lineTo(boxX + boxW - r - 8, boxY + boxH);
-                    ctx.stroke();
-
-                    if (isCodeDetected) {
-                        ctx.fillStyle = '#10B981';
+                        // Draw white pill background
                         ctx.beginPath();
-                        ctx.arc(boxX + boxW / 2, boxY + boxH / 2, 4, 0, 2 * Math.PI);
+                        if (ctx.roundRect) {
+                            ctx.roundRect(pillX, pillY, pillW, pillH, 5);
+                        } else {
+                            ctx.rect(pillX, pillY, pillW, pillH);
+                        }
                         ctx.fill();
 
-                        const pulseScale = 1.0 + 0.08 * Math.sin(Date.now() / 120);
-                        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
-                        ctx.lineWidth = 1.5;
-                        ctx.shadowBlur = 0;
-                        ctx.beginPath();
-                        ctx.arc(boxX + boxW / 2, boxY + boxH / 2, (Math.min(boxW, boxH) / 3.5) * pulseScale, 0, 2 * Math.PI);
-                        ctx.stroke();
-                    } else {
+                        // Draw black text inside pill
+                        ctx.fillStyle = '#000000';
+                        ctx.fillText(label, pillX + pillW / 2, pillY + pillH / 2);
+                        ctx.restore();
+                    }
+
+                    // Search line animation when idling
+                    if (!isCodeDetected) {
+                        ctx.save();
                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
                         ctx.lineWidth = 1.5;
                         
@@ -436,9 +527,8 @@ export default function QrScannerIndex({
                         ctx.moveTo(boxX + 10, lineY);
                         ctx.lineTo(boxX + boxW - 10, lineY);
                         ctx.stroke();
+                        ctx.restore();
                     }
-
-                    ctx.restore();
                 }
             }
 
@@ -458,7 +548,7 @@ export default function QrScannerIndex({
                 cancelAnimationFrame(animationFrameId);
             }
         };
-    }, [isScanning]);
+    }, [isScanning, useNativeScanner]);
 
     const startScanner = () => setIsScanning(true);
 
@@ -707,7 +797,18 @@ export default function QrScannerIndex({
                                             </button>
                                         ) : (
                                             <>
-                                                <div id="reader" className="w-full h-full [&>video]:object-cover [&>video]:h-[300px] z-0"></div>
+                                                {useNativeScanner ? (
+                                                    <video
+                                                        id="native-video"
+                                                        ref={nativeVideoRef}
+                                                        autoPlay
+                                                        playsInline
+                                                        muted
+                                                        className="w-full h-[300px] object-cover z-0"
+                                                    />
+                                                ) : (
+                                                    <div id="reader" className="w-full h-full [&>video]:object-cover [&>video]:h-[300px] z-0"></div>
+                                                )}
                                                 
                                                 {/* Canvas overlay for Google Lens tracking */}
                                                 <canvas
@@ -725,14 +826,7 @@ export default function QrScannerIndex({
                                                                     <button
                                                                         key={zoomVal}
                                                                         type="button"
-                                                                        onClick={() => {
-                                                                            if (scannerRef.current) {
-                                                                                (scannerRef.current as any).applyVideoConstraints({
-                                                                                    advanced: [{ zoom: zoomVal }]
-                                                                                });
-                                                                                setCurrentZoom(zoomVal);
-                                                                            }
-                                                                        }}
+                                                                        onClick={() => applyZoom(zoomVal)}
                                                                         className={`text-[11px] font-extrabold w-8.5 h-8.5 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200 ${
                                                                             isActive
                                                                                 ? 'bg-primary text-primary-foreground scale-110 shadow-[0_0_12px_rgba(var(--primary),0.5)] font-black'
