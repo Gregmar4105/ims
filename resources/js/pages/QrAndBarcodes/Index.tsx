@@ -120,6 +120,22 @@ export default function QrScannerIndex({
         const now = Date.now();
         if (now - lastScanRef.current < 2000) return;
         lastScanRef.current = now;
+
+        // Freeze the video stream in fallback mode if possible
+        if (!useNativeScanner) {
+            const video = document.querySelector('#reader video') as HTMLVideoElement;
+            if (video) {
+                try {
+                    video.pause();
+                    setTimeout(() => {
+                        video.play().catch(() => {});
+                    }, 1000);
+                } catch (e) {
+                    console.warn("Failed to pause fallback video", e);
+                }
+            }
+        }
+
         playBeep();
         if (navigator.vibrate) navigator.vibrate(200);
         handleCodeScanned(decodedText);
@@ -313,6 +329,7 @@ export default function QrScannerIndex({
         let isDetecting = false;
         let lastDetectedBox: { x: number; y: number; width: number; height: number; format?: string } | null = null;
         let isCodeDetected = false;
+        let isFrozen = false;
 
         const checkFrame = async () => {
             if (!active) return;
@@ -343,15 +360,24 @@ export default function QrScannerIndex({
                     // Throttled detection: Only run BarcodeDetector.detect() once every 60ms (native) or 120ms (fallback) to save CPU
                     const nowTime = Date.now();
                     const detectionInterval = useNativeScanner ? 60 : 120;
-                    if (detector && !isDetecting && nowTime - lastDetectTime > detectionInterval) {
+                    if (detector && !isDetecting && !isFrozen && nowTime - lastDetectTime > detectionInterval) {
                         isDetecting = true;
                         lastDetectTime = nowTime;
                         
                         detector.detect(video).then((barcodes: any[]) => {
                             if (!active) return;
-                            if (barcodes && barcodes.length > 0) {
+                            if (barcodes && barcodes.length > 0 && !isFrozen) {
                                 const barcode = barcodes[0];
                                 const box = barcode.boundingBox;
+
+                                // Freeze frame UX logic: Pause video to freeze the camera stream
+                                isFrozen = true;
+                                try {
+                                    video.pause();
+                                } catch (e) {
+                                    console.warn("Failed to pause video stream", e);
+                                }
+
                                 lastDetectedBox = {
                                     x: box.x * scale + offsetX,
                                     y: box.y * scale + offsetY,
@@ -390,7 +416,20 @@ export default function QrScannerIndex({
                                 if (barcode.rawValue) {
                                     onSuccessfulScan(barcode.rawValue);
                                 }
-                            } else {
+
+                                // Unfreeze camera frame and resume scanning after 1000ms
+                                setTimeout(() => {
+                                    if (!active) return;
+                                    try {
+                                        video.play().catch(playErr => console.warn("Failed to play video stream after freeze", playErr));
+                                    } catch (e) {
+                                        console.warn("Failed to resume video stream", e);
+                                    }
+                                    isFrozen = false;
+                                    lastDetectedBox = null;
+                                    isCodeDetected = false;
+                                }, 1000);
+                            } else if (!isFrozen) {
                                 lastDetectedBox = null;
                                 isCodeDetected = false;
                             }
@@ -456,20 +495,14 @@ export default function QrScannerIndex({
                     ctx.fill();
                     ctx.restore();
 
-                    // Draw the custom visual tracking border (rounded rectangle like Google Lens)
+                    // Draw the custom visual tracking border (rounded rectangle in solid white, exactly like Google Lens)
                     ctx.save();
-                    const themeColor = isCodeDetected ? '#10B981' : '#FFFFFF';
-                    ctx.strokeStyle = themeColor;
+                    ctx.strokeStyle = '#FFFFFF';
                     ctx.lineWidth = 3.5;
                     ctx.globalAlpha = boxOpacity;
 
-                    if (isCodeDetected) {
-                        ctx.shadowColor = '#10B981';
-                        ctx.shadowBlur = 10;
-                    } else {
-                        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-                        ctx.shadowBlur = 4;
-                    }
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+                    ctx.shadowBlur = 6;
 
                     ctx.beginPath();
                     const borderRadius = Math.min(16, boxW / 4, boxH / 4);
@@ -481,7 +514,7 @@ export default function QrScannerIndex({
                     ctx.stroke();
                     ctx.restore();
 
-                    // If code is detected, draw Google Lens label pill above the box
+                    // If code is detected, draw Google Lens label pill above the box (white tag with black text, no green dot)
                     if (isCodeDetected && lastDetectedBox) {
                         ctx.save();
                         ctx.globalAlpha = boxOpacity;
