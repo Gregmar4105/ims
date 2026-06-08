@@ -84,6 +84,8 @@ export default function QrScannerIndex({
     const [manualCode, setManualCode] = useState('');
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const lastScanRef = useRef<number>(0);
+    const [zoomCapability, setZoomCapability] = useState<{ min: number; max: number; step: number } | null>(null);
+    const [currentZoom, setCurrentZoom] = useState<number>(1);
 
     // Cart State
     const [cart, setCart] = useState<Item[]>([]);
@@ -111,9 +113,15 @@ export default function QrScannerIndex({
     };
 
     // --- Scanner Logic ---
-    // --- Scanner Logic ---
-    // Moved initialization to useEffect to wait for DOM Rendering
-    // --- Scanner Logic ---
+    const onSuccessfulScan = (decodedText: string) => {
+        const now = Date.now();
+        if (now - lastScanRef.current < 2000) return;
+        lastScanRef.current = now;
+        playBeep();
+        if (navigator.vibrate) navigator.vibrate(200);
+        handleCodeScanned(decodedText);
+    };
+
     // Moved initialization to useEffect to wait for DOM Rendering
     useEffect(() => {
         let isMounted = true;
@@ -129,17 +137,29 @@ export default function QrScannerIndex({
 
                 html5QrCode.start(
                     { facingMode: "environment" },
-                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    { fps: 15 },
                     (decodedText) => {
-                        const now = Date.now();
-                        if (now - lastScanRef.current < 1500) return;
-                        lastScanRef.current = now;
-                        playBeep();
-                        if (navigator.vibrate) navigator.vibrate(200);
-                        handleCodeScanned(decodedText);
+                        onSuccessfulScan(decodedText);
                     },
                     (errorMessage) => { }
-                ).catch(err => {
+                ).then(() => {
+                    try {
+                        const capabilities = (html5QrCode as any).getRunningTrackCapabilities();
+                        if (capabilities && capabilities.zoom) {
+                            setZoomCapability({
+                                min: capabilities.zoom.min || 1,
+                                max: capabilities.zoom.max || 1,
+                                step: capabilities.zoom.step || 0.1
+                            });
+                            setCurrentZoom(capabilities.zoom.min || 1);
+                        } else {
+                            setZoomCapability(null);
+                        }
+                    } catch (e) {
+                        console.warn("Could not retrieve camera zoom capabilities", e);
+                        setZoomCapability(null);
+                    }
+                }).catch(err => {
                     console.error("Error starting scanner", err);
                     toast.error("Could not start camera");
                     setIsScanning(false);
@@ -166,6 +186,241 @@ export default function QrScannerIndex({
                     }
                 }
                 scannerRef.current = null;
+            }
+        };
+    }, [isScanning]);
+
+    // Tracking & Auto-Zoom Loop
+    useEffect(() => {
+        if (!isScanning) {
+            setZoomCapability(null);
+            return;
+        }
+
+        let active = true;
+        let animationFrameId: number;
+        let detector: any = null;
+
+        if ('BarcodeDetector' in window) {
+            try {
+                // @ts-ignore
+                detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+            } catch (e) {
+                console.warn("BarcodeDetector is in window but failed to instantiate", e);
+            }
+        }
+
+        // Keep track of the current viewfinder box parameters (for interpolation / lerp)
+        let boxX = 0;
+        let boxY = 0;
+        let boxW = 0;
+        let boxH = 0;
+        let boxOpacity = 0.4;
+        let isFirstFrame = true;
+
+        const checkFrame = async () => {
+            if (!active) return;
+
+            const video = document.querySelector('#reader video') as HTMLVideoElement;
+            const canvas = document.getElementById('tracking-canvas') as HTMLCanvasElement;
+
+            if (video && video.readyState >= 2 && canvas) {
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    const rect = video.getBoundingClientRect();
+                    if (canvas.width !== rect.width || canvas.height !== rect.height) {
+                        canvas.width = rect.width;
+                        canvas.height = rect.height;
+                    }
+
+                    const vWidth = video.videoWidth;
+                    const vHeight = video.videoHeight;
+                    const elWidth = rect.width;
+                    const elHeight = rect.height;
+
+                    const scale = Math.max(elWidth / vWidth, elHeight / vHeight);
+                    const renderedWidth = vWidth * scale;
+                    const renderedHeight = vHeight * scale;
+                    const offsetX = (elWidth - renderedWidth) / 2;
+                    const offsetY = (elHeight - renderedHeight) / 2;
+
+                    const defaultSize = Math.min(canvas.width, canvas.height) * 0.65;
+                    const targetX = (canvas.width - defaultSize) / 2;
+                    const targetY = (canvas.height - defaultSize) / 2;
+                    const targetW = defaultSize;
+                    const targetH = defaultSize;
+
+                    let targetX_final = targetX;
+                    let targetY_final = targetY;
+                    let targetW_final = targetW;
+                    let targetH_final = targetH;
+                    let targetOpacity = 0.35;
+                    let isCodeDetected = false;
+
+                    if (detector) {
+                        try {
+                            const barcodes = await detector.detect(video);
+                            if (barcodes && barcodes.length > 0) {
+                                const barcode = barcodes[0];
+                                const box = barcode.boundingBox;
+
+                                targetX_final = box.x * scale + offsetX;
+                                targetY_final = box.y * scale + offsetY;
+                                targetW_final = box.width * scale;
+                                targetH_final = box.height * scale;
+                                targetOpacity = 1.0;
+                                isCodeDetected = true;
+
+                                const ratio = box.width / vWidth;
+                                if (ratio < 0.45 && scannerRef.current) {
+                                    try {
+                                        const capabilities = (scannerRef.current as any).getRunningTrackCapabilities();
+                                        if (capabilities && capabilities.zoom) {
+                                            const minZ = capabilities.zoom.min || 1;
+                                            const maxZ = capabilities.zoom.max || 4;
+                                            const currentZ = (scannerRef.current as any).getRunningTrackSettings()?.zoom || 1;
+                                            const targetZ = Math.min(maxZ, Math.max(minZ, currentZ * (0.50 / ratio)));
+
+                                            if (Math.abs(targetZ - currentZ) > 0.2) {
+                                                await (scannerRef.current as any).applyVideoConstraints({
+                                                    advanced: [{ zoom: targetZ }]
+                                                });
+                                                setCurrentZoom(targetZ);
+                                            }
+                                        }
+                                    } catch (zoomErr) {
+                                        console.warn("Auto-zoom application failed", zoomErr);
+                                    }
+                                }
+
+                                if (barcode.rawValue) {
+                                    onSuccessfulScan(barcode.rawValue);
+                                }
+                            }
+                        } catch (err) {
+                            console.error("BarcodeDetector scan error", err);
+                        }
+                    }
+
+                    if (isFirstFrame) {
+                        boxX = targetX_final;
+                        boxY = targetY_final;
+                        boxW = targetW_final;
+                        boxH = targetH_final;
+                        boxOpacity = targetOpacity;
+                        isFirstFrame = false;
+                    } else {
+                        const lerpAmt = 0.22;
+                        boxX += (targetX_final - boxX) * lerpAmt;
+                        boxY += (targetY_final - boxY) * lerpAmt;
+                        boxW += (targetW_final - boxW) * lerpAmt;
+                        boxH += (targetH_final - boxH) * lerpAmt;
+                        boxOpacity += (targetOpacity - boxOpacity) * 0.15;
+                    }
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+                    ctx.beginPath();
+                    ctx.rect(0, 0, canvas.width, canvas.height);
+                    ctx.moveTo(boxX, boxY);
+                    ctx.lineTo(boxX, boxY + boxH);
+                    ctx.lineTo(boxX + boxW, boxY + boxH);
+                    ctx.lineTo(boxX + boxW, boxY);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+
+                    ctx.save();
+                    const themeColor = isCodeDetected ? '#10B981' : '#FFFFFF';
+                    ctx.strokeStyle = themeColor;
+                    ctx.lineWidth = isCodeDetected ? 3.5 : 2;
+                    ctx.globalAlpha = boxOpacity;
+
+                    if (isCodeDetected) {
+                        ctx.shadowColor = '#10B981';
+                        ctx.shadowBlur = 12;
+                    }
+
+                    const r = Math.min(12, boxW / 4, boxH / 4);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(boxX + r, boxY);
+                    ctx.arcTo(boxX, boxY, boxX, boxY + r, r);
+                    ctx.lineTo(boxX, boxY + r + 8);
+                    ctx.moveTo(boxX, boxY + r);
+                    ctx.lineTo(boxX + r + 8, boxY);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(boxX + boxW - r, boxY);
+                    ctx.arcTo(boxX + boxW, boxY, boxX + boxW, boxY + r, r);
+                    ctx.lineTo(boxX + boxW, boxY + r + 8);
+                    ctx.moveTo(boxX + boxW, boxY + r);
+                    ctx.lineTo(boxX + boxW - r - 8, boxY);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(boxX + r, boxY + boxH);
+                    ctx.arcTo(boxX, boxY + boxH, boxX, boxY + boxH - r, r);
+                    ctx.lineTo(boxX, boxY + boxH - r - 8);
+                    ctx.moveTo(boxX, boxY + boxH - r);
+                    ctx.lineTo(boxX + r + 8, boxY + boxH);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(boxX + boxW - r, boxY + boxH);
+                    ctx.arcTo(boxX + boxW, boxY + boxH, boxX + boxW, boxY + boxH - r, r);
+                    ctx.lineTo(boxX + boxW, boxY + boxH - r - 8);
+                    ctx.moveTo(boxX + boxW, boxY + boxH - r);
+                    ctx.lineTo(boxX + boxW - r - 8, boxY + boxH);
+                    ctx.stroke();
+
+                    if (isCodeDetected) {
+                        ctx.fillStyle = '#10B981';
+                        ctx.beginPath();
+                        ctx.arc(boxX + boxW / 2, boxY + boxH / 2, 4, 0, 2 * Math.PI);
+                        ctx.fill();
+
+                        const pulseScale = 1.0 + 0.08 * Math.sin(Date.now() / 120);
+                        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+                        ctx.lineWidth = 1.5;
+                        ctx.shadowBlur = 0;
+                        ctx.beginPath();
+                        ctx.arc(boxX + boxW / 2, boxY + boxH / 2, (Math.min(boxW, boxH) / 3.5) * pulseScale, 0, 2 * Math.PI);
+                        ctx.stroke();
+                    } else {
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                        ctx.lineWidth = 1.5;
+                        
+                        const time = Date.now() / 1000;
+                        const lineY = boxY + (boxH * (0.5 + 0.45 * Math.sin(time * 2)));
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(boxX + 10, lineY);
+                        ctx.lineTo(boxX + boxW - 10, lineY);
+                        ctx.stroke();
+                    }
+
+                    ctx.restore();
+                }
+            }
+
+            if (active) {
+                animationFrameId = requestAnimationFrame(checkFrame);
+            }
+        };
+
+        const timer = setTimeout(() => {
+            checkFrame();
+        }, 300);
+
+        return () => {
+            active = false;
+            clearTimeout(timer);
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
             }
         };
     }, [isScanning]);
@@ -418,41 +673,54 @@ export default function QrScannerIndex({
                                         ) : (
                                             <>
                                                 <div id="reader" className="w-full h-full [&>video]:object-cover [&>video]:h-[300px] z-0"></div>
-                                                {/* Glow corner brackets overlay for scanning */}
-                                                <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center">
-                                                    <div className="relative w-[250px] h-[250px]">
-                                                        {/* Neon Viewfinder corners */}
-                                                        <div className="absolute top-0 left-0 w-8 h-8 border-t-[3px] border-l-[3px] border-primary rounded-tl-xl shadow-[0_0_8px_rgba(var(--primary),0.5)]"></div>
-                                                        <div className="absolute top-0 right-0 w-8 h-8 border-t-[3px] border-r-[3px] border-primary rounded-tr-xl shadow-[0_0_8px_rgba(var(--primary),0.5)]"></div>
-                                                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-[3px] border-l-[3px] border-primary rounded-bl-xl shadow-[0_0_8px_rgba(var(--primary),0.5)]"></div>
-                                                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[3px] border-r-[3px] border-primary rounded-br-xl shadow-[0_0_8px_rgba(var(--primary),0.5)]"></div>
-
-                                                        {/* Scan Line Animation */}
-                                                        <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-[scan_2s_ease-in-out_infinite] pointer-events-none"></div>
-                                                    </div>
-                                                </div>
                                                 
-                                                {/* Sleek Darkening overlay on outer area */}
-                                                <div className="absolute inset-0 bg-black/40 pointer-events-none z-0"></div>
+                                                {/* Canvas overlay for Google Lens tracking */}
+                                                <canvas
+                                                    id="tracking-canvas"
+                                                    className="absolute inset-0 pointer-events-none z-20 w-full h-full"
+                                                />
+
+                                                {/* Manual Zoom Presets Overlay */}
+                                                {zoomCapability && zoomCapability.max > zoomCapability.min && (
+                                                    <div className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-black/75 backdrop-blur-md px-3.5 py-2 rounded-full flex items-center gap-3.5 border border-white/10 z-30 shadow-2xl transition-all duration-300">
+                                                        {[1, 2, 4].map((zoomVal) => {
+                                                            if (zoomVal >= zoomCapability.min && zoomVal <= zoomCapability.max) {
+                                                                const isActive = Math.abs(currentZoom - zoomVal) < 0.2;
+                                                                return (
+                                                                    <button
+                                                                        key={zoomVal}
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            if (scannerRef.current) {
+                                                                                (scannerRef.current as any).applyVideoConstraints({
+                                                                                    advanced: [{ zoom: zoomVal }]
+                                                                                });
+                                                                                setCurrentZoom(zoomVal);
+                                                                            }
+                                                                        }}
+                                                                        className={`text-[11px] font-extrabold w-8.5 h-8.5 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200 ${
+                                                                            isActive
+                                                                                ? 'bg-primary text-primary-foreground scale-110 shadow-[0_0_12px_rgba(var(--primary),0.5)] font-black'
+                                                                                : 'text-zinc-300 hover:text-white hover:bg-white/10 font-bold border border-white/5'
+                                                                        }`}
+                                                                    >
+                                                                        {zoomVal}x
+                                                                    </button>
+                                                                );
+                                                            }
+                                                            return null;
+                                                        })}
+                                                    </div>
+                                                )}
+
+                                                <Button
+                                                    size="icon"
+                                                    className="absolute bottom-4 right-4 rounded-full h-11 w-11 shadow-2xl z-50 bg-destructive hover:bg-destructive/90 text-destructive-foreground border border-border/20 transition-all active:scale-95 duration-200"
+                                                    onClick={stopScanner}
+                                                >
+                                                    <StopCircle className="w-5 h-5" />
+                                                </Button>
                                             </>
-                                        )}
-
-                                        <style>{`
-                                            @keyframes scan {
-                                                0%, 100% { top: 0%; opacity: 0; }
-                                                10%, 90% { opacity: 1; }
-                                                50% { top: 100%; }
-                                            }
-                                        `}</style>
-
-                                        {isScanning && (
-                                            <Button
-                                                size="icon"
-                                                className="absolute bottom-4 right-4 rounded-full h-11 w-11 shadow-2xl z-50 bg-destructive hover:bg-destructive/90 text-destructive-foreground border border-border/20 transition-all active:scale-95 duration-200"
-                                                onClick={stopScanner}
-                                            >
-                                                <StopCircle className="w-5 h-5" />
-                                            </Button>
                                         )}
                                     </div>
                                 </Card>
