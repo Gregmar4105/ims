@@ -47,3 +47,25 @@ createInertiaApp({
 
 // This will set light / dark mode on load...
 initializeTheme();
+
+// Handle dynamic import / chunk loading failures gracefully (e.g., after new deployments/builds)
+window.addEventListener('error', (e) => {
+    const isChunkError = 
+        e.message?.includes('Failed to fetch dynamically imported module') || 
+        e.message?.includes('Importing a module script failed') ||
+        e.message?.includes('dynamic import');
+    if (isChunkError) {
+        window.location.reload();
+    }
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+    const isChunkError = 
+        e.reason?.message?.includes('Failed to fetch dynamically imported module') || 
+        e.reason?.message?.includes('Importing a module script failed') ||
+        e.reason?.message?.includes('dynamic import') ||
+        (e.reason && String(e.reason).includes('Failed to fetch dynamically imported module'));
+    if (isChunkError) {
+        window.location.reload();
+    }
+});
