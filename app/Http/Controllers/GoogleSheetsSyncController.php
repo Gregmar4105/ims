@@ -483,6 +483,9 @@ class GoogleSheetsSyncController extends Controller
             return response()->json(['error' => 'Unauthorized. Only System Administrators can perform this action.'], 403);
         }
 
+        ini_set('memory_limit', '1024M');
+        set_time_limit(600); // 10 minutes for large imports (e.g. 1800+ items)
+
         $request->validate([
             'items' => 'required|array',
             'items.*.is_rejected' => 'required|boolean',
@@ -505,12 +508,17 @@ class GoogleSheetsSyncController extends Controller
             $createdCount = 0;
             $updatedCount = 0;
 
+            // Cache arrays for Brands, Categories, and Suppliers to optimize DB queries
+            $cachedBrands = [];
+            $cachedCategories = [];
+            $cachedSuppliers = [];
+
             // Temporarily disable Google Sheet sync observers to prevent a high volume of
             // slow synchronous API requests and quota exceptions in the loop.
-            \App\Models\Transfer::withoutEvents(function() use ($request, $branchId, $userId, &$createdCount, &$updatedCount) {
-                \App\Models\Product::withoutEvents(function() use ($request, $branchId, $userId, &$createdCount, &$updatedCount) {
-                    \App\Models\BranchProduct::withoutEvents(function() use ($request, $branchId, $userId, &$createdCount, &$updatedCount) {
-                        \Illuminate\Support\Facades\DB::transaction(function() use ($request, $branchId, $userId, &$createdCount, &$updatedCount) {
+            \App\Models\Transfer::withoutEvents(function() use ($request, $branchId, $userId, &$createdCount, &$updatedCount, &$cachedBrands, &$cachedCategories, &$cachedSuppliers) {
+                \App\Models\Product::withoutEvents(function() use ($request, $branchId, $userId, &$createdCount, &$updatedCount, &$cachedBrands, &$cachedCategories, &$cachedSuppliers) {
+                    \App\Models\BranchProduct::withoutEvents(function() use ($request, $branchId, $userId, &$createdCount, &$updatedCount, &$cachedBrands, &$cachedCategories, &$cachedSuppliers) {
+                        \Illuminate\Support\Facades\DB::transaction(function() use ($request, $branchId, $userId, &$createdCount, &$updatedCount, &$cachedBrands, &$cachedCategories, &$cachedSuppliers) {
                             $validItems = array_filter($request->items, function($itemData) {
                                 return !$itemData['is_rejected'];
                             });
@@ -531,51 +539,69 @@ class GoogleSheetsSyncController extends Controller
                                     // 1. Resolve Brand
                                     $brandId = null;
                                     if (!empty($values['brand_name'])) {
-                                        $brand = \App\Models\Brand::where('name', $values['brand_name'])
-                                            ->where(function($q) use ($branchId) {
-                                                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
-                                            })->first();
-                                        
-                                        if (!$brand) {
-                                            $brand = \App\Models\Brand::create([
-                                                'name' => $values['brand_name'],
-                                                'slug' => \Illuminate\Support\Str::slug($values['brand_name']),
-                                                'status' => 'Active',
-                                                'branch_id' => $branchId,
-                                                'created_by' => $userId,
-                                            ]);
+                                        $brandNameKey = trim($values['brand_name']);
+                                        if (isset($cachedBrands[$brandNameKey])) {
+                                            $brandId = $cachedBrands[$brandNameKey];
+                                        } else {
+                                            $brand = \App\Models\Brand::where('name', $values['brand_name'])
+                                                ->where(function($q) use ($branchId) {
+                                                    $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+                                                })->first();
+                                            
+                                            if (!$brand) {
+                                                $brand = \App\Models\Brand::create([
+                                                    'name' => $values['brand_name'],
+                                                    'slug' => \Illuminate\Support\Str::slug($values['brand_name']),
+                                                    'status' => 'Active',
+                                                    'branch_id' => $branchId,
+                                                    'created_by' => $userId,
+                                                ]);
+                                            }
+                                            $brandId = $brand->id;
+                                            $cachedBrands[$brandNameKey] = $brandId;
                                         }
-                                        $brandId = $brand->id;
                                     }
 
                                     // 2. Resolve Category
                                     $categoryId = null;
                                     if (!empty($values['category_name'])) {
-                                        $category = \App\Models\Category::where('name', $values['category_name'])
-                                            ->where(function($q) use ($branchId) {
-                                                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
-                                            })->first();
-                                        
-                                        if (!$category) {
-                                            $category = \App\Models\Category::create([
-                                                'name' => $values['category_name'],
-                                                'slug' => \Illuminate\Support\Str::slug($values['category_name']),
-                                                'status' => 'Active',
-                                                'branch_id' => $branchId,
-                                                'created_by' => $userId,
-                                            ]);
+                                        $categoryNameKey = trim($values['category_name']);
+                                        if (isset($cachedCategories[$categoryNameKey])) {
+                                            $categoryId = $cachedCategories[$categoryNameKey];
+                                        } else {
+                                            $category = \App\Models\Category::where('name', $values['category_name'])
+                                                ->where(function($q) use ($branchId) {
+                                                    $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+                                                })->first();
+                                            
+                                            if (!$category) {
+                                                $category = \App\Models\Category::create([
+                                                    'name' => $values['category_name'],
+                                                    'slug' => \Illuminate\Support\Str::slug($values['category_name']),
+                                                    'status' => 'Active',
+                                                    'branch_id' => $branchId,
+                                                    'created_by' => $userId,
+                                                ]);
+                                            }
+                                            $categoryId = $category->id;
+                                            $cachedCategories[$categoryNameKey] = $categoryId;
                                         }
-                                        $categoryId = $category->id;
                                     }
 
                                     // 3. Resolve Supplier
                                     $supplierId = null;
                                     if (!empty($values['supplier_name'])) {
-                                        $supplier = \App\Models\Supplier::where('name', $values['supplier_name'])->first();
-                                        if (!$supplier) {
-                                            $supplier = \App\Models\Supplier::create(['name' => $values['supplier_name']]);
+                                        $supplierNameKey = trim($values['supplier_name']);
+                                        if (isset($cachedSuppliers[$supplierNameKey])) {
+                                            $supplierId = $cachedSuppliers[$supplierNameKey];
+                                        } else {
+                                            $supplier = \App\Models\Supplier::where('name', $values['supplier_name'])->first();
+                                            if (!$supplier) {
+                                                $supplier = \App\Models\Supplier::create(['name' => $values['supplier_name']]);
+                                            }
+                                            $supplierId = $supplier->id;
+                                            $cachedSuppliers[$supplierNameKey] = $supplierId;
                                         }
-                                        $supplierId = $supplier->id;
                                     }
 
                                     // Parse Variations

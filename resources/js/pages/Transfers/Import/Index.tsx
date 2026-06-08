@@ -414,7 +414,28 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
             }
         } catch (err: any) {
             console.error(err);
-            toast.error(err.response?.data?.error || "Error applying sheets changes.", { id: toastId });
+            let errorMsg = "Error applying sheets changes.";
+            if (err.response?.data?.errors) {
+                const validationErrors = err.response.data.errors;
+                const firstErrorKey = Object.keys(validationErrors)[0];
+                const firstError = validationErrors[firstErrorKey]?.[0];
+                if (firstError) {
+                    // Try to extract the row index from key like "items.12.values.name"
+                    const match = firstErrorKey.match(/items\.(\d+)\.values\.(.+)/);
+                    if (match) {
+                        const idx = parseInt(match[1]);
+                        const item = pullItems[idx];
+                        const rowNum = item ? item.sheet_row_index : idx + 2;
+                        const fieldName = match[2];
+                        errorMsg = `Validation failed at row ${rowNum} (${fieldName}): ${firstError}`;
+                    } else {
+                        errorMsg = `Validation failed: ${firstError}`;
+                    }
+                }
+            } else if (err.response?.data?.error) {
+                errorMsg = err.response.data.error;
+            }
+            toast.error(errorMsg, { id: toastId });
         } finally {
             setIsSavingPull(false);
         }
