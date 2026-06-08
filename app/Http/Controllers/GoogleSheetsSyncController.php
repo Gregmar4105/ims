@@ -485,10 +485,10 @@ class GoogleSheetsSyncController extends Controller
 
         $request->validate([
             'items' => 'required|array',
-            'items.*.values.name' => 'required|string|max:255',
-            'items.*.values.quantity' => 'required|integer|min:0',
-            'items.*.values.price' => 'required|numeric|min:0',
             'items.*.is_rejected' => 'required|boolean',
+            'items.*.values.name' => 'exclude_if:items.*.is_rejected,true|required|string|max:255',
+            'items.*.values.quantity' => 'exclude_if:items.*.is_rejected,true|required|integer|min:0',
+            'items.*.values.price' => 'exclude_if:items.*.is_rejected,true|required|numeric|min:0',
         ]);
 
         try {
