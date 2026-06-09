@@ -53,7 +53,7 @@ class TransferController extends Controller
 
         $transfers = Transfer::with(['items.product', 'toBranch:id,branch_name', 'readiedBy:id,name'])
             ->where('source_branch_id', $user->branch_id)
-            ->whereIn('status', ['readied', 'outgoing'])
+            ->whereIn('status', ['readied', 'outgoing', 'requested', 'incomplete'])
             ->latest()
             ->get();
 
@@ -72,7 +72,7 @@ class TransferController extends Controller
 
         $transfers = Transfer::with(['items.product', 'fromBranch:id,branch_name', 'readiedBy:id,name'])
             ->where('destination_branch_id', $user->branch_id)
-            ->where('status', 'outgoing')
+            ->whereIn('status', ['outgoing', 'incomplete', 'requested'])
             ->latest()
             ->get();
 

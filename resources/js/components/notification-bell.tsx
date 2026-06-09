@@ -298,22 +298,41 @@ export function NotificationBell({
 
         // Process Transfers
         const transfers = (data.transfers || []).map((item: any) => {
-            const date = new Date(item.created_at);
+            const date = new Date(item.updated_at || item.created_at);
             const isIncoming = item.destination_branch_id === userBranchId;
-            const title = isIncoming ? 'Incoming Transfer' : 'Transfer Readied';
+            
+            // Customize Title based on Status and Role
+            let title = 'Transfer';
+            if (item.status === 'requested') {
+                title = isIncoming ? 'Incoming Transfer Requested' : 'Transfer Request Sent';
+            } else if (item.status === 'readied') {
+                title = isIncoming ? 'Incoming Transfer Prepared' : 'Transfer Prepared (Readied)';
+            } else if (item.status === 'outgoing') {
+                title = isIncoming ? 'Incoming Transfer Dispatched' : 'Transfer Dispatched';
+            } else if (item.status === 'incomplete') {
+                title = isIncoming ? 'Transfer Confirmed (Incomplete)' : 'Transfer Received (Incomplete)';
+            } else if (item.status === 'completed') {
+                title = isIncoming ? 'Transfer Received (Completed)' : 'Transfer Completed';
+            } else if (item.status === 'rejected') {
+                title = isIncoming ? 'Transfer Rejected' : 'Transfer Rejected';
+            }
+
             const desc = isIncoming
-                ? `From ${item.source_branch?.branch_name || 'Unknown'}`
-                : `To ${item.destination_branch?.branch_name || 'Unknown'}`;
+                ? `From ${item.source_branch?.branch_name || 'Unknown Branch'} (Transfer #${item.id})`
+                : `To ${item.destination_branch?.branch_name || 'Unknown Branch'} (Transfer #${item.id})`;
+
+            const isFinalized = ['completed', 'rejected'].includes(item.status);
+            const link = isFinalized ? '/transfer-list' : (isIncoming ? '/incoming' : '/outgoing');
 
             return {
                 id: `transfer-${item.id}`,
                 type: 'transfer' as const,
                 title: title,
                 description: desc,
-                time: item.created_at,
+                time: item.updated_at || item.created_at,
                 timestamp: date.getTime(),
                 read: item.is_read, // Uses UserNotificationView check from backend
-                link: isIncoming ? '/incoming' : '/outgoing',
+                link: link,
                 icon: ArrowRightLeft,
                 isAvatar: false
             };

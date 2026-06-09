@@ -399,7 +399,7 @@ class BranchDashboardController extends Controller
                       ->whereIn('status', ['outgoing', 'incomplete']);
             })->orWhere(function($inner) use ($branchId) {
                 $inner->where('source_branch_id', $branchId)
-                      ->where('status', 'readied');
+                      ->whereIn('status', ['readied', 'incomplete', 'requested']);
             });
         })->count();
 
@@ -478,7 +478,7 @@ class BranchDashboardController extends Controller
                       ->whereIn('status', ['outgoing', 'incomplete']);
             })->orWhere(function($inner) use ($branchId) {
                 $inner->where('source_branch_id', $branchId)
-                      ->where('status', 'readied');
+                      ->whereIn('status', ['readied', 'incomplete', 'requested']);
             });
         })->count();
 

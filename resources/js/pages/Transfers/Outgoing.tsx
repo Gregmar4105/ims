@@ -200,6 +200,13 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                                                     >
                                                         <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Readied</span>
                                                     </Badge>
+                                                ) : transfer.status === 'incomplete' ? (
+                                                    <Badge
+                                                        variant="default"
+                                                        className="px-2.5 py-0.5 text-sm font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                                                    >
+                                                        <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Incomplete</span>
+                                                    </Badge>
                                                 ) : (
                                                     <Badge
                                                         variant="default"

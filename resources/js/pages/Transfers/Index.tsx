@@ -327,6 +327,9 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                                 <SelectItem value="completed">Completed</SelectItem>
                                 <SelectItem value="incomplete">Incomplete</SelectItem>
                                 <SelectItem value="rejected">Rejected</SelectItem>
+                                <SelectItem value="outgoing">Pending/Outgoing</SelectItem>
+                                <SelectItem value="readied">Readied</SelectItem>
+                                <SelectItem value="requested">Requested</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -353,7 +356,13 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                                                             ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800'
                                                             : transfer.status === 'incomplete'
                                                             ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800'
-                                                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800'
+                                                            : transfer.status === 'rejected'
+                                                            ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800'
+                                                            : transfer.status === 'outgoing'
+                                                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                                                            : transfer.status === 'requested'
+                                                            ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300 border-violet-200 dark:border-violet-800'
+                                                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800'
                                                     }`}
                                                 >
                                                     <span className="flex items-center gap-1.5">
@@ -361,8 +370,12 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                                                             <CheckCircle className="w-3.5 h-3.5" />
                                                         ) : transfer.status === 'incomplete' ? (
                                                             <Clock className="w-3.5 h-3.5" />
-                                                        ) : (
+                                                        ) : transfer.status === 'rejected' ? (
                                                             <XCircle className="w-3.5 h-3.5" />
+                                                        ) : transfer.status === 'outgoing' ? (
+                                                            <Truck className="w-3.5 h-3.5" />
+                                                        ) : (
+                                                            <Clock className="w-3.5 h-3.5" />
                                                         )}
                                                         {transfer.status.charAt(0).toUpperCase() + transfer.status.slice(1)}
                                                     </span>

@@ -28,7 +28,7 @@ class TransferController extends Controller
 
         $transfers = Transfer::with(['items.product', 'destinationBranch', 'readiedBy', 'approvedBy'])
             ->where('source_branch_id', $branchId)
-            ->whereIn('status', ['readied', 'outgoing', 'requested'])
+            ->whereIn('status', ['readied', 'outgoing', 'requested', 'incomplete'])
             ->latest()
             ->get();
 
@@ -224,6 +224,11 @@ class TransferController extends Controller
                     'notes' => $request->notes,
                 ]);
             });
+
+            // Reset notifications view so it appears as unread for users
+            \App\Models\UserNotificationView::where('viewable_type', 'transfer')
+                ->where('viewable_id', $transfer->id)
+                ->delete();
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -457,6 +462,11 @@ class TransferController extends Controller
                     ]);
                 }
             });
+
+            // Reset notifications view so it appears as unread for users
+            \App\Models\UserNotificationView::where('viewable_type', 'transfer')
+                ->where('viewable_id', $transfer->id)
+                ->delete();
         } catch (\Exception $e) {
             return back()->with('error', 'Error processing transfer receipt: ' . $e->getMessage());
         }
@@ -526,6 +536,11 @@ class TransferController extends Controller
             'status' => 'rejected',
         ]);
 
+        // Reset notifications view so it appears as unread for users
+        \App\Models\UserNotificationView::where('viewable_type', 'transfer')
+            ->where('viewable_id', $transfer->id)
+            ->delete();
+
         // Notify Destination Branch Administrators
         try {
             $destAdminPlayerIds = \App\Models\User::role('Branch Administrator')
@@ -563,7 +578,7 @@ class TransferController extends Controller
         if ($statusFilter !== 'all') {
             $query->where('status', $statusFilter);
         } else {
-            $query->whereIn('status', ['completed', 'rejected', 'incomplete']);
+            $query->whereIn('status', ['completed', 'rejected', 'incomplete', 'outgoing', 'readied', 'requested']);
         }
             
         // Date Filters

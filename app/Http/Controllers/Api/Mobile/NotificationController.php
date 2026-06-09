@@ -67,25 +67,24 @@ class NotificationController extends Controller
                     'link' => "/mobile/sales/{$s->id}"
                 ]);
         }
-
         // Transfers
         $transfers = collect();
         if (!$isEmployee) {
             $transfers = Transfer::where(function($q) use ($branchId) {
-                $q->where('destination_branch_id', $branchId)->where('status', 'outgoing');
+                $q->where('destination_branch_id', $branchId)->whereIn('status', ['outgoing', 'incomplete']);
             })->orWhere(function($q) use ($branchId) {
-                $q->where('source_branch_id', $branchId)->where('status', 'readied');
+                $q->where('source_branch_id', $branchId)->whereIn('status', ['readied', 'incomplete', 'requested']);
             })
-            ->latest()
+            ->latest('updated_at')
             ->take(20)
             ->get()
             ->map(fn($t) => [
                 'id' => $t->id,
                 'type' => 'transfer',
-                'title' => $t->status === 'outgoing' ? 'Incoming Transfer' : 'Transfer Pending Ship',
+                'title' => $t->status === 'outgoing' ? 'Incoming Transfer' : ($t->status === 'incomplete' ? 'Transfer Received (Incomplete)' : ($t->status === 'requested' ? 'Incoming Transfer Requested' : 'Transfer Pending Ship')),
                 'message' => "Transfer #{$t->id} is {$t->status}",
                 'is_read' => isset($viewed['transfer']) && $viewed['transfer']->contains('viewable_id', $t->id),
-                'created_at' => $t->created_at,
+                'created_at' => $t->updated_at ?? $t->created_at,
                 'link' => "/mobile/transfers/{$t->id}"
             ]);
         }

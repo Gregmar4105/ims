@@ -92,8 +92,8 @@ class NotificationController extends Controller
         if (!$isEmployee) {
             $incomingTransfers = Transfer::with('sourceBranch')
                 ->where('destination_branch_id', $branchId)
-                ->where('status', 'outgoing')
-                ->latest()
+                ->whereIn('status', ['outgoing', 'incomplete'])
+                ->latest('updated_at')
                 ->take(100)
                 ->get()
                 ->map(function ($transfer) use ($viewedTransfers) {
@@ -107,8 +107,8 @@ class NotificationController extends Controller
         if (!$isEmployee) {
             $readiedTransfers = Transfer::with('destinationBranch')
                 ->where('source_branch_id', $branchId)
-                ->where('status', 'readied')
-                ->latest()
+                ->whereIn('status', ['readied', 'incomplete', 'requested'])
+                ->latest('updated_at')
                 ->take(50)
                 ->get()
                 ->map(function ($transfer) use ($viewedTransfers) {
@@ -133,7 +133,7 @@ class NotificationController extends Controller
             ],
             'chats' => $chats->values(),
             'sales' => $sales->values(),
-            'transfers' => $incomingTransfers->merge($readiedTransfers)->sortByDesc('created_at')->values(),
+            'transfers' => $incomingTransfers->merge($readiedTransfers)->sortByDesc('updated_at')->values(),
         ]);
     }
 
@@ -231,14 +231,14 @@ class NotificationController extends Controller
 
             // 3. Mark all Transfers as read (viewed)
             $incomingTransfers = Transfer::where('destination_branch_id', $branchId)
-                ->where('status', 'outgoing')
+                ->whereIn('status', ['outgoing', 'incomplete'])
                 ->pluck('id');
             
             $readiedTransfers = Transfer::where('source_branch_id', $branchId)
-                ->where('status', 'readied')
+                ->whereIn('status', ['readied', 'incomplete', 'requested'])
                 ->pluck('id');
             
-            $allTransfers = $incomingTransfers->merge($readiedTransfers);
+            $allTransfers = $incomingTransfers->merge($readiedTransfers)->unique();
 
             Log::info("Found pending transfers to mark: " . $allTransfers->count());
 
