@@ -29,6 +29,7 @@ interface Sale {
     downpayment?: number | null;
     cash_received?: number | null;
     change_amount?: number | null;
+    split_ewallet_amount?: number | null;
     customer_name?: string | null;
     reservation_buy_date?: string | null;
 }
@@ -169,7 +170,8 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                                     <span className="capitalize">
                                         {sale.payment_method === 'e-wallet' ? `E-Wallet (${sale.ewallet_provider})` : 
                                          sale.payment_method === 'home_credit' ? `Home Credit (${sale.home_credited_name || 'Bikes and Accessories'})` : 
-                                         sale.payment_method === 'reservation' ? 'Reservation' : 'Cash'}
+                                         sale.payment_method === 'reservation' ? 'Reservation' : 
+                                         sale.payment_method === 'split_bill' ? 'Split Bill' : 'Cash'}
                                     </span>
                                 </div>
                                 {sale.payment_method === 'cash' && (
@@ -181,6 +183,18 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                                         <div className="flex justify-between font-semibold text-black">
                                             <span>Change</span>
                                             <span>₱{Number(sale.change_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                    </>
+                                )}
+                                {sale.payment_method === 'split_bill' && (
+                                    <>
+                                        <div className="flex justify-between">
+                                            <span>Cash Portion</span>
+                                            <span>₱{Number(sale.cash_received).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>E-Wallet Portion ({sale.ewallet_provider})</span>
+                                            <span>₱{Number(sale.split_ewallet_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                         </div>
                                     </>
                                 )}

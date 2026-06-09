@@ -19,6 +19,7 @@ class Sale extends Model
         'downpayment',
         'cash_received',
         'change_amount',
+        'split_ewallet_amount',
         'customer_name',
         'reservation_buy_date',
     ];

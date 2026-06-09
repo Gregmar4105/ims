@@ -172,3 +172,69 @@ test('approving a sale fails validation if required fields are missing', functio
     ]);
     $response2->assertSessionHasErrors(['ewallet_provider', 'proof_of_payment']);
 });
+
+test('branch admin can approve a sale with split bill payment', function () {
+    $branch = Branch::create([
+        'branch_name' => 'Test Branch',
+        'location' => 'Test Location',
+    ]);
+
+    $admin = User::factory()->create(['branch_id' => $branch->id]);
+    $admin->assignRole('Branch Administrator');
+
+    $employee = User::factory()->create(['branch_id' => $branch->id]);
+    $employee->assignRole('Employee');
+
+    $product = Product::create([
+        'name' => 'Gears Set',
+        'price' => 250.00,
+        'sku' => 'GEARS-001',
+    ]);
+    $product->branches()->attach($branch->id, ['quantity' => 5]);
+
+    $sale = Sale::create([
+        'branch_id' => $branch->id,
+        'status' => 'readied',
+        'readied_by' => $employee->id,
+        'notes' => 'Test split bill sale',
+    ]);
+
+    $saleItem = SaleItem::create([
+        'sale_id' => $sale->id,
+        'product_id' => $product->id,
+        'quantity' => 2, // total sale is 500
+        'price' => 250.00,
+        'original_price' => 250.00,
+        'custom_code' => 'SPLIT-001',
+    ]);
+
+    $file = UploadedFile::fake()->image('payment_proof.jpg');
+
+    $response = $this->actingAs($admin)->post("/sales/{$sale->id}/approve", [
+        'payment_method' => 'split_bill',
+        'cash_received' => 200.00,
+        'split_ewallet_amount' => 300.00,
+        'ewallet_provider' => 'GCash',
+        'proof_of_payment' => $file,
+    ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHasNoErrors();
+
+    // Check DB sale updates
+    $sale->refresh();
+    expect($sale->status)->toBe('completed');
+    expect($sale->approved_by)->toBe($admin->id);
+    expect($sale->payment_method)->toBe('split_bill');
+    expect((float)$sale->cash_received)->toBe(200.00);
+    expect((float)$sale->split_ewallet_amount)->toBe(300.00);
+    expect($sale->ewallet_provider)->toBe('GCash');
+    expect($sale->proof_of_payment_path)->not->toBeNull();
+
+    // Verify proof file exists in fake storage
+    Storage::disk('public')->assertExists($sale->proof_of_payment_path);
+
+    // Verify inventory deduction
+    $pivotQuantity = $product->branches()->find($branch->id)->pivot->quantity;
+    expect($pivotQuantity)->toBe(3); // 5 - 2
+});

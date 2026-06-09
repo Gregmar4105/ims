@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, Plus, Trash2, Scan, ShoppingCart, Check, X, AlertCircle, Loader2, Barcode, Camera, TicketPercent, Wallet, Upload, CircleDollarSign, Clock } from 'lucide-react';
+import { Package, Plus, Trash2, Scan, ShoppingCart, Check, X, AlertCircle, Loader2, Barcode, Camera, TicketPercent, Wallet, Upload, CircleDollarSign, Clock, Coins } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -390,11 +390,12 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const [approveModalOpen, setApproveModalOpen] = useState(false);
     const [selectedSaleForApproval, setSelectedSaleForApproval] = useState<PendingSale | null>(null);
     const approveForm = useForm({
-        payment_method: 'cash' as 'cash' | 'e-wallet' | 'home_credit' | 'reservation',
+        payment_method: 'cash' as 'cash' | 'e-wallet' | 'home_credit' | 'reservation' | 'split_bill',
         ewallet_provider: 'GCash',
         proof_of_payment: null as File | null,
         cash_received: '',
         change_amount: 0,
+        split_ewallet_amount: '',
         home_credited_name: '',
         downpayment: '',
         customer_name: '',
@@ -417,6 +418,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                 proof_of_payment: null,
                 cash_received: '',
                 change_amount: 0,
+                split_ewallet_amount: '',
                 home_credited_name: defaultName,
                 downpayment: isReserved ? String(selectedSaleForApproval.downpayment || '') : '',
                 customer_name: isReserved ? (selectedSaleForApproval.customer_name || '') : '',
@@ -514,6 +516,19 @@ export default function Create({ products, pendingSales }: { products: Product[]
         });
     };
 
+    const handleSplitCashReceivedChange = (value: string) => {
+        approveForm.setData(data => {
+            const cash = parseFloat(value) || 0;
+            const total = selectedSaleForApproval ? selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0) : 0;
+            const ewallet = Math.max(0, total - cash);
+            return {
+                ...data,
+                cash_received: value,
+                split_ewallet_amount: ewallet.toFixed(2),
+            };
+        });
+    };
+
     const handleReservationCashReceivedChange = (value: string) => {
         approveForm.setData(data => {
             const cash = parseFloat(value) || 0;
@@ -558,6 +573,20 @@ export default function Create({ products, pendingSales }: { products: Product[]
             } else if (approveForm.data.payment_method === 'e-wallet') {
                 if (!approveForm.data.proof_of_payment) {
                     toast.error('Proof of payment is required for E-wallet transactions');
+                    return;
+                }
+            } else if (approveForm.data.payment_method === 'split_bill') {
+                const cash = parseFloat(approveForm.data.cash_received) || 0;
+                if (cash <= 0) {
+                    toast.error('Cash portion must be greater than ₱0.00');
+                    return;
+                }
+                if (cash >= total) {
+                    toast.error(`Cash portion must be less than the total sale amount of ₱${total.toFixed(2)}`);
+                    return;
+                }
+                if (!approveForm.data.proof_of_payment) {
+                    toast.error('Proof of payment is required for the E-wallet portion');
                     return;
                 }
             } else if (approveForm.data.payment_method === 'home_credit') {
@@ -1254,49 +1283,60 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                         {/* Payment Method Select */}
                                         <div className="space-y-2">
                                             <Label>Payment Method</Label>
-                                            <div className="grid grid-cols-4 gap-2">
+                                            <div className="grid grid-cols-5 gap-1.5">
                                                 <button
                                                     type="button"
                                                     onClick={() => approveForm.setData('payment_method', 'cash')}
-                                                    className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 text-[10px] font-bold transition-all ${approveForm.data.payment_method === 'cash'
+                                                    className={`flex flex-col items-center justify-center gap-1 py-2 rounded-lg border-2 text-[10px] font-bold transition-all ${approveForm.data.payment_method === 'cash'
                                                             ? 'border-primary bg-primary/5 text-primary'
                                                             : 'border-muted hover:bg-accent'
                                                         }`}
                                                 >
-                                                    <CircleDollarSign className="w-4 h-4" />
+                                                    <CircleDollarSign className="w-3.5 h-3.5" />
                                                     Cash
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => approveForm.setData('payment_method', 'e-wallet')}
-                                                    className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 text-[10px] font-bold transition-all ${approveForm.data.payment_method === 'e-wallet'
+                                                    className={`flex flex-col items-center justify-center gap-1 py-2 rounded-lg border-2 text-[10px] font-bold transition-all ${approveForm.data.payment_method === 'e-wallet'
                                                             ? 'border-primary bg-primary/5 text-primary'
                                                             : 'border-muted hover:bg-accent'
                                                         }`}
                                                 >
-                                                    <Wallet className="w-4 h-4" />
+                                                    <Wallet className="w-3.5 h-3.5" />
                                                     E-Wallet
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={() => approveForm.setData('payment_method', 'home_credit')}
-                                                    className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 text-[10px] font-bold transition-all ${approveForm.data.payment_method === 'home_credit'
+                                                    onClick={() => approveForm.setData('payment_method', 'split_bill')}
+                                                    className={`flex flex-col items-center justify-center gap-1 py-2 rounded-lg border-2 text-[10px] font-bold transition-all ${approveForm.data.payment_method === 'split_bill'
                                                             ? 'border-primary bg-primary/5 text-primary'
                                                             : 'border-muted hover:bg-accent'
                                                         }`}
                                                 >
-                                                    <TicketPercent className="w-4 h-4" />
+                                                    <Coins className="w-3.5 h-3.5" />
+                                                    Split Bill
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => approveForm.setData('payment_method', 'home_credit')}
+                                                    className={`flex flex-col items-center justify-center gap-1 py-2 rounded-lg border-2 text-[10px] font-bold transition-all ${approveForm.data.payment_method === 'home_credit'
+                                                            ? 'border-primary bg-primary/5 text-primary'
+                                                            : 'border-muted hover:bg-accent'
+                                                        }`}
+                                                >
+                                                    <TicketPercent className="w-3.5 h-3.5" />
                                                     Home Credit
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => approveForm.setData('payment_method', 'reservation')}
-                                                    className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 text-[10px] font-bold transition-all ${approveForm.data.payment_method === 'reservation'
+                                                    className={`flex flex-col items-center justify-center gap-1 py-2 rounded-lg border-2 text-[10px] font-bold transition-all ${approveForm.data.payment_method === 'reservation'
                                                             ? 'border-primary bg-primary/5 text-primary'
                                                             : 'border-muted hover:bg-accent'
                                                         }`}
                                                 >
-                                                    <Clock className="w-4 h-4" />
+                                                    <Clock className="w-3.5 h-3.5" />
                                                     Reservation
                                                 </button>
                                             </div>
@@ -1352,6 +1392,124 @@ export default function Create({ products, pendingSales }: { products: Product[]
 
                                                 <div className="space-y-3">
                                                     <Label>Proof of Payment</Label>
+                                                    {useWebcam ? (
+                                                        <div className="border rounded-lg overflow-hidden bg-black relative flex flex-col items-center">
+                                                            <video ref={videoRef} autoPlay playsInline className="w-full h-48 object-cover" />
+                                                            <div className="flex gap-2 p-2 w-full bg-muted/90 backdrop-blur justify-center">
+                                                                <Button type="button" size="sm" onClick={capturePhoto} className="gap-1 bg-green-600 hover:bg-green-700">
+                                                                    <Camera className="w-3.5 h-3.5" /> Capture
+                                                                </Button>
+                                                                <Button type="button" size="sm" variant="outline" onClick={stopWebcam}>
+                                                                    Cancel
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    ) : proofPreview ? (
+                                                        <div className="relative border rounded-lg overflow-hidden bg-accent group">
+                                                            <img src={proofPreview} alt="Proof preview" className="w-full h-48 object-contain" />
+                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="destructive"
+                                                                    size="sm"
+                                                                    onClick={() => approveForm.setData('proof_of_payment', null)}
+                                                                >
+                                                                    <Trash2 className="w-4 h-4 mr-1" /> Delete
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                className="h-24 flex flex-col gap-2 border-dashed border-2 hover:border-primary"
+                                                                onClick={startWebcam}
+                                                            >
+                                                                <Camera className="w-6 h-6 text-muted-foreground" />
+                                                                <span className="text-xs">Take Photo</span>
+                                                            </Button>
+                                                            <div className="relative">
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                                    onChange={(e) => {
+                                                                        if (e.target.files && e.target.files[0]) {
+                                                                            approveForm.setData('proof_of_payment', e.target.files[0]);
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    className="w-full h-24 flex flex-col gap-2 border-dashed border-2 hover:border-primary"
+                                                                >
+                                                                    <Upload className="w-6 h-6 text-muted-foreground" />
+                                                                    <span className="text-xs">Upload File</span>
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {approveForm.data.payment_method === 'split_bill' && (
+                                            <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="split-cash-received">Cash Portion</Label>
+                                                        <div className="relative">
+                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₱</span>
+                                                            <Input
+                                                                id="split-cash-received"
+                                                                type="number"
+                                                                step="0.01"
+                                                                min="0"
+                                                                className="pl-7"
+                                                                value={approveForm.data.cash_received}
+                                                                onChange={(e) => handleSplitCashReceivedChange(e.target.value)}
+                                                                placeholder="Enter cash paid"
+                                                                required
+                                                                autoFocus
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="split-ewallet-amount">E-Wallet Portion</Label>
+                                                        <div className="relative">
+                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₱</span>
+                                                            <Input
+                                                                id="split-ewallet-amount"
+                                                                type="text"
+                                                                className="pl-7 bg-muted"
+                                                                value={approveForm.data.split_ewallet_amount}
+                                                                disabled
+                                                                readOnly
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="split-ewallet-provider">E-Wallet Provider</Label>
+                                                    <select
+                                                        id="split-ewallet-provider"
+                                                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                        value={approveForm.data.ewallet_provider}
+                                                        onChange={(e) => approveForm.setData('ewallet_provider', e.target.value)}
+                                                    >
+                                                        <option value="GCash">GCash</option>
+                                                        <option value="Maya">Maya</option>
+                                                        <option value="GrabPay">GrabPay</option>
+                                                        <option value="ShopeePay">ShopeePay</option>
+                                                    </select>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    <Label>Proof of Payment (E-Wallet Portion)</Label>
                                                     {useWebcam ? (
                                                         <div className="border rounded-lg overflow-hidden bg-black relative flex flex-col items-center">
                                                             <video ref={videoRef} autoPlay playsInline className="w-full h-48 object-cover" />
@@ -1513,6 +1671,11 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                         (parseFloat(approveForm.data.cash_received) || 0) < selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0)
                                                     ) ||
                                                     (approveForm.data.payment_method === 'e-wallet' && !approveForm.data.proof_of_payment) ||
+                                                    (approveForm.data.payment_method === 'split_bill' && (
+                                                        (parseFloat(approveForm.data.cash_received) || 0) <= 0 ||
+                                                        (parseFloat(approveForm.data.cash_received) || 0) >= selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0) ||
+                                                        !approveForm.data.proof_of_payment
+                                                    )) ||
                                                     (approveForm.data.payment_method === 'home_credit' && !approveForm.data.home_credited_name.trim()) ||
                                                     (approveForm.data.payment_method === 'reservation' && (!approveForm.data.customer_name.trim() || (parseFloat(approveForm.data.downpayment) || 0) <= 0))
                                                 }

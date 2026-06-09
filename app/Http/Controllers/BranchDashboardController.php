@@ -115,6 +115,10 @@ class BranchDashboardController extends Controller
             } elseif ($sale->payment_method === 'e-wallet') {
                 $todayEwalletSalesSum += $saleRevenue;
                 $todaySalesSum += $saleRevenue;
+            } elseif ($sale->payment_method === 'split_bill') {
+                $todaySalesSum += $saleRevenue;
+                $todayCashSalesSum += (float)$sale->cash_received;
+                $todayEwalletSalesSum += (float)$sale->split_ewallet_amount;
             } elseif ($sale->payment_method === 'home_credit') {
                 $todayHomeCreditSalesSum += $saleRevenue;
                 $todaySalesSum += $saleRevenue;

@@ -52,6 +52,7 @@ interface Sale {
     downpayment?: number | null;
     cash_received?: number | null;
     change_amount?: number | null;
+    split_ewallet_amount?: number | null;
     customer_name?: string | null;
     reservation_buy_date?: string | null;
     returns?: Array<{
@@ -277,6 +278,18 @@ export default function Index({
                 amount: saleTotal,
                 sale: sale
             });
+        } else if (sale.payment_method === 'split_bill') {
+            if (Number(sale.cash_received) > 0) {
+                cashSalesEntries.push({
+                    id: sale.id,
+                    type: 'cash_sale',
+                    description: `Cash portion for Split Bill: ${sale.items.map(i => `${i.product?.name} (x${i.quantity})`).join(', ')}`,
+                    branchName: sale.branch?.branch_name,
+                    time: sale.updated_at,
+                    amount: Number(sale.cash_received),
+                    sale: sale
+                });
+            }
         } else if (sale.payment_method === 'home_credit') {
             if (Number(sale.downpayment) > 0) {
                 cashSalesEntries.push({
@@ -352,6 +365,7 @@ export default function Index({
 
     const ewalletSalesFilter = todaySales.filter(s => {
         if (s.payment_method === 'e-wallet') return true;
+        if (s.payment_method === 'split_bill' && s.split_ewallet_amount && Number(s.split_ewallet_amount) > 0) return true;
         if (s.payment_method === 'reservation' && s.status === 'completed' && s.ewallet_provider) return true;
         return false;
     });
@@ -707,7 +721,7 @@ export default function Index({
                                     {ewalletSalesFilter.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-14 text-muted-foreground px-4 text-center">
                                             <Wallet className="w-8 h-8 mb-2 text-emerald-355 dark:text-emerald-855 opacity-40" />
-                                            <p className="text-xs font-semibold">No e-wallet sales today</p>
+                                        <p className="text-xs font-semibold">No e-wallet sales today</p>
                                         </div>
                                     ) : (
                                         <div className="divide-y divide-emerald-100/50 dark:divide-emerald-900/10">
@@ -715,7 +729,7 @@ export default function Index({
                                                 const saleTotal = sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                                                 const displayAmount = sale.payment_method === 'reservation' 
                                                     ? (saleTotal - Number(sale.downpayment || 0))
-                                                    : saleTotal;
+                                                    : (sale.payment_method === 'split_bill' ? Number(sale.split_ewallet_amount || 0) : saleTotal);
                                                 return (
                                                     <div key={sale.id} className="p-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/5 transition-colors">
                                                         <div className="flex justify-between items-start gap-2">
@@ -1096,6 +1110,7 @@ export default function Index({
                                             <SelectItem value="all">All Payments</SelectItem>
                                             <SelectItem value="cash">Cash</SelectItem>
                                             <SelectItem value="e-wallet">E-Wallet</SelectItem>
+                                            <SelectItem value="split_bill">Split Bill</SelectItem>
                                             <SelectItem value="home_credit">Home Credit</SelectItem>
                                             <SelectItem value="reservation">Reservation</SelectItem>
                                         </SelectContent>
@@ -1149,7 +1164,8 @@ export default function Index({
                                                             <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary capitalize font-normal text-xs">
                                                                 {sale.payment_method === 'e-wallet' ? `E-Wallet (${sale.ewallet_provider})` : 
                                                                  sale.payment_method === 'home_credit' ? 'Home Credit' : 
-                                                                 sale.payment_method === 'reservation' ? 'Reservation' : 'Cash'}
+                                                                 sale.payment_method === 'reservation' ? 'Reservation' : 
+                                                                 sale.payment_method === 'split_bill' ? 'Split Bill' : 'Cash'}
                                                             </Badge>
                                                         )}
                                                     </div>
@@ -1172,6 +1188,25 @@ export default function Index({
                                                             <span className="text-xs bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/30 px-2 py-0.5 rounded">
                                                                 Cash Received: ₱{Number(sale.cash_received).toFixed(2)} | Change: ₱{Number(sale.change_amount).toFixed(2)}
                                                             </span>
+                                                        )}
+                                                        {sale.payment_method === 'split_bill' && (
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <span className="text-xs bg-emerald-50 dark:bg-emerald-955/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/30 px-2 py-0.5 rounded font-semibold">
+                                                                    Cash portion: ₱{Number(sale.cash_received).toFixed(2)}
+                                                                </span>
+                                                                <span className="text-xs bg-blue-50 dark:bg-blue-955/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/30 px-2 py-0.5 rounded font-semibold font-mono">
+                                                                    E-Wallet portion: ₱{Number(sale.split_ewallet_amount).toFixed(2)} ({sale.ewallet_provider})
+                                                                </span>
+                                                                {sale.proof_of_payment_path && (
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={() => setActiveProofSale(sale)}
+                                                                        className="text-xs text-primary hover:underline font-semibold flex items-center gap-1 bg-transparent border-none cursor-pointer p-0"
+                                                                    >
+                                                                        <Image className="w-3.5 h-3.5" /> View Proof
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                         )}
                                                         {sale.payment_method === 'e-wallet' && (
                                                             <div className="flex items-center gap-2">

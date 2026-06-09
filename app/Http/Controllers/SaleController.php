@@ -140,6 +140,10 @@ class SaleController extends Controller
             } elseif ($sale->payment_method === 'e-wallet') {
                 $todayEwalletSalesSum += $saleRevenue;
                 $todaySalesSum += $saleRevenue;
+            } elseif ($sale->payment_method === 'split_bill') {
+                $todaySalesSum += $saleRevenue;
+                $todayCashSalesSum += (float)$sale->cash_received;
+                $todayEwalletSalesSum += (float)$sale->split_ewallet_amount;
             } elseif ($sale->payment_method === 'home_credit') {
                 $todayHomeCreditSalesSum += $saleRevenue;
                 $todaySalesSum += $saleRevenue;
@@ -602,11 +606,12 @@ class SaleController extends Controller
         $isCompleting = $request->input('is_completing_reservation') === true || $request->input('is_completing_reservation') === 'true' || $sale->status === 'reserved';
 
         $rules = [
-            'payment_method' => 'required|in:cash,e-wallet,home_credit,reservation',
-            'ewallet_provider' => 'required_if:payment_method,e-wallet|nullable|string',
-            'proof_of_payment' => 'required_if:payment_method,e-wallet|nullable|image|max:5120', // 5MB max
-            'cash_received' => 'required_if:payment_method,cash|nullable|numeric|min:0',
+            'payment_method' => 'required|in:cash,e-wallet,home_credit,reservation,split_bill',
+            'ewallet_provider' => 'required_if:payment_method,e-wallet,split_bill|nullable|string',
+            'proof_of_payment' => 'required_if:payment_method,e-wallet,split_bill|nullable|image|max:5120', // 5MB max
+            'cash_received' => 'required_if:payment_method,cash,split_bill|nullable|numeric|min:0',
             'change_amount' => 'required_if:payment_method,cash|nullable|numeric|min:0',
+            'split_ewallet_amount' => 'required_if:payment_method,split_bill|nullable|numeric|min:0',
             'home_credited_name' => 'required_if:payment_method,home_credit|nullable|string',
             'downpayment' => 'nullable|numeric|min:0',
         ];
@@ -665,6 +670,16 @@ class SaleController extends Controller
                     $updateData['reservation_buy_date'] = $request->reservation_buy_date;
                 } elseif ($request->payment_method === 'e-wallet') {
                     $updateData['status'] = 'completed';
+                    $updateData['ewallet_provider'] = $request->ewallet_provider;
+                    if ($request->hasFile('proof_of_payment')) {
+                        $path = $request->file('proof_of_payment')->store('proofs', 'public');
+                        $updateData['proof_of_payment_path'] = $path;
+                    }
+                } elseif ($request->payment_method === 'split_bill') {
+                    $updateData['status'] = 'completed';
+                    $updateData['cash_received'] = $request->cash_received;
+                    $updateData['change_amount'] = 0.00;
+                    $updateData['split_ewallet_amount'] = $request->split_ewallet_amount;
                     $updateData['ewallet_provider'] = $request->ewallet_provider;
                     if ($request->hasFile('proof_of_payment')) {
                         $path = $request->file('proof_of_payment')->store('proofs', 'public');
