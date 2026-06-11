@@ -35,7 +35,7 @@
         }
     </style>
 
-    <title inertia>{{ config('app.name', 'Laravel') }}</title>
+    <title inertia>{{ config('app.name', 'LM2 Bicycle Trading') }}</title>
 
     <link rel="img" href="/LM2.png" sizes="any">
     <link rel="icon" href="/LM2.png" type="image/svg+xml">

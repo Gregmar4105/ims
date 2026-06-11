@@ -21,7 +21,7 @@ declare global {
     }
 }
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'LM2 Bicycle Trading';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
