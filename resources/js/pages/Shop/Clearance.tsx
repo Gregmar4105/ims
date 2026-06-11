@@ -22,10 +22,17 @@ interface Props {
 }
 
 export default function ClearancePage({ products }: Props) {
+    const descriptionText = "LM2 Bicycle Trading Clearance Sale! Don't miss out on amazing deals and limited-time discounts on premium bicycles, components, and accessories.";
+
     return (
         <>
             <AppLayout>
-                <Head title="Clearance Sale" />
+                <Head title="Clearance Sale">
+                    <meta name="description" head-key="description" content={descriptionText} />
+                    <meta property="og:title" content="Clearance Sale - LM2 Bicycle Trading" />
+                    <meta property="og:description" content={descriptionText} />
+                    <meta property="og:type" content="website" />
+                </Head>
                 <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
 
                     {/* Header Section */}

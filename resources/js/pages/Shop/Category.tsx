@@ -48,10 +48,42 @@ export default function CategoryPage({ category, products }: Props) {
         return date > thirtyDaysAgo;
     };
 
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const breadcrumbSchema = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": origin || "/"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": category.name,
+                "item": category.slug ? `${origin}/shop/${category.slug}` : `${origin}/shop`
+            }
+        ]
+    };
+
+    const descriptionText = category.description 
+        ? category.description 
+        : `Explore our collection of ${category.name} at LM2 Bicycle Trading. Premium quality bicycle parts, accessories, and gear at the best prices.`;
+
     return (
         <>
             <AppLayout>
-                <Head title={category.name} />
+                <Head title={category.name}>
+                    <meta name="description" head-key="description" content={descriptionText} />
+                    <meta property="og:title" content={`${category.name} - LM2 Bicycle Trading`} />
+                    <meta property="og:description" content={descriptionText} />
+                    <meta property="og:type" content="website" />
+                    <script type="application/ld+json">
+                        {JSON.stringify(breadcrumbSchema)}
+                    </script>
+                </Head>
                 <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
 
                     {/* Header Section */}

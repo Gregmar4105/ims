@@ -57,10 +57,59 @@ export default function Show({ product }: { product: Product }) {
     const lm2Branch = product.branches?.find(b => b.branch_name === 'LM2 Bicycle Trading');
     const isAvailable = lm2Branch && lm2Branch.pivot.quantity > 0;
 
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const imageUrl = product.image_path ? `${origin}/storage/${product.image_path}` : `${origin}/LM2.png`;
+    const productUrl = `${origin}/product/${product.id}`;
+
+    const cleanDescription = product.description
+        ? product.description.replace(/<[^>]*>/g, '').trim()
+        : `Buy ${product.name} online at LM2 Bicycle Trading. Check price, availability, and specs.`;
+
+    const shortDescription = cleanDescription.length > 155
+        ? `${cleanDescription.substring(0, 152)}...`
+        : cleanDescription;
+
+    const productSchema = {
+        "@context": "https://schema.org/",
+        "@type": "Product",
+        "name": product.name,
+        "image": [imageUrl],
+        "description": cleanDescription,
+        ...(product.brand ? {
+            "brand": {
+                "@type": "Brand",
+                "name": product.brand.name
+            }
+        } : {}),
+        ...(product.category ? {
+            "category": product.category.name
+        } : {}),
+        "offers": {
+            "@type": "Offer",
+            "url": productUrl,
+            "priceCurrency": "PHP",
+            "price": product.price ? Number(product.price) : 0,
+            "availability": isAvailable ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            "itemCondition": "https://schema.org/NewCondition"
+        }
+    };
+
     return (
         <>
             <AppLayout breadcrumbs={breadcrumbs}>
-                <Head title={product.name} />
+                <Head title={product.name}>
+                    <meta name="description" head-key="description" content={shortDescription} />
+                    <meta property="og:title" content={`${product.name} - LM2 Bicycle Trading`} />
+                    <meta property="og:description" content={shortDescription} />
+                    {product.image_path && (
+                        <meta property="og:image" content={imageUrl} />
+                    )}
+                    <meta property="og:type" content="product" />
+                    <meta property="og:url" content={productUrl} />
+                    <script type="application/ld+json">
+                        {JSON.stringify(productSchema)}
+                    </script>
+                </Head>
                 <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
                     {/* Back Button */}
                     <div className="mb-6">

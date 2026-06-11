@@ -70,6 +70,10 @@ export default function Welcome({
                         href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600"
                         rel="stylesheet"
                     />
+                    <meta name="description" head-key="description" content="Welcome to LM2 Bicycle Trading. Discover our wide selection of high-quality bicycles, components, parts, and cycling accessories at the best prices." />
+                    <meta property="og:title" content="Welcome to LM2 Bicycle Trading" />
+                    <meta property="og:description" content="Discover our wide selection of high-quality bicycles, components, parts, and cycling accessories at the best prices." />
+                    <meta property="og:type" content="website" />
                 </Head>
                 <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                     <div className="relative h-145 w-full overflow-hidden rounded-xl border dark:border-sidebar-border">

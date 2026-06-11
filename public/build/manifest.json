@@ -1,778 +1,778 @@
 {
-  "_AreaChart-D9aAjYy9.js": {
-    "file": "assets/AreaChart-D9aAjYy9.js",
+  "_AreaChart-Dj8WH8qQ.js": {
+    "file": "assets/AreaChart-Dj8WH8qQ.js",
     "name": "AreaChart",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js",
-      "_with-selector-BnaNNgDd.js",
-      "_seo-D39WYX3T.js"
+      "_utils-Dd8jGCA1.js",
+      "_with-selector-eMmd1wBD.js",
+      "_seo-BwXM-fea.js"
     ]
   },
-  "_AutocompleteInput-BhyH9eGt.js": {
-    "file": "assets/AutocompleteInput-BhyH9eGt.js",
+  "_AutocompleteInput-BJUsseQ5.js": {
+    "file": "assets/AutocompleteInput-BJUsseQ5.js",
     "name": "AutocompleteInput",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js",
-      "_input-CQkdgPUc.js",
-      "_popover-Bo3p1lSw.js",
-      "_use-debounce-CcozBXUS.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_index-BBu0OL3s.js"
+      "_utils-Dd8jGCA1.js",
+      "_input-C6Jhypl4.js",
+      "_popover-CMN2SdwF.js",
+      "_use-debounce-TIo2QsBO.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_index-HuxJM3t6.js"
     ]
   },
-  "_DeleteConfirmation-CcMbB23n.js": {
-    "file": "assets/DeleteConfirmation-CcMbB23n.js",
+  "_DeleteConfirmation-CkUw08Zb.js": {
+    "file": "assets/DeleteConfirmation-CkUw08Zb.js",
     "name": "DeleteConfirmation",
     "imports": [
       "resources/js/app.tsx",
-      "_dialog-BM_AQMsp.js",
-      "_button-Cj-lkF21.js"
+      "_dialog-VtqZNygx.js",
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_Footer-DU8raouN.js": {
-    "file": "assets/Footer-DU8raouN.js",
+  "_Footer-P2HLkroD.js": {
+    "file": "assets/Footer-P2HLkroD.js",
     "name": "Footer",
     "imports": [
       "resources/js/app.tsx",
-      "_app-logo-icon-DCEQV7va.js",
-      "_button-Cj-lkF21.js"
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_LineChart-BX7gzC0z.js": {
-    "file": "assets/LineChart-BX7gzC0z.js",
+  "_LineChart-DlnapqHT.js": {
+    "file": "assets/LineChart-DlnapqHT.js",
     "name": "LineChart",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js",
-      "_AreaChart-D9aAjYy9.js"
+      "_utils-Dd8jGCA1.js",
+      "_AreaChart-Dj8WH8qQ.js"
     ]
   },
-  "_MultiSelect-LmBaZ835.js": {
-    "file": "assets/MultiSelect-LmBaZ835.js",
+  "_MultiSelect-OdpiCstB.js": {
+    "file": "assets/MultiSelect-OdpiCstB.js",
     "name": "MultiSelect",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js",
-      "_button-Cj-lkF21.js",
-      "_seo-D39WYX3T.js",
-      "_badge-B3Xzum8t.js",
-      "_dialog-BM_AQMsp.js",
-      "_app-layout-D8OmphMM.js"
+      "_utils-Dd8jGCA1.js",
+      "_button-BqYIfh3n.js",
+      "_seo-BwXM-fea.js",
+      "_badge-DDvrCUJw.js",
+      "_dialog-VtqZNygx.js",
+      "_app-layout-yTeiGXxy.js"
     ]
   },
-  "_Pagination-BAazxV1y.js": {
-    "file": "assets/Pagination-BAazxV1y.js",
+  "_Pagination-CNDjKDSk.js": {
+    "file": "assets/Pagination-CNDjKDSk.js",
     "name": "Pagination",
     "imports": [
       "resources/js/app.tsx",
-      "_chevron-left-FO3qdWdV.js"
+      "_chevron-left-CzlX4TjN.js"
     ]
   },
-  "_ProgressBar-Dkl0EzdM.js": {
-    "file": "assets/ProgressBar-Dkl0EzdM.js",
+  "_ProgressBar-C1mTETfz.js": {
+    "file": "assets/ProgressBar-C1mTETfz.js",
     "name": "ProgressBar",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js"
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_SearchableSelect-CPxqwQo_.js": {
-    "file": "assets/SearchableSelect-CPxqwQo_.js",
+  "_SearchableSelect-BDJFxW_C.js": {
+    "file": "assets/SearchableSelect-BDJFxW_C.js",
     "name": "SearchableSelect",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js",
-      "_button-Cj-lkF21.js",
-      "_popover-Bo3p1lSw.js",
-      "_seo-D39WYX3T.js",
-      "_index-BBu0OL3s.js"
+      "_utils-Dd8jGCA1.js",
+      "_button-BqYIfh3n.js",
+      "_popover-CMN2SdwF.js",
+      "_seo-BwXM-fea.js",
+      "_index-HuxJM3t6.js"
     ]
   },
-  "_activity-mSFkbdlx.js": {
-    "file": "assets/activity-mSFkbdlx.js",
+  "_activity-Butvx42p.js": {
+    "file": "assets/activity-Butvx42p.js",
     "name": "activity",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_alert-CIUmeAUG.js": {
-    "file": "assets/alert-CIUmeAUG.js",
+  "_alert-DvpBafKv.js": {
+    "file": "assets/alert-DvpBafKv.js",
     "name": "alert",
     "imports": [
       "resources/js/app.tsx",
-      "_button-Cj-lkF21.js",
-      "_utils-Dt-58bAu.js"
+      "_button-BqYIfh3n.js",
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_app-layout-D8OmphMM.js": {
-    "file": "assets/app-layout-D8OmphMM.js",
+  "_app-layout-yTeiGXxy.js": {
+    "file": "assets/app-layout-yTeiGXxy.js",
     "name": "app-layout",
     "imports": [
       "resources/js/app.tsx",
-      "_seo-D39WYX3T.js",
-      "_button-Cj-lkF21.js",
-      "_index-B5CM7fG6.js",
-      "_dialog-BM_AQMsp.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_utils-Dt-58bAu.js",
-      "_badge-B3Xzum8t.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js"
+      "_seo-BwXM-fea.js",
+      "_button-BqYIfh3n.js",
+      "_index-9sZaCjm5.js",
+      "_dialog-VtqZNygx.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_utils-Dd8jGCA1.js",
+      "_badge-DDvrCUJw.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js"
     ]
   },
-  "_app-logo-icon-DCEQV7va.js": {
-    "file": "assets/app-logo-icon-DCEQV7va.js",
+  "_app-logo-icon-DBU6hfJ1.js": {
+    "file": "assets/app-logo-icon-DBU6hfJ1.js",
     "name": "app-logo-icon",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
-  "_arrow-left-mrUZRrpY.js": {
-    "file": "assets/arrow-left-mrUZRrpY.js",
+  "_arrow-left-C_E2w4Vj.js": {
+    "file": "assets/arrow-left-C_E2w4Vj.js",
     "name": "arrow-left",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_arrow-right-B-8MvkeH.js": {
-    "file": "assets/arrow-right-B-8MvkeH.js",
+  "_arrow-right-B2_wuapW.js": {
+    "file": "assets/arrow-right-B2_wuapW.js",
     "name": "arrow-right",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_auth-layout-DJBYUTQt.js": {
-    "file": "assets/auth-layout-DJBYUTQt.js",
+  "_auth-layout-DWXoD1v_.js": {
+    "file": "assets/auth-layout-DWXoD1v_.js",
     "name": "auth-layout",
     "imports": [
       "resources/js/app.tsx",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-logo-icon-DBU6hfJ1.js"
     ]
   },
-  "_badge-B3Xzum8t.js": {
-    "file": "assets/badge-B3Xzum8t.js",
+  "_badge-DDvrCUJw.js": {
+    "file": "assets/badge-DDvrCUJw.js",
     "name": "badge",
     "imports": [
       "resources/js/app.tsx",
-      "_button-Cj-lkF21.js",
-      "_utils-Dt-58bAu.js"
+      "_button-BqYIfh3n.js",
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_barcode-B_kXg8sR.js": {
-    "file": "assets/barcode-B_kXg8sR.js",
+  "_barcode-De_rhRZq.js": {
+    "file": "assets/barcode-De_rhRZq.js",
     "name": "barcode",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_bike-Dy3_USvY.js": {
-    "file": "assets/bike-Dy3_USvY.js",
+  "_bike-pU6yLZZJ.js": {
+    "file": "assets/bike-pU6yLZZJ.js",
     "name": "bike",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_bluetooth-printer-context-fZ052AMf.js": {
-    "file": "assets/bluetooth-printer-context-fZ052AMf.js",
+  "_bluetooth-printer-context-BND3K2mI.js": {
+    "file": "assets/bluetooth-printer-context-BND3K2mI.js",
     "name": "bluetooth-printer-context",
     "imports": [
-      "_button-Cj-lkF21.js",
+      "_button-BqYIfh3n.js",
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js",
-      "_dialog-BM_AQMsp.js"
+      "_utils-Dd8jGCA1.js",
+      "_dialog-VtqZNygx.js"
     ]
   },
-  "_building-B5hwVB8G.js": {
-    "file": "assets/building-B5hwVB8G.js",
+  "_building-t9UN_fOt.js": {
+    "file": "assets/building-t9UN_fOt.js",
     "name": "building",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_button-Cj-lkF21.js": {
-    "file": "assets/button-Cj-lkF21.js",
+  "_button-BqYIfh3n.js": {
+    "file": "assets/button-BqYIfh3n.js",
     "name": "button",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js"
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_calendar-CekgcGGr.js": {
-    "file": "assets/calendar-CekgcGGr.js",
+  "_calendar-1Yl2h63f.js": {
+    "file": "assets/calendar-1Yl2h63f.js",
     "name": "calendar",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_camera-Cu5lzDVd.js": {
-    "file": "assets/camera-Cu5lzDVd.js",
+  "_camera-DuTNpAJP.js": {
+    "file": "assets/camera-DuTNpAJP.js",
     "name": "camera",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_card-DJ-j6P0h.js": {
-    "file": "assets/card-DJ-j6P0h.js",
+  "_card-CiMNmdyq.js": {
+    "file": "assets/card-CiMNmdyq.js",
     "name": "card",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js"
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_checkbox-QmaM10Ka.js": {
-    "file": "assets/checkbox-QmaM10Ka.js",
+  "_checkbox-C8JsoaJv.js": {
+    "file": "assets/checkbox-C8JsoaJv.js",
     "name": "checkbox",
     "imports": [
       "resources/js/app.tsx",
-      "_button-Cj-lkF21.js",
-      "_index-B5CM7fG6.js",
-      "_index-ChDe4o69.js",
-      "_index-BBu0OL3s.js",
-      "_utils-Dt-58bAu.js"
+      "_button-BqYIfh3n.js",
+      "_index-9sZaCjm5.js",
+      "_index-ncgSEHwf.js",
+      "_index-HuxJM3t6.js",
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_chevron-left-FO3qdWdV.js": {
-    "file": "assets/chevron-left-FO3qdWdV.js",
+  "_chevron-left-CzlX4TjN.js": {
+    "file": "assets/chevron-left-CzlX4TjN.js",
     "name": "chevron-left",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_circle-alert-BbB87gNP.js": {
-    "file": "assets/circle-alert-BbB87gNP.js",
+  "_circle-alert-CDkedLU9.js": {
+    "file": "assets/circle-alert-CDkedLU9.js",
     "name": "circle-alert",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_circle-check-big-UfB4ktWd.js": {
-    "file": "assets/circle-check-big-UfB4ktWd.js",
+  "_circle-check-big-C3W4fUGS.js": {
+    "file": "assets/circle-check-big-C3W4fUGS.js",
     "name": "circle-check-big",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_circle-x-BEWal90Y.js": {
-    "file": "assets/circle-x-BEWal90Y.js",
+  "_circle-x-Z9zIMrej.js": {
+    "file": "assets/circle-x-Z9zIMrej.js",
     "name": "circle-x",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_clipboard-list-5i7WVkJU.js": {
-    "file": "assets/clipboard-list-5i7WVkJU.js",
+  "_clipboard-list-BXSrL5wh.js": {
+    "file": "assets/clipboard-list-BXSrL5wh.js",
     "name": "clipboard-list",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_clock-C7XTpQT6.js": {
-    "file": "assets/clock-C7XTpQT6.js",
+  "_clock-D3I-GbCs.js": {
+    "file": "assets/clock-D3I-GbCs.js",
     "name": "clock",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_coins-TWeIUk7G.js": {
-    "file": "assets/coins-TWeIUk7G.js",
+  "_coins-BIEbVwEa.js": {
+    "file": "assets/coins-BIEbVwEa.js",
     "name": "coins",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_dialog-BM_AQMsp.js": {
-    "file": "assets/dialog-BM_AQMsp.js",
+  "_dialog-VtqZNygx.js": {
+    "file": "assets/dialog-VtqZNygx.js",
     "name": "dialog",
     "imports": [
-      "_button-Cj-lkF21.js",
+      "_button-BqYIfh3n.js",
       "resources/js/app.tsx",
-      "_index-B5CM7fG6.js",
-      "_utils-Dt-58bAu.js"
+      "_index-9sZaCjm5.js",
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_download-Cbt_JcvC.js": {
-    "file": "assets/download-Cbt_JcvC.js",
+  "_download-ZV_Irvh0.js": {
+    "file": "assets/download-ZV_Irvh0.js",
     "name": "download",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_eye-BBp1AynB.js": {
-    "file": "assets/eye-BBp1AynB.js",
+  "_eye-DzWAF0Gh.js": {
+    "file": "assets/eye-DzWAF0Gh.js",
     "name": "eye",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_file-text-BNSbj8nS.js": {
-    "file": "assets/file-text-BNSbj8nS.js",
+  "_file-text-BtPHS_92.js": {
+    "file": "assets/file-text-BtPHS_92.js",
     "name": "file-text",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
   "_format-CSQe5d3I.js": {
     "file": "assets/format-CSQe5d3I.js",
     "name": "format"
   },
-  "_hard-drive-C6D4oNm2.js": {
-    "file": "assets/hard-drive-C6D4oNm2.js",
+  "_hard-drive-DFc4ltDA.js": {
+    "file": "assets/hard-drive-DFc4ltDA.js",
     "name": "hard-drive",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_heading-small-BW3avilY.js": {
-    "file": "assets/heading-small-BW3avilY.js",
+  "_heading-small-CImVF_K8.js": {
+    "file": "assets/heading-small-CImVF_K8.js",
     "name": "heading-small",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
-  "_history-u41WBa_p.js": {
-    "file": "assets/history-u41WBa_p.js",
+  "_history-tckcQhZK.js": {
+    "file": "assets/history-tckcQhZK.js",
     "name": "history",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_html5-qrcode-scanner-BgJjON0v.js": {
-    "file": "assets/html5-qrcode-scanner-BgJjON0v.js",
+  "_html5-qrcode-scanner-klK9WRzx.js": {
+    "file": "assets/html5-qrcode-scanner-klK9WRzx.js",
     "name": "html5-qrcode-scanner",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
-  "_image-CmOMFzKL.js": {
-    "file": "assets/image-CmOMFzKL.js",
+  "_image-TNWuhppK.js": {
+    "file": "assets/image-TNWuhppK.js",
     "name": "image",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_index-B5CM7fG6.js": {
-    "file": "assets/index-B5CM7fG6.js",
+  "_index-9sZaCjm5.js": {
+    "file": "assets/index-9sZaCjm5.js",
     "name": "index",
     "imports": [
       "resources/js/app.tsx",
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_index-BBu0OL3s.js": {
-    "file": "assets/index-BBu0OL3s.js",
+  "_index-B3k9E3T6.js": {
+    "file": "assets/index-B3k9E3T6.js",
     "name": "index",
     "imports": [
-      "_button-Cj-lkF21.js",
+      "_app-logo-icon-DBU6hfJ1.js"
+    ]
+  },
+  "_index-Bp11G_oa.js": {
+    "file": "assets/index-Bp11G_oa.js",
+    "name": "index",
+    "imports": [
+      "_app-logo-icon-DBU6hfJ1.js"
+    ]
+  },
+  "_index-C2AwbXxq.js": {
+    "file": "assets/index-C2AwbXxq.js",
+    "name": "index",
+    "imports": [
       "resources/js/app.tsx",
-      "_index-B5CM7fG6.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_index-BHaZVgpF.js": {
-    "file": "assets/index-BHaZVgpF.js",
+  "_index-DCXSLGIw.js": {
+    "file": "assets/index-DCXSLGIw.js",
     "name": "index",
     "imports": [
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-CyU46Iqn.js"
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-wAZqKfT2.js"
     ]
   },
-  "_index-ChDe4o69.js": {
-    "file": "assets/index-ChDe4o69.js",
+  "_index-HuxJM3t6.js": {
+    "file": "assets/index-HuxJM3t6.js",
+    "name": "index",
+    "imports": [
+      "_button-BqYIfh3n.js",
+      "resources/js/app.tsx",
+      "_index-9sZaCjm5.js"
+    ]
+  },
+  "_index-ncgSEHwf.js": {
+    "file": "assets/index-ncgSEHwf.js",
     "name": "index",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
-  "_index-CyU46Iqn.js": {
-    "file": "assets/index-CyU46Iqn.js",
+  "_index-wAZqKfT2.js": {
+    "file": "assets/index-wAZqKfT2.js",
     "name": "index",
     "imports": [
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-logo-icon-DBU6hfJ1.js"
     ]
   },
-  "_index-DjAC6XNV.js": {
-    "file": "assets/index-DjAC6XNV.js",
-    "name": "index",
-    "imports": [
-      "resources/js/app.tsx",
-      "_button-Cj-lkF21.js"
-    ]
-  },
-  "_index-iu9sm10G.js": {
-    "file": "assets/index-iu9sm10G.js",
-    "name": "index",
-    "imports": [
-      "_app-logo-icon-DCEQV7va.js"
-    ]
-  },
-  "_index-xLTr1eH4.js": {
-    "file": "assets/index-xLTr1eH4.js",
-    "name": "index",
-    "imports": [
-      "_app-logo-icon-DCEQV7va.js"
-    ]
-  },
-  "_info-BPRUY1fu.js": {
-    "file": "assets/info-BPRUY1fu.js",
+  "_info-DNo4HjU2.js": {
+    "file": "assets/info-DNo4HjU2.js",
     "name": "info",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_input-CQkdgPUc.js": {
-    "file": "assets/input-CQkdgPUc.js",
+  "_input-C6Jhypl4.js": {
+    "file": "assets/input-C6Jhypl4.js",
     "name": "input",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js"
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_input-error-CaS-QFro.js": {
-    "file": "assets/input-error-CaS-QFro.js",
+  "_input-error-DclUJGuE.js": {
+    "file": "assets/input-error-DclUJGuE.js",
     "name": "input-error",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js"
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_key-ZGYHUJA7.js": {
-    "file": "assets/key-ZGYHUJA7.js",
+  "_key-BS5NoqVt.js": {
+    "file": "assets/key-BS5NoqVt.js",
     "name": "key",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_label-2D4NLm3z.js": {
-    "file": "assets/label-2D4NLm3z.js",
+  "_label-Csv3fuRt.js": {
+    "file": "assets/label-Csv3fuRt.js",
     "name": "label",
     "imports": [
       "resources/js/app.tsx",
-      "_index-DjAC6XNV.js",
-      "_utils-Dt-58bAu.js"
+      "_index-C2AwbXxq.js",
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_layers-DyxlCH2t.js": {
-    "file": "assets/layers-DyxlCH2t.js",
+  "_layers-Cd-wmhnl.js": {
+    "file": "assets/layers-Cd-wmhnl.js",
     "name": "layers",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_layout-CSTyORiR.js": {
-    "file": "assets/layout-CSTyORiR.js",
+  "_layout-DedBTl2l.js": {
+    "file": "assets/layout-DedBTl2l.js",
     "name": "layout",
     "imports": [
       "resources/js/app.tsx",
-      "_button-Cj-lkF21.js",
-      "_separator-DYyL4cnt.js",
-      "_utils-Dt-58bAu.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_seo-D39WYX3T.js",
-      "_index-iu9sm10G.js"
+      "_button-BqYIfh3n.js",
+      "_separator-DZ7dKUiA.js",
+      "_utils-Dd8jGCA1.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_seo-BwXM-fea.js",
+      "_index-B3k9E3T6.js"
     ]
   },
-  "_loader-circle-CCoFNwcp.js": {
-    "file": "assets/loader-circle-CCoFNwcp.js",
+  "_loader-circle-D9A8xk4r.js": {
+    "file": "assets/loader-circle-D9A8xk4r.js",
     "name": "loader-circle",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_minus-Ny_sAc4X.js": {
-    "file": "assets/minus-Ny_sAc4X.js",
+  "_minus-NFevRzxu.js": {
+    "file": "assets/minus-NFevRzxu.js",
     "name": "minus",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_monitor-BoDM_Oxx.js": {
-    "file": "assets/monitor-BoDM_Oxx.js",
+  "_monitor-CqW8rOHL.js": {
+    "file": "assets/monitor-CqW8rOHL.js",
     "name": "monitor",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_open-closed-Bf8DP223.js": {
-    "file": "assets/open-closed-Bf8DP223.js",
+  "_open-closed-_GzNvkDi.js": {
+    "file": "assets/open-closed-_GzNvkDi.js",
     "name": "open-closed",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
-  "_package-open-CxXD-sfw.js": {
-    "file": "assets/package-open-CxXD-sfw.js",
+  "_package-open-DeJwcQ1n.js": {
+    "file": "assets/package-open-DeJwcQ1n.js",
     "name": "package-open",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_paperclip-BSsFgR8M.js": {
-    "file": "assets/paperclip-BSsFgR8M.js",
+  "_paperclip-Bf3d_dDg.js": {
+    "file": "assets/paperclip-Bf3d_dDg.js",
     "name": "paperclip",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_pencil-DvgLnN4z.js": {
-    "file": "assets/pencil-DvgLnN4z.js",
+  "_pencil-CGj3Hmiw.js": {
+    "file": "assets/pencil-CGj3Hmiw.js",
     "name": "pencil",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_percent-_hQj59d_.js": {
-    "file": "assets/percent-_hQj59d_.js",
+  "_percent-C8V9rAMj.js": {
+    "file": "assets/percent-C8V9rAMj.js",
     "name": "percent",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_plus-DStMOmUY.js": {
-    "file": "assets/plus-DStMOmUY.js",
+  "_plus-QDmHt4yE.js": {
+    "file": "assets/plus-QDmHt4yE.js",
     "name": "plus",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_popover-Bo3p1lSw.js": {
-    "file": "assets/popover-Bo3p1lSw.js",
+  "_popover-CMN2SdwF.js": {
+    "file": "assets/popover-CMN2SdwF.js",
     "name": "popover",
     "imports": [
       "resources/js/app.tsx",
-      "_index-B5CM7fG6.js",
-      "_button-Cj-lkF21.js",
-      "_dialog-BM_AQMsp.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js"
+      "_index-9sZaCjm5.js",
+      "_button-BqYIfh3n.js",
+      "_dialog-VtqZNygx.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_power-DhbrGye8.js": {
-    "file": "assets/power-DhbrGye8.js",
+  "_power-a_6c8VqG.js": {
+    "file": "assets/power-a_6c8VqG.js",
     "name": "power",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_print-selection-modal-D04SkcUe.js": {
-    "file": "assets/print-selection-modal-D04SkcUe.js",
+  "_print-selection-modal-Dy6BytUf.js": {
+    "file": "assets/print-selection-modal-Dy6BytUf.js",
     "name": "print-selection-modal",
     "imports": [
       "resources/js/app.tsx",
-      "_dialog-BM_AQMsp.js",
-      "_button-Cj-lkF21.js",
-      "_separator-DYyL4cnt.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_smartphone-DF6x1GWJ.js",
-      "_printer-CEanp_OC.js",
-      "_loader-circle-CCoFNwcp.js"
+      "_dialog-VtqZNygx.js",
+      "_button-BqYIfh3n.js",
+      "_separator-DZ7dKUiA.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_smartphone-1yji6_tT.js",
+      "_printer-yJAoIJg-.js",
+      "_loader-circle-D9A8xk4r.js"
     ]
   },
-  "_printer-CEanp_OC.js": {
-    "file": "assets/printer-CEanp_OC.js",
+  "_printer-yJAoIJg-.js": {
+    "file": "assets/printer-yJAoIJg-.js",
     "name": "printer",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_react-barcode-CN3HF5zi.js": {
-    "file": "assets/react-barcode-CN3HF5zi.js",
+  "_react-barcode-tlTzqGsp.js": {
+    "file": "assets/react-barcode-tlTzqGsp.js",
     "name": "react-barcode",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
-  "_save-E9ftlhSR.js": {
-    "file": "assets/save-E9ftlhSR.js",
+  "_save-Mld3ToPO.js": {
+    "file": "assets/save-Mld3ToPO.js",
     "name": "save",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_select-BOnMgxl1.js": {
-    "file": "assets/select-BOnMgxl1.js",
+  "_select-BcDDXWqs.js": {
+    "file": "assets/select-BcDDXWqs.js",
     "name": "select",
     "imports": [
       "resources/js/app.tsx",
-      "_index-B5CM7fG6.js",
-      "_seo-D39WYX3T.js",
-      "_button-Cj-lkF21.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-ChDe4o69.js",
-      "_utils-Dt-58bAu.js",
-      "_index-BBu0OL3s.js"
+      "_index-9sZaCjm5.js",
+      "_seo-BwXM-fea.js",
+      "_button-BqYIfh3n.js",
+      "_dialog-VtqZNygx.js",
+      "_index-ncgSEHwf.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-HuxJM3t6.js"
     ]
   },
-  "_send-LXCcX03W.js": {
-    "file": "assets/send-LXCcX03W.js",
+  "_send-DrMmWnyf.js": {
+    "file": "assets/send-DrMmWnyf.js",
     "name": "send",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_seo-D39WYX3T.js": {
-    "file": "assets/seo-D39WYX3T.js",
+  "_seo-BwXM-fea.js": {
+    "file": "assets/seo-BwXM-fea.js",
     "name": "seo",
     "imports": [
-      "_button-Cj-lkF21.js",
+      "_button-BqYIfh3n.js",
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_utils-Dd8jGCA1.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ]
   },
-  "_separator-DYyL4cnt.js": {
-    "file": "assets/separator-DYyL4cnt.js",
+  "_separator-DZ7dKUiA.js": {
+    "file": "assets/separator-DZ7dKUiA.js",
     "name": "separator",
     "imports": [
       "resources/js/app.tsx",
-      "_index-DjAC6XNV.js",
-      "_utils-Dt-58bAu.js"
+      "_index-C2AwbXxq.js",
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_shield-cYQ46Dq1.js": {
-    "file": "assets/shield-cYQ46Dq1.js",
+  "_shield-DSd69VX1.js": {
+    "file": "assets/shield-DSd69VX1.js",
     "name": "shield",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_shield-check-fSmvSgjq.js": {
-    "file": "assets/shield-check-fSmvSgjq.js",
+  "_shield-check-BFAgD6TG.js": {
+    "file": "assets/shield-check-BFAgD6TG.js",
     "name": "shield-check",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_smartphone-DF6x1GWJ.js": {
-    "file": "assets/smartphone-DF6x1GWJ.js",
+  "_smartphone-1yji6_tT.js": {
+    "file": "assets/smartphone-1yji6_tT.js",
     "name": "smartphone",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_sparkles-YD1lbBCS.js": {
-    "file": "assets/sparkles-YD1lbBCS.js",
+  "_sparkles-B_GJmes-.js": {
+    "file": "assets/sparkles-B_GJmes-.js",
     "name": "sparkles",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_spinner-B76KBl1I.js": {
-    "file": "assets/spinner-B76KBl1I.js",
+  "_spinner-VpdlF9Qf.js": {
+    "file": "assets/spinner-VpdlF9Qf.js",
     "name": "spinner",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js",
-      "_loader-circle-CCoFNwcp.js"
+      "_utils-Dd8jGCA1.js",
+      "_loader-circle-D9A8xk4r.js"
     ]
   },
-  "_table-DIH9xjYl.js": {
-    "file": "assets/table-DIH9xjYl.js",
+  "_table-CDFFUjX0.js": {
+    "file": "assets/table-CDFFUjX0.js",
     "name": "table",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js"
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_tabs-BVYYlSdn.js": {
-    "file": "assets/tabs-BVYYlSdn.js",
+  "_tabs-CzkBwJXe.js": {
+    "file": "assets/tabs-CzkBwJXe.js",
     "name": "tabs",
     "imports": [
       "resources/js/app.tsx",
-      "_index-B5CM7fG6.js",
-      "_seo-D39WYX3T.js",
-      "_button-Cj-lkF21.js",
-      "_dialog-BM_AQMsp.js",
-      "_utils-Dt-58bAu.js"
+      "_index-9sZaCjm5.js",
+      "_seo-BwXM-fea.js",
+      "_button-BqYIfh3n.js",
+      "_dialog-VtqZNygx.js",
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_text-link-BipkKaDa.js": {
-    "file": "assets/text-link-BipkKaDa.js",
+  "_text-link-B3cPCOR6.js": {
+    "file": "assets/text-link-B3cPCOR6.js",
     "name": "text-link",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js"
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_textarea-Cl8cDtLj.js": {
-    "file": "assets/textarea-Cl8cDtLj.js",
+  "_textarea-D6KU4avP.js": {
+    "file": "assets/textarea-D6KU4avP.js",
     "name": "textarea",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js"
+      "_utils-Dd8jGCA1.js"
     ]
   },
-  "_transition-Dc384eqD.js": {
-    "file": "assets/transition-Dc384eqD.js",
+  "_transition-BdqosHII.js": {
+    "file": "assets/transition-BdqosHII.js",
     "name": "transition",
     "imports": [
       "resources/js/app.tsx",
-      "_open-closed-Bf8DP223.js"
+      "_open-closed-_GzNvkDi.js"
     ]
   },
-  "_trash-2-DHZKLP-9.js": {
-    "file": "assets/trash-2-DHZKLP-9.js",
+  "_trash-2-BUGyJSZp.js": {
+    "file": "assets/trash-2-BUGyJSZp.js",
     "name": "trash-2",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_trash-D8O5fIpo.js": {
-    "file": "assets/trash-D8O5fIpo.js",
+  "_trash-gbh3Hem8.js": {
+    "file": "assets/trash-gbh3Hem8.js",
     "name": "trash",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_truck-Brq_RlGR.js": {
-    "file": "assets/truck-Brq_RlGR.js",
+  "_truck-JYzg9vre.js": {
+    "file": "assets/truck-JYzg9vre.js",
     "name": "truck",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_upload-CkHgyokW.js": {
-    "file": "assets/upload-CkHgyokW.js",
+  "_upload-mqnkgtet.js": {
+    "file": "assets/upload-mqnkgtet.js",
     "name": "upload",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_use-debounce-CcozBXUS.js": {
-    "file": "assets/use-debounce-CcozBXUS.js",
+  "_use-debounce-TIo2QsBO.js": {
+    "file": "assets/use-debounce-TIo2QsBO.js",
     "name": "use-debounce",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
-  "_use-two-factor-auth-CDg0daqY.js": {
-    "file": "assets/use-two-factor-auth-CDg0daqY.js",
+  "_use-two-factor-auth-B4pjFYeI.js": {
+    "file": "assets/use-two-factor-auth-B4pjFYeI.js",
     "name": "use-two-factor-auth",
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js",
-      "_minus-Ny_sAc4X.js",
-      "_index-iu9sm10G.js"
+      "_utils-Dd8jGCA1.js",
+      "_minus-NFevRzxu.js",
+      "_index-B3k9E3T6.js"
     ]
   },
-  "_user-dWBU41CS.js": {
-    "file": "assets/user-dWBU41CS.js",
+  "_user-vjI__SQG.js": {
+    "file": "assets/user-vjI__SQG.js",
     "name": "user",
     "imports": [
-      "_button-Cj-lkF21.js"
+      "_button-BqYIfh3n.js"
     ]
   },
-  "_utils-Dt-58bAu.js": {
-    "file": "assets/utils-Dt-58bAu.js",
+  "_utils-Dd8jGCA1.js": {
+    "file": "assets/utils-Dd8jGCA1.js",
     "name": "utils",
     "imports": [
       "resources/js/app.tsx"
@@ -783,39 +783,39 @@
       "node_modules/canvg/lib/index.es.js"
     ]
   },
-  "_welcome-layout-CXxcGADY.js": {
-    "file": "assets/welcome-layout-CXxcGADY.js",
+  "_welcome-layout-zPUgBZBQ.js": {
+    "file": "assets/welcome-layout-zPUgBZBQ.js",
     "name": "welcome-layout",
     "imports": [
       "resources/js/app.tsx",
-      "_seo-D39WYX3T.js",
-      "_button-Cj-lkF21.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_index-ChDe4o69.js",
-      "_utils-Dt-58bAu.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_input-CQkdgPUc.js",
-      "_bike-Dy3_USvY.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_info-BPRUY1fu.js"
+      "_seo-BwXM-fea.js",
+      "_button-BqYIfh3n.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_index-ncgSEHwf.js",
+      "_utils-Dd8jGCA1.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_input-C6Jhypl4.js",
+      "_bike-pU6yLZZJ.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_info-DNo4HjU2.js"
     ]
   },
-  "_with-selector-BnaNNgDd.js": {
-    "file": "assets/with-selector-BnaNNgDd.js",
+  "_with-selector-eMmd1wBD.js": {
+    "file": "assets/with-selector-eMmd1wBD.js",
     "name": "with-selector",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
   "node_modules/canvg/lib/index.es.js": {
-    "file": "assets/index.es-CtaUGt4J.js",
+    "file": "assets/index.es-CHiFcqoJ.js",
     "name": "index.es",
     "src": "node_modules/canvg/lib/index.es.js",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js"
+      "_utils-Dd8jGCA1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
@@ -843,7 +843,7 @@
     ]
   },
   "resources/js/app.tsx": {
-    "file": "assets/app-jQy76UOz.js",
+    "file": "assets/app-uQeji7D2.js",
     "name": "app",
     "src": "resources/js/app.tsx",
     "isEntry": true,
@@ -923,1358 +923,1358 @@
     ]
   },
   "resources/js/pages/BranchChat/Index.tsx": {
-    "file": "assets/Index-B02OVvJA.js",
+    "file": "assets/Index-B-EKt4bt.js",
     "name": "Index",
     "src": "resources/js/pages/BranchChat/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_dialog-BM_AQMsp.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_textarea-Cl8cDtLj.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_paperclip-BSsFgR8M.js",
-      "_clock-C7XTpQT6.js",
-      "_arrow-left-mrUZRrpY.js",
-      "_file-text-BNSbj8nS.js",
-      "_truck-Brq_RlGR.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_camera-Cu5lzDVd.js",
-      "_send-LXCcX03W.js",
-      "_index-B5CM7fG6.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_dialog-VtqZNygx.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_textarea-D6KU4avP.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_paperclip-Bf3d_dDg.js",
+      "_clock-D3I-GbCs.js",
+      "_arrow-left-C_E2w4Vj.js",
+      "_file-text-BtPHS_92.js",
+      "_truck-JYzg9vre.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_camera-DuTNpAJP.js",
+      "_send-DrMmWnyf.js",
+      "_index-9sZaCjm5.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/BranchDashboard.tsx": {
-    "file": "assets/BranchDashboard-DuOyi7df.js",
+    "file": "assets/BranchDashboard-BqrKdXdQ.js",
     "name": "BranchDashboard",
     "src": "resources/js/pages/BranchDashboard.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_seo-D39WYX3T.js",
-      "_card-DJ-j6P0h.js",
-      "_input-CQkdgPUc.js",
-      "_table-DIH9xjYl.js",
-      "_app-layout-D8OmphMM.js",
-      "_popover-Bo3p1lSw.js",
-      "_button-Cj-lkF21.js",
-      "_percent-_hQj59d_.js",
-      "_layers-DyxlCH2t.js",
-      "_AreaChart-D9aAjYy9.js",
-      "_LineChart-BX7gzC0z.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_utils-Dt-58bAu.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_label-2D4NLm3z.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_with-selector-BnaNNgDd.js"
+      "_seo-BwXM-fea.js",
+      "_card-CiMNmdyq.js",
+      "_input-C6Jhypl4.js",
+      "_table-CDFFUjX0.js",
+      "_app-layout-yTeiGXxy.js",
+      "_popover-CMN2SdwF.js",
+      "_button-BqYIfh3n.js",
+      "_percent-C8V9rAMj.js",
+      "_layers-Cd-wmhnl.js",
+      "_AreaChart-Dj8WH8qQ.js",
+      "_LineChart-DlnapqHT.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_utils-Dd8jGCA1.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_label-Csv3fuRt.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_with-selector-eMmd1wBD.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Branches/Create.tsx": {
-    "file": "assets/Create-CQN-nUrk.js",
+    "file": "assets/Create-iMEa2cyb.js",
     "name": "Create",
     "src": "resources/js/pages/Branches/Create.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_dialog-BM_AQMsp.js",
-      "_select-BOnMgxl1.js",
-      "_textarea-Cl8cDtLj.js",
-      "_building-B5hwVB8G.js",
-      "_save-E9ftlhSR.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-ChDe4o69.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_dialog-VtqZNygx.js",
+      "_select-BcDDXWqs.js",
+      "_textarea-D6KU4avP.js",
+      "_building-t9UN_fOt.js",
+      "_save-Mld3ToPO.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-ncgSEHwf.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Branches/Edit.tsx": {
-    "file": "assets/Edit-D4OhTMTF.js",
+    "file": "assets/Edit-C3ePhXeP.js",
     "name": "Edit",
     "src": "resources/js/pages/Branches/Edit.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_dialog-BM_AQMsp.js",
-      "_select-BOnMgxl1.js",
-      "_textarea-Cl8cDtLj.js",
-      "_building-B5hwVB8G.js",
-      "_save-E9ftlhSR.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-ChDe4o69.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_dialog-VtqZNygx.js",
+      "_select-BcDDXWqs.js",
+      "_textarea-D6KU4avP.js",
+      "_building-t9UN_fOt.js",
+      "_save-Mld3ToPO.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-ncgSEHwf.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Branches/Index.tsx": {
-    "file": "assets/Index-C9lSoJzC.js",
+    "file": "assets/Index-fCiZVdz9.js",
     "name": "Index",
     "src": "resources/js/pages/Branches/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_table-DIH9xjYl.js",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_badge-B3Xzum8t.js",
-      "_Pagination-BAazxV1y.js",
-      "_dialog-BM_AQMsp.js",
-      "_input-CQkdgPUc.js",
-      "_DeleteConfirmation-CcMbB23n.js",
-      "_clock-C7XTpQT6.js",
-      "_pencil-DvgLnN4z.js",
-      "_building-B5hwVB8G.js",
-      "_seo-D39WYX3T.js",
-      "_plus-DStMOmUY.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_table-CDFFUjX0.js",
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_badge-DDvrCUJw.js",
+      "_Pagination-CNDjKDSk.js",
+      "_dialog-VtqZNygx.js",
+      "_input-C6Jhypl4.js",
+      "_DeleteConfirmation-CkUw08Zb.js",
+      "_clock-D3I-GbCs.js",
+      "_pencil-CGj3Hmiw.js",
+      "_building-t9UN_fOt.js",
+      "_seo-BwXM-fea.js",
+      "_plus-QDmHt4yE.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Brands/Index.tsx": {
-    "file": "assets/Index-CCDbubuE.js",
+    "file": "assets/Index-BWkxMShy.js",
     "name": "Index",
     "src": "resources/js/pages/Brands/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_table-DIH9xjYl.js",
-      "_dialog-BM_AQMsp.js",
-      "_select-BOnMgxl1.js",
-      "_Pagination-BAazxV1y.js",
-      "_badge-B3Xzum8t.js",
-      "_AutocompleteInput-BhyH9eGt.js",
-      "_pencil-DvgLnN4z.js",
-      "_trash-2-DHZKLP-9.js",
-      "_sparkles-YD1lbBCS.js",
-      "_plus-DStMOmUY.js",
-      "_seo-D39WYX3T.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_utils-Dt-58bAu.js",
-      "_index-BBu0OL3s.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-DjAC6XNV.js",
-      "_index-ChDe4o69.js",
-      "_popover-Bo3p1lSw.js",
-      "_use-debounce-CcozBXUS.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_table-CDFFUjX0.js",
+      "_dialog-VtqZNygx.js",
+      "_select-BcDDXWqs.js",
+      "_Pagination-CNDjKDSk.js",
+      "_badge-DDvrCUJw.js",
+      "_AutocompleteInput-BJUsseQ5.js",
+      "_pencil-CGj3Hmiw.js",
+      "_trash-2-BUGyJSZp.js",
+      "_sparkles-B_GJmes-.js",
+      "_plus-QDmHt4yE.js",
+      "_seo-BwXM-fea.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-HuxJM3t6.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-C2AwbXxq.js",
+      "_index-ncgSEHwf.js",
+      "_popover-CMN2SdwF.js",
+      "_use-debounce-TIo2QsBO.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Categories/Index.tsx": {
-    "file": "assets/Index-DVWAouyz.js",
+    "file": "assets/Index-BUO3uoOg.js",
     "name": "Index",
     "src": "resources/js/pages/Categories/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_table-DIH9xjYl.js",
-      "_dialog-BM_AQMsp.js",
-      "_select-BOnMgxl1.js",
-      "_Pagination-BAazxV1y.js",
-      "_badge-B3Xzum8t.js",
-      "_AutocompleteInput-BhyH9eGt.js",
-      "_pencil-DvgLnN4z.js",
-      "_trash-2-DHZKLP-9.js",
-      "_plus-DStMOmUY.js",
-      "_seo-D39WYX3T.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_utils-Dt-58bAu.js",
-      "_index-BBu0OL3s.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-DjAC6XNV.js",
-      "_index-ChDe4o69.js",
-      "_popover-Bo3p1lSw.js",
-      "_use-debounce-CcozBXUS.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_table-CDFFUjX0.js",
+      "_dialog-VtqZNygx.js",
+      "_select-BcDDXWqs.js",
+      "_Pagination-CNDjKDSk.js",
+      "_badge-DDvrCUJw.js",
+      "_AutocompleteInput-BJUsseQ5.js",
+      "_pencil-CGj3Hmiw.js",
+      "_trash-2-BUGyJSZp.js",
+      "_plus-QDmHt4yE.js",
+      "_seo-BwXM-fea.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-HuxJM3t6.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-C2AwbXxq.js",
+      "_index-ncgSEHwf.js",
+      "_popover-CMN2SdwF.js",
+      "_use-debounce-TIo2QsBO.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Chats/Index.tsx": {
-    "file": "assets/Index-UNmWpJFT.js",
+    "file": "assets/Index-DHS5RmMv.js",
     "name": "Index",
     "src": "resources/js/pages/Chats/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_dialog-BM_AQMsp.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_textarea-Cl8cDtLj.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_paperclip-BSsFgR8M.js",
-      "_clock-C7XTpQT6.js",
-      "_arrow-left-mrUZRrpY.js",
-      "_file-text-BNSbj8nS.js",
-      "_truck-Brq_RlGR.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_camera-Cu5lzDVd.js",
-      "_send-LXCcX03W.js",
-      "_index-B5CM7fG6.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_dialog-VtqZNygx.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_textarea-D6KU4avP.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_paperclip-Bf3d_dDg.js",
+      "_clock-D3I-GbCs.js",
+      "_arrow-left-C_E2w4Vj.js",
+      "_file-text-BtPHS_92.js",
+      "_truck-JYzg9vre.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_camera-DuTNpAJP.js",
+      "_send-DrMmWnyf.js",
+      "_index-9sZaCjm5.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Downloads/Index.tsx": {
-    "file": "assets/Index-Be_PdpHa.js",
+    "file": "assets/Index-CfImKx5d.js",
     "name": "Index",
     "src": "resources/js/pages/Downloads/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_welcome-layout-CXxcGADY.js",
-      "_button-Cj-lkF21.js",
-      "_card-DJ-j6P0h.js",
-      "_badge-B3Xzum8t.js",
-      "_tabs-BVYYlSdn.js",
-      "_shield-check-fSmvSgjq.js",
-      "_hard-drive-C6D4oNm2.js",
-      "_download-Cbt_JcvC.js",
-      "_smartphone-DF6x1GWJ.js",
-      "_monitor-BoDM_Oxx.js",
-      "_history-u41WBa_p.js",
-      "_calendar-CekgcGGr.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-ChDe4o69.js",
-      "_input-CQkdgPUc.js",
-      "_bike-Dy3_USvY.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_info-BPRUY1fu.js"
+      "_welcome-layout-zPUgBZBQ.js",
+      "_button-BqYIfh3n.js",
+      "_card-CiMNmdyq.js",
+      "_badge-DDvrCUJw.js",
+      "_tabs-CzkBwJXe.js",
+      "_shield-check-BFAgD6TG.js",
+      "_hard-drive-DFc4ltDA.js",
+      "_download-ZV_Irvh0.js",
+      "_smartphone-1yji6_tT.js",
+      "_monitor-CqW8rOHL.js",
+      "_history-tckcQhZK.js",
+      "_calendar-1Yl2h63f.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-ncgSEHwf.js",
+      "_input-C6Jhypl4.js",
+      "_bike-pU6yLZZJ.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_info-DNo4HjU2.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/EmployeeDashboard.tsx": {
-    "file": "assets/EmployeeDashboard-BP46mcsN.js",
+    "file": "assets/EmployeeDashboard-Cs7BGTmS.js",
     "name": "EmployeeDashboard",
     "src": "resources/js/pages/EmployeeDashboard.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_badge-B3Xzum8t.js",
-      "_button-Cj-lkF21.js",
-      "_card-DJ-j6P0h.js",
-      "_input-CQkdgPUc.js",
-      "_table-DIH9xjYl.js",
-      "_app-layout-D8OmphMM.js",
-      "_truck-Brq_RlGR.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_dialog-BM_AQMsp.js",
-      "_package-open-CxXD-sfw.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_badge-DDvrCUJw.js",
+      "_button-BqYIfh3n.js",
+      "_card-CiMNmdyq.js",
+      "_input-C6Jhypl4.js",
+      "_table-CDFFUjX0.js",
+      "_app-layout-yTeiGXxy.js",
+      "_truck-JYzg9vre.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_dialog-VtqZNygx.js",
+      "_package-open-DeJwcQ1n.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Locations/Index.tsx": {
-    "file": "assets/Index-CGhz6RBH.js",
+    "file": "assets/Index-w78dLh9x.js",
     "name": "Index",
     "src": "resources/js/pages/Locations/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_welcome-layout-CXxcGADY.js",
-      "_card-DJ-j6P0h.js",
-      "_badge-B3Xzum8t.js",
-      "_building-B5hwVB8G.js",
-      "_button-Cj-lkF21.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-ChDe4o69.js",
-      "_input-CQkdgPUc.js",
-      "_bike-Dy3_USvY.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_info-BPRUY1fu.js"
+      "_welcome-layout-zPUgBZBQ.js",
+      "_card-CiMNmdyq.js",
+      "_badge-DDvrCUJw.js",
+      "_building-t9UN_fOt.js",
+      "_button-BqYIfh3n.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-ncgSEHwf.js",
+      "_input-C6Jhypl4.js",
+      "_bike-pU6yLZZJ.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_info-DNo4HjU2.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/More.tsx": {
-    "file": "assets/More-EdNlAWX5.js",
+    "file": "assets/More-DNR8l7n7.js",
     "name": "More",
     "src": "resources/js/pages/More.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_seo-D39WYX3T.js",
-      "_dialog-BM_AQMsp.js",
-      "_package-open-CxXD-sfw.js",
-      "_user-dWBU41CS.js",
-      "_button-Cj-lkF21.js",
-      "_shield-cYQ46Dq1.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_utils-Dt-58bAu.js",
-      "_badge-B3Xzum8t.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_seo-BwXM-fea.js",
+      "_dialog-VtqZNygx.js",
+      "_package-open-DeJwcQ1n.js",
+      "_user-vjI__SQG.js",
+      "_button-BqYIfh3n.js",
+      "_shield-DSd69VX1.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_utils-Dd8jGCA1.js",
+      "_badge-DDvrCUJw.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Notifications/Index.tsx": {
-    "file": "assets/Index-BnFaVOnv.js",
+    "file": "assets/Index-DZBvtpnK.js",
     "name": "Index",
     "src": "resources/js/pages/Notifications/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js",
-      "_button-Cj-lkF21.js",
-      "_app-layout-D8OmphMM.js",
-      "_seo-D39WYX3T.js",
-      "_index-BBu0OL3s.js",
-      "_index-B5CM7fG6.js",
-      "_dialog-BM_AQMsp.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_utils-Dd8jGCA1.js",
+      "_button-BqYIfh3n.js",
+      "_app-layout-yTeiGXxy.js",
+      "_seo-BwXM-fea.js",
+      "_index-HuxJM3t6.js",
+      "_index-9sZaCjm5.js",
+      "_dialog-VtqZNygx.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Permissions/Create.tsx": {
-    "file": "assets/Create-D4jRThVu.js",
+    "file": "assets/Create-CfTfO2vN.js",
     "name": "Create",
     "src": "resources/js/pages/Permissions/Create.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_dialog-BM_AQMsp.js",
-      "_key-ZGYHUJA7.js",
-      "_save-E9ftlhSR.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_dialog-VtqZNygx.js",
+      "_key-BS5NoqVt.js",
+      "_save-Mld3ToPO.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Permissions/Edit.tsx": {
-    "file": "assets/Edit-DgI4Kck_.js",
+    "file": "assets/Edit-BA93FKF9.js",
     "name": "Edit",
     "src": "resources/js/pages/Permissions/Edit.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_dialog-BM_AQMsp.js",
-      "_key-ZGYHUJA7.js",
-      "_save-E9ftlhSR.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_dialog-VtqZNygx.js",
+      "_key-BS5NoqVt.js",
+      "_save-Mld3ToPO.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Permissions/Index.tsx": {
-    "file": "assets/Index-BBbnPypI.js",
+    "file": "assets/Index-DtNcu66X.js",
     "name": "Index",
     "src": "resources/js/pages/Permissions/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_table-DIH9xjYl.js",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_alert-CIUmeAUG.js",
-      "_Pagination-BAazxV1y.js",
-      "_dialog-BM_AQMsp.js",
-      "_input-CQkdgPUc.js",
-      "_DeleteConfirmation-CcMbB23n.js",
-      "_pencil-DvgLnN4z.js",
-      "_trash-D8O5fIpo.js",
-      "_key-ZGYHUJA7.js",
-      "_seo-D39WYX3T.js",
-      "_plus-DStMOmUY.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_table-CDFFUjX0.js",
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_alert-DvpBafKv.js",
+      "_Pagination-CNDjKDSk.js",
+      "_dialog-VtqZNygx.js",
+      "_input-C6Jhypl4.js",
+      "_DeleteConfirmation-CkUw08Zb.js",
+      "_pencil-CGj3Hmiw.js",
+      "_trash-gbh3Hem8.js",
+      "_key-BS5NoqVt.js",
+      "_seo-BwXM-fea.js",
+      "_plus-QDmHt4yE.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Personalization/Index.tsx": {
-    "file": "assets/Index-CKiyA7KW.js",
+    "file": "assets/Index-C49D1lqO.js",
     "name": "Index",
     "src": "resources/js/pages/Personalization/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_heading-small-BW3avilY.js",
-      "_input-error-CaS-QFro.js",
-      "_button-Cj-lkF21.js",
-      "_label-2D4NLm3z.js",
-      "_app-layout-D8OmphMM.js",
-      "_dialog-BM_AQMsp.js",
-      "_image-CmOMFzKL.js",
-      "_upload-CkHgyokW.js",
-      "_transition-Dc384eqD.js",
-      "_utils-Dt-58bAu.js",
-      "_index-DjAC6XNV.js",
-      "_seo-D39WYX3T.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_open-closed-Bf8DP223.js"
+      "_heading-small-CImVF_K8.js",
+      "_input-error-DclUJGuE.js",
+      "_button-BqYIfh3n.js",
+      "_label-Csv3fuRt.js",
+      "_app-layout-yTeiGXxy.js",
+      "_dialog-VtqZNygx.js",
+      "_image-TNWuhppK.js",
+      "_upload-mqnkgtet.js",
+      "_transition-BdqosHII.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-C2AwbXxq.js",
+      "_seo-BwXM-fea.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_open-closed-_GzNvkDi.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Products/Create.tsx": {
-    "file": "assets/Create-C2WQ5sna.js",
+    "file": "assets/Create-zr1K_qtS.js",
     "name": "Create",
     "src": "resources/js/pages/Products/Create.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_textarea-Cl8cDtLj.js",
-      "_select-BOnMgxl1.js",
-      "_AutocompleteInput-BhyH9eGt.js",
-      "_dialog-BM_AQMsp.js",
-      "_arrow-left-mrUZRrpY.js",
-      "_info-BPRUY1fu.js",
-      "_barcode-B_kXg8sR.js",
-      "_clock-C7XTpQT6.js",
-      "_plus-DStMOmUY.js",
-      "_trash-2-DHZKLP-9.js",
-      "_upload-CkHgyokW.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-ChDe4o69.js",
-      "_popover-Bo3p1lSw.js",
-      "_use-debounce-CcozBXUS.js",
-      "_loader-circle-CCoFNwcp.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_textarea-D6KU4avP.js",
+      "_select-BcDDXWqs.js",
+      "_AutocompleteInput-BJUsseQ5.js",
+      "_dialog-VtqZNygx.js",
+      "_arrow-left-C_E2w4Vj.js",
+      "_info-DNo4HjU2.js",
+      "_barcode-De_rhRZq.js",
+      "_clock-D3I-GbCs.js",
+      "_plus-QDmHt4yE.js",
+      "_trash-2-BUGyJSZp.js",
+      "_upload-mqnkgtet.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-ncgSEHwf.js",
+      "_popover-CMN2SdwF.js",
+      "_use-debounce-TIo2QsBO.js",
+      "_loader-circle-D9A8xk4r.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Products/DragAndDropUpload.tsx": {
-    "file": "assets/DragAndDropUpload-DbO7SvNe.js",
+    "file": "assets/DragAndDropUpload-C4p2zsma.js",
     "name": "DragAndDropUpload",
     "src": "resources/js/pages/Products/DragAndDropUpload.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_input-CQkdgPUc.js",
-      "_button-Cj-lkF21.js",
-      "_label-2D4NLm3z.js",
-      "_textarea-Cl8cDtLj.js",
-      "_dialog-BM_AQMsp.js",
-      "_AutocompleteInput-BhyH9eGt.js",
-      "_badge-B3Xzum8t.js",
-      "_ProgressBar-Dkl0EzdM.js",
-      "_image-CmOMFzKL.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_upload-CkHgyokW.js",
-      "_index-BBu0OL3s.js",
-      "_circle-alert-BbB87gNP.js",
-      "_eye-BBp1AynB.js",
-      "_trash-2-DHZKLP-9.js",
-      "_barcode-B_kXg8sR.js",
-      "_clock-C7XTpQT6.js",
-      "_plus-DStMOmUY.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_popover-Bo3p1lSw.js",
-      "_use-debounce-CcozBXUS.js"
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_input-C6Jhypl4.js",
+      "_button-BqYIfh3n.js",
+      "_label-Csv3fuRt.js",
+      "_textarea-D6KU4avP.js",
+      "_dialog-VtqZNygx.js",
+      "_AutocompleteInput-BJUsseQ5.js",
+      "_badge-DDvrCUJw.js",
+      "_ProgressBar-C1mTETfz.js",
+      "_image-TNWuhppK.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_upload-mqnkgtet.js",
+      "_index-HuxJM3t6.js",
+      "_circle-alert-CDkedLU9.js",
+      "_eye-DzWAF0Gh.js",
+      "_trash-2-BUGyJSZp.js",
+      "_barcode-De_rhRZq.js",
+      "_clock-D3I-GbCs.js",
+      "_plus-QDmHt4yE.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_popover-CMN2SdwF.js",
+      "_use-debounce-TIo2QsBO.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Products/Edit.tsx": {
-    "file": "assets/Edit-DbSmZEeQ.js",
+    "file": "assets/Edit-sxjPK6lB.js",
     "name": "Edit",
     "src": "resources/js/pages/Products/Edit.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_textarea-Cl8cDtLj.js",
-      "_select-BOnMgxl1.js",
-      "_dialog-BM_AQMsp.js",
-      "_AutocompleteInput-BhyH9eGt.js",
-      "_info-BPRUY1fu.js",
-      "_arrow-left-mrUZRrpY.js",
-      "_barcode-B_kXg8sR.js",
-      "_clock-C7XTpQT6.js",
-      "_plus-DStMOmUY.js",
-      "_trash-2-DHZKLP-9.js",
-      "_upload-CkHgyokW.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-ChDe4o69.js",
-      "_popover-Bo3p1lSw.js",
-      "_use-debounce-CcozBXUS.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_textarea-D6KU4avP.js",
+      "_select-BcDDXWqs.js",
+      "_dialog-VtqZNygx.js",
+      "_AutocompleteInput-BJUsseQ5.js",
+      "_info-DNo4HjU2.js",
+      "_arrow-left-C_E2w4Vj.js",
+      "_barcode-De_rhRZq.js",
+      "_clock-D3I-GbCs.js",
+      "_plus-QDmHt4yE.js",
+      "_trash-2-BUGyJSZp.js",
+      "_upload-mqnkgtet.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-ncgSEHwf.js",
+      "_popover-CMN2SdwF.js",
+      "_use-debounce-TIo2QsBO.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Products/Index.tsx": {
-    "file": "assets/Index-4RGR9vhI.js",
+    "file": "assets/Index-qTYG5KCR.js",
     "name": "Index",
     "src": "resources/js/pages/Products/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_html5-qrcode-scanner-BgJjON0v.js",
-      "_dialog-BM_AQMsp.js",
-      "_input-CQkdgPUc.js",
-      "_button-Cj-lkF21.js",
-      "_utils-Dt-58bAu.js",
-      "_Pagination-BAazxV1y.js",
-      "_badge-B3Xzum8t.js",
-      "_SearchableSelect-CPxqwQo_.js",
-      "_seo-D39WYX3T.js",
-      "_select-BOnMgxl1.js",
-      "_label-2D4NLm3z.js",
-      "_react-barcode-CN3HF5zi.js",
-      "_package-open-CxXD-sfw.js",
-      "_file-text-BNSbj8nS.js",
-      "_upload-CkHgyokW.js",
-      "_trash-2-DHZKLP-9.js",
-      "_plus-DStMOmUY.js",
-      "_power-DhbrGye8.js",
-      "_layers-DyxlCH2t.js",
-      "_arrow-right-B-8MvkeH.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_printer-CEanp_OC.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_index-BBu0OL3s.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_popover-Bo3p1lSw.js",
-      "_clock-C7XTpQT6.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-ChDe4o69.js"
+      "_app-layout-yTeiGXxy.js",
+      "_html5-qrcode-scanner-klK9WRzx.js",
+      "_dialog-VtqZNygx.js",
+      "_input-C6Jhypl4.js",
+      "_button-BqYIfh3n.js",
+      "_utils-Dd8jGCA1.js",
+      "_Pagination-CNDjKDSk.js",
+      "_badge-DDvrCUJw.js",
+      "_SearchableSelect-BDJFxW_C.js",
+      "_seo-BwXM-fea.js",
+      "_select-BcDDXWqs.js",
+      "_label-Csv3fuRt.js",
+      "_react-barcode-tlTzqGsp.js",
+      "_package-open-DeJwcQ1n.js",
+      "_file-text-BtPHS_92.js",
+      "_upload-mqnkgtet.js",
+      "_trash-2-BUGyJSZp.js",
+      "_plus-QDmHt4yE.js",
+      "_power-a_6c8VqG.js",
+      "_layers-Cd-wmhnl.js",
+      "_arrow-right-B2_wuapW.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_printer-yJAoIJg-.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_index-HuxJM3t6.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_popover-CMN2SdwF.js",
+      "_clock-D3I-GbCs.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-ncgSEHwf.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Products/Print.tsx": {
-    "file": "assets/Print-BaSA0Q4F.js",
+    "file": "assets/Print-CJMbipDq.js",
     "name": "Print",
     "src": "resources/js/pages/Products/Print.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_button-Cj-lkF21.js",
-      "_utils-Dt-58bAu.js",
-      "_printer-CEanp_OC.js"
+      "_button-BqYIfh3n.js",
+      "_utils-Dd8jGCA1.js",
+      "_printer-yJAoIJg-.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Products/RequestOrders.tsx": {
-    "file": "assets/RequestOrders-JXFPgFtE.js",
+    "file": "assets/RequestOrders-DefL1ksc.js",
     "name": "RequestOrders",
     "src": "resources/js/pages/Products/RequestOrders.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_badge-B3Xzum8t.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_textarea-Cl8cDtLj.js",
-      "_label-2D4NLm3z.js",
-      "_table-DIH9xjYl.js",
-      "_Pagination-BAazxV1y.js",
-      "_SearchableSelect-CPxqwQo_.js",
-      "_dialog-BM_AQMsp.js",
-      "_bike-Dy3_USvY.js",
-      "_minus-Ny_sAc4X.js",
-      "_plus-DStMOmUY.js",
-      "_trash-2-DHZKLP-9.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_send-LXCcX03W.js",
-      "_seo-D39WYX3T.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_utils-Dt-58bAu.js",
-      "_index-BBu0OL3s.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-DjAC6XNV.js",
-      "_popover-Bo3p1lSw.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_badge-DDvrCUJw.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_textarea-D6KU4avP.js",
+      "_label-Csv3fuRt.js",
+      "_table-CDFFUjX0.js",
+      "_Pagination-CNDjKDSk.js",
+      "_SearchableSelect-BDJFxW_C.js",
+      "_dialog-VtqZNygx.js",
+      "_bike-pU6yLZZJ.js",
+      "_minus-NFevRzxu.js",
+      "_plus-QDmHt4yE.js",
+      "_trash-2-BUGyJSZp.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_send-DrMmWnyf.js",
+      "_seo-BwXM-fea.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-HuxJM3t6.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-C2AwbXxq.js",
+      "_popover-CMN2SdwF.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Products/Show.tsx": {
-    "file": "assets/Show-8833uJjC.js",
+    "file": "assets/Show-Cu5-LNFO.js",
     "name": "Show",
     "src": "resources/js/pages/Products/Show.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_badge-B3Xzum8t.js",
-      "_separator-DYyL4cnt.js",
-      "_react-barcode-CN3HF5zi.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_print-selection-modal-D04SkcUe.js",
-      "_truck-Brq_RlGR.js",
-      "_layers-DyxlCH2t.js",
-      "_arrow-left-mrUZRrpY.js",
-      "_printer-CEanp_OC.js",
-      "_index-B5CM7fG6.js",
-      "_dialog-BM_AQMsp.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_smartphone-DF6x1GWJ.js",
-      "_loader-circle-CCoFNwcp.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_badge-DDvrCUJw.js",
+      "_separator-DZ7dKUiA.js",
+      "_react-barcode-tlTzqGsp.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_print-selection-modal-Dy6BytUf.js",
+      "_truck-JYzg9vre.js",
+      "_layers-Cd-wmhnl.js",
+      "_arrow-left-C_E2w4Vj.js",
+      "_printer-yJAoIJg-.js",
+      "_index-9sZaCjm5.js",
+      "_dialog-VtqZNygx.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_smartphone-1yji6_tT.js",
+      "_loader-circle-D9A8xk4r.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Products/TemporaryPhotoUpload.tsx": {
-    "file": "assets/TemporaryPhotoUpload-Dn7xQLWk.js",
+    "file": "assets/TemporaryPhotoUpload-uFSdOUq6.js",
     "name": "TemporaryPhotoUpload",
     "src": "resources/js/pages/Products/TemporaryPhotoUpload.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_input-CQkdgPUc.js",
-      "_button-Cj-lkF21.js",
-      "_badge-B3Xzum8t.js",
-      "_dialog-BM_AQMsp.js",
-      "_ProgressBar-Dkl0EzdM.js",
-      "_image-CmOMFzKL.js",
-      "_info-BPRUY1fu.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_upload-CkHgyokW.js",
-      "_index-BBu0OL3s.js",
-      "_circle-alert-BbB87gNP.js",
-      "_seo-D39WYX3T.js",
-      "_eye-BBp1AynB.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_utils-Dt-58bAu.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_input-C6Jhypl4.js",
+      "_button-BqYIfh3n.js",
+      "_badge-DDvrCUJw.js",
+      "_dialog-VtqZNygx.js",
+      "_ProgressBar-C1mTETfz.js",
+      "_image-TNWuhppK.js",
+      "_info-DNo4HjU2.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_upload-mqnkgtet.js",
+      "_index-HuxJM3t6.js",
+      "_circle-alert-CDkedLU9.js",
+      "_seo-BwXM-fea.js",
+      "_eye-DzWAF0Gh.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_utils-Dd8jGCA1.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/QrAndBarcodes/Index.tsx": {
-    "file": "assets/Index-DxIb0rDQ.js",
+    "file": "assets/Index-BylYtXzb.js",
     "name": "Index",
     "src": "resources/js/pages/QrAndBarcodes/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_html5-qrcode-scanner-BgJjON0v.js",
-      "_dialog-BM_AQMsp.js",
-      "_button-Cj-lkF21.js",
-      "_card-DJ-j6P0h.js",
-      "_badge-B3Xzum8t.js",
-      "_label-2D4NLm3z.js",
-      "_select-BOnMgxl1.js",
-      "_camera-Cu5lzDVd.js",
-      "_history-u41WBa_p.js",
-      "_barcode-B_kXg8sR.js",
-      "_index-BBu0OL3s.js",
-      "_minus-Ny_sAc4X.js",
-      "_plus-DStMOmUY.js",
-      "_trash-2-DHZKLP-9.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-ChDe4o69.js"
+      "_app-layout-yTeiGXxy.js",
+      "_html5-qrcode-scanner-klK9WRzx.js",
+      "_dialog-VtqZNygx.js",
+      "_button-BqYIfh3n.js",
+      "_card-CiMNmdyq.js",
+      "_badge-DDvrCUJw.js",
+      "_label-Csv3fuRt.js",
+      "_select-BcDDXWqs.js",
+      "_camera-DuTNpAJP.js",
+      "_history-tckcQhZK.js",
+      "_barcode-De_rhRZq.js",
+      "_index-HuxJM3t6.js",
+      "_minus-NFevRzxu.js",
+      "_plus-QDmHt4yE.js",
+      "_trash-2-BUGyJSZp.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-ncgSEHwf.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/QrBarcodes/Index.tsx": {
-    "file": "assets/Index-D1B5aDE9.js",
+    "file": "assets/Index-BcDMe65c.js",
     "name": "Index",
     "src": "resources/js/pages/QrBarcodes/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_dialog-BM_AQMsp.js",
-      "_label-2D4NLm3z.js",
-      "_input-CQkdgPUc.js",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_table-DIH9xjYl.js",
-      "_Pagination-BAazxV1y.js",
-      "_badge-B3Xzum8t.js",
-      "_checkbox-QmaM10Ka.js",
-      "_sparkles-YD1lbBCS.js",
-      "_pencil-DvgLnN4z.js",
-      "_index-B5CM7fG6.js",
-      "_utils-Dt-58bAu.js",
-      "_index-DjAC6XNV.js",
-      "_seo-D39WYX3T.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-ChDe4o69.js"
+      "_dialog-VtqZNygx.js",
+      "_label-Csv3fuRt.js",
+      "_input-C6Jhypl4.js",
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_table-CDFFUjX0.js",
+      "_Pagination-CNDjKDSk.js",
+      "_badge-DDvrCUJw.js",
+      "_checkbox-C8JsoaJv.js",
+      "_sparkles-B_GJmes-.js",
+      "_pencil-CGj3Hmiw.js",
+      "_index-9sZaCjm5.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-C2AwbXxq.js",
+      "_seo-BwXM-fea.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-ncgSEHwf.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Reorders/Index.tsx": {
-    "file": "assets/Index-Crm5NOi1.js",
+    "file": "assets/Index-BpeOeoQj.js",
     "name": "Index",
     "src": "resources/js/pages/Reorders/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_table-DIH9xjYl.js",
-      "_SearchableSelect-CPxqwQo_.js",
-      "_bike-Dy3_USvY.js",
-      "_dialog-BM_AQMsp.js",
-      "_printer-CEanp_OC.js",
-      "_seo-D39WYX3T.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_utils-Dt-58bAu.js",
-      "_badge-B3Xzum8t.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_popover-Bo3p1lSw.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_table-CDFFUjX0.js",
+      "_SearchableSelect-BDJFxW_C.js",
+      "_bike-pU6yLZZJ.js",
+      "_dialog-VtqZNygx.js",
+      "_printer-yJAoIJg-.js",
+      "_seo-BwXM-fea.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_utils-Dd8jGCA1.js",
+      "_badge-DDvrCUJw.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_popover-CMN2SdwF.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Reports/Index.tsx": {
-    "file": "assets/Index-DXZcChsF.js",
+    "file": "assets/Index-C1_qz-Dl.js",
     "name": "Index",
     "src": "resources/js/pages/Reports/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_table-DIH9xjYl.js",
-      "_input-CQkdgPUc.js",
-      "_button-Cj-lkF21.js",
-      "_AreaChart-D9aAjYy9.js",
-      "_seo-D39WYX3T.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_activity-mSFkbdlx.js",
-      "_index-B5CM7fG6.js",
-      "_dialog-BM_AQMsp.js",
-      "_utils-Dt-58bAu.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_printer-CEanp_OC.js",
-      "_with-selector-BnaNNgDd.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_table-CDFFUjX0.js",
+      "_input-C6Jhypl4.js",
+      "_button-BqYIfh3n.js",
+      "_AreaChart-Dj8WH8qQ.js",
+      "_seo-BwXM-fea.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_activity-Butvx42p.js",
+      "_index-9sZaCjm5.js",
+      "_dialog-VtqZNygx.js",
+      "_utils-Dd8jGCA1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_printer-yJAoIJg-.js",
+      "_with-selector-eMmd1wBD.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Roles/Create.tsx": {
-    "file": "assets/Create-lqMz9Hnz.js",
+    "file": "assets/Create-CysYD_Cm.js",
     "name": "Create",
     "src": "resources/js/pages/Roles/Create.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_dialog-BM_AQMsp.js",
-      "_checkbox-QmaM10Ka.js",
-      "_shield-cYQ46Dq1.js",
-      "_save-E9ftlhSR.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-ChDe4o69.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_dialog-VtqZNygx.js",
+      "_checkbox-C8JsoaJv.js",
+      "_shield-DSd69VX1.js",
+      "_save-Mld3ToPO.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-ncgSEHwf.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Roles/Edit.tsx": {
-    "file": "assets/Edit-BY9ECDCd.js",
+    "file": "assets/Edit-Cvl1-yu8.js",
     "name": "Edit",
     "src": "resources/js/pages/Roles/Edit.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_dialog-BM_AQMsp.js",
-      "_checkbox-QmaM10Ka.js",
-      "_shield-cYQ46Dq1.js",
-      "_save-E9ftlhSR.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-ChDe4o69.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_dialog-VtqZNygx.js",
+      "_checkbox-C8JsoaJv.js",
+      "_shield-DSd69VX1.js",
+      "_save-Mld3ToPO.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-ncgSEHwf.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Roles/Index.tsx": {
-    "file": "assets/Index-BQq88phi.js",
+    "file": "assets/Index-BRnO8itz.js",
     "name": "Index",
     "src": "resources/js/pages/Roles/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_table-DIH9xjYl.js",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_alert-CIUmeAUG.js",
-      "_badge-B3Xzum8t.js",
-      "_Pagination-BAazxV1y.js",
-      "_dialog-BM_AQMsp.js",
-      "_input-CQkdgPUc.js",
-      "_DeleteConfirmation-CcMbB23n.js",
-      "_pencil-DvgLnN4z.js",
-      "_trash-D8O5fIpo.js",
-      "_shield-cYQ46Dq1.js",
-      "_seo-D39WYX3T.js",
-      "_plus-DStMOmUY.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_table-CDFFUjX0.js",
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_alert-DvpBafKv.js",
+      "_badge-DDvrCUJw.js",
+      "_Pagination-CNDjKDSk.js",
+      "_dialog-VtqZNygx.js",
+      "_input-C6Jhypl4.js",
+      "_DeleteConfirmation-CkUw08Zb.js",
+      "_pencil-CGj3Hmiw.js",
+      "_trash-gbh3Hem8.js",
+      "_shield-DSd69VX1.js",
+      "_seo-BwXM-fea.js",
+      "_plus-QDmHt4yE.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Sales/Create.tsx": {
-    "file": "assets/Create-DcjH_vE2.js",
+    "file": "assets/Create-Czee902a.js",
     "name": "Create",
     "src": "resources/js/pages/Sales/Create.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_badge-B3Xzum8t.js",
-      "_dialog-BM_AQMsp.js",
-      "_html5-qrcode-scanner-BgJjON0v.js",
-      "_use-debounce-CcozBXUS.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_camera-Cu5lzDVd.js",
-      "_circle-alert-BbB87gNP.js",
-      "_barcode-B_kXg8sR.js",
-      "_trash-2-DHZKLP-9.js",
-      "_index-BBu0OL3s.js",
-      "_upload-CkHgyokW.js",
-      "_coins-TWeIUk7G.js",
-      "_clock-C7XTpQT6.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js"
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_badge-DDvrCUJw.js",
+      "_dialog-VtqZNygx.js",
+      "_html5-qrcode-scanner-klK9WRzx.js",
+      "_use-debounce-TIo2QsBO.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_camera-DuTNpAJP.js",
+      "_circle-alert-CDkedLU9.js",
+      "_barcode-De_rhRZq.js",
+      "_trash-2-BUGyJSZp.js",
+      "_index-HuxJM3t6.js",
+      "_upload-mqnkgtet.js",
+      "_coins-BIEbVwEa.js",
+      "_clock-D3I-GbCs.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Sales/EndOfDay.tsx": {
-    "file": "assets/EndOfDay-DioxLobc.js",
+    "file": "assets/EndOfDay-B-Ta_xX2.js",
     "name": "EndOfDay",
     "src": "resources/js/pages/Sales/EndOfDay.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_badge-B3Xzum8t.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_table-DIH9xjYl.js",
-      "_printer-CEanp_OC.js",
-      "_coins-TWeIUk7G.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_label-2D4NLm3z.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js"
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_badge-DDvrCUJw.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_table-CDFFUjX0.js",
+      "_printer-yJAoIJg-.js",
+      "_coins-BIEbVwEa.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_label-Csv3fuRt.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Sales/ExpenseTracker.tsx": {
-    "file": "assets/ExpenseTracker-olM31Obe.js",
+    "file": "assets/ExpenseTracker-9X5qlqlm.js",
     "name": "ExpenseTracker",
     "src": "resources/js/pages/Sales/ExpenseTracker.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_badge-B3Xzum8t.js",
-      "_table-DIH9xjYl.js",
-      "_dialog-BM_AQMsp.js",
-      "_Pagination-BAazxV1y.js",
-      "_clipboard-list-5i7WVkJU.js",
-      "_seo-D39WYX3T.js",
-      "_circle-x-BEWal90Y.js",
-      "_calendar-CekgcGGr.js",
-      "_user-dWBU41CS.js",
-      "_clock-C7XTpQT6.js",
-      "_plus-DStMOmUY.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_index-BBu0OL3s.js",
-      "_trash-2-DHZKLP-9.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_utils-Dt-58bAu.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_badge-DDvrCUJw.js",
+      "_table-CDFFUjX0.js",
+      "_dialog-VtqZNygx.js",
+      "_Pagination-CNDjKDSk.js",
+      "_clipboard-list-BXSrL5wh.js",
+      "_seo-BwXM-fea.js",
+      "_circle-x-Z9zIMrej.js",
+      "_calendar-1Yl2h63f.js",
+      "_user-vjI__SQG.js",
+      "_clock-D3I-GbCs.js",
+      "_plus-QDmHt4yE.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_index-HuxJM3t6.js",
+      "_trash-2-BUGyJSZp.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_utils-Dd8jGCA1.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Sales/Index.tsx": {
-    "file": "assets/Index-CDPF7HKV.js",
+    "file": "assets/Index-CI0vsOzQ.js",
     "name": "Index",
     "src": "resources/js/pages/Sales/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_badge-B3Xzum8t.js",
-      "_input-CQkdgPUc.js",
-      "_table-DIH9xjYl.js",
-      "_select-BOnMgxl1.js",
-      "_button-Cj-lkF21.js",
-      "_Pagination-BAazxV1y.js",
-      "_dialog-BM_AQMsp.js",
-      "_trash-2-DHZKLP-9.js",
-      "_printer-CEanp_OC.js",
-      "_percent-_hQj59d_.js",
-      "_clipboard-list-5i7WVkJU.js",
-      "_arrow-left-mrUZRrpY.js",
-      "_clock-C7XTpQT6.js",
-      "_image-CmOMFzKL.js",
-      "_circle-x-BEWal90Y.js",
-      "_user-dWBU41CS.js",
-      "_seo-D39WYX3T.js",
-      "_circle-check-big-UfB4ktWd.js",
-      "_barcode-B_kXg8sR.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_utils-Dt-58bAu.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_index-ChDe4o69.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_badge-DDvrCUJw.js",
+      "_input-C6Jhypl4.js",
+      "_table-CDFFUjX0.js",
+      "_select-BcDDXWqs.js",
+      "_button-BqYIfh3n.js",
+      "_Pagination-CNDjKDSk.js",
+      "_dialog-VtqZNygx.js",
+      "_trash-2-BUGyJSZp.js",
+      "_printer-yJAoIJg-.js",
+      "_percent-C8V9rAMj.js",
+      "_clipboard-list-BXSrL5wh.js",
+      "_arrow-left-C_E2w4Vj.js",
+      "_clock-D3I-GbCs.js",
+      "_image-TNWuhppK.js",
+      "_circle-x-Z9zIMrej.js",
+      "_user-vjI__SQG.js",
+      "_seo-BwXM-fea.js",
+      "_circle-check-big-C3W4fUGS.js",
+      "_barcode-De_rhRZq.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_index-ncgSEHwf.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Sales/PrintItem.tsx": {
-    "file": "assets/PrintItem-COuTicm1.js",
+    "file": "assets/PrintItem-D1I_OACv.js",
     "name": "PrintItem",
     "src": "resources/js/pages/Sales/PrintItem.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_table-DIH9xjYl.js",
-      "_button-Cj-lkF21.js",
-      "_utils-Dt-58bAu.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_print-selection-modal-D04SkcUe.js",
-      "_printer-CEanp_OC.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_separator-DYyL4cnt.js",
-      "_index-DjAC6XNV.js",
-      "_smartphone-DF6x1GWJ.js",
-      "_loader-circle-CCoFNwcp.js"
+      "_table-CDFFUjX0.js",
+      "_button-BqYIfh3n.js",
+      "_utils-Dd8jGCA1.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_print-selection-modal-Dy6BytUf.js",
+      "_printer-yJAoIJg-.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_separator-DZ7dKUiA.js",
+      "_index-C2AwbXxq.js",
+      "_smartphone-1yji6_tT.js",
+      "_loader-circle-D9A8xk4r.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Sales/PrintList.tsx": {
-    "file": "assets/PrintList-oSXwsA9F.js",
+    "file": "assets/PrintList-BmdB35eu.js",
     "name": "PrintList",
     "src": "resources/js/pages/Sales/PrintList.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_table-DIH9xjYl.js",
-      "_button-Cj-lkF21.js",
-      "_utils-Dt-58bAu.js",
-      "_printer-CEanp_OC.js",
-      "_circle-check-big-UfB4ktWd.js",
-      "_circle-x-BEWal90Y.js",
-      "_clock-C7XTpQT6.js",
+      "_table-CDFFUjX0.js",
+      "_button-BqYIfh3n.js",
+      "_utils-Dd8jGCA1.js",
+      "_printer-yJAoIJg-.js",
+      "_circle-check-big-C3W4fUGS.js",
+      "_circle-x-Z9zIMrej.js",
+      "_clock-D3I-GbCs.js",
       "_format-CSQe5d3I.js"
     ],
     "css": [
@@ -2282,540 +2282,540 @@
     ]
   },
   "resources/js/pages/Sales/Returns.tsx": {
-    "file": "assets/Returns-BP4pCpVH.js",
+    "file": "assets/Returns-B8qwIzZO.js",
     "name": "Returns",
     "src": "resources/js/pages/Sales/Returns.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_table-DIH9xjYl.js",
-      "_dialog-BM_AQMsp.js",
-      "_textarea-Cl8cDtLj.js",
-      "_badge-B3Xzum8t.js",
-      "_utils-Dt-58bAu.js",
-      "_open-closed-Bf8DP223.js",
-      "_with-selector-BnaNNgDd.js",
-      "_seo-D39WYX3T.js",
-      "_index-BBu0OL3s.js",
-      "_arrow-right-B-8MvkeH.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-DjAC6XNV.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_table-CDFFUjX0.js",
+      "_dialog-VtqZNygx.js",
+      "_textarea-D6KU4avP.js",
+      "_badge-DDvrCUJw.js",
+      "_utils-Dd8jGCA1.js",
+      "_open-closed-_GzNvkDi.js",
+      "_with-selector-eMmd1wBD.js",
+      "_seo-BwXM-fea.js",
+      "_index-HuxJM3t6.js",
+      "_arrow-right-B2_wuapW.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-C2AwbXxq.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Sales/ServiceFees.tsx": {
-    "file": "assets/ServiceFees-D-pEvPpF.js",
+    "file": "assets/ServiceFees-CD33JsXd.js",
     "name": "ServiceFees",
     "src": "resources/js/pages/Sales/ServiceFees.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_badge-B3Xzum8t.js",
-      "_table-DIH9xjYl.js",
-      "_dialog-BM_AQMsp.js",
-      "_Pagination-BAazxV1y.js",
-      "_clipboard-list-5i7WVkJU.js",
-      "_seo-D39WYX3T.js",
-      "_circle-x-BEWal90Y.js",
-      "_calendar-CekgcGGr.js",
-      "_user-dWBU41CS.js",
-      "_clock-C7XTpQT6.js",
-      "_plus-DStMOmUY.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_index-BBu0OL3s.js",
-      "_trash-2-DHZKLP-9.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_utils-Dt-58bAu.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_badge-DDvrCUJw.js",
+      "_table-CDFFUjX0.js",
+      "_dialog-VtqZNygx.js",
+      "_Pagination-CNDjKDSk.js",
+      "_clipboard-list-BXSrL5wh.js",
+      "_seo-BwXM-fea.js",
+      "_circle-x-Z9zIMrej.js",
+      "_calendar-1Yl2h63f.js",
+      "_user-vjI__SQG.js",
+      "_clock-D3I-GbCs.js",
+      "_plus-QDmHt4yE.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_index-HuxJM3t6.js",
+      "_trash-2-BUGyJSZp.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_utils-Dd8jGCA1.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Shop/Category.tsx": {
-    "file": "assets/Category-DbfzD64R.js",
+    "file": "assets/Category-Cy_oQ3uQ.js",
     "name": "Category",
     "src": "resources/js/pages/Shop/Category.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_welcome-layout-CXxcGADY.js",
-      "_Footer-DU8raouN.js",
-      "_Pagination-BAazxV1y.js",
-      "_package-open-CxXD-sfw.js",
-      "_seo-D39WYX3T.js",
-      "_button-Cj-lkF21.js",
-      "_utils-Dt-58bAu.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-ChDe4o69.js",
-      "_input-CQkdgPUc.js",
-      "_bike-Dy3_USvY.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_info-BPRUY1fu.js",
-      "_chevron-left-FO3qdWdV.js"
+      "_welcome-layout-zPUgBZBQ.js",
+      "_Footer-P2HLkroD.js",
+      "_Pagination-CNDjKDSk.js",
+      "_package-open-DeJwcQ1n.js",
+      "_seo-BwXM-fea.js",
+      "_button-BqYIfh3n.js",
+      "_utils-Dd8jGCA1.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-ncgSEHwf.js",
+      "_input-C6Jhypl4.js",
+      "_bike-pU6yLZZJ.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_info-DNo4HjU2.js",
+      "_chevron-left-CzlX4TjN.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Shop/Clearance.tsx": {
-    "file": "assets/Clearance-D88WjEeA.js",
+    "file": "assets/Clearance-CVkwZDeh.js",
     "name": "Clearance",
     "src": "resources/js/pages/Shop/Clearance.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_welcome-layout-CXxcGADY.js",
-      "_Footer-DU8raouN.js",
-      "_package-open-CxXD-sfw.js",
-      "_seo-D39WYX3T.js",
-      "_button-Cj-lkF21.js",
-      "_utils-Dt-58bAu.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-ChDe4o69.js",
-      "_input-CQkdgPUc.js",
-      "_bike-Dy3_USvY.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_info-BPRUY1fu.js"
+      "_welcome-layout-zPUgBZBQ.js",
+      "_Footer-P2HLkroD.js",
+      "_package-open-DeJwcQ1n.js",
+      "_seo-BwXM-fea.js",
+      "_button-BqYIfh3n.js",
+      "_utils-Dd8jGCA1.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-ncgSEHwf.js",
+      "_input-C6Jhypl4.js",
+      "_bike-pU6yLZZJ.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_info-DNo4HjU2.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Shop/Show.tsx": {
-    "file": "assets/Show-CyIjwqNW.js",
+    "file": "assets/Show-Bb2PdblG.js",
     "name": "Show",
     "src": "resources/js/pages/Shop/Show.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_welcome-layout-CXxcGADY.js",
-      "_Footer-DU8raouN.js",
-      "_badge-B3Xzum8t.js",
-      "_separator-DYyL4cnt.js",
-      "_package-open-CxXD-sfw.js",
-      "_arrow-left-mrUZRrpY.js",
-      "_seo-D39WYX3T.js",
-      "_button-Cj-lkF21.js",
-      "_utils-Dt-58bAu.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-ChDe4o69.js",
-      "_input-CQkdgPUc.js",
-      "_bike-Dy3_USvY.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_info-BPRUY1fu.js"
+      "_welcome-layout-zPUgBZBQ.js",
+      "_Footer-P2HLkroD.js",
+      "_badge-DDvrCUJw.js",
+      "_separator-DZ7dKUiA.js",
+      "_package-open-DeJwcQ1n.js",
+      "_arrow-left-C_E2w4Vj.js",
+      "_seo-BwXM-fea.js",
+      "_button-BqYIfh3n.js",
+      "_utils-Dd8jGCA1.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-ncgSEHwf.js",
+      "_input-C6Jhypl4.js",
+      "_bike-pU6yLZZJ.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_info-DNo4HjU2.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Suppliers/Index.tsx": {
-    "file": "assets/Index-Bh1S6gN6.js",
+    "file": "assets/Index-BlFGZ-yM.js",
     "name": "Index",
     "src": "resources/js/pages/Suppliers/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_textarea-Cl8cDtLj.js",
-      "_dialog-BM_AQMsp.js",
-      "_table-DIH9xjYl.js",
-      "_AutocompleteInput-BhyH9eGt.js",
-      "_pencil-DvgLnN4z.js",
-      "_trash-2-DHZKLP-9.js",
-      "_truck-Brq_RlGR.js",
-      "_plus-DStMOmUY.js",
-      "_seo-D39WYX3T.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_utils-Dt-58bAu.js",
-      "_badge-B3Xzum8t.js",
-      "_index-BBu0OL3s.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-DjAC6XNV.js",
-      "_popover-Bo3p1lSw.js",
-      "_use-debounce-CcozBXUS.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_textarea-D6KU4avP.js",
+      "_dialog-VtqZNygx.js",
+      "_table-CDFFUjX0.js",
+      "_AutocompleteInput-BJUsseQ5.js",
+      "_pencil-CGj3Hmiw.js",
+      "_trash-2-BUGyJSZp.js",
+      "_truck-JYzg9vre.js",
+      "_plus-QDmHt4yE.js",
+      "_seo-BwXM-fea.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_utils-Dd8jGCA1.js",
+      "_badge-DDvrCUJw.js",
+      "_index-HuxJM3t6.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-C2AwbXxq.js",
+      "_popover-CMN2SdwF.js",
+      "_use-debounce-TIo2QsBO.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Suppliers/Portal.tsx": {
-    "file": "assets/Portal-DpuFatPd.js",
+    "file": "assets/Portal-Dz1j8wso.js",
     "name": "Portal",
     "src": "resources/js/pages/Suppliers/Portal.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_welcome-layout-CXxcGADY.js",
-      "_button-Cj-lkF21.js",
-      "_label-2D4NLm3z.js",
-      "_input-CQkdgPUc.js",
-      "_textarea-Cl8cDtLj.js",
-      "_select-BOnMgxl1.js",
-      "_dialog-BM_AQMsp.js",
-      "_plus-DStMOmUY.js",
-      "_trash-2-DHZKLP-9.js",
-      "_send-LXCcX03W.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-ChDe4o69.js",
-      "_bike-Dy3_USvY.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_info-BPRUY1fu.js"
+      "_welcome-layout-zPUgBZBQ.js",
+      "_button-BqYIfh3n.js",
+      "_label-Csv3fuRt.js",
+      "_input-C6Jhypl4.js",
+      "_textarea-D6KU4avP.js",
+      "_select-BcDDXWqs.js",
+      "_dialog-VtqZNygx.js",
+      "_plus-QDmHt4yE.js",
+      "_trash-2-BUGyJSZp.js",
+      "_send-DrMmWnyf.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-ncgSEHwf.js",
+      "_bike-pU6yLZZJ.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_info-DNo4HjU2.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/SystemDashboard.tsx": {
-    "file": "assets/SystemDashboard-xIJQhFCY.js",
+    "file": "assets/SystemDashboard-Cl6joJrI.js",
     "name": "SystemDashboard",
     "src": "resources/js/pages/SystemDashboard.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_badge-B3Xzum8t.js",
-      "_button-Cj-lkF21.js",
-      "_card-DJ-j6P0h.js",
-      "_dialog-BM_AQMsp.js",
-      "_input-CQkdgPUc.js",
-      "_table-DIH9xjYl.js",
-      "_tabs-BVYYlSdn.js",
-      "_app-layout-D8OmphMM.js",
-      "_utils-Dt-58bAu.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_power-DhbrGye8.js",
-      "_activity-mSFkbdlx.js",
-      "_AreaChart-D9aAjYy9.js",
-      "_LineChart-BX7gzC0z.js",
-      "_clock-C7XTpQT6.js",
-      "_info-BPRUY1fu.js",
-      "_monitor-BoDM_Oxx.js",
-      "_hard-drive-C6D4oNm2.js",
-      "_index-B5CM7fG6.js",
-      "_seo-D39WYX3T.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_label-2D4NLm3z.js",
-      "_download-Cbt_JcvC.js",
-      "_printer-CEanp_OC.js",
-      "_with-selector-BnaNNgDd.js"
+      "_badge-DDvrCUJw.js",
+      "_button-BqYIfh3n.js",
+      "_card-CiMNmdyq.js",
+      "_dialog-VtqZNygx.js",
+      "_input-C6Jhypl4.js",
+      "_table-CDFFUjX0.js",
+      "_tabs-CzkBwJXe.js",
+      "_app-layout-yTeiGXxy.js",
+      "_utils-Dd8jGCA1.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_power-a_6c8VqG.js",
+      "_activity-Butvx42p.js",
+      "_AreaChart-Dj8WH8qQ.js",
+      "_LineChart-DlnapqHT.js",
+      "_clock-D3I-GbCs.js",
+      "_info-DNo4HjU2.js",
+      "_monitor-CqW8rOHL.js",
+      "_hard-drive-DFc4ltDA.js",
+      "_index-9sZaCjm5.js",
+      "_seo-BwXM-fea.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_label-Csv3fuRt.js",
+      "_download-ZV_Irvh0.js",
+      "_printer-yJAoIJg-.js",
+      "_with-selector-eMmd1wBD.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Transfers/Create.tsx": {
-    "file": "assets/Create-BFRjrLQM.js",
+    "file": "assets/Create-DeKnnG1b.js",
     "name": "Create",
     "src": "resources/js/pages/Transfers/Create.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_badge-B3Xzum8t.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_textarea-Cl8cDtLj.js",
-      "_label-2D4NLm3z.js",
-      "_table-DIH9xjYl.js",
-      "_select-BOnMgxl1.js",
-      "_dialog-BM_AQMsp.js",
-      "_bike-Dy3_USvY.js",
-      "_minus-Ny_sAc4X.js",
-      "_plus-DStMOmUY.js",
-      "_trash-2-DHZKLP-9.js",
-      "_arrow-right-B-8MvkeH.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_send-LXCcX03W.js",
-      "_seo-D39WYX3T.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_utils-Dt-58bAu.js",
-      "_index-BBu0OL3s.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-DjAC6XNV.js",
-      "_index-ChDe4o69.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_badge-DDvrCUJw.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_textarea-D6KU4avP.js",
+      "_label-Csv3fuRt.js",
+      "_table-CDFFUjX0.js",
+      "_select-BcDDXWqs.js",
+      "_dialog-VtqZNygx.js",
+      "_bike-pU6yLZZJ.js",
+      "_minus-NFevRzxu.js",
+      "_plus-QDmHt4yE.js",
+      "_trash-2-BUGyJSZp.js",
+      "_arrow-right-B2_wuapW.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_send-DrMmWnyf.js",
+      "_seo-BwXM-fea.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-HuxJM3t6.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-C2AwbXxq.js",
+      "_index-ncgSEHwf.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Transfers/Import/Index.tsx": {
-    "file": "assets/Index-tjUtnOw8.js",
+    "file": "assets/Index-CFr6j4jU.js",
     "name": "Index",
     "src": "resources/js/pages/Transfers/Import/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_card-DJ-j6P0h.js",
-      "_input-CQkdgPUc.js",
-      "_dialog-BM_AQMsp.js",
-      "_AutocompleteInput-BhyH9eGt.js",
-      "_SearchableSelect-CPxqwQo_.js",
-      "_label-2D4NLm3z.js",
-      "_select-BOnMgxl1.js",
-      "_badge-B3Xzum8t.js",
-      "_checkbox-QmaM10Ka.js",
-      "_tabs-BVYYlSdn.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_sparkles-YD1lbBCS.js",
-      "_eye-BBp1AynB.js",
-      "_upload-CkHgyokW.js",
-      "_circle-alert-BbB87gNP.js",
-      "_info-BPRUY1fu.js",
-      "_plus-DStMOmUY.js",
-      "_circle-check-big-UfB4ktWd.js",
-      "_trash-2-DHZKLP-9.js",
-      "_barcode-B_kXg8sR.js",
-      "_save-E9ftlhSR.js",
-      "_seo-D39WYX3T.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_index-BBu0OL3s.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_utils-Dt-58bAu.js",
-      "_download-Cbt_JcvC.js",
-      "_printer-CEanp_OC.js",
-      "_popover-Bo3p1lSw.js",
-      "_use-debounce-CcozBXUS.js",
-      "_index-DjAC6XNV.js",
-      "_index-ChDe4o69.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_card-CiMNmdyq.js",
+      "_input-C6Jhypl4.js",
+      "_dialog-VtqZNygx.js",
+      "_AutocompleteInput-BJUsseQ5.js",
+      "_SearchableSelect-BDJFxW_C.js",
+      "_label-Csv3fuRt.js",
+      "_select-BcDDXWqs.js",
+      "_badge-DDvrCUJw.js",
+      "_checkbox-C8JsoaJv.js",
+      "_tabs-CzkBwJXe.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_sparkles-B_GJmes-.js",
+      "_eye-DzWAF0Gh.js",
+      "_upload-mqnkgtet.js",
+      "_circle-alert-CDkedLU9.js",
+      "_info-DNo4HjU2.js",
+      "_plus-QDmHt4yE.js",
+      "_circle-check-big-C3W4fUGS.js",
+      "_trash-2-BUGyJSZp.js",
+      "_barcode-De_rhRZq.js",
+      "_save-Mld3ToPO.js",
+      "_seo-BwXM-fea.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_index-HuxJM3t6.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_utils-Dd8jGCA1.js",
+      "_download-ZV_Irvh0.js",
+      "_printer-yJAoIJg-.js",
+      "_popover-CMN2SdwF.js",
+      "_use-debounce-TIo2QsBO.js",
+      "_index-C2AwbXxq.js",
+      "_index-ncgSEHwf.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Transfers/Incoming.tsx": {
-    "file": "assets/Incoming-BXh7O2xc.js",
+    "file": "assets/Incoming-C0rBjkBI.js",
     "name": "Incoming",
     "src": "resources/js/pages/Transfers/Incoming.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_badge-B3Xzum8t.js",
-      "_button-Cj-lkF21.js",
-      "_table-DIH9xjYl.js",
-      "_dialog-BM_AQMsp.js",
-      "_select-BOnMgxl1.js",
-      "_input-CQkdgPUc.js",
-      "_checkbox-QmaM10Ka.js",
-      "_label-2D4NLm3z.js",
-      "_popover-Bo3p1lSw.js",
-      "_truck-Brq_RlGR.js",
-      "_clock-C7XTpQT6.js",
-      "_circle-check-big-UfB4ktWd.js",
-      "_user-dWBU41CS.js",
-      "_barcode-B_kXg8sR.js",
-      "_circle-x-BEWal90Y.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-ChDe4o69.js"
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_badge-DDvrCUJw.js",
+      "_button-BqYIfh3n.js",
+      "_table-CDFFUjX0.js",
+      "_dialog-VtqZNygx.js",
+      "_select-BcDDXWqs.js",
+      "_input-C6Jhypl4.js",
+      "_checkbox-C8JsoaJv.js",
+      "_label-Csv3fuRt.js",
+      "_popover-CMN2SdwF.js",
+      "_truck-JYzg9vre.js",
+      "_clock-D3I-GbCs.js",
+      "_circle-check-big-C3W4fUGS.js",
+      "_user-vjI__SQG.js",
+      "_barcode-De_rhRZq.js",
+      "_circle-x-Z9zIMrej.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-ncgSEHwf.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Transfers/Index.tsx": {
-    "file": "assets/Index-DMgvFhZ8.js",
+    "file": "assets/Index-f75imnU6.js",
     "name": "Index",
     "src": "resources/js/pages/Transfers/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_badge-B3Xzum8t.js",
-      "_input-CQkdgPUc.js",
-      "_table-DIH9xjYl.js",
-      "_dialog-BM_AQMsp.js",
-      "_select-BOnMgxl1.js",
-      "_seo-D39WYX3T.js",
-      "_button-Cj-lkF21.js",
-      "_Pagination-BAazxV1y.js",
-      "_truck-Brq_RlGR.js",
-      "_circle-check-big-UfB4ktWd.js",
-      "_clock-C7XTpQT6.js",
-      "_circle-x-BEWal90Y.js",
-      "_arrow-right-B-8MvkeH.js",
-      "_printer-CEanp_OC.js",
-      "_user-dWBU41CS.js",
-      "_trash-2-DHZKLP-9.js",
-      "_barcode-B_kXg8sR.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_utils-Dt-58bAu.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_index-ChDe4o69.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_badge-DDvrCUJw.js",
+      "_input-C6Jhypl4.js",
+      "_table-CDFFUjX0.js",
+      "_dialog-VtqZNygx.js",
+      "_select-BcDDXWqs.js",
+      "_seo-BwXM-fea.js",
+      "_button-BqYIfh3n.js",
+      "_Pagination-CNDjKDSk.js",
+      "_truck-JYzg9vre.js",
+      "_circle-check-big-C3W4fUGS.js",
+      "_clock-D3I-GbCs.js",
+      "_circle-x-Z9zIMrej.js",
+      "_arrow-right-B2_wuapW.js",
+      "_printer-yJAoIJg-.js",
+      "_user-vjI__SQG.js",
+      "_trash-2-BUGyJSZp.js",
+      "_barcode-De_rhRZq.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_index-ncgSEHwf.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Transfers/Outgoing.tsx": {
-    "file": "assets/Outgoing-CIeNal5d.js",
+    "file": "assets/Outgoing-DAeYquQ7.js",
     "name": "Outgoing",
     "src": "resources/js/pages/Transfers/Outgoing.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_dialog-BM_AQMsp.js",
-      "_input-CQkdgPUc.js",
-      "_textarea-Cl8cDtLj.js",
-      "_label-2D4NLm3z.js",
-      "_app-layout-D8OmphMM.js",
-      "_card-DJ-j6P0h.js",
-      "_badge-B3Xzum8t.js",
-      "_button-Cj-lkF21.js",
-      "_table-DIH9xjYl.js",
-      "_truck-Brq_RlGR.js",
-      "_clock-C7XTpQT6.js",
-      "_circle-x-BEWal90Y.js",
-      "_send-LXCcX03W.js",
-      "_user-dWBU41CS.js",
-      "_circle-check-big-UfB4ktWd.js",
-      "_plus-DStMOmUY.js",
-      "_barcode-B_kXg8sR.js",
-      "_index-B5CM7fG6.js",
-      "_utils-Dt-58bAu.js",
-      "_index-DjAC6XNV.js",
-      "_seo-D39WYX3T.js",
-      "_index-BBu0OL3s.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js"
+      "_dialog-VtqZNygx.js",
+      "_input-C6Jhypl4.js",
+      "_textarea-D6KU4avP.js",
+      "_label-Csv3fuRt.js",
+      "_app-layout-yTeiGXxy.js",
+      "_card-CiMNmdyq.js",
+      "_badge-DDvrCUJw.js",
+      "_button-BqYIfh3n.js",
+      "_table-CDFFUjX0.js",
+      "_truck-JYzg9vre.js",
+      "_clock-D3I-GbCs.js",
+      "_circle-x-Z9zIMrej.js",
+      "_send-DrMmWnyf.js",
+      "_user-vjI__SQG.js",
+      "_circle-check-big-C3W4fUGS.js",
+      "_plus-QDmHt4yE.js",
+      "_barcode-De_rhRZq.js",
+      "_index-9sZaCjm5.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-C2AwbXxq.js",
+      "_seo-BwXM-fea.js",
+      "_index-HuxJM3t6.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Transfers/PrintItem.tsx": {
-    "file": "assets/PrintItem--5drGmyY.js",
+    "file": "assets/PrintItem-dv89P9Mz.js",
     "name": "PrintItem",
     "src": "resources/js/pages/Transfers/PrintItem.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_table-DIH9xjYl.js",
-      "_button-Cj-lkF21.js",
-      "_utils-Dt-58bAu.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_print-selection-modal-D04SkcUe.js",
-      "_printer-CEanp_OC.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_separator-DYyL4cnt.js",
-      "_index-DjAC6XNV.js",
-      "_smartphone-DF6x1GWJ.js",
-      "_loader-circle-CCoFNwcp.js"
+      "_table-CDFFUjX0.js",
+      "_button-BqYIfh3n.js",
+      "_utils-Dd8jGCA1.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_print-selection-modal-Dy6BytUf.js",
+      "_printer-yJAoIJg-.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_separator-DZ7dKUiA.js",
+      "_index-C2AwbXxq.js",
+      "_smartphone-1yji6_tT.js",
+      "_loader-circle-D9A8xk4r.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Transfers/PrintList.tsx": {
-    "file": "assets/PrintList-Cn-yhKSH.js",
+    "file": "assets/PrintList-C8pDFIzH.js",
     "name": "PrintList",
     "src": "resources/js/pages/Transfers/PrintList.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_table-DIH9xjYl.js",
-      "_button-Cj-lkF21.js",
-      "_utils-Dt-58bAu.js",
-      "_printer-CEanp_OC.js",
-      "_circle-check-big-UfB4ktWd.js",
-      "_circle-x-BEWal90Y.js",
-      "_clock-C7XTpQT6.js",
+      "_table-CDFFUjX0.js",
+      "_button-BqYIfh3n.js",
+      "_utils-Dd8jGCA1.js",
+      "_printer-yJAoIJg-.js",
+      "_circle-check-big-C3W4fUGS.js",
+      "_circle-x-Z9zIMrej.js",
+      "_clock-D3I-GbCs.js",
       "_format-CSQe5d3I.js"
     ],
     "css": [
@@ -2823,477 +2823,477 @@
     ]
   },
   "resources/js/pages/Users/Create.tsx": {
-    "file": "assets/Create-3dwNhgf4.js",
+    "file": "assets/Create-D_Bh5INE.js",
     "name": "Create",
     "src": "resources/js/pages/Users/Create.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_select-BOnMgxl1.js",
-      "_MultiSelect-LmBaZ835.js",
-      "_dialog-BM_AQMsp.js",
-      "_save-E9ftlhSR.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-ChDe4o69.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_select-BcDDXWqs.js",
+      "_MultiSelect-OdpiCstB.js",
+      "_dialog-VtqZNygx.js",
+      "_save-Mld3ToPO.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-ncgSEHwf.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Users/Edit.tsx": {
-    "file": "assets/Edit-DdYuSiCM.js",
+    "file": "assets/Edit-CLEBVbpr.js",
     "name": "Edit",
     "src": "resources/js/pages/Users/Edit.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_select-BOnMgxl1.js",
-      "_MultiSelect-LmBaZ835.js",
-      "_dialog-BM_AQMsp.js",
-      "_save-E9ftlhSR.js",
-      "_seo-D39WYX3T.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_index-ChDe4o69.js"
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_select-BcDDXWqs.js",
+      "_MultiSelect-OdpiCstB.js",
+      "_dialog-VtqZNygx.js",
+      "_save-Mld3ToPO.js",
+      "_seo-BwXM-fea.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_index-ncgSEHwf.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/Users/Index.tsx": {
-    "file": "assets/Index-DMWJypBl.js",
+    "file": "assets/Index-D266QVQP.js",
     "name": "Index",
     "src": "resources/js/pages/Users/Index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_table-DIH9xjYl.js",
-      "_app-layout-D8OmphMM.js",
-      "_button-Cj-lkF21.js",
-      "_badge-B3Xzum8t.js",
-      "_Pagination-BAazxV1y.js",
-      "_dialog-BM_AQMsp.js",
-      "_input-CQkdgPUc.js",
-      "_DeleteConfirmation-CcMbB23n.js",
-      "_seo-D39WYX3T.js",
-      "_pencil-DvgLnN4z.js",
-      "_trash-D8O5fIpo.js",
-      "_plus-DStMOmUY.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_index-BBu0OL3s.js",
-      "_label-2D4NLm3z.js",
-      "_index-DjAC6XNV.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_clock-C7XTpQT6.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_table-CDFFUjX0.js",
+      "_app-layout-yTeiGXxy.js",
+      "_button-BqYIfh3n.js",
+      "_badge-DDvrCUJw.js",
+      "_Pagination-CNDjKDSk.js",
+      "_dialog-VtqZNygx.js",
+      "_input-C6Jhypl4.js",
+      "_DeleteConfirmation-CkUw08Zb.js",
+      "_seo-BwXM-fea.js",
+      "_pencil-CGj3Hmiw.js",
+      "_trash-gbh3Hem8.js",
+      "_plus-QDmHt4yE.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_index-HuxJM3t6.js",
+      "_label-Csv3fuRt.js",
+      "_index-C2AwbXxq.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_clock-D3I-GbCs.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/auth/confirm-password.tsx": {
-    "file": "assets/confirm-password-BhT3_5tL.js",
+    "file": "assets/confirm-password-BevpHKCW.js",
     "name": "confirm-password",
     "src": "resources/js/pages/auth/confirm-password.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_input-error-CaS-QFro.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_spinner-B76KBl1I.js",
-      "_auth-layout-DJBYUTQt.js",
-      "_index-CyU46Iqn.js",
-      "_utils-Dt-58bAu.js",
-      "_index-DjAC6XNV.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_input-error-DclUJGuE.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_spinner-VpdlF9Qf.js",
+      "_auth-layout-DWXoD1v_.js",
+      "_index-wAZqKfT2.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-C2AwbXxq.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/auth/forgot-password.tsx": {
-    "file": "assets/forgot-password-DxrWaUUN.js",
+    "file": "assets/forgot-password-CoebNILE.js",
     "name": "forgot-password",
     "src": "resources/js/pages/auth/forgot-password.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-logo-icon-DCEQV7va.js",
-      "_text-link-BipkKaDa.js",
-      "_auth-layout-DJBYUTQt.js",
-      "_utils-Dt-58bAu.js"
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_text-link-B3cPCOR6.js",
+      "_auth-layout-DWXoD1v_.js",
+      "_utils-Dd8jGCA1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/auth/login.tsx": {
-    "file": "assets/login-o1lVZUUA.js",
+    "file": "assets/login-Crtm_Fu-.js",
     "name": "login",
     "src": "resources/js/pages/auth/login.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_input-error-CaS-QFro.js",
-      "_text-link-BipkKaDa.js",
-      "_button-Cj-lkF21.js",
-      "_checkbox-QmaM10Ka.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_spinner-B76KBl1I.js",
-      "_auth-layout-DJBYUTQt.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-BHaZVgpF.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_index-ChDe4o69.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_index-CyU46Iqn.js"
+      "_input-error-DclUJGuE.js",
+      "_text-link-B3cPCOR6.js",
+      "_button-BqYIfh3n.js",
+      "_checkbox-C8JsoaJv.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_spinner-VpdlF9Qf.js",
+      "_auth-layout-DWXoD1v_.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-DCXSLGIw.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_index-ncgSEHwf.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_index-wAZqKfT2.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/auth/register.tsx": {
-    "file": "assets/register-7sHBW5YX.js",
+    "file": "assets/register-B0ydUYJz.js",
     "name": "register",
     "src": "resources/js/pages/auth/register.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-logo-icon-DCEQV7va.js",
-      "_input-error-CaS-QFro.js",
-      "_text-link-BipkKaDa.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_spinner-B76KBl1I.js",
-      "_auth-layout-DJBYUTQt.js",
-      "_utils-Dt-58bAu.js",
-      "_index-DjAC6XNV.js",
-      "_loader-circle-CCoFNwcp.js"
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_input-error-DclUJGuE.js",
+      "_text-link-B3cPCOR6.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_spinner-VpdlF9Qf.js",
+      "_auth-layout-DWXoD1v_.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-C2AwbXxq.js",
+      "_loader-circle-D9A8xk4r.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/auth/reset-password.tsx": {
-    "file": "assets/reset-password-DLiLdOrF.js",
+    "file": "assets/reset-password-CIQUVAIa.js",
     "name": "reset-password",
     "src": "resources/js/pages/auth/reset-password.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_index-BHaZVgpF.js",
-      "_input-error-CaS-QFro.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_spinner-B76KBl1I.js",
-      "_auth-layout-DJBYUTQt.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-CyU46Iqn.js",
-      "_utils-Dt-58bAu.js",
-      "_index-DjAC6XNV.js",
-      "_loader-circle-CCoFNwcp.js"
+      "_index-DCXSLGIw.js",
+      "_input-error-DclUJGuE.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_spinner-VpdlF9Qf.js",
+      "_auth-layout-DWXoD1v_.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-wAZqKfT2.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-C2AwbXxq.js",
+      "_loader-circle-D9A8xk4r.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/auth/two-factor-challenge.tsx": {
-    "file": "assets/two-factor-challenge-BkazT-p-.js",
+    "file": "assets/two-factor-challenge-Dx2AKvCc.js",
     "name": "two-factor-challenge",
     "src": "resources/js/pages/auth/two-factor-challenge.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_input-error-CaS-QFro.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_use-two-factor-auth-CDg0daqY.js",
-      "_auth-layout-DJBYUTQt.js",
-      "_index-iu9sm10G.js",
-      "_utils-Dt-58bAu.js",
-      "_minus-Ny_sAc4X.js",
-      "_app-logo-icon-DCEQV7va.js"
+      "_input-error-DclUJGuE.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_use-two-factor-auth-B4pjFYeI.js",
+      "_auth-layout-DWXoD1v_.js",
+      "_index-B3k9E3T6.js",
+      "_utils-Dd8jGCA1.js",
+      "_minus-NFevRzxu.js",
+      "_app-logo-icon-DBU6hfJ1.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/auth/verify-email.tsx": {
-    "file": "assets/verify-email-8d3yCboN.js",
+    "file": "assets/verify-email-Bk8GvaOX.js",
     "name": "verify-email",
     "src": "resources/js/pages/auth/verify-email.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_text-link-BipkKaDa.js",
-      "_button-Cj-lkF21.js",
-      "_spinner-B76KBl1I.js",
-      "_auth-layout-DJBYUTQt.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-xLTr1eH4.js",
-      "_utils-Dt-58bAu.js",
-      "_loader-circle-CCoFNwcp.js"
+      "_text-link-B3cPCOR6.js",
+      "_button-BqYIfh3n.js",
+      "_spinner-VpdlF9Qf.js",
+      "_auth-layout-DWXoD1v_.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-Bp11G_oa.js",
+      "_utils-Dd8jGCA1.js",
+      "_loader-circle-D9A8xk4r.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/settings/appearance.tsx": {
-    "file": "assets/appearance-DDQ9Ie34.js",
+    "file": "assets/appearance-B4VJcU90.js",
     "name": "appearance",
     "src": "resources/js/pages/settings/appearance.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_utils-Dt-58bAu.js",
-      "_button-Cj-lkF21.js",
-      "_monitor-BoDM_Oxx.js",
-      "_heading-small-BW3avilY.js",
-      "_app-layout-D8OmphMM.js",
-      "_layout-CSTyORiR.js",
-      "_seo-D39WYX3T.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_label-2D4NLm3z.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_separator-DYyL4cnt.js",
-      "_index-iu9sm10G.js"
+      "_utils-Dd8jGCA1.js",
+      "_button-BqYIfh3n.js",
+      "_monitor-CqW8rOHL.js",
+      "_heading-small-CImVF_K8.js",
+      "_app-layout-yTeiGXxy.js",
+      "_layout-DedBTl2l.js",
+      "_seo-BwXM-fea.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_label-Csv3fuRt.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_separator-DZ7dKUiA.js",
+      "_index-B3k9E3T6.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/settings/branch-profile.tsx": {
-    "file": "assets/branch-profile-BbKMFfFd.js",
+    "file": "assets/branch-profile-CSuJozML.js",
     "name": "branch-profile",
     "src": "resources/js/pages/settings/branch-profile.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_heading-small-BW3avilY.js",
-      "_input-error-CaS-QFro.js",
-      "_button-Cj-lkF21.js",
-      "_label-2D4NLm3z.js",
-      "_app-layout-D8OmphMM.js",
-      "_layout-CSTyORiR.js",
-      "_seo-D39WYX3T.js",
-      "_transition-Dc384eqD.js",
-      "_utils-Dt-58bAu.js",
-      "_index-DjAC6XNV.js",
-      "_index-B5CM7fG6.js",
-      "_dialog-BM_AQMsp.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_index-BBu0OL3s.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_separator-DYyL4cnt.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-iu9sm10G.js",
-      "_clock-C7XTpQT6.js",
-      "_open-closed-Bf8DP223.js"
+      "_heading-small-CImVF_K8.js",
+      "_input-error-DclUJGuE.js",
+      "_button-BqYIfh3n.js",
+      "_label-Csv3fuRt.js",
+      "_app-layout-yTeiGXxy.js",
+      "_layout-DedBTl2l.js",
+      "_seo-BwXM-fea.js",
+      "_transition-BdqosHII.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-C2AwbXxq.js",
+      "_index-9sZaCjm5.js",
+      "_dialog-VtqZNygx.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_index-HuxJM3t6.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_separator-DZ7dKUiA.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-B3k9E3T6.js",
+      "_clock-D3I-GbCs.js",
+      "_open-closed-_GzNvkDi.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/settings/password.tsx": {
-    "file": "assets/password-BnBrOQoJ.js",
+    "file": "assets/password-dx3UX0IL.js",
     "name": "password",
     "src": "resources/js/pages/settings/password.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_app-logo-icon-DCEQV7va.js",
-      "_input-error-CaS-QFro.js",
-      "_app-layout-D8OmphMM.js",
-      "_layout-CSTyORiR.js",
-      "_heading-small-BW3avilY.js",
-      "_button-Cj-lkF21.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_transition-Dc384eqD.js",
-      "_utils-Dt-58bAu.js",
-      "_seo-D39WYX3T.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_separator-DYyL4cnt.js",
-      "_index-iu9sm10G.js",
-      "_open-closed-Bf8DP223.js"
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_input-error-DclUJGuE.js",
+      "_app-layout-yTeiGXxy.js",
+      "_layout-DedBTl2l.js",
+      "_heading-small-CImVF_K8.js",
+      "_button-BqYIfh3n.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_transition-BdqosHII.js",
+      "_utils-Dd8jGCA1.js",
+      "_seo-BwXM-fea.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_separator-DZ7dKUiA.js",
+      "_index-B3k9E3T6.js",
+      "_open-closed-_GzNvkDi.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/settings/profile.tsx": {
-    "file": "assets/profile-LtwdQ3cD.js",
+    "file": "assets/profile-BiTISDB9.js",
     "name": "profile",
     "src": "resources/js/pages/settings/profile.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_index-xLTr1eH4.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_heading-small-BW3avilY.js",
-      "_input-error-CaS-QFro.js",
-      "_button-Cj-lkF21.js",
-      "_dialog-BM_AQMsp.js",
-      "_input-CQkdgPUc.js",
-      "_label-2D4NLm3z.js",
-      "_app-layout-D8OmphMM.js",
-      "_layout-CSTyORiR.js",
-      "_seo-D39WYX3T.js",
-      "_transition-Dc384eqD.js",
-      "_utils-Dt-58bAu.js",
-      "_index-B5CM7fG6.js",
-      "_index-DjAC6XNV.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_badge-B3Xzum8t.js",
-      "_index-BBu0OL3s.js",
-      "_download-Cbt_JcvC.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_printer-CEanp_OC.js",
-      "_separator-DYyL4cnt.js",
-      "_index-iu9sm10G.js",
-      "_clock-C7XTpQT6.js",
-      "_open-closed-Bf8DP223.js"
+      "_index-Bp11G_oa.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_heading-small-CImVF_K8.js",
+      "_input-error-DclUJGuE.js",
+      "_button-BqYIfh3n.js",
+      "_dialog-VtqZNygx.js",
+      "_input-C6Jhypl4.js",
+      "_label-Csv3fuRt.js",
+      "_app-layout-yTeiGXxy.js",
+      "_layout-DedBTl2l.js",
+      "_seo-BwXM-fea.js",
+      "_transition-BdqosHII.js",
+      "_utils-Dd8jGCA1.js",
+      "_index-9sZaCjm5.js",
+      "_index-C2AwbXxq.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_badge-DDvrCUJw.js",
+      "_index-HuxJM3t6.js",
+      "_download-ZV_Irvh0.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_printer-yJAoIJg-.js",
+      "_separator-DZ7dKUiA.js",
+      "_index-B3k9E3T6.js",
+      "_clock-D3I-GbCs.js",
+      "_open-closed-_GzNvkDi.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/settings/two-factor.tsx": {
-    "file": "assets/two-factor-DGogZQZw.js",
+    "file": "assets/two-factor-DXkW13bm.js",
     "name": "two-factor",
     "src": "resources/js/pages/settings/two-factor.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_heading-small-BW3avilY.js",
-      "_button-Cj-lkF21.js",
-      "_card-DJ-j6P0h.js",
-      "_index-iu9sm10G.js",
-      "_alert-CIUmeAUG.js",
-      "_circle-alert-BbB87gNP.js",
-      "_eye-BBp1AynB.js",
-      "_bluetooth-printer-context-fZ052AMf.js",
-      "_input-error-CaS-QFro.js",
-      "_dialog-BM_AQMsp.js",
-      "_use-two-factor-auth-CDg0daqY.js",
-      "_spinner-B76KBl1I.js",
-      "_index-BBu0OL3s.js",
-      "_app-layout-D8OmphMM.js",
-      "_badge-B3Xzum8t.js",
-      "_layout-CSTyORiR.js",
-      "_shield-check-fSmvSgjq.js",
-      "_utils-Dt-58bAu.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-B5CM7fG6.js",
-      "_minus-Ny_sAc4X.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_seo-D39WYX3T.js",
-      "_clock-C7XTpQT6.js",
-      "_index-DjAC6XNV.js",
-      "_chevron-left-FO3qdWdV.js",
-      "_package-open-CxXD-sfw.js",
-      "_label-2D4NLm3z.js",
-      "_download-Cbt_JcvC.js",
-      "_printer-CEanp_OC.js",
-      "_separator-DYyL4cnt.js"
+      "_heading-small-CImVF_K8.js",
+      "_button-BqYIfh3n.js",
+      "_card-CiMNmdyq.js",
+      "_index-B3k9E3T6.js",
+      "_alert-DvpBafKv.js",
+      "_circle-alert-CDkedLU9.js",
+      "_eye-DzWAF0Gh.js",
+      "_bluetooth-printer-context-BND3K2mI.js",
+      "_input-error-DclUJGuE.js",
+      "_dialog-VtqZNygx.js",
+      "_use-two-factor-auth-B4pjFYeI.js",
+      "_spinner-VpdlF9Qf.js",
+      "_index-HuxJM3t6.js",
+      "_app-layout-yTeiGXxy.js",
+      "_badge-DDvrCUJw.js",
+      "_layout-DedBTl2l.js",
+      "_shield-check-BFAgD6TG.js",
+      "_utils-Dd8jGCA1.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-9sZaCjm5.js",
+      "_minus-NFevRzxu.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_seo-BwXM-fea.js",
+      "_clock-D3I-GbCs.js",
+      "_index-C2AwbXxq.js",
+      "_chevron-left-CzlX4TjN.js",
+      "_package-open-DeJwcQ1n.js",
+      "_label-Csv3fuRt.js",
+      "_download-ZV_Irvh0.js",
+      "_printer-yJAoIJg-.js",
+      "_separator-DZ7dKUiA.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
     ]
   },
   "resources/js/pages/welcome.tsx": {
-    "file": "assets/welcome-CugJ9dN6.js",
+    "file": "assets/welcome-CRyPmmbP.js",
     "name": "welcome",
     "src": "resources/js/pages/welcome.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_welcome-layout-CXxcGADY.js",
-      "_Footer-DU8raouN.js",
-      "_package-open-CxXD-sfw.js",
-      "_seo-D39WYX3T.js",
-      "_button-Cj-lkF21.js",
-      "_utils-Dt-58bAu.js",
-      "_dialog-BM_AQMsp.js",
-      "_index-B5CM7fG6.js",
-      "_clock-C7XTpQT6.js",
-      "_index-BBu0OL3s.js",
-      "_index-DjAC6XNV.js",
-      "_app-logo-icon-DCEQV7va.js",
-      "_index-ChDe4o69.js",
-      "_input-CQkdgPUc.js",
-      "_bike-Dy3_USvY.js",
-      "_loader-circle-CCoFNwcp.js",
-      "_info-BPRUY1fu.js"
+      "_welcome-layout-zPUgBZBQ.js",
+      "_Footer-P2HLkroD.js",
+      "_package-open-DeJwcQ1n.js",
+      "_seo-BwXM-fea.js",
+      "_button-BqYIfh3n.js",
+      "_utils-Dd8jGCA1.js",
+      "_dialog-VtqZNygx.js",
+      "_index-9sZaCjm5.js",
+      "_clock-D3I-GbCs.js",
+      "_index-HuxJM3t6.js",
+      "_index-C2AwbXxq.js",
+      "_app-logo-icon-DBU6hfJ1.js",
+      "_index-ncgSEHwf.js",
+      "_input-C6Jhypl4.js",
+      "_bike-pU6yLZZJ.js",
+      "_loader-circle-D9A8xk4r.js",
+      "_info-DNo4HjU2.js"
     ],
     "css": [
       "assets/app-CTQTBGum.css"
