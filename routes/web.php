@@ -23,6 +23,7 @@ Route::get('/product/{product}', [\App\Http\Controllers\WelcomeController::class
 Route::get('/clearance-sale', [\App\Http\Controllers\WelcomeController::class, 'clearanceSale'])->name('clearance.index');
 Route::get('/locations', [\App\Http\Controllers\BranchController::class, 'locations'])->name('locations.index');
 Route::get('/downloads', [\App\Http\Controllers\DownloadController::class, 'index'])->name('downloads');
+Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'index'])->name('sitemap');
 
 Route::get('/suppliers', [\App\Http\Controllers\SupplierPortalController::class, 'index'])->name('suppliers.portal');
 Route::post('/suppliers/send', [\App\Http\Controllers\SupplierPortalController::class, 'store'])->name('suppliers.send');

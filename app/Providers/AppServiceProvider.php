@@ -77,5 +77,18 @@ class AppServiceProvider extends ServiceProvider
         BranchProduct::observe(BranchProductObserver::class);
         Sale::observe(SaleObserver::class);
         Transfer::observe(TransferObserver::class);
+
+        // Clear dynamic sitemap cache on data changes
+        $clearSitemapCache = function () {
+            cache()->forget('sitemap-xml');
+        };
+        Product::saved($clearSitemapCache);
+        Product::deleted($clearSitemapCache);
+        BranchProduct::saved($clearSitemapCache);
+        BranchProduct::deleted($clearSitemapCache);
+        Branch::saved($clearSitemapCache);
+        Branch::deleted($clearSitemapCache);
+        \App\Models\Category::saved($clearSitemapCache);
+        \App\Models\Category::deleted($clearSitemapCache);
     }
 }
