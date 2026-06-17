@@ -1,5 +1,13 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router, usePage } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,9 +63,31 @@ const breadcrumbs = [
 ];
 
 export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesSum, filters }: Props) {
+    const { auth } = usePage<SharedData>().props;
+    const isSystemAdmin = auth.roles.includes('System Administrator');
+    const branchName = auth.user?.branch?.branch_name || 'Active Branch';
+
     const [search, setSearch] = useState(filters.search || '');
     const [dateFrom, setDateFrom] = useState(filters.date_from || '');
     const [dateTo, setDateTo] = useState(filters.date_to || '');
+
+    const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
+    const [isDeletingAll, setIsDeletingAll] = useState(false);
+
+    const executeDeleteAll = () => {
+        setIsDeletingAll(true);
+        router.post("/expense-tracker/delete-all", {}, {
+            onSuccess: () => {
+                setIsDeleteAllModalOpen(false);
+                setIsDeletingAll(false);
+                toast.success('Successfully deleted all expenses for this branch.');
+            },
+            onError: () => {
+                setIsDeletingAll(false);
+                toast.error("Failed to delete expenses.");
+            }
+        });
+    };
 
     // Helper to group expenses by date
     const groupExpensesByDate = (expensesList: Expense[]) => {
@@ -180,6 +210,16 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
                         </div>
                         <p className="text-muted-foreground mt-1">Track daily expenses and monitor historical spending lists.</p>
                     </div>
+                    {isSystemAdmin && (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            className="hidden md:flex bg-red-600 hover:bg-red-700 text-white shrink-0"
+                            onClick={() => setIsDeleteAllModalOpen(true)}
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete All Expenses
+                        </Button>
+                    )}
                 </div>
 
                 {/* Two-Column Grid */}
@@ -459,6 +499,46 @@ export default function ExpenseTracker({ expenses, todayExpenses, todayExpensesS
                 </div>
 
             </div>
+            {/* Confirmation Dialog */}
+            <Dialog open={isDeleteAllModalOpen} onOpenChange={setIsDeleteAllModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600 font-bold">
+                            <Trash2 className="h-5 w-5" /> Confirm Deletion of All Expenses
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-6 flex flex-col items-center text-center">
+                        <div className="h-16 w-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                            <Trash2 className="h-8 w-8 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">Are you absolutely sure?</h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                            You are about to delete <strong>ALL</strong> expenses for the branch <strong>{branchName}</strong>.
+                        </p>
+                        <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                            <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                                IMPORTANT: This action cannot be undone. All expense records for this branch will be permanently deleted from the database.
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter className="flex gap-2 sm:justify-center">
+                        <Button variant="outline" onClick={() => setIsDeleteAllModalOpen(false)} className="flex-1" disabled={isDeletingAll}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={executeDeleteAll} className="flex-1" disabled={isDeletingAll}>
+                            {isDeletingAll ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete All'
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
         </AppLayout>
     );
 }

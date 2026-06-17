@@ -101,4 +101,26 @@ class ExpenseController extends Controller
 
         return redirect()->back()->with('success', 'Expense deleted successfully.');
     }
+
+    public function deleteAll(Request $request)
+    {
+        $user = auth()->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+
+        if (!$isSystemAdmin) {
+            abort(403, 'Unauthorized action. Only System Administrators can delete all expenses.');
+        }
+
+        $branchId = (session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+
+        if (!$branchId) {
+            return back()->with('error', 'No active branch selected.');
+        }
+
+        Expense::where('branch_id', $branchId)->delete();
+
+        return redirect()->back()->with('success', 'All expenses for this branch have been deleted successfully.');
+    }
 }

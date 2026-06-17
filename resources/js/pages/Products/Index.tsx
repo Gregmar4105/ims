@@ -1004,19 +1004,6 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 </Button>
                             )}
 
-                            {isSystemAdmin && (
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    disabled={branch === "all"}
-                                    className="h-10 w-10 border-rose-600 text-rose-600 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 flex items-center justify-center"
-                                    onClick={() => setIsDeleteAllModalOpen(true)}
-                                    title={`Delete All in ${branch !== 'all' ? branch : 'Selected Branch'}`}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            )}
-
                             {!isEmployee && (
                                 <Button
                                     variant={isSelectionMode ? (selectedProductIds.length > 0 ? "destructive" : "default") : "outline"}

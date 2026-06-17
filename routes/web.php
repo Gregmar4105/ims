@@ -197,11 +197,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('expense-tracker', [\App\Http\Controllers\ExpenseController::class, 'index'])->name('expenses.index');
     Route::post('expense-tracker', [\App\Http\Controllers\ExpenseController::class, 'store'])->name('expenses.store');
     Route::delete('expense-tracker/{expense}', [\App\Http\Controllers\ExpenseController::class, 'destroy'])->name('expenses.destroy');
+    Route::post('expense-tracker/delete-all', [\App\Http\Controllers\ExpenseController::class, 'deleteAll'])->name('expenses.deleteAll');
 
     // Service Fee routes
     Route::get('service-fees', [\App\Http\Controllers\ServiceFeeController::class, 'index'])->name('service-fees.index');
     Route::post('service-fees', [\App\Http\Controllers\ServiceFeeController::class, 'store'])->name('service-fees.store');
     Route::delete('service-fees/{serviceFee}', [\App\Http\Controllers\ServiceFeeController::class, 'destroy'])->name('service-fees.destroy');
+    Route::post('service-fees/delete-all', [\App\Http\Controllers\ServiceFeeController::class, 'deleteAll'])->name('serviceFees.deleteAll');
 
     // End of Day route
     Route::get('end-of-day', function () {
