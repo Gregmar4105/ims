@@ -2133,3 +2133,18 @@ API ERROR (createBranchSheet): {"error":"invalid_grant","error_description":"Inv
 API ERROR (createBranchSheet): {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
 API ERROR (createBranchSheet): {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
 API ERROR (createBranchSheet): {"error":"invalid_grant","error_description":"Invalid JWT Signature."}
+API ERROR (updateSheetContent): {
+  "error": {
+    "code": 400,
+    "message": "Your input contains more than the maximum of 50000 characters in a single cell.",
+    "errors": [
+      {
+        "message": "Your input contains more than the maximum of 50000 characters in a single cell.",
+        "domain": "global",
+        "reason": "badRequest"
+      }
+    ],
+    "status": "INVALID_ARGUMENT"
+  }
+}
+

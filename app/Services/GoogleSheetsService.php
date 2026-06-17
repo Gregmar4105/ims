@@ -493,9 +493,13 @@ class GoogleSheetsService
             }
 
             // Build items summary
-            $items = $sale->items->map(function($item) {
+            $itemCount = $sale->items->count();
+            $items = $sale->items->take(250)->map(function($item) {
                 return '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity . ' @ ' . $item->price;
             })->implode("\n");
+            if ($itemCount > 250) {
+                $items .= "\n• ... and " . ($itemCount - 250) . " more items";
+            }
 
             // Calculate total
             $total = $sale->items->sum(function($item) {
@@ -619,13 +623,17 @@ class GoogleSheetsService
             }
 
             // Build items summary
-            $items = $transfer->items->map(function($item) {
+            $itemCount = $transfer->items->count();
+            $items = $transfer->items->take(250)->map(function($item) {
                 $summary = '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
                 if ($item->received_quantity !== null) {
                     $summary .= " [Rec: {$item->received_quantity}]";
                 }
                 return $summary;
             })->implode("\n");
+            if ($itemCount > 250) {
+                $items .= "\n• ... and " . ($itemCount - 250) . " more items";
+            }
 
             $destination = $transfer->destinationBranch?->branch_name ?? $transfer->supplier?->name ?? 'Unknown';
 
@@ -851,9 +859,13 @@ class GoogleSheetsService
                 ->get();
             
             foreach ($allSales as $sale) {
-                $itemsSummary = $sale->items->map(function($item) {
+                $itemCount = $sale->items->count();
+                $itemsSummary = $sale->items->take(250)->map(function($item) {
                     return '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity . ' @ ' . $item->price;
                 })->implode("\n");
+                if ($itemCount > 250) {
+                    $itemsSummary .= "\n• ... and " . ($itemCount - 250) . " more items";
+                }
 
                 $total = $sale->items->sum(function($item) {
                     return $item->price * $item->quantity;
@@ -895,13 +907,17 @@ class GoogleSheetsService
                 ->get();
 
             foreach ($allTransfers as $transfer) {
-                $itemsSummary = $transfer->items->map(function($item) {
+                $itemCount = $transfer->items->count();
+                $itemsSummary = $transfer->items->take(250)->map(function($item) {
                     $summary = '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
                     if ($item->received_quantity !== null) {
                         $summary .= " [Rec: {$item->received_quantity}]";
                     }
                     return $summary;
                 })->implode("\n");
+                if ($itemCount > 250) {
+                    $itemsSummary .= "\n• ... and " . ($itemCount - 250) . " more items";
+                }
 
                 $destination = $transfer->destinationBranch?->branch_name ?? $transfer->supplier?->name ?? 'Unknown';
 

@@ -842,13 +842,18 @@ class GoogleSheetsSyncController extends Controller
                 $allTransfers = \App\Models\Transfer::with(['sourceBranch', 'destinationBranch', 'supplier', 'readiedBy', 'approvedBy', 'receivedBy', 'items.product'])->orderBy('created_at', 'desc')->get();
 
                 foreach ($allTransfers as $t) {
-                    $itemsSummary = $t->items->map(function($item) {
+                    $itemCount = $t->items->count();
+                    $itemsSummary = $t->items->take(250)->map(function($item) {
                         $summary = '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
                         if ($item->received_quantity !== null) {
                             $summary .= " [Rec: {$item->received_quantity}]";
                         }
                         return $summary;
                     })->implode("\n");
+
+                    if ($itemCount > 250) {
+                        $itemsSummary .= "\n• ... and " . ($itemCount - 250) . " more items";
+                    }
 
                     $destination = $t->destinationBranch?->branch_name ?? $t->supplier?->name ?? 'Unknown';
 
