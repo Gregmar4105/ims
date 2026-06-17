@@ -492,6 +492,14 @@ class GoogleSheetsService
                 }
             }
 
+            $branchName = $sale->branch?->branch_name;
+            if ($branchName === null || $branchName === '') {
+                if ($rowIndex !== -1) {
+                    $this->removeSaleFromSheets($sale->id);
+                }
+                return true;
+            }
+
             // Build items summary
             $itemCount = $sale->items->count();
             $items = $sale->items->take(250)->map(function($item) {
@@ -620,6 +628,19 @@ class GoogleSheetsService
                         break;
                     }
                 }
+            }
+
+            $sourceBranch = $transfer->sourceBranch?->branch_name;
+            $destination = $transfer->destinationBranch?->branch_name ?? $transfer->supplier?->name ?? 'Unknown';
+
+            $isSourceArchived = $sourceBranch && (strpos($sourceBranch, '[ARCHIVED]') !== false);
+            $isDestArchived = $destination && (strpos($destination, '[ARCHIVED]') !== false);
+
+            if ($isSourceArchived || $isDestArchived) {
+                if ($rowIndex !== -1) {
+                    $this->removeTransferFromSheets($transfer->id);
+                }
+                return true;
             }
 
             // Build items summary
@@ -859,6 +880,11 @@ class GoogleSheetsService
                 ->get();
             
             foreach ($allSales as $sale) {
+                $branchName = $sale->branch?->branch_name;
+                if ($branchName === null || $branchName === '') {
+                    continue;
+                }
+
                 $itemCount = $sale->items->count();
                 $itemsSummary = $sale->items->take(250)->map(function($item) {
                     return '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity . ' @ ' . $item->price;
@@ -907,6 +933,16 @@ class GoogleSheetsService
                 ->get();
 
             foreach ($allTransfers as $transfer) {
+                $sourceBranch = $transfer->sourceBranch?->branch_name;
+                $destination = $transfer->destinationBranch?->branch_name ?? $transfer->supplier?->name ?? 'Unknown';
+
+                $isSourceArchived = $sourceBranch && (strpos($sourceBranch, '[ARCHIVED]') !== false);
+                $isDestArchived = $destination && (strpos($destination, '[ARCHIVED]') !== false);
+
+                if ($isSourceArchived || $isDestArchived) {
+                    continue;
+                }
+
                 $itemCount = $transfer->items->count();
                 $itemsSummary = $transfer->items->take(250)->map(function($item) {
                     $summary = '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;

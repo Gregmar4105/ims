@@ -837,40 +837,7 @@ class GoogleSheetsSyncController extends Controller
                 $this->sheetsService->updateSheetContent('Reorders', array_values($reorderRows));
 
                 // 3. Sync the Transfers tab in one bulk call
-                $transferHeaders = ['Transfer ID', 'Source Branch', 'Destination', 'Status', 'Date', 'Readied By', 'Approved By', 'Received By', 'Items', 'Notes'];
-                $transferRows = [$transferHeaders];
-                $allTransfers = \App\Models\Transfer::with(['sourceBranch', 'destinationBranch', 'supplier', 'readiedBy', 'approvedBy', 'receivedBy', 'items.product'])->orderBy('created_at', 'desc')->get();
-
-                foreach ($allTransfers as $t) {
-                    $itemCount = $t->items->count();
-                    $itemsSummary = $t->items->take(250)->map(function($item) {
-                        $summary = '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
-                        if ($item->received_quantity !== null) {
-                            $summary .= " [Rec: {$item->received_quantity}]";
-                        }
-                        return $summary;
-                    })->implode("\n");
-
-                    if ($itemCount > 250) {
-                        $itemsSummary .= "\n• ... and " . ($itemCount - 250) . " more items";
-                    }
-
-                    $destination = $t->destinationBranch?->branch_name ?? $t->supplier?->name ?? 'Unknown';
-
-                    $transferRows[] = [
-                        $t->id,
-                        $t->sourceBranch?->branch_name,
-                        $destination,
-                        $t->status,
-                        $t->created_at->format('Y-m-d H:i'),
-                        $t->readiedBy?->name,
-                        $t->approvedBy?->name,
-                        $t->received_by_name ?? $t->receivedBy?->name,
-                        $itemsSummary,
-                        $t->notes,
-                    ];
-                }
-                $this->sheetsService->updateSheetContent('Transfers', array_values($transferRows));
+                $this->sheetsService->syncTransfersSheet();
             }
 
             // Always rebuild and store the sheet snapshot for this branch
