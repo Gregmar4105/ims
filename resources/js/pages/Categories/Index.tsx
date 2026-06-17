@@ -83,7 +83,7 @@ export default function Index({ categories, filters }: Props) {
             onSuccess: () => {
                 setIsDeleteAllModalOpen(false);
                 setIsDeletingAll(false);
-                toast.success('Successfully deleted all categories for this branch.');
+                toast.success('Successfully deleted all categories globally.');
             },
             onError: () => {
                 setIsDeletingAll(false);
@@ -307,11 +307,11 @@ export default function Index({ categories, filters }: Props) {
                         </div>
                         <h3 className="text-lg font-semibold mb-2">Are you absolutely sure?</h3>
                         <p className="text-gray-600 dark:text-gray-400 text-sm">
-                            You are about to delete <strong>ALL</strong> categories for the branch <strong>{branchName}</strong>.
+                            You are about to delete <strong>ALL</strong> categories <strong>globally</strong>.
                         </p>
                         <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                             <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                                IMPORTANT: This action cannot be undone. All category records for this branch will be permanently deleted, and associated products will have their category cleared.
+                                IMPORTANT: This action cannot be undone. All category records will be permanently deleted from the database, and associated products will have their category cleared.
                             </p>
                         </div>
                     </div>

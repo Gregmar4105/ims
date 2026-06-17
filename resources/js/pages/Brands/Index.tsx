@@ -83,7 +83,7 @@ export default function Index({ brands, filters }: Props) {
             onSuccess: () => {
                 setIsDeleteAllModalOpen(false);
                 setIsDeletingAll(false);
-                toast.success('Successfully deleted all brands for this branch.');
+                toast.success('Successfully deleted all brands globally.');
             },
             onError: () => {
                 setIsDeletingAll(false);
@@ -307,11 +307,11 @@ export default function Index({ brands, filters }: Props) {
                         </div>
                         <h3 className="text-lg font-semibold mb-2">Are you absolutely sure?</h3>
                         <p className="text-gray-600 dark:text-gray-400 text-sm">
-                            You are about to delete <strong>ALL</strong> brands for the branch <strong>{branchName}</strong>.
+                            You are about to delete <strong>ALL</strong> brands <strong>globally</strong>.
                         </p>
                         <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                             <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                                IMPORTANT: This action cannot be undone. All brand records for this branch will be permanently deleted, and associated products will have their brand cleared.
+                                IMPORTANT: This action cannot be undone. All brand records will be permanently deleted from the database, and associated products will have their brand cleared.
                             </p>
                         </div>
                     </div>

@@ -177,7 +177,7 @@ test('branch admin is forbidden from deleting all brands', function () {
         ->assertStatus(403);
 });
 
-test('system administrator can delete all brands for active branch only', function () {
+test('system administrator can delete all brands globally', function () {
     $branch1 = Branch::create(['branch_name' => 'Branch One', 'physical_location' => 'Location One']);
     $branch2 = Branch::create(['branch_name' => 'Branch Two', 'physical_location' => 'Location Two']);
 
@@ -209,18 +209,13 @@ test('system administrator can delete all brands for active branch only', functi
         'created_by' => $admin->id,
     ]);
 
-    // Set active branch to branch 1 in session
     $this->actingAs($admin)
-        ->withSession(['active_branch_id' => $branch1->id])
         ->post(route('brands.deleteAll'))
         ->assertRedirect()
         ->assertSessionHas('success');
 
-    // Verify branch 1 brands are deleted
-    expect(Brand::where('branch_id', $branch1->id)->count())->toBe(0);
-
-    // Verify branch 2 brands are intact
-    expect(Brand::where('branch_id', $branch2->id)->count())->toBe(1);
+    // Verify all brands are deleted globally
+    expect(Brand::count())->toBe(0);
 });
 
 // --- Category Delete All Tests ---
@@ -248,7 +243,7 @@ test('branch admin is forbidden from deleting all categories', function () {
         ->assertStatus(403);
 });
 
-test('system administrator can delete all categories for active branch only', function () {
+test('system administrator can delete all categories globally', function () {
     $branch1 = Branch::create(['branch_name' => 'Branch One', 'physical_location' => 'Location One']);
     $branch2 = Branch::create(['branch_name' => 'Branch Two', 'physical_location' => 'Location Two']);
 
@@ -280,18 +275,13 @@ test('system administrator can delete all categories for active branch only', fu
         'created_by' => $admin->id,
     ]);
 
-    // Set active branch to branch 1 in session
     $this->actingAs($admin)
-        ->withSession(['active_branch_id' => $branch1->id])
         ->post(route('categories.deleteAll'))
         ->assertRedirect()
         ->assertSessionHas('success');
 
-    // Verify branch 1 categories are deleted
-    expect(Category::where('branch_id', $branch1->id)->count())->toBe(0);
-
-    // Verify branch 2 categories are intact
-    expect(Category::where('branch_id', $branch2->id)->count())->toBe(1);
+    // Verify all categories are deleted globally
+    expect(Category::count())->toBe(0);
 });
 
 // --- Supplier Delete All Tests ---
