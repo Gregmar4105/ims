@@ -21,7 +21,7 @@ class Transfer extends Model
 
     public function sourceBranch()
     {
-        return $this->belongsTo(Branch::class, 'source_branch_id');
+        return $this->belongsTo(Branch::class, 'source_branch_id')->withTrashed();
     }
 
     public function supplier()
@@ -31,7 +31,7 @@ class Transfer extends Model
 
     public function destinationBranch()
     {
-        return $this->belongsTo(Branch::class, 'destination_branch_id');
+        return $this->belongsTo(Branch::class, 'destination_branch_id')->withTrashed();
     }
 
     public function readiedBy()

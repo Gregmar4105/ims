@@ -1039,13 +1039,19 @@ class SaleController extends Controller
                         ->delete();
                 });
             } else if ($type === 'transfers') {
-                // Delete historical Transfers (completed, rejected)
-                \App\Models\Transfer::withoutEvents(function () use ($branchId) {
+                // Delete historical Transfers (completed, rejected, or involving a soft-deleted branch)
+                $deletedBranchIds = \App\Models\Branch::onlyTrashed()->pluck('id')->toArray();
+
+                \App\Models\Transfer::withoutEvents(function () use ($branchId, $deletedBranchIds) {
                     \App\Models\Transfer::where(function ($query) use ($branchId) {
                         $query->where('source_branch_id', $branchId)
                               ->orWhere('destination_branch_id', $branchId);
                     })
-                    ->whereIn('status', ['completed', 'rejected'])
+                    ->where(function ($query) use ($deletedBranchIds) {
+                        $query->whereIn('status', ['completed', 'rejected'])
+                              ->orWhereIn('source_branch_id', $deletedBranchIds)
+                              ->orWhereIn('destination_branch_id', $deletedBranchIds);
+                    })
                     ->delete();
                 });
             }
