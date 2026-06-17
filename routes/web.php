@@ -112,7 +112,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['restrict.employee'])->group(function () {
         Route::post('branches/switch', [\App\Http\Controllers\BranchController::class, 'switch'])->name('branches.switch');
         Route::resource('branches', \App\Http\Controllers\BranchController::class);
+        Route::post('brands/delete-all', [\App\Http\Controllers\BrandController::class, 'deleteAll'])->name('brands.deleteAll');
         Route::resource('brands', \App\Http\Controllers\BrandController::class);
+        Route::post('categories/delete-all', [\App\Http\Controllers\CategoryController::class, 'deleteAll'])->name('categories.deleteAll');
         Route::resource('categories', \App\Http\Controllers\CategoryController::class);
         Route::get('qr-barcodes', [\App\Http\Controllers\QrBarcodeController::class, 'index'])->name('qr-barcodes.index');
         Route::post('qr-barcodes', [\App\Http\Controllers\QrBarcodeController::class, 'store'])->name('qr-barcodes.store');
@@ -143,6 +145,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('products/{product}/search-printer-app', [\App\Http\Controllers\ProductController::class, 'searchPrinterApp'])->name('products.search-printer-app');
         Route::post('products/{product}/print-ddl', [\App\Http\Controllers\ProductController::class, 'printDdl'])->name('products.print-ddl');
         Route::resource('products', \App\Http\Controllers\ProductController::class);
+        Route::post('product-suppliers/delete-all', [\App\Http\Controllers\SupplierController::class, 'deleteAll'])->name('suppliers.deleteAll');
         Route::resource('product-suppliers', \App\Http\Controllers\SupplierController::class)->parameters(['product-suppliers' => 'supplier']);
     });
 

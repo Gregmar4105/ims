@@ -99,6 +99,28 @@ class BrandController extends Controller
         return redirect()->back()->with('success', 'Brand deleted successfully.');
     }
 
+    public function deleteAll(Request $request)
+    {
+        $user = auth()->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+
+        if (!$isSystemAdmin) {
+            abort(403, 'Unauthorized action. Only System Administrators can delete all brands.');
+        }
+
+        $branchId = (session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+
+        if (!$branchId) {
+            return back()->with('error', 'No active branch selected.');
+        }
+
+        Brand::where('branch_id', $branchId)->delete();
+
+        return redirect()->back()->with('success', 'All brands for this branch have been deleted successfully.');
+    }
+
     public function search(Request $request)
     {
         $search = $request->query('search');

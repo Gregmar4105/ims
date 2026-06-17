@@ -28,11 +28,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Search, Sparkles } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Sparkles, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import Pagination from '@/components/Pagination';
 import { Badge } from "@/components/ui/badge";
 import { AutocompleteInput } from "@/components/AutocompleteInput";
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -66,10 +67,30 @@ interface Props {
 
 export default function Index({ brands, filters }: Props) {
     const { auth } = usePage<SharedData>().props;
+    const isSystemAdmin = auth.roles.includes('System Administrator');
+    const branchName = auth.user?.branch?.branch_name || 'Active Branch';
     const isEmployee = auth.roles.includes('Employee') && !auth.roles.includes('System Administrator') && !auth.roles.includes('Branch Administrator');
     const [search, setSearch] = useState(filters.search || '');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
+
+    const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
+    const [isDeletingAll, setIsDeletingAll] = useState(false);
+
+    const executeDeleteAll = () => {
+        setIsDeletingAll(true);
+        router.post("/brands/delete-all", {}, {
+            onSuccess: () => {
+                setIsDeleteAllModalOpen(false);
+                setIsDeletingAll(false);
+                toast.success('Successfully deleted all brands for this branch.');
+            },
+            onError: () => {
+                setIsDeletingAll(false);
+                toast.error("Failed to delete brands.");
+            }
+        });
+    };
 
     const { data, setData, post, put, delete: destroy, processing, reset, errors, clearErrors } = useForm({
         name: '',
@@ -134,11 +155,22 @@ export default function Index({ brands, filters }: Props) {
                             </p>
                         </div>
                     </div>
-                    {!isEmployee && (
-                        <Button onClick={openCreateDialog}>
-                            <Plus className="mr-2 h-4 w-4" /> Add Brand
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {isSystemAdmin && (
+                            <Button
+                                variant="destructive"
+                                className="hidden md:flex bg-red-600 hover:bg-red-700 text-white shrink-0"
+                                onClick={() => setIsDeleteAllModalOpen(true)}
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete All Brands
+                            </Button>
+                        )}
+                        {!isEmployee && (
+                            <Button onClick={openCreateDialog}>
+                                <Plus className="mr-2 h-4 w-4" /> Add Brand
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border shadow-sm">
@@ -258,6 +290,46 @@ export default function Index({ brands, filters }: Props) {
                             </Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Confirmation Dialog */}
+            <Dialog open={isDeleteAllModalOpen} onOpenChange={setIsDeleteAllModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600 font-bold">
+                            <Trash2 className="h-5 w-5" /> Confirm Deletion of All Brands
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-6 flex flex-col items-center text-center">
+                        <div className="h-16 w-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                            <Trash2 className="h-8 w-8 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">Are you absolutely sure?</h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                            You are about to delete <strong>ALL</strong> brands for the branch <strong>{branchName}</strong>.
+                        </p>
+                        <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                            <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                                IMPORTANT: This action cannot be undone. All brand records for this branch will be permanently deleted, and associated products will have their brand cleared.
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter className="flex gap-2 sm:justify-center">
+                        <Button variant="outline" onClick={() => setIsDeleteAllModalOpen(false)} className="flex-1" disabled={isDeletingAll}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={executeDeleteAll} className="flex-1" disabled={isDeletingAll}>
+                            {isDeletingAll ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete All'
+                            )}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </AppLayout>

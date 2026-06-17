@@ -99,13 +99,24 @@ class SupplierController extends Controller
         return redirect()->back()->with('success', 'Supplier updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Supplier $supplier)
     {
         $supplier->delete();
         return redirect()->back()->with('success', 'Supplier deleted successfully.');
+    }
+
+    public function deleteAll(Request $request)
+    {
+        $user = auth()->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+
+        if (!$isSystemAdmin) {
+            abort(403, 'Unauthorized action. Only System Administrators can delete all suppliers.');
+        }
+
+        Supplier::query()->delete();
+
+        return redirect()->back()->with('success', 'All suppliers have been deleted successfully.');
     }
 
     public function search(Request $request)

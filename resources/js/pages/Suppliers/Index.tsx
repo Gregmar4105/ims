@@ -23,9 +23,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Pencil, Trash2, Truck } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Truck, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { AutocompleteInput } from "@/components/AutocompleteInput";
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -60,6 +61,24 @@ export default function Index({ suppliers, filters }: Props) {
     const [search, setSearch] = useState(filters.search || '');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+
+    const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
+    const [isDeletingAll, setIsDeletingAll] = useState(false);
+
+    const executeDeleteAll = () => {
+        setIsDeletingAll(true);
+        router.post("/product-suppliers/delete-all", {}, {
+            onSuccess: () => {
+                setIsDeleteAllModalOpen(false);
+                setIsDeletingAll(false);
+                toast.success('Successfully deleted all suppliers globally.');
+            },
+            onError: () => {
+                setIsDeletingAll(false);
+                toast.error("Failed to delete suppliers.");
+            }
+        });
+    };
 
     // Form for Create/Edit
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
@@ -130,11 +149,22 @@ export default function Index({ suppliers, filters }: Props) {
                             <p className="text-muted-foreground">Manage your product suppliers inventory source.</p>
                         </div>
                     </div>
-                    {isSystemAdmin && (
-                        <Button onClick={() => { setEditingSupplier(null); setIsCreateOpen(true); }}>
-                            <Plus className="mr-2 h-4 w-4" /> Add Supplier
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {isSystemAdmin && (
+                            <Button
+                                variant="destructive"
+                                className="hidden md:flex bg-red-600 hover:bg-red-700 text-white shrink-0"
+                                onClick={() => setIsDeleteAllModalOpen(true)}
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete All Suppliers
+                            </Button>
+                        )}
+                        {isSystemAdmin && (
+                            <Button onClick={() => { setEditingSupplier(null); setIsCreateOpen(true); }}>
+                                <Plus className="mr-2 h-4 w-4" /> Add Supplier
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg border shadow-sm p-4">
@@ -338,6 +368,46 @@ export default function Index({ suppliers, filters }: Props) {
                             </Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Confirmation Dialog */}
+            <Dialog open={isDeleteAllModalOpen} onOpenChange={setIsDeleteAllModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600 font-bold">
+                            <Trash2 className="h-5 w-5" /> Confirm Deletion of All Suppliers
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-6 flex flex-col items-center text-center">
+                        <div className="h-16 w-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                            <Trash2 className="h-8 w-8 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">Are you absolutely sure?</h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                            You are about to delete <strong>ALL</strong> product suppliers <strong>globally</strong>.
+                        </p>
+                        <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                            <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                                IMPORTANT: This action cannot be undone. All supplier records will be permanently deleted from the database, and associated products will have their supplier fields set to null.
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter className="flex gap-2 sm:justify-center">
+                        <Button variant="outline" onClick={() => setIsDeleteAllModalOpen(false)} className="flex-1" disabled={isDeletingAll}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={executeDeleteAll} className="flex-1" disabled={isDeletingAll}>
+                            {isDeletingAll ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete All'
+                            )}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </AppLayout>
