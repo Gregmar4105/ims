@@ -143,7 +143,7 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                 }
             });
             const nextProducts = response.data?.props?.products?.data || [];
-            setLoadedProducts(prev => [...prev, ...nextProducts]);
+            setLoadedProducts((prev: any[]) => [...prev, ...nextProducts]);
             setCurrentNextPageUrl(response.data?.props?.products?.next_page_url || null);
         } catch (error) {
             console.error('Failed to load more products:', error);
@@ -235,6 +235,26 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [statusToggleProduct, setStatusToggleProduct] = useState<Product | null>(null);
+    const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
+    const [isDeletingAll, setIsDeletingAll] = useState(false);
+
+    const executeDeleteAll = () => {
+        if (branch === "all") return;
+        setIsDeletingAll(true);
+        router.post("/products/delist-all-branch", {
+            branch: branch
+        }, {
+            onSuccess: () => {
+                setIsDeleteAllModalOpen(false);
+                setIsDeletingAll(false);
+                toast.success(`Successfully delisted all products in branch ${branch}.`);
+            },
+            onError: () => {
+                setIsDeletingAll(false);
+                toast.error("Failed to delist products.");
+            }
+        });
+    };
 
     const toggleSelection = (productId: number) => {
         setSelectedProductIds(prev =>
@@ -768,6 +788,19 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                     </Button>
                                 )}
 
+                                {isSystemAdmin && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={branch === "all"}
+                                        className={`hidden md:flex border-rose-600 text-rose-600 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                        onClick={() => setIsDeleteAllModalOpen(true)}
+                                    >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete All ({branch !== 'all' ? branch : 'Select Branch'})
+                                    </Button>
+                                )}
+
                                 {!isEmployee && (
                                     <Link href="/products/create">
                                         <Button size="sm" className="bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black">
@@ -968,6 +1001,19 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                             {selectedProductIds.length > 0 ? `Set Price (${selectedProductIds.length})` : 'Clearance'}
                                         </span>
                                     )}
+                                </Button>
+                            )}
+
+                            {isSystemAdmin && (
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    disabled={branch === "all"}
+                                    className="h-10 w-10 border-rose-600 text-rose-600 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 flex items-center justify-center"
+                                    onClick={() => setIsDeleteAllModalOpen(true)}
+                                    title={`Delete All in ${branch !== 'all' ? branch : 'Selected Branch'}`}
+                                >
+                                    <Trash2 className="h-4 w-4" />
                                 </Button>
                             )}
 
@@ -1663,6 +1709,45 @@ export default function Index({ products, filters, options, isSystemAdmin }: Pro
                                 </>
                             ) : (
                                 'Update Clearance Sales'
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isDeleteAllModalOpen} onOpenChange={setIsDeleteAllModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600 font-bold">
+                            <Trash2 className="h-5 w-5" /> Confirm Delisting All Products
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-6 flex flex-col items-center text-center">
+                        <div className="h-16 w-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                            <Trash2 className="h-8 w-8 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">Are you absolutely sure?</h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                            You are about to delist <strong>ALL</strong> products in the branch <strong>{branch}</strong>.
+                        </p>
+                        <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                            <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                                IMPORTANT: This will remove all product stock levels and records for this branch from the database. When synced, they will also be cleared from the Google Sheet. This action cannot be undone.
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter className="flex gap-2 sm:justify-center">
+                        <Button variant="outline" onClick={() => setIsDeleteAllModalOpen(false)} className="flex-1" disabled={isDeletingAll}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={executeDeleteAll} className="flex-1" disabled={isDeletingAll}>
+                            {isDeletingAll ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delist All'
                             )}
                         </Button>
                     </DialogFooter>

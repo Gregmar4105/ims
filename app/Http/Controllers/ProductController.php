@@ -1045,4 +1045,84 @@ class ProductController extends Controller
             ], 500);
         }
     }
+
+    public function delistAllBranchProducts(Request $request)
+    {
+        $user = auth()->user();
+        $isSystemAdmin = $user->hasRole('System Administrator');
+
+        if (!$isSystemAdmin) {
+            abort(403, 'Unauthorized action. Only System Administrators can delist all products.');
+        }
+
+        $branchName = $request->input('branch');
+        if (!$branchName || $branchName === 'all') {
+            return back()->with('error', 'Please select a specific branch first.');
+        }
+
+        $branch = Branch::where('branch_name', $branchName)->first();
+        if (!$branch) {
+            return back()->with('error', 'Selected branch not found.');
+        }
+
+        $branchId = $branch->id;
+
+        DB::transaction(function () use ($branchId, $branchName) {
+            // Delete all BranchProduct rows for this branch without firing Eloquent events in a loop
+            \App\Models\BranchProduct::withoutEvents(function () use ($branchId) {
+                \App\Models\BranchProduct::where('branch_id', $branchId)->delete();
+            });
+
+            // Reset branch sheet snapshot
+            $branch = Branch::find($branchId);
+            if ($branch) {
+                $branch->update([
+                    'sheet_snapshot' => null,
+                    'last_sheet_sync_at' => now(),
+                ]);
+            }
+
+            // Clear the Google Sheet for this branch from row 2 onwards (retaining headers in row 1)
+            $sheetsService = resolve(\App\Services\GoogleSheetsService::class);
+            $sheetsService->clearBranchSheet($branchName);
+
+            // Re-sync the Reorders sheet
+            $branches = Branch::all();
+            $reorderHeaders = ['ID', 'Product Name', 'Brand', 'Category', 'Supplier'];
+            foreach ($branches as $b) {
+                $reorderHeaders[] = $b->branch_name . ' Stock';
+                $reorderHeaders[] = $b->branch_name . ' Reorder';
+            }
+
+            $reorderRows = [$reorderHeaders];
+
+            // Get all products that have at least one branch in reorder state
+            $productsWithReorders = Product::whereHas('branches', function ($query) {
+                $query->whereNotNull('branch_products.reorder_level')
+                      ->where('branch_products.reorder_level', '>', 0)
+                      ->whereRaw('branch_products.quantity <= branch_products.reorder_level');
+            })->with(['brand', 'category', 'supplier', 'branches'])->get();
+
+            foreach ($productsWithReorders as $product) {
+                $row = [
+                    $product->id,
+                    $product->name,
+                    $product->brand?->name,
+                    $product->category?->name,
+                    $product->supplier?->name,
+                ];
+
+                foreach ($branches as $b) {
+                    $bp = $product->branches->where('id', $b->id)->first();
+                    $row[] = $bp ? $bp->pivot->quantity : 0;
+                    $row[] = $bp ? $bp->pivot->reorder_level : 0;
+                }
+                $reorderRows[] = $row;
+            }
+
+            $sheetsService->updateSheetContent('Reorders', array_values($reorderRows));
+        });
+
+        return back()->with('success', "All products in branch '{$branchName}' have been delisted and Google Sheets updated.");
+    }
 }

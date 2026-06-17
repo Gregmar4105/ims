@@ -291,6 +291,24 @@ class GoogleSheetsService
     }
 
     /**
+     * Clear all product rows from a branch sheet (preserving the headers in row 1).
+     */
+    public function clearBranchSheet(string $branchName)
+    {
+        try {
+            $range = $branchName . '!A2:Z';
+            return $this->service->spreadsheets_values->clear(
+                $this->spreadsheetId,
+                $range,
+                new \Google\Service\Sheets\ClearValuesRequest()
+            );
+        } catch (\Exception $e) {
+            Log::error('Google Sheets Clear Branch Sheet Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Ensure the Reorders sheet exists with correct headers.
      */
     public function ensureReordersSheet(array $branches)
