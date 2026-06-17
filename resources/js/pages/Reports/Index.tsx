@@ -34,6 +34,7 @@ import {
     Search,
     Calendar,
     ArrowUpRight,
+    Truck,
 } from 'lucide-react';
 import {
     Area,
@@ -50,6 +51,8 @@ import {
     YAxis,
     Label,
     Legend,
+    BarChart,
+    Bar,
 } from 'recharts';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -91,6 +94,28 @@ interface MatrixItem {
     total_sales: number;
 }
 
+interface TransferStats {
+    total_transfers: number;
+    total_qty_transferred: number;
+    outgoing_transfers: number;
+    incoming_transfers: number;
+}
+
+interface TopTransferredProduct {
+    id: number;
+    name: string;
+    sku: string;
+    category: string;
+    quantity_transferred: number;
+    transfers_count: number;
+}
+
+interface TransferBranchItem {
+    branch_name: string;
+    incoming_qty: number;
+    outgoing_qty: number;
+}
+
 interface ReportsProps {
     branches: Branch[];
     branchId: string | number;
@@ -112,6 +137,10 @@ interface ReportsProps {
     chartData: { name: string; sales: number }[];
     pieData: { name: string; value: number; count?: number }[];
     paymentData: { name: string; value: number; count?: number }[];
+    transferStats: TransferStats;
+    transferChartData: { name: string; transfers: number }[];
+    topTransferredProducts: TopTransferredProduct[];
+    transfersByBranch: TransferBranchItem[];
 }
 
 const getChartColor = (index: number, total: number) => {
@@ -140,6 +169,10 @@ export default function ReportsIndex({
     chartData,
     pieData,
     paymentData,
+    transferStats,
+    transferChartData,
+    topTransferredProducts,
+    transfersByBranch,
 }: ReportsProps) {
     const { auth } = usePage().props as any;
     const isSystemAdmin = auth.roles.includes('System Administrator');
@@ -360,7 +393,8 @@ export default function ReportsIndex({
                         {[
                             { id: 'overview', label: 'Visual Overview', icon: BarChart2 },
                             { id: 'trending', label: 'Trending Items', icon: TrendingUp },
-                            { id: 'matrix', label: 'Branch Stock Matrix', icon: Grid }
+                            { id: 'matrix', label: 'Branch Stock Matrix', icon: Grid },
+                            { id: 'transfers', label: 'Transfers', icon: Truck }
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -663,6 +697,188 @@ export default function ReportsIndex({
                                 )}
                             </CardContent>
                         </Card>
+                    )}
+
+                    {/* Tab 4: Transfers Analytics */}
+                    {activeTab === 'transfers' && (
+                        <div className="space-y-6">
+                            {/* Transfers Stats Sub-grid */}
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                {/* Total Completed Transfers */}
+                                <Card className="border-l-4 border-l-blue-500 shadow-sm">
+                                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Completed Transfers</CardTitle>
+                                        <Layers className="h-5 w-5 text-blue-500" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold tracking-tight text-blue-600 dark:text-blue-400">
+                                            {transferStats.total_transfers.toLocaleString()}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-1">
+                                            Total transfer transactions
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Total Quantity Transferred */}
+                                <Card className="border-l-4 border-l-emerald-500 shadow-sm">
+                                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Quantity Transferred</CardTitle>
+                                        <TrendingUp className="h-5 w-5 text-emerald-500" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+                                            {transferStats.total_qty_transferred.toLocaleString()}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-1">
+                                            Total units moved
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Outgoing Transfers */}
+                                <Card className="border-l-4 border-l-indigo-500 shadow-sm">
+                                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Outgoing Transfers</CardTitle>
+                                        <ArrowUpRight className="h-5 w-5 text-indigo-500" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400">
+                                            {transferStats.outgoing_transfers.toLocaleString()}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-1">
+                                            Transfers sent in period
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Incoming Transfers */}
+                                <Card className="border-l-4 border-l-amber-500 shadow-sm">
+                                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Incoming Transfers</CardTitle>
+                                        <Users className="h-5 w-5 text-amber-500" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
+                                            {transferStats.incoming_transfers.toLocaleString()}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-1">
+                                            Transfers received in period
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Charts Grid */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Transfer Trend Chart */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Transfer Trend Timeline</CardTitle>
+                                        <CardDescription>
+                                            Timeline trend of product quantities transferred.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="h-[300px]">
+                                        {transferChartData.length > 0 ? (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <AreaChart data={transferChartData} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
+                                                    <defs>
+                                                        <linearGradient id="colorTransfers" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="5%" stopColor="hsl(215, 80%, 60%)" stopOpacity={0.4} />
+                                                            <stop offset="95%" stopColor="hsl(215, 80%, 60%)" stopOpacity={0} />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                                    <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={10} className="text-[10px] text-muted-foreground" />
+                                                    <YAxis tickLine={false} axisLine={false} tickMargin={10} width={40} className="text-[10px] text-muted-foreground" tickFormatter={(value) => value.toLocaleString()} />
+                                                    <Tooltip formatter={(value: number) => [value.toLocaleString(), 'Units Transferred']} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }} />
+                                                    <Area type="monotone" dataKey="transfers" stroke="hsl(215, 80%, 60%)" strokeWidth={2} fillOpacity={1} fill="url(#colorTransfers)" />
+                                                </AreaChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            <div className="flex items-center justify-center h-full text-muted-foreground text-xs">
+                                                No transfer trend data found for the selected period.
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Transfers by Branch */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Transfers by Branch</CardTitle>
+                                        <CardDescription>
+                                            Sent vs Received unit quantities comparison.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="h-[300px]">
+                                        {transfersByBranch.length > 0 ? (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={transfersByBranch} margin={{ top: 10, right: 30, left: 10, bottom: 5 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                                    <XAxis dataKey="branch_name" tickLine={false} axisLine={false} tickMargin={10} className="text-[10px] text-muted-foreground" />
+                                                    <YAxis tickLine={false} axisLine={false} tickMargin={10} width={40} className="text-[10px] text-muted-foreground" />
+                                                    <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }} />
+                                                    <Legend verticalAlign="top" height={36} iconSize={10} wrapperStyle={{ fontSize: '10px' }} />
+                                                    <Bar dataKey="outgoing_qty" name="Sent (Outgoing)" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                                    <Bar dataKey="incoming_qty" name="Received (Incoming)" fill="hsl(215, 80%, 60%)" radius={[4, 4, 0, 0]} />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            <div className="flex items-center justify-center h-full text-muted-foreground text-xs">
+                                                No branch transfer statistics available.
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Top Transferred Products Table */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Top Transferred Products</CardTitle>
+                                    <CardDescription>
+                                        Top 10 items in terms of quantities transferred.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {topTransferredProducts.length > 0 ? (
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Product details</TableHead>
+                                                    <TableHead>SKU</TableHead>
+                                                    <TableHead>Category</TableHead>
+                                                    <TableHead className="text-center font-semibold">Qty Transferred</TableHead>
+                                                    <TableHead className="text-center font-semibold">Transfers Count</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {topTransferredProducts.map((item, index) => (
+                                                    <TableRow key={item.id} className="hover:bg-muted/50">
+                                                        <TableCell className="font-medium">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs font-bold text-muted-foreground w-4">#{index + 1}</span>
+                                                                <span>{item.name}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>{item.sku || '-'}</TableCell>
+                                                        <TableCell>{item.category}</TableCell>
+                                                        <TableCell className="text-center font-semibold text-blue-600 dark:text-blue-400">{item.quantity_transferred.toLocaleString()}</TableCell>
+                                                        <TableCell className="text-center font-semibold">{item.transfers_count.toLocaleString()}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    ) : (
+                                        <div className="py-12 text-center text-muted-foreground">
+                                            No transferred products found for this selection.
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
                     )}
                 </div>
             </div>

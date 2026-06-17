@@ -54,10 +54,15 @@ class ReportController extends Controller
             }
         }
 
+        // --- Active Branch IDs list for filtering ---
+        $activeBranchIds = Branch::where('branch_status', 'Active')->pluck('id');
+
         // --- Overview Stats (Financial Summary) ---
         $salesQuery = Sale::where('status', 'completed');
         if ($branchId !== 'all') {
             $salesQuery->where('branch_id', $branchId);
+        } else {
+            $salesQuery->whereIn('branch_id', $activeBranchIds);
         }
         if ($startDate) {
             $salesQuery->where('created_at', '>=', $startDate);
@@ -80,6 +85,8 @@ class ReportController extends Controller
         $expenseQuery = \App\Models\Expense::query();
         if ($branchId !== 'all') {
             $expenseQuery->where('branch_id', $branchId);
+        } else {
+            $expenseQuery->whereIn('branch_id', $activeBranchIds);
         }
         if ($startDate) {
             $expenseQuery->where('created_at', '>=', $startDate);
@@ -93,6 +100,8 @@ class ReportController extends Controller
         $feeQuery = \App\Models\ServiceFee::query();
         if ($branchId !== 'all') {
             $feeQuery->where('branch_id', $branchId);
+        } else {
+            $feeQuery->whereIn('branch_id', $activeBranchIds);
         }
         if ($startDate) {
             $feeQuery->where('created_at', '>=', $startDate);
@@ -106,6 +115,8 @@ class ReportController extends Controller
         $returnQuery = \App\Models\SaleReturn::query();
         if ($branchId !== 'all') {
             $returnQuery->whereHas('sale', fn($q) => $q->where('branch_id', $branchId));
+        } else {
+            $returnQuery->whereHas('sale', fn($q) => $q->whereIn('branch_id', $activeBranchIds));
         }
         if ($startDate) {
             $returnQuery->where('created_at', '>=', $startDate);
@@ -120,10 +131,12 @@ class ReportController extends Controller
         $netProfit = $totalRevenue + $totalFees - $totalExpenses - $totalReturns;
 
         // --- Trending / Fast-Moving Items ---
-        $trendingItemsQuery = SaleItem::whereHas('sale', function ($q) use ($branchId, $startDate, $endDate) {
+        $trendingItemsQuery = SaleItem::whereHas('sale', function ($q) use ($branchId, $startDate, $endDate, $activeBranchIds) {
             $q->where('status', 'completed');
             if ($branchId !== 'all') {
                 $q->where('branch_id', $branchId);
+            } else {
+                $q->whereIn('branch_id', $activeBranchIds);
             }
             if ($startDate) {
                 $q->where('created_at', '>=', $startDate);
@@ -152,7 +165,7 @@ class ReportController extends Controller
             });
 
         // --- Branch Stock & Sales Matrix ---
-        $branches = Branch::all();
+        $branches = Branch::where('branch_status', 'Active')->get();
         $searchQuery = $request->input('search');
 
         $productsQuery = Product::with(['category', 'branches']);
@@ -196,10 +209,11 @@ class ReportController extends Controller
                 'category' => $product->category?->name ?? 'Uncategorized',
                 'price' => (float)$product->price,
                 'branches' => $branchData,
-                'total_stock' => (int)$product->branches->sum('pivot.quantity'),
+                'total_stock' => (int)$product->branches->whereIn('id', $branches->pluck('id'))->sum('pivot.quantity'),
                 'total_sales' => (int)SaleItem::where('product_id', $product->id)
-                    ->whereHas('sale', function ($q) use ($startDate, $endDate) {
-                        $q->where('status', 'completed');
+                    ->whereHas('sale', function ($q) use ($startDate, $endDate, $branches) {
+                        $q->where('status', 'completed')
+                          ->whereIn('branch_id', $branches->pluck('id'));
                         if ($startDate) {
                             $q->where('created_at', '>=', $startDate);
                         }
@@ -215,11 +229,13 @@ class ReportController extends Controller
         if ($datePreset === 'today') {
             for ($i = 6; $i >= 0; $i--) {
                 $day = Carbon::today()->subDays($i);
-                $revenue = SaleItem::whereHas('sale', function ($q) use ($branchId, $day) {
+                $revenue = SaleItem::whereHas('sale', function ($q) use ($branchId, $day, $activeBranchIds) {
                     $q->where('status', 'completed')
                       ->whereDate('created_at', $day);
                     if ($branchId !== 'all') {
                         $q->where('branch_id', $branchId);
+                    } else {
+                        $q->whereIn('branch_id', $activeBranchIds);
                     }
                 })->sum(DB::raw('quantity * price'));
                 
@@ -229,11 +245,13 @@ class ReportController extends Controller
             $start = Carbon::now()->startOfWeek();
             for ($i = 0; $i < 7; $i++) {
                 $day = $start->copy()->addDays($i);
-                $revenue = SaleItem::whereHas('sale', function ($q) use ($branchId, $day) {
+                $revenue = SaleItem::whereHas('sale', function ($q) use ($branchId, $day, $activeBranchIds) {
                     $q->where('status', 'completed')
                       ->whereDate('created_at', $day);
                     if ($branchId !== 'all') {
                         $q->where('branch_id', $branchId);
+                    } else {
+                        $q->whereIn('branch_id', $activeBranchIds);
                     }
                 })->sum(DB::raw('quantity * price'));
                 
@@ -246,11 +264,13 @@ class ReportController extends Controller
                 $day = $start->copy()->addDays($i);
                 if ($day->gt(Carbon::today())) continue;
                 
-                $revenue = SaleItem::whereHas('sale', function ($q) use ($branchId, $day) {
+                $revenue = SaleItem::whereHas('sale', function ($q) use ($branchId, $day, $activeBranchIds) {
                     $q->where('status', 'completed')
                       ->whereDate('created_at', $day);
                     if ($branchId !== 'all') {
                         $q->where('branch_id', $branchId);
+                    } else {
+                        $q->whereIn('branch_id', $activeBranchIds);
                     }
                 })->sum(DB::raw('quantity * price'));
                 
@@ -262,11 +282,13 @@ class ReportController extends Controller
                 if ($diffInDays <= 31) {
                     for ($i = 0; $i <= $diffInDays; $i++) {
                         $day = $startDate->copy()->addDays($i);
-                        $revenue = SaleItem::whereHas('sale', function ($q) use ($branchId, $day) {
+                        $revenue = SaleItem::whereHas('sale', function ($q) use ($branchId, $day, $activeBranchIds) {
                             $q->where('status', 'completed')
                               ->whereDate('created_at', $day);
                             if ($branchId !== 'all') {
                                 $q->where('branch_id', $branchId);
+                            } else {
+                                $q->whereIn('branch_id', $activeBranchIds);
                             }
                         })->sum(DB::raw('quantity * price'));
                         
@@ -276,12 +298,14 @@ class ReportController extends Controller
                     $diffInMonths = $startDate->diffInMonths($endDate);
                     for ($i = 0; $i <= $diffInMonths; $i++) {
                         $month = $startDate->copy()->addMonths($i);
-                        $revenue = SaleItem::whereHas('sale', function ($q) use ($branchId, $month) {
+                        $revenue = SaleItem::whereHas('sale', function ($q) use ($branchId, $month, $activeBranchIds) {
                             $q->where('status', 'completed')
                               ->whereMonth('created_at', $month->month)
                               ->whereYear('created_at', $month->year);
                             if ($branchId !== 'all') {
                                 $q->where('branch_id', $branchId);
+                            } else {
+                                $q->whereIn('branch_id', $activeBranchIds);
                             }
                         })->sum(DB::raw('quantity * price'));
                         
@@ -294,12 +318,14 @@ class ReportController extends Controller
             $currentMonth = Carbon::now()->month;
             for ($i = 1; $i <= $currentMonth; $i++) {
                 $month = Carbon::create(Carbon::now()->year, $i, 1);
-                $revenue = SaleItem::whereHas('sale', function ($q) use ($branchId, $i) {
+                $revenue = SaleItem::whereHas('sale', function ($q) use ($branchId, $i, $activeBranchIds) {
                     $q->where('status', 'completed')
                       ->whereMonth('created_at', $i)
                       ->whereYear('created_at', Carbon::now()->year);
                     if ($branchId !== 'all') {
                         $q->where('branch_id', $branchId);
+                    } else {
+                        $q->whereIn('branch_id', $activeBranchIds);
                     }
                 })->sum(DB::raw('quantity * price'));
                 
@@ -309,10 +335,12 @@ class ReportController extends Controller
 
         // --- Sales Distribution by Category ---
         $salesDistribution = SaleItem::with(['product.category'])
-            ->whereHas('sale', function ($q) use ($branchId, $startDate, $endDate) {
+            ->whereHas('sale', function ($q) use ($branchId, $startDate, $endDate, $activeBranchIds) {
                 $q->where('status', 'completed');
                 if ($branchId !== 'all') {
                     $q->where('branch_id', $branchId);
+                } else {
+                    $q->whereIn('branch_id', $activeBranchIds);
                 }
                 if ($startDate) {
                     $q->where('created_at', '>=', $startDate);
@@ -335,7 +363,7 @@ class ReportController extends Controller
 
         // --- Sales Distribution by Payment Method ---
         $paymentMethodDistribution = Sale::where('status', 'completed')
-            ->when($branchId !== 'all', fn($q) => $q->where('branch_id', $branchId))
+            ->when($branchId !== 'all', fn($q) => $q->where('branch_id', $branchId), fn($q) => $q->whereIn('branch_id', $activeBranchIds))
             ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
             ->when($endDate, fn($q) => $q->where('created_at', '<=', $endDate))
             ->get()
@@ -352,6 +380,270 @@ class ReportController extends Controller
             })
             ->values()
             ->all();
+
+        // --- Transfers Analytics ---
+        $transfersQuery = \App\Models\Transfer::where('status', 'completed');
+        if ($branchId !== 'all') {
+            $transfersQuery->where(function($q) use ($branchId) {
+                $q->where('source_branch_id', $branchId)
+                  ->orWhere('destination_branch_id', $branchId);
+            });
+        } else {
+            $transfersQuery->where(function($q) use ($activeBranchIds) {
+                $q->whereIn('source_branch_id', $activeBranchIds)
+                  ->orWhereIn('destination_branch_id', $activeBranchIds);
+            });
+        }
+
+        if ($startDate) {
+            $transfersQuery->where('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $transfersQuery->where('created_at', '<=', $endDate);
+        }
+
+        $transfers = $transfersQuery->with('items')->get();
+
+        $totalTransfersCount = $transfers->count();
+        $totalQtyTransferred = 0;
+        $outgoingTransfersCount = 0;
+        $incomingTransfersCount = 0;
+
+        foreach ($transfers as $transfer) {
+            $qty = $transfer->items->sum('received_quantity');
+            $totalQtyTransferred += $qty;
+
+            if ($branchId !== 'all') {
+                if ($transfer->source_branch_id == $branchId) {
+                    $outgoingTransfersCount++;
+                }
+                if ($transfer->destination_branch_id == $branchId) {
+                    $incomingTransfersCount++;
+                }
+            } else {
+                if (in_array($transfer->source_branch_id, $activeBranchIds->toArray())) {
+                    $outgoingTransfersCount++;
+                }
+                if (in_array($transfer->destination_branch_id, $activeBranchIds->toArray())) {
+                    $incomingTransfersCount++;
+                }
+            }
+        }
+
+        // --- Top Transferred Products ---
+        $transferItemsQuery = \App\Models\TransferItem::whereHas('transfer', function($q) use ($branchId, $activeBranchIds, $startDate, $endDate) {
+            $q->where('status', 'completed');
+            if ($branchId !== 'all') {
+                $q->where(function($sub) use ($branchId) {
+                    $sub->where('source_branch_id', $branchId)
+                        ->orWhere('destination_branch_id', $branchId);
+                });
+            } else {
+                $q->where(function($sub) use ($activeBranchIds) {
+                    $sub->whereIn('source_branch_id', $activeBranchIds)
+                        ->orWhereIn('destination_branch_id', $activeBranchIds);
+                });
+            }
+            if ($startDate) {
+                $q->where('created_at', '>=', $startDate);
+            }
+            if ($endDate) {
+                $q->where('created_at', '<=', $endDate);
+            }
+        });
+
+        $topTransferred = $transferItemsQuery->with('product.category')
+            ->select('product_id', DB::raw('SUM(received_quantity) as total_qty'), DB::raw('count(distinct transfer_id) as transfers_count'))
+            ->groupBy('product_id')
+            ->orderByDesc('total_qty')
+            ->limit(10)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->product_id,
+                    'name' => $item->product?->name ?? 'Unknown Product',
+                    'sku' => $item->product?->sku ?? '',
+                    'category' => $item->product?->category?->name ?? 'Uncategorized',
+                    'quantity_transferred' => (int)$item->total_qty,
+                    'transfers_count' => (int)$item->transfers_count,
+                ];
+            });
+
+        // --- Transfers Trend Timeline ---
+        $transferTrend = [];
+        if ($datePreset === 'today') {
+            for ($i = 6; $i >= 0; $i--) {
+                $day = Carbon::today()->subDays($i);
+                $qty = \App\Models\TransferItem::whereHas('transfer', function ($q) use ($branchId, $activeBranchIds, $day) {
+                    $q->where('status', 'completed')
+                      ->whereDate('created_at', $day);
+                    if ($branchId !== 'all') {
+                        $q->where(function($sub) use ($branchId) {
+                            $sub->where('source_branch_id', $branchId)
+                                ->orWhere('destination_branch_id', $branchId);
+                        });
+                    } else {
+                        $q->where(function($sub) use ($activeBranchIds) {
+                            $sub->whereIn('source_branch_id', $activeBranchIds)
+                                ->orWhereIn('destination_branch_id', $activeBranchIds);
+                        });
+                    }
+                })->sum('received_quantity');
+                
+                $transferTrend[] = ['name' => $day->format('M d'), 'transfers' => (int)$qty];
+            }
+        } elseif ($datePreset === 'weekly') {
+            $start = Carbon::now()->startOfWeek();
+            for ($i = 0; $i < 7; $i++) {
+                $day = $start->copy()->addDays($i);
+                $qty = \App\Models\TransferItem::whereHas('transfer', function ($q) use ($branchId, $activeBranchIds, $day) {
+                    $q->where('status', 'completed')
+                      ->whereDate('created_at', $day);
+                    if ($branchId !== 'all') {
+                        $q->where(function($sub) use ($branchId) {
+                            $sub->where('source_branch_id', $branchId)
+                                ->orWhere('destination_branch_id', $branchId);
+                        });
+                    } else {
+                        $q->where(function($sub) use ($activeBranchIds) {
+                            $sub->whereIn('source_branch_id', $activeBranchIds)
+                                ->orWhereIn('destination_branch_id', $activeBranchIds);
+                        });
+                    }
+                })->sum('received_quantity');
+                
+                $transferTrend[] = ['name' => $day->format('D'), 'transfers' => (int)$qty];
+            }
+        } elseif ($datePreset === 'monthly') {
+            $start = Carbon::now()->startOfMonth();
+            $daysInMonth = Carbon::now()->daysInMonth;
+            for ($i = 0; $i < $daysInMonth; $i++) {
+                $day = $start->copy()->addDays($i);
+                if ($day->gt(Carbon::today())) continue;
+                
+                $qty = \App\Models\TransferItem::whereHas('transfer', function ($q) use ($branchId, $activeBranchIds, $day) {
+                    $q->where('status', 'completed')
+                      ->whereDate('created_at', $day);
+                    if ($branchId !== 'all') {
+                        $q->where(function($sub) use ($branchId) {
+                            $sub->where('source_branch_id', $branchId)
+                                ->orWhere('destination_branch_id', $branchId);
+                        });
+                    } else {
+                        $q->where(function($sub) use ($activeBranchIds) {
+                            $sub->whereIn('source_branch_id', $activeBranchIds)
+                                ->orWhereIn('destination_branch_id', $activeBranchIds);
+                        });
+                    }
+                })->sum('received_quantity');
+                
+                $transferTrend[] = ['name' => $day->format('d'), 'transfers' => (int)$qty];
+            }
+        } elseif ($datePreset === 'custom') {
+            if ($startDate && $endDate) {
+                $diffInDays = $startDate->diffInDays($endDate);
+                if ($diffInDays <= 31) {
+                    for ($i = 0; $i <= $diffInDays; $i++) {
+                        $day = $startDate->copy()->addDays($i);
+                        $qty = \App\Models\TransferItem::whereHas('transfer', function ($q) use ($branchId, $activeBranchIds, $day) {
+                            $q->where('status', 'completed')
+                              ->whereDate('created_at', $day);
+                            if ($branchId !== 'all') {
+                                $q->where(function($sub) use ($branchId) {
+                                    $sub->where('source_branch_id', $branchId)
+                                        ->orWhere('destination_branch_id', $branchId);
+                                });
+                            } else {
+                                $q->where(function($sub) use ($activeBranchIds) {
+                                    $sub->whereIn('source_branch_id', $activeBranchIds)
+                                        ->orWhereIn('destination_branch_id', $activeBranchIds);
+                                });
+                            }
+                        })->sum('received_quantity');
+                        
+                        $transferTrend[] = ['name' => $day->format('M d'), 'transfers' => (int)$qty];
+                    }
+                } else {
+                    $diffInMonths = $startDate->diffInMonths($endDate);
+                    for ($i = 0; $i <= $diffInMonths; $i++) {
+                        $month = $startDate->copy()->addMonths($i);
+                        $qty = \App\Models\TransferItem::whereHas('transfer', function ($q) use ($branchId, $activeBranchIds, $month) {
+                            $q->where('status', 'completed')
+                              ->whereMonth('created_at', $month->month)
+                              ->whereYear('created_at', $month->year);
+                            if ($branchId !== 'all') {
+                                $q->where(function($sub) use ($branchId) {
+                                    $sub->where('source_branch_id', $branchId)
+                                        ->orWhere('destination_branch_id', $branchId);
+                                });
+                            } else {
+                                $q->where(function($sub) use ($activeBranchIds) {
+                                    $sub->whereIn('source_branch_id', $activeBranchIds)
+                                        ->orWhereIn('destination_branch_id', $activeBranchIds);
+                                });
+                            }
+                        })->sum('received_quantity');
+                        
+                        $transferTrend[] = ['name' => $month->format('M Y'), 'transfers' => (int)$qty];
+                    }
+                }
+            }
+        } else {
+            // ytd
+            $currentMonth = Carbon::now()->month;
+            for ($i = 1; $i <= $currentMonth; $i++) {
+                $month = Carbon::create(Carbon::now()->year, $i, 1);
+                $qty = \App\Models\TransferItem::whereHas('transfer', function ($q) use ($branchId, $activeBranchIds, $i) {
+                    $q->where('status', 'completed')
+                      ->whereMonth('created_at', $i)
+                      ->whereYear('created_at', Carbon::now()->year);
+                    if ($branchId !== 'all') {
+                        $q->where(function($sub) use ($branchId) {
+                            $sub->where('source_branch_id', $branchId)
+                                ->orWhere('destination_branch_id', $branchId);
+                        });
+                    } else {
+                        $q->where(function($sub) use ($activeBranchIds) {
+                            $sub->whereIn('source_branch_id', $activeBranchIds)
+                                ->orWhereIn('destination_branch_id', $activeBranchIds);
+                        });
+                    }
+                })->sum('received_quantity');
+                
+                $transferTrend[] = ['name' => $month->format('M'), 'transfers' => (int)$qty];
+            }
+        }
+
+        // --- Transfers by Branch (Incoming/Outgoing Comparison) ---
+        $transfersByBranch = $branches->map(function ($branch) use ($startDate, $endDate) {
+            $outgoingQty = (int)\App\Models\TransferItem::whereHas('transfer', function($q) use ($branch, $startDate, $endDate) {
+                $q->where('source_branch_id', $branch->id)
+                  ->where('status', 'completed');
+                if ($startDate) {
+                    $q->where('created_at', '>=', $startDate);
+                }
+                if ($endDate) {
+                    $q->where('created_at', '<=', $endDate);
+                }
+            })->sum('received_quantity');
+
+            $incomingQty = (int)\App\Models\TransferItem::whereHas('transfer', function($q) use ($branch, $startDate, $endDate) {
+                $q->where('destination_branch_id', $branch->id)
+                  ->where('status', 'completed');
+                if ($startDate) {
+                    $q->where('created_at', '>=', $startDate);
+                }
+                if ($endDate) {
+                    $q->where('created_at', '<=', $endDate);
+                }
+            })->sum('received_quantity');
+
+            return [
+                'branch_name' => $branch->branch_name,
+                'incoming_qty' => $incomingQty,
+                'outgoing_qty' => $outgoingQty,
+            ];
+        })->values()->toArray();
 
         return Inertia::render('Reports/Index', [
             'branches' => $branches,
@@ -374,6 +666,16 @@ class ReportController extends Controller
             'chartData' => $salesTrend,
             'pieData' => $salesDistribution,
             'paymentData' => $paymentMethodDistribution,
+            'transferStats' => [
+                'total_transfers' => (int)$totalTransfersCount,
+                'total_qty_transferred' => (int)$totalQtyTransferred,
+                'outgoing_transfers' => (int)$outgoingTransfersCount,
+                'incoming_transfers' => (int)$incomingTransfersCount,
+            ],
+            'transferChartData' => $transferTrend,
+            'topTransferredProducts' => $topTransferred,
+            'transfersByBranch' => $transfersByBranch,
         ]);
     }
 }
+
