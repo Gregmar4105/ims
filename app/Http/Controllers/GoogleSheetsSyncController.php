@@ -252,9 +252,18 @@ class GoogleSheetsSyncController extends Controller
                 $sheetVariations = $cleanValue($row[11] ?? null);
                 $sheetDesc = $cleanValue($row[12] ?? null);
                 $sheetSupplierDesc = $cleanValue($row[13] ?? null);
-                $sheetReorder = $cleanValue($row[14] ?? null, 0);
-                $sheetPrice = $cleanValue($row[15] ?? null, 0);
-                $sheetQty = $cleanValue($row[16] ?? null, 0);
+                
+                $rawReorder = $cleanValue($row[14] ?? null, 0);
+                $cleanReorder = preg_replace('/[^\d]/', '', $rawReorder);
+                $sheetReorder = is_numeric($cleanReorder) ? (int)$cleanReorder : 0;
+
+                $rawPrice = $cleanValue($row[15] ?? null, 0);
+                $cleanPrice = preg_replace('/[^\d\.]/', '', $rawPrice);
+                $sheetPrice = is_numeric($cleanPrice) ? (float)$cleanPrice : 0.0;
+
+                $rawQty = $cleanValue($row[16] ?? null, 0);
+                $cleanQty = preg_replace('/[^\d\-]/', '', $rawQty);
+                $sheetQty = is_numeric($cleanQty) ? (int)$cleanQty : 0;
 
                 if (!$sheetName) {
                     continue; // Skip products with no name
