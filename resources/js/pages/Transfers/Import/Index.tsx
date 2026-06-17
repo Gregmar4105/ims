@@ -176,22 +176,22 @@ export default function ImportTransferIndex({ brands = [], categories = [], supp
     };
 
     const handleMatchQuantityInGoogleSheet = async () => {
-        const confirmMatch = window.confirm("Are you sure you want to match product quantities with the Google Sheet? This will update the database quantities for all existing products in this branch to match the Google Sheet exactly (excluding sales, transfers, and reorders). This only affects the branch tab.");
+        const confirmMatch = window.confirm("Are you sure you want to match product quantities and prices with the Google Sheet? This will update the database quantities and prices for all existing products in this branch to match the Google Sheet exactly (excluding sales, transfers, and reorders). This only affects the branch tab.");
         if (!confirmMatch) return;
 
         setIsMatchingQuantity(true);
-        const toastId = toast.loading("Matching quantities from Google Sheets to database...", { duration: 15000 });
+        const toastId = toast.loading("Matching quantities and prices from Google Sheets to database...", { duration: 15000 });
         try {
             const response = await axios.post('/google-sheets/match-quantity');
             if (response.data.success) {
-                toast.success(response.data.message || "Quantities matched successfully!", { id: toastId });
+                toast.success(response.data.message || "Quantities and prices matched successfully!", { id: toastId });
                 router.reload();
             } else {
-                toast.error(response.data.error || "Failed to match quantities.", { id: toastId });
+                toast.error(response.data.error || "Failed to match quantities and prices.", { id: toastId });
             }
         } catch (err: any) {
             console.error(err);
-            toast.error(err.response?.data?.error || "Error matching quantities.", { id: toastId });
+            toast.error(err.response?.data?.error || "Error matching quantities and prices.", { id: toastId });
         } finally {
             setIsMatchingQuantity(false);
         }
@@ -1080,7 +1080,7 @@ toast.error("The selected spreadsheet appears to be empty.", { id: toastId });
                                 ) : (
                                     <FileSpreadsheet className="w-4 h-4" />
                                 )}
-                                Match Quantity in Google Sheet
+                                Match Quantity & Price in Google Sheet
                             </Button>
                             <Button 
                                 onClick={handlePullFromGoogleSheets}
