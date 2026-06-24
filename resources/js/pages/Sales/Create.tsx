@@ -35,6 +35,12 @@ interface SaleItem {
     custom_code: string | null;
 }
 
+interface ServiceFee {
+    id: number;
+    name: string;
+    amount: string | number;
+}
+
 interface PendingSale {
     id: number;
     status: string;
@@ -51,6 +57,7 @@ interface PendingSale {
             name: string;
         };
     }[];
+    service_fees?: ServiceFee[];
     customer_name?: string | null;
     downpayment?: string | number | null;
     reservation_buy_date?: string | null;
@@ -68,6 +75,13 @@ const generateDefaultHomeCredited = (items: any[]) => {
 
 export default function Create({ products, pendingSales }: { products: Product[], pendingSales: PendingSale[] }) {
     const { can } = usePermission();
+    
+    const getSaleTotal = (sale: PendingSale) => {
+        const itemsTotal = sale.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0);
+        const serviceFeeTotal = sale.service_fees?.reduce((sum, fee) => sum + Number(fee.amount), 0) || 0;
+        return itemsTotal + serviceFeeTotal;
+    };
+
     const [scannedCode, setScannedCode] = useState('');
     const [cart, setCart] = useState<SaleItem[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -85,6 +99,9 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const { data, setData, post, processing, reset, errors } = useForm({
         items: [] as { product_id: number; quantity: number; price: number; original_price: number; custom_code: string | null }[],
         notes: '',
+        add_service_fee: false,
+        service_fee_name: '',
+        service_fee_amount: '',
     });
 
     const [discountModalOpen, setDiscountModalOpen] = useState(false);
@@ -382,6 +399,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
         post('/sales', {
             onSuccess: () => {
                 setCart([]);
+                reset();
                 toast.success('Sale readied successfully');
             },
         });
@@ -547,7 +565,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
         e.preventDefault();
         if (!selectedSaleForApproval) return;
 
-        const total = selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0);
+        const total = getSaleTotal(selectedSaleForApproval);
 
         if (approveForm.data.is_completing_reservation) {
             const remaining = total - Number(selectedSaleForApproval.downpayment || 0);
@@ -898,6 +916,59 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 </div>
                                             </div>
                                         ))}
+
+                                        {/* Optional Service Fee Section */}
+                                        <div className="mt-6 pt-6 border-t space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <CircleDollarSign className="w-4.5 h-4.5 text-teal-600 dark:text-teal-400" />
+                                                    <span className="font-semibold text-sm">Add Service Fee (Optional)</span>
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    id="toggle-service-fee"
+                                                    checked={data.add_service_fee}
+                                                    onChange={(e) => setData('add_service_fee', e.target.checked)}
+                                                    className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
+                                                />
+                                            </div>
+
+                                            {data.add_service_fee && (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg border bg-muted/20 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                    <div className="space-y-1.5">
+                                                        <Label htmlFor="service-fee-name">Service Name / Description</Label>
+                                                        <Input
+                                                            id="service-fee-name"
+                                                            placeholder="e.g. Bike Tune Up, Wheel Alignment"
+                                                            value={data.service_fee_name}
+                                                            onChange={(e) => setData('service_fee_name', e.target.value)}
+                                                        />
+                                                        {errors.service_fee_name && (
+                                                            <p className="text-xs text-destructive">{errors.service_fee_name}</p>
+                                                        )}
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label htmlFor="service-fee-amount">Amount (₱)</Label>
+                                                        <div className="relative">
+                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-semibold">₱</span>
+                                                            <Input
+                                                                id="service-fee-amount"
+                                                                type="number"
+                                                                step="0.01"
+                                                                min="0.01"
+                                                                placeholder="0.00"
+                                                                className="pl-7"
+                                                                value={data.service_fee_amount}
+                                                                onChange={(e) => setData('service_fee_amount', e.target.value)}
+                                                            />
+                                                        </div>
+                                                        {errors.service_fee_amount && (
+                                                            <p className="text-xs text-destructive">{errors.service_fee_amount}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </CardContent>
@@ -906,7 +977,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                     <div className="text-sm text-muted-foreground">
                                         Total Items: <span className="font-medium text-foreground">{cart.reduce((acc, item) => acc + item.quantity, 0)}</span>
                                         <div className="text-xl font-bold text-primary mt-1">
-                                            Total: ₱{cart.reduce((acc, item) => acc + (item.quantity * item.price), 0).toFixed(2)}
+                                            Total: ₱{(
+                                                cart.reduce((acc, item) => acc + (item.quantity * item.price), 0) +
+                                                (data.add_service_fee && data.service_fee_amount ? Number(data.service_fee_amount) : 0)
+                                            ).toFixed(2)}
                                         </div>
                                     </div>
                                     <Button
@@ -947,9 +1021,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                     <span className="text-xs font-mono text-muted-foreground">#{sale.id}</span>
                                                     <p className="text-sm font-medium">Readied by {sale.readied_by.name}</p>
                                                     <p className="text-xs text-muted-foreground">{new Date(sale.created_at).toLocaleString()}</p>
+                                                    <p className="text-xs font-semibold text-primary mt-1">Total: ₱{getSaleTotal(sale).toFixed(2)}</p>
                                                 </div>
                                                 {sale.status === 'reserved' ? (
-                                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800">
+                                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-955/20 dark:text-blue-300 dark:border-blue-800">
                                                         Reserved
                                                     </Badge>
                                                 ) : (
@@ -982,6 +1057,18 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                     </div>
                                                 ))}
                                             </div>
+
+                                            {sale.service_fees && sale.service_fees.length > 0 && (
+                                                <div className="mt-2 pt-2 border-t border-dashed border-muted text-xs space-y-1 text-muted-foreground">
+                                                    <p className="font-semibold text-foreground">Service Fees:</p>
+                                                    {sale.service_fees.map((fee) => (
+                                                        <div key={fee.id} className="flex justify-between">
+                                                            <span>{fee.name}</span>
+                                                            <span className="font-medium text-foreground">₱{Number(fee.amount).toFixed(2)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
 
                                             {(can('branch.admin') || can('system.admin')) && (
                                                 <div className="flex gap-2 pt-2">
@@ -1088,7 +1175,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                             </div>
                                             <div className="flex justify-between items-center text-sm border-t border-dashed border-blue-200 dark:border-blue-800/30 pt-2">
                                                 <span className="text-muted-foreground">Total Sale Amount:</span>
-                                                <span className="font-bold">₱{selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0).toFixed(2)}</span>
+                                                <span className="font-bold">₱{getSaleTotal(selectedSaleForApproval).toFixed(2)}</span>
                                             </div>
                                             <div className="flex justify-between items-center text-sm">
                                                 <span className="text-muted-foreground text-emerald-700 dark:text-emerald-400">Downpayment Paid:</span>
@@ -1096,7 +1183,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                             </div>
                                             <div className="flex justify-between items-center text-lg border-t border-blue-200 dark:border-blue-800/30 pt-2 font-bold">
                                                 <span className="text-primary">Remaining Balance:</span>
-                                                <span className="text-primary">₱{(selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0) - Number(selectedSaleForApproval.downpayment || 0)).toFixed(2)}</span>
+                                                <span className="text-primary">₱{(getSaleTotal(selectedSaleForApproval) - Number(selectedSaleForApproval.downpayment || 0)).toFixed(2)}</span>
                                             </div>
                                         </div>
 
@@ -1258,7 +1345,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 disabled={
                                                     approveForm.processing ||
                                                     (approveForm.data.reservation_final_method === 'cash' &&
-                                                        (parseFloat(approveForm.data.reservation_cash_received) || 0) < (selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0) - Number(selectedSaleForApproval.downpayment || 0))
+                                                        (parseFloat(approveForm.data.reservation_cash_received) || 0) < (getSaleTotal(selectedSaleForApproval) - Number(selectedSaleForApproval.downpayment || 0))
                                                     ) ||
                                                     (approveForm.data.reservation_final_method === 'e-wallet' && !approveForm.data.reservation_proof_of_payment)
                                                 }
@@ -1276,7 +1363,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                         <div className="bg-primary/5 border rounded-lg p-4 flex justify-between items-center">
                                             <span className="font-semibold text-sm text-muted-foreground">Total Sale Amount:</span>
                                             <span className="text-2xl font-bold text-primary">
-                                                ₱{selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0).toFixed(2)}
+                                                ₱{getSaleTotal(selectedSaleForApproval).toFixed(2)}
                                             </span>
                                         </div>
 
@@ -1668,12 +1755,12 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 disabled={
                                                     approveForm.processing ||
                                                     (approveForm.data.payment_method === 'cash' &&
-                                                        (parseFloat(approveForm.data.cash_received) || 0) < selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0)
+                                                        (parseFloat(approveForm.data.cash_received) || 0) < getSaleTotal(selectedSaleForApproval)
                                                     ) ||
                                                     (approveForm.data.payment_method === 'e-wallet' && !approveForm.data.proof_of_payment) ||
                                                     (approveForm.data.payment_method === 'split_bill' && (
                                                         (parseFloat(approveForm.data.cash_received) || 0) <= 0 ||
-                                                        (parseFloat(approveForm.data.cash_received) || 0) >= selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0) ||
+                                                        (parseFloat(approveForm.data.cash_received) || 0) >= getSaleTotal(selectedSaleForApproval) ||
                                                         !approveForm.data.proof_of_payment
                                                     )) ||
                                                     (approveForm.data.payment_method === 'home_credit' && !approveForm.data.home_credited_name.trim()) ||

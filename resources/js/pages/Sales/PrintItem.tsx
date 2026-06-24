@@ -23,6 +23,7 @@ interface Sale {
         product: { name: string; barcode: string; qr_code: string; code: string | null };
         custom_code: string | null;
     }>;
+    service_fees?: Array<{ id: number; name: string; amount: number | string }>;
     payment_method?: string | null;
     ewallet_provider?: string | null;
     home_credited_name?: string | null;
@@ -68,7 +69,8 @@ export default function PrintItem({ sale }: { sale: Sale }) {
         }).format(new Date(dateString));
     };
 
-    const totalRevenue = sale.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+    const totalServiceFees = sale.service_fees?.reduce((sum, fee) => sum + Number(fee.amount), 0) || 0;
+    const totalRevenue = sale.items.reduce((sum, item) => sum + (item.quantity * item.price), 0) + totalServiceFees;
     const totalItems = sale.items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
@@ -159,6 +161,12 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                             <span>Total Items</span>
                             <span>{totalItems}</span>
                         </div>
+                        {totalServiceFees > 0 && (
+                            <div className="flex justify-between text-sm text-gray-600">
+                                <span>Service Fee ({sale.service_fees?.map(f => f.name).join(', ')})</span>
+                                <span>₱{totalServiceFees.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between text-xl font-bold pt-2 border-t border-gray-100">
                             <span>Total</span>
                             <span>₱{totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>

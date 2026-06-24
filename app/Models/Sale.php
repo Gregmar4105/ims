@@ -48,4 +48,9 @@ class Sale extends Model
     {
         return $this->hasMany(SaleReturn::class);
     }
+
+    public function serviceFees()
+    {
+        return $this->hasMany(ServiceFee::class);
+    }
 }

@@ -14,6 +14,7 @@ class ServiceFee extends Model
         'name',
         'amount',
         'created_by',
+        'sale_id',
     ];
 
     public function branch()
@@ -24,5 +25,10 @@ class ServiceFee extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function sale()
+    {
+        return $this->belongsTo(Sale::class);
     }
 }

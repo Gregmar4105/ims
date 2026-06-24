@@ -20,8 +20,14 @@ class ServiceFeeController extends Controller
             abort(403, 'User does not belong to a branch or active branch not selected');
         }
 
-        $query = ServiceFee::with('creator')
+        $query = ServiceFee::with(['creator', 'sale'])
             ->where('branch_id', $branchId)
+            ->where(function ($q) {
+                $q->whereNull('sale_id')
+                  ->orWhereHas('sale', function ($sq) {
+                      $sq->whereIn('status', ['completed', 'reserved']);
+                  });
+            })
             ->latest();
 
         // Search Filter (for historical list)
@@ -44,9 +50,15 @@ class ServiceFeeController extends Controller
         $serviceFees = $query->paginate(10)->withQueryString();
 
         // Today's service fees (resets at midnight - created on the current calendar date)
-        $todayFees = ServiceFee::with('creator')
+        $todayFees = ServiceFee::with(['creator', 'sale'])
             ->where('branch_id', $branchId)
             ->whereDate('created_at', Carbon::today())
+            ->where(function ($q) {
+                $q->whereNull('sale_id')
+                  ->orWhereHas('sale', function ($sq) {
+                      $sq->whereIn('status', ['completed', 'reserved']);
+                  });
+            })
             ->latest()
             ->get();
 

@@ -24,7 +24,7 @@ class SaleController extends Controller
     {
         $user = auth()->user();
         
-        $query = Sale::with(['items.product', 'branch', 'readiedBy', 'approvedBy', 'returns.product', 'returns.replacementProduct'])
+        $query = Sale::with(['items.product', 'branch', 'readiedBy', 'approvedBy', 'returns.product', 'returns.replacementProduct', 'serviceFees'])
             ->latest();
             
         // Status Filter
@@ -199,14 +199,20 @@ class SaleController extends Controller
         $todayExpensesSum = $todayExpenses->sum('amount');
  
         // 3. Service Fees
-        $todayServiceFeesQuery = ServiceFee::query();
+        $todayServiceFeesQuery = ServiceFee::query()
+            ->where(function($q) {
+                $q->whereNull('sale_id')
+                  ->orWhereHas('sale', function($sq) {
+                      $sq->whereIn('status', ['completed', 'reserved']);
+                  });
+            });
         if ($startDate) {
             $todayServiceFeesQuery->where('created_at', '>=', $startDate);
         }
         if ($endDate) {
             $todayServiceFeesQuery->where('created_at', '<=', $endDate);
         }
-        $todayServiceFeesQuery->with('creator');
+        $todayServiceFeesQuery->with(['creator', 'sale']);
  
         if ($branchId) {
             $todayServiceFeesQuery->where('branch_id', $branchId);
@@ -265,7 +271,7 @@ class SaleController extends Controller
     {
         $user = auth()->user();
         
-        $query = Sale::with(['items.product', 'branch', 'readiedBy', 'approvedBy'])
+        $query = Sale::with(['items.product', 'branch', 'readiedBy', 'approvedBy', 'serviceFees'])
             ->latest();
             
         // Reuse identical filters from index
@@ -359,7 +365,7 @@ class SaleController extends Controller
             abort(403, 'Unauthorized to view this sale');
         }
         
-        $sale->load(['items.product', 'branch', 'readiedBy', 'approvedBy']);
+        $sale->load(['items.product', 'branch', 'readiedBy', 'approvedBy', 'serviceFees']);
         
         return Inertia::render('Sales/PrintItem', [
             'sale' => $sale,
@@ -398,7 +404,7 @@ class SaleController extends Controller
             ->get();
         
         // Get readied or reserved sales pending approval (for branch admins)
-        $pendingSales = Sale::with(['items.product', 'readiedBy'])
+        $pendingSales = Sale::with(['items.product', 'readiedBy', 'serviceFees'])
             ->where('branch_id', $branchId)
             ->whereIn('status', ['readied', 'reserved'])
             ->latest()
@@ -424,7 +430,7 @@ class SaleController extends Controller
             return response()->json(['error' => 'User does not belong to a branch or active branch not selected'], 403);
         }
         
-        $pendingSales = Sale::with(['items.product', 'readiedBy'])
+        $pendingSales = Sale::with(['items.product', 'readiedBy', 'serviceFees'])
             ->where('branch_id', $branchId)
             ->whereIn('status', ['readied', 'reserved'])
             ->latest()
@@ -531,6 +537,9 @@ class SaleController extends Controller
             'items.*.original_price' => 'required|numeric|min:0',
             'items.*.custom_code' => 'nullable|string',
             'notes' => 'nullable|string',
+            'add_service_fee' => 'nullable|boolean',
+            'service_fee_name' => 'nullable|string|max:255',
+            'service_fee_amount' => 'nullable|numeric|min:0',
         ]);
         
         $user = auth()->user();
@@ -560,6 +569,16 @@ class SaleController extends Controller
                     'price' => $item['price'],
                     'original_price' => $item['original_price'],
                     'custom_code' => $item['custom_code'] ?? null,
+                ]);
+            }
+
+            if ($request->add_service_fee && $request->service_fee_amount > 0) {
+                ServiceFee::create([
+                    'branch_id' => $branchId,
+                    'name' => $request->service_fee_name ?: 'Service Fee',
+                    'amount' => $request->service_fee_amount,
+                    'created_by' => $user->id,
+                    'sale_id' => $sale->id,
                 ]);
             }
         });
@@ -736,6 +755,8 @@ class SaleController extends Controller
                 }
             }
             $sale->update(['status' => 'cancelled']);
+            // Delete associated service fees
+            $sale->serviceFees()->delete();
         });
         
         // Notify the user who readied the sale

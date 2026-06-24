@@ -45,6 +45,7 @@ interface Sale {
         name: string;
     } | null;
     items: SaleItem[];
+    service_fees?: ServiceFee[];
     payment_method?: string | null;
     ewallet_provider?: string | null;
     proof_of_payment_path?: string | null;
@@ -1341,6 +1342,49 @@ export default function Index({
                                                                 </TableCell>
                                                             </TableRow>
                                                         ))}
+
+                                                        {/* Service Fees Rows */}
+                                                        {sale.service_fees && sale.service_fees.length > 0 && (
+                                                            <>
+                                                                {sale.service_fees.map((fee) => (
+                                                                    <TableRow key={`fee-${fee.id}`} className="bg-muted/5 hover:bg-muted/5">
+                                                                        <TableCell className="pl-6 font-medium text-teal-600 dark:text-teal-400">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <div className="h-8 w-8 rounded bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 dark:text-teal-400">
+                                                                                    <Briefcase className="w-4 h-4" />
+                                                                                </div>
+                                                                                Service Fee: {fee.name}
+                                                                            </div>
+                                                                        </TableCell>
+                                                                        <TableCell className="text-xs text-muted-foreground italic">
+                                                                            Service Charge
+                                                                        </TableCell>
+                                                                        <TableCell className="text-right font-bold text-teal-600 dark:text-teal-400">
+                                                                            ₱{Number(fee.amount).toFixed(2)}
+                                                                        </TableCell>
+                                                                        <TableCell className="text-right pr-6 font-semibold">-</TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                                {/* Grand Total Row */}
+                                                                <TableRow className="bg-primary/5 hover:bg-primary/5 font-bold text-primary">
+                                                                    <TableCell className="pl-6 py-4">
+                                                                        Grand Total (with Service Fee)
+                                                                    </TableCell>
+                                                                    <TableCell className="text-xs italic text-primary/75">
+                                                                        Total Amount
+                                                                    </TableCell>
+                                                                    <TableCell className="text-right text-lg font-black">
+                                                                        ₱{(
+                                                                            sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) +
+                                                                            sale.service_fees.reduce((sum, fee) => sum + Number(fee.amount), 0)
+                                                                        ).toFixed(2)}
+                                                                    </TableCell>
+                                                                    <TableCell className="text-right pr-6">
+                                                                        {sale.items.reduce((sum, item) => sum + item.quantity, 0)}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            </>
+                                                        )}
                                                     </TableBody>
                                                 </Table>
                                             </div>

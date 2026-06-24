@@ -33,6 +33,7 @@ interface ServiceFee {
     created_at: string;
     updated_at: string;
     creator?: Creator;
+    sale_id?: number | null;
 }
 
 interface PaginatedData<T> {
@@ -315,6 +316,7 @@ export default function ServiceFees({ serviceFees, todayFees, todayFeesSum, filt
                                                 <TableHeader className="bg-muted/10">
                                                     <TableRow>
                                                         <TableHead className="pl-6">Service Name / Description</TableHead>
+                                                        <TableHead>Connected Sale</TableHead>
                                                         <TableHead>Logged By</TableHead>
                                                         <TableHead>Time</TableHead>
                                                         <TableHead className="text-right pr-6">Amount</TableHead>
@@ -325,6 +327,15 @@ export default function ServiceFees({ serviceFees, todayFees, todayFeesSum, filt
                                                         <TableRow key={fee.id} className="hover:bg-muted/5">
                                                             <TableCell className="font-medium pl-6">
                                                                 {fee.name}
+                                                            </TableCell>
+                                                            <TableCell className="text-muted-foreground text-sm">
+                                                                {fee.sale_id ? (
+                                                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200">
+                                                                        Sale #{fee.sale_id}
+                                                                    </Badge>
+                                                                ) : (
+                                                                    <span className="text-xs text-muted-foreground italic">None (Direct Log)</span>
+                                                                )}
                                                             </TableCell>
                                                             <TableCell className="text-muted-foreground text-sm">
                                                                 <div className="flex items-center gap-1.5">
@@ -464,6 +475,11 @@ export default function ServiceFees({ serviceFees, todayFees, todayFeesSum, filt
                                                             <User className="w-3.5 h-3.5" />
                                                             {fee.creator?.name || 'You'}
                                                         </span>
+                                                        {fee.sale_id && (
+                                                            <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 text-[10px] py-0 px-1.5 leading-none">
+                                                                Sale #{fee.sale_id}
+                                                            </Badge>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-3 shrink-0">
