@@ -645,6 +645,69 @@ class ReportController extends Controller
             ];
         })->values()->toArray();
 
+        // --- Unsold Products (3 Months) ---
+        $threeMonthsAgoForUnsold = Carbon::now()->subMonths(3);
+        $soldProductIds = SaleItem::whereHas('sale', function ($query) use ($threeMonthsAgoForUnsold, $branchId, $activeBranchIds) {
+            $query->where('status', 'completed')
+                  ->where('created_at', '>=', $threeMonthsAgoForUnsold);
+            if ($branchId !== 'all') {
+                $query->where('branch_id', $branchId);
+            } else {
+                $query->whereIn('branch_id', $activeBranchIds);
+            }
+        })->pluck('product_id')->unique()->toArray();
+
+        $unsoldProductsRaw = Product::whereHas('branches', function ($query) use ($branchId, $activeBranchIds) {
+            if ($branchId !== 'all') {
+                $query->where('branches.id', $branchId);
+            } else {
+                $query->whereIn('branches.id', $activeBranchIds);
+            }
+        })
+        ->whereNotIn('id', $soldProductIds)
+        ->with(['category', 'branches'])
+        ->get();
+
+        $unsoldProductsMapped = $unsoldProductsRaw->map(function ($product) use ($branchId, $activeBranchIds) {
+            // Find last completed sale for this product (filtered by selected branch)
+            $lastSaleItem = SaleItem::where('product_id', $product->id)
+                ->whereHas('sale', function ($query) use ($branchId, $activeBranchIds) {
+                    $query->where('status', 'completed');
+                    if ($branchId !== 'all') {
+                        $query->where('branch_id', $branchId);
+                    } else {
+                        $query->whereIn('branch_id', $activeBranchIds);
+                    }
+                })
+                ->with('sale')
+                ->latest()
+                ->first();
+
+            // Calculate stock
+            $stock = 0;
+            if ($branchId !== 'all') {
+                $bp = $product->branches->firstWhere('id', $branchId);
+                $stock = $bp ? $bp->pivot->quantity : 0;
+            } else {
+                $stock = $product->branches->whereIn('id', $activeBranchIds)->sum('pivot.quantity');
+            }
+
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'sku' => $product->sku ?? '',
+                'category' => $product->category?->name ?? 'Uncategorized',
+                'price' => (float)$product->price,
+                'stock' => (int)$stock,
+                'last_sold_date' => $lastSaleItem ? $lastSaleItem->sale->created_at->toIso8601String() : null,
+            ];
+        });
+
+        // Sort: Never sold items first, then oldest sale date
+        $unsoldProductsSorted = $unsoldProductsMapped->sortBy(function ($item) {
+            return $item['last_sold_date'] ? Carbon::parse($item['last_sold_date'])->timestamp : 0;
+        })->values()->all();
+
         return Inertia::render('Reports/Index', [
             'branches' => $branches,
             'branchId' => $branchId,
@@ -675,6 +738,7 @@ class ReportController extends Controller
             'transferChartData' => $transferTrend,
             'topTransferredProducts' => $topTransferred,
             'transfersByBranch' => $transfersByBranch,
+            'unsoldProducts' => $unsoldProductsSorted,
         ]);
     }
 }

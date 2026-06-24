@@ -116,6 +116,16 @@ interface TransferBranchItem {
     outgoing_qty: number;
 }
 
+interface UnsoldItem {
+    id: number;
+    name: string;
+    sku: string;
+    category: string;
+    price: number;
+    stock: number;
+    last_sold_date: string | null;
+}
+
 interface ReportsProps {
     branches: Branch[];
     branchId: string | number;
@@ -141,6 +151,7 @@ interface ReportsProps {
     transferChartData: { name: string; transfers: number }[];
     topTransferredProducts: TopTransferredProduct[];
     transfersByBranch: TransferBranchItem[];
+    unsoldProducts: UnsoldItem[];
 }
 
 const getChartColor = (index: number, total: number) => {
@@ -173,6 +184,7 @@ export default function ReportsIndex({
     transferChartData,
     topTransferredProducts,
     transfersByBranch,
+    unsoldProducts,
 }: ReportsProps) {
     const { auth } = usePage().props as any;
     const isSystemAdmin = auth.roles.includes('System Administrator');
@@ -394,7 +406,8 @@ export default function ReportsIndex({
                             { id: 'overview', label: 'Visual Overview', icon: BarChart2 },
                             { id: 'trending', label: 'Trending Items', icon: TrendingUp },
                             { id: 'matrix', label: 'Branch Stock Matrix', icon: Grid },
-                            { id: 'transfers', label: 'Transfers', icon: Truck }
+                            { id: 'transfers', label: 'Transfers', icon: Truck },
+                            { id: 'unsold', label: 'Unsold Products (3 Months)', icon: Layers }
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -879,6 +892,67 @@ export default function ReportsIndex({
                                 </CardContent>
                             </Card>
                         </div>
+                    )}
+
+                    {/* Tab 5: Unsold Products (Last 3 Months) */}
+                    {activeTab === 'unsold' && (
+                        <Card>
+                            <CardHeader className="flex flex-col md:flex-row md:items-center justify-between pb-4 gap-4">
+                                <div>
+                                    <CardTitle>Unsold Products (Last 3 Months)</CardTitle>
+                                    <CardDescription>
+                                        Products in the selected branch that haven't been sold in the last 3 months, ordered by the date of their last completed sale.
+                                    </CardDescription>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                {unsoldProducts.length > 0 ? (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Product details</TableHead>
+                                                <TableHead>SKU</TableHead>
+                                                <TableHead>Category</TableHead>
+                                                <TableHead className="text-right">Unit Price</TableHead>
+                                                <TableHead className="text-center">Current Stock</TableHead>
+                                                <TableHead className="text-center font-semibold">Last Sold Date</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {unsoldProducts.map((item, index) => (
+                                                <TableRow key={item.id} className="hover:bg-muted/50">
+                                                    <TableCell className="font-medium">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs font-bold text-muted-foreground w-4">#{index + 1}</span>
+                                                            <span>{item.name}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>{item.sku || '-'}</TableCell>
+                                                    <TableCell>{item.category}</TableCell>
+                                                    <TableCell className="text-right font-semibold">{formatCurrency(item.price)}</TableCell>
+                                                    <TableCell className="text-center">{item.stock.toLocaleString()}</TableCell>
+                                                    <TableCell className="text-center">
+                                                        {item.last_sold_date ? (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
+                                                                {new Date(item.last_sold_date).toLocaleDateString()}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400">
+                                                                Never Sold
+                                                            </span>
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                ) : (
+                                    <div className="py-12 text-center text-muted-foreground">
+                                        No unsold products found for this selection.
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
                     )}
                 </div>
             </div>

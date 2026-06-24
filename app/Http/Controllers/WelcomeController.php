@@ -78,6 +78,22 @@ class WelcomeController extends Controller
              $q->where('branch_name', 'LM2 Bicycle Trading');
         }]);
 
+        // Check if the product qualifies for the 3-month unsold rule for LM2 branch
+        $threeMonthsAgo = now()->subMonths(3);
+        $lm2Branch = \App\Models\Branch::where('branch_name', 'LM2 Bicycle Trading')->first();
+        if ($lm2Branch) {
+            $isSold = \App\Models\SaleItem::where('product_id', $product->id)
+                ->whereHas('sale', function ($query) use ($threeMonthsAgo, $lm2Branch) {
+                    $query->where('status', 'completed')
+                          ->where('branch_id', $lm2Branch->id)
+                          ->where('created_at', '>=', $threeMonthsAgo);
+                })->exists();
+
+            if (!$isSold && is_null($product->clearance_price)) {
+                $product->clearance_price = $product->price;
+            }
+        }
+
         return Inertia::render('Shop/Show', [
             'product' => $product,
         ]);
@@ -85,14 +101,42 @@ class WelcomeController extends Controller
 
     public function clearanceSale()
     {
-        $products = Product::whereNotNull('clearance_price')
-            ->where(function($q) {
-                $q->whereNull('clearance_until')
-                  ->orWhere('clearance_until', '>', now());
+        $lm2Branch = \App\Models\Branch::where('branch_name', 'LM2 Bicycle Trading')->first();
+        $lm2BranchId = $lm2Branch ? $lm2Branch->id : null;
+
+        if ($lm2BranchId) {
+            $threeMonthsAgo = now()->subMonths(3);
+            $soldInLast3MonthsIds = \App\Models\SaleItem::whereHas('sale', function ($query) use ($threeMonthsAgo, $lm2BranchId) {
+                $query->where('status', 'completed')
+                      ->where('branch_id', $lm2BranchId)
+                      ->where('created_at', '>=', $threeMonthsAgo);
+            })->pluck('product_id')->unique()->toArray();
+
+            $products = Product::whereHas('branches', function ($query) use ($lm2BranchId) {
+                $query->where('branches.id', $lm2BranchId);
+            })
+            ->where(function ($query) use ($soldInLast3MonthsIds) {
+                $query->where(function ($q) {
+                    $q->whereNotNull('clearance_price')
+                      ->where(function ($sub) {
+                          $sub->whereNull('clearance_until')
+                              ->orWhere('clearance_until', '>', now());
+                      });
+                })
+                ->orWhereNotIn('id', $soldInLast3MonthsIds);
             })
             ->with(['category', 'brand'])
             ->latest()
-            ->get();
+            ->get()
+            ->map(function ($product) {
+                if (is_null($product->clearance_price)) {
+                    $product->clearance_price = $product->price;
+                }
+                return $product;
+            });
+        } else {
+            $products = collect();
+        }
 
         return Inertia::render('Shop/Clearance', [
             'canLogin' => Route::has('login'),

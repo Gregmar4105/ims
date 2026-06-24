@@ -85,9 +85,11 @@ export default function ClearancePage({ products }: Props) {
                                                     <span className="bg-yellow-400 px-2 py-1 font-bold text-xl text-black">
                                                         ₱{Number(product.clearance_price).toLocaleString()}
                                                     </span>
-                                                    <span className="text-gray-400 line-through text-sm">
-                                                        ₱{Number(product.price).toLocaleString()}
-                                                    </span>
+                                                    {Number(product.clearance_price) < Number(product.price) && (
+                                                        <span className="text-gray-400 line-through text-sm">
+                                                            ₱{Number(product.price).toLocaleString()}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
 
