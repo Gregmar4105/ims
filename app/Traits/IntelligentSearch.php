@@ -33,8 +33,12 @@ trait IntelligentSearch
         }
 
         $query->where(function ($q) use ($searchWords, $search, $extraFields) {
-            foreach ($searchWords as $word) {
-                $q->orWhere('name', 'like', "%{$word}%");
+            if (!empty($searchWords)) {
+                $q->where(function ($inner) use ($searchWords) {
+                    foreach ($searchWords as $word) {
+                        $inner->where('name', 'like', "%{$word}%");
+                    }
+                });
             }
             foreach ($extraFields as $field) {
                 $q->orWhere($field, 'like', "%{$search}%");
