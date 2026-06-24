@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import Pagination from '@/components/Pagination';
 import { type BreadcrumbItem } from '@/types';
 import {
     Card,
@@ -143,7 +144,7 @@ interface ReportsProps {
         items_sold: number;
     };
     trendingItems: TrendingItem[];
-    branchMatrix: MatrixItem[];
+    branchMatrix: PaginatedData<MatrixItem>;
     chartData: { name: string; sales: number }[];
     pieData: { name: string; value: number; count?: number }[];
     paymentData: { name: string; value: number; count?: number }[];
@@ -151,7 +152,16 @@ interface ReportsProps {
     transferChartData: { name: string; transfers: number }[];
     topTransferredProducts: TopTransferredProduct[];
     transfersByBranch: TransferBranchItem[];
-    unsoldProducts: UnsoldItem[];
+    unsoldProducts: PaginatedData<UnsoldItem>;
+}
+
+interface PaginatedData<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    links: any[];
 }
 
 const getChartColor = (index: number, total: number) => {
@@ -630,79 +640,82 @@ export default function ReportsIndex({
                                 </div>
                             </CardHeader>
                             <CardContent className="overflow-x-auto">
-                                {branchMatrix.length > 0 ? (
-                                    <Table className="min-w-[700px]">
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="font-bold min-w-[180px]">Product Details</TableHead>
-                                                <TableHead className="font-bold">Category</TableHead>
-                                                <TableHead className="font-bold text-right">Unit Price</TableHead>
-                                                {branches.map((b) => (
-                                                    <TableHead key={b.id} className="text-center font-bold border-l bg-muted/20" colSpan={2}>
-                                                        {b.branch_name}
+                                {branchMatrix.data.length > 0 ? (
+                                    <>
+                                        <Table className="min-w-[700px]">
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead className="font-bold min-w-[180px]">Product Details</TableHead>
+                                                    <TableHead className="font-bold">Category</TableHead>
+                                                    <TableHead className="font-bold text-right">Unit Price</TableHead>
+                                                    {branches.map((b) => (
+                                                        <TableHead key={b.id} className="text-center font-bold border-l bg-muted/20" colSpan={2}>
+                                                            {b.branch_name}
+                                                        </TableHead>
+                                                    ))}
+                                                    <TableHead className="font-bold text-center border-l bg-indigo-50/10" colSpan={2}>
+                                                        Overall Total
                                                     </TableHead>
-                                                ))}
-                                                <TableHead className="font-bold text-center border-l bg-indigo-50/10" colSpan={2}>
-                                                    Overall Total
-                                                </TableHead>
-                                            </TableRow>
-                                            <TableRow className="bg-muted/5">
-                                                <TableHead></TableHead>
-                                                <TableHead></TableHead>
-                                                <TableHead></TableHead>
-                                                {branches.map((b) => (
-                                                    <React.Fragment key={`sub-${b.id}`}>
-                                                        <TableHead className="text-center text-[10px] font-semibold border-l py-1.5">Stock</TableHead>
-                                                        <TableHead className="text-center text-[10px] font-semibold text-blue-600 dark:text-blue-400 py-1.5">Sales</TableHead>
-                                                    </React.Fragment>
-                                                ))}
-                                                <TableHead className="text-center text-[10px] font-bold border-l py-1.5">Stock</TableHead>
-                                                <TableHead className="text-center text-[10px] font-bold text-blue-600 dark:text-blue-400 py-1.5">Sales</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {branchMatrix.map((item) => (
-                                                <TableRow key={item.id} className="hover:bg-muted/30">
-                                                    <TableCell className="font-medium">
-                                                        <div className="flex flex-col">
-                                                            <span className="truncate max-w-[200px]" title={item.name}>{item.name}</span>
-                                                            <span className="text-[10px] text-muted-foreground">{item.sku || '-'}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-xs">{item.category}</TableCell>
-                                                    <TableCell className="text-right text-xs font-semibold">{formatCurrency(item.price)}</TableCell>
-                                                    {branches.map((b) => {
-                                                        const stock = item.branches[b.id]?.stock ?? 0;
-                                                        const sales = item.branches[b.id]?.sales ?? 0;
-                                                        return (
-                                                            <React.Fragment key={`val-${item.id}-${b.id}`}>
-                                                                <TableCell className="text-center text-xs border-l">
-                                                                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
-                                                                        stock === 0
-                                                                            ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400'
-                                                                            : stock <= 5
-                                                                            ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400'
-                                                                            : 'text-foreground'
-                                                                    }`}>
-                                                                        {stock}
-                                                                    </span>
-                                                                </TableCell>
-                                                                <TableCell className="text-center text-xs text-blue-600 dark:text-blue-400 font-medium">
-                                                                    {sales > 0 ? sales : '-'}
-                                                                </TableCell>
-                                                            </React.Fragment>
-                                                        );
-                                                    })}
-                                                    <TableCell className="text-center text-xs border-l font-bold bg-indigo-50/5">
-                                                        {item.total_stock}
-                                                    </TableCell>
-                                                    <TableCell className="text-center text-xs text-blue-600 dark:text-blue-400 font-bold bg-indigo-50/5">
-                                                        {item.total_sales > 0 ? item.total_sales : '-'}
-                                                    </TableCell>
                                                 </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                                <TableRow className="bg-muted/5">
+                                                    <TableHead></TableHead>
+                                                    <TableHead></TableHead>
+                                                    <TableHead></TableHead>
+                                                    {branches.map((b) => (
+                                                        <React.Fragment key={`sub-${b.id}`}>
+                                                            <TableHead className="text-center text-[10px] font-semibold border-l py-1.5">Stock</TableHead>
+                                                            <TableHead className="text-center text-[10px] font-semibold text-blue-600 dark:text-blue-400 py-1.5">Sales</TableHead>
+                                                        </React.Fragment>
+                                                    ))}
+                                                    <TableHead className="text-center text-[10px] font-bold border-l py-1.5">Stock</TableHead>
+                                                    <TableHead className="text-center text-[10px] font-bold text-blue-600 dark:text-blue-400 py-1.5">Sales</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {branchMatrix.data.map((item) => (
+                                                    <TableRow key={item.id} className="hover:bg-muted/30">
+                                                        <TableCell className="font-medium">
+                                                            <div className="flex flex-col">
+                                                                <span className="truncate max-w-[200px]" title={item.name}>{item.name}</span>
+                                                                <span className="text-[10px] text-muted-foreground">{item.sku || '-'}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="text-xs">{item.category}</TableCell>
+                                                        <TableCell className="text-right text-xs font-semibold">{formatCurrency(item.price)}</TableCell>
+                                                        {branches.map((b) => {
+                                                            const stock = item.branches[b.id]?.stock ?? 0;
+                                                            const sales = item.branches[b.id]?.sales ?? 0;
+                                                            return (
+                                                                <React.Fragment key={`val-${item.id}-${b.id}`}>
+                                                                    <TableCell className="text-center text-xs border-l">
+                                                                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+                                                                            stock === 0
+                                                                                ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400'
+                                                                                : stock <= 5
+                                                                                ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400'
+                                                                                : 'text-foreground'
+                                                                        }`}>
+                                                                            {stock}
+                                                                        </span>
+                                                                    </TableCell>
+                                                                    <TableCell className="text-center text-xs text-blue-600 dark:text-blue-400 font-medium">
+                                                                        {sales > 0 ? sales : '-'}
+                                                                    </TableCell>
+                                                                </React.Fragment>
+                                                            );
+                                                        })}
+                                                        <TableCell className="text-center text-xs border-l font-bold bg-indigo-50/5">
+                                                            {item.total_stock}
+                                                        </TableCell>
+                                                        <TableCell className="text-center text-xs text-blue-600 dark:text-blue-400 font-bold bg-indigo-50/5">
+                                                            {item.total_sales > 0 ? item.total_sales : '-'}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                        <Pagination links={branchMatrix.links} />
+                                    </>
                                 ) : (
                                     <div className="py-12 text-center text-muted-foreground">
                                         No items found matching the search criteria.
@@ -906,46 +919,49 @@ export default function ReportsIndex({
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                {unsoldProducts.length > 0 ? (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Product details</TableHead>
-                                                <TableHead>SKU</TableHead>
-                                                <TableHead>Category</TableHead>
-                                                <TableHead className="text-right">Unit Price</TableHead>
-                                                <TableHead className="text-center">Current Stock</TableHead>
-                                                <TableHead className="text-center font-semibold">Last Sold Date</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {unsoldProducts.map((item, index) => (
-                                                <TableRow key={item.id} className="hover:bg-muted/50">
-                                                    <TableCell className="font-medium">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs font-bold text-muted-foreground w-4">#{index + 1}</span>
-                                                            <span>{item.name}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>{item.sku || '-'}</TableCell>
-                                                    <TableCell>{item.category}</TableCell>
-                                                    <TableCell className="text-right font-semibold">{formatCurrency(item.price)}</TableCell>
-                                                    <TableCell className="text-center">{item.stock.toLocaleString()}</TableCell>
-                                                    <TableCell className="text-center">
-                                                        {item.last_sold_date ? (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
-                                                                {new Date(item.last_sold_date).toLocaleDateString()}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400">
-                                                                Never Sold
-                                                            </span>
-                                                        )}
-                                                    </TableCell>
+                                {unsoldProducts.data.length > 0 ? (
+                                    <>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Product details</TableHead>
+                                                    <TableHead>SKU</TableHead>
+                                                    <TableHead>Category</TableHead>
+                                                    <TableHead className="text-right">Unit Price</TableHead>
+                                                    <TableHead className="text-center">Current Stock</TableHead>
+                                                    <TableHead className="text-center font-semibold">Last Sold Date</TableHead>
                                                 </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {unsoldProducts.data.map((item, index) => (
+                                                    <TableRow key={item.id} className="hover:bg-muted/50">
+                                                        <TableCell className="font-medium">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs font-bold text-muted-foreground w-4">#{index + 1}</span>
+                                                                <span>{item.name}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>{item.sku || '-'}</TableCell>
+                                                        <TableCell>{item.category}</TableCell>
+                                                        <TableCell className="text-right font-semibold">{formatCurrency(item.price)}</TableCell>
+                                                        <TableCell className="text-center">{item.stock.toLocaleString()}</TableCell>
+                                                        <TableCell className="text-center">
+                                                            {item.last_sold_date ? (
+                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
+                                                                    {new Date(item.last_sold_date).toLocaleDateString()}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400">
+                                                                    Never Sold
+                                                                </span>
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                        <Pagination links={unsoldProducts.links} />
+                                    </>
                                 ) : (
                                     <div className="py-12 text-center text-muted-foreground">
                                         No unsold products found for this selection.

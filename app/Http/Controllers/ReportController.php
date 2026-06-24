@@ -168,33 +168,37 @@ class ReportController extends Controller
         $branches = Branch::where('branch_status', 'Active')->get();
         $searchQuery = $request->input('search');
 
-        $productsQuery = Product::with(['category', 'branches']);
-        if ($searchQuery) {
-            $productsQuery->where(function($q) use ($searchQuery) {
-                $q->where('name', 'like', "%{$searchQuery}%")
-                  ->orWhere('sku', 'like', "%{$searchQuery}%")
-                  ->orWhere('code', 'like', "%{$searchQuery}%");
-            });
-        }
-        $products = $productsQuery->limit(50)->get();
+        $productsPaginator = Product::with(['category', 'branches'])
+            ->when($searchQuery, function($q) use ($searchQuery) {
+                $q->where(function($sub) use ($searchQuery) {
+                    $sub->where('name', 'like', "%{$searchQuery}%")
+                        ->orWhere('sku', 'like', "%{$searchQuery}%")
+                        ->orWhere('code', 'like', "%{$searchQuery}%");
+                });
+            })
+            ->paginate(10, ['*'], 'matrix_page')
+            ->withQueryString();
 
-        $branchMatrix = $products->map(function ($product) use ($branches, $startDate, $endDate) {
+        // Eager load sales sums in 1 query for these 10 products
+        $salesSums = SaleItem::select('product_id', 'sales.branch_id', DB::raw('SUM(quantity) as total_sales'))
+            ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+            ->where('sales.status', 'completed')
+            ->whereIn('product_id', $productsPaginator->pluck('id'))
+            ->when($startDate, fn($q) => $q->where('sales.created_at', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->where('sales.created_at', '<=', $endDate))
+            ->groupBy('product_id', 'sales.branch_id')
+            ->get()
+            ->groupBy('product_id');
+
+        $branchMatrixData = collect($productsPaginator->items())->map(function ($product) use ($branches, $salesSums) {
             $branchData = [];
+            $productSales = $salesSums->get($product->id);
+
             foreach ($branches as $branch) {
                 $branchProduct = $product->branches->firstWhere('id', $branch->id);
                 $stock = $branchProduct ? $branchProduct->pivot->quantity : 0;
                 
-                $salesQty = SaleItem::where('product_id', $product->id)
-                    ->whereHas('sale', function ($q) use ($branch, $startDate, $endDate) {
-                        $q->where('branch_id', $branch->id)
-                          ->where('status', 'completed');
-                        if ($startDate) {
-                            $q->where('created_at', '>=', $startDate);
-                        }
-                        if ($endDate) {
-                            $q->where('created_at', '<=', $endDate);
-                        }
-                    })->sum('quantity');
+                $salesQty = $productSales ? $productSales->firstWhere('branch_id', $branch->id)?->total_sales ?? 0 : 0;
 
                 $branchData[$branch->id] = [
                     'stock' => (int)$stock,
@@ -210,19 +214,18 @@ class ReportController extends Controller
                 'price' => (float)$product->price,
                 'branches' => $branchData,
                 'total_stock' => (int)$product->branches->whereIn('id', $branches->pluck('id'))->sum('pivot.quantity'),
-                'total_sales' => (int)SaleItem::where('product_id', $product->id)
-                    ->whereHas('sale', function ($q) use ($startDate, $endDate, $branches) {
-                        $q->where('status', 'completed')
-                          ->whereIn('branch_id', $branches->pluck('id'));
-                        if ($startDate) {
-                            $q->where('created_at', '>=', $startDate);
-                        }
-                        if ($endDate) {
-                            $q->where('created_at', '<=', $endDate);
-                        }
-                    })->sum('quantity'),
+                'total_sales' => $productSales ? (int)$productSales->sum('total_sales') : 0,
             ];
         });
+
+        $branchMatrix = [
+            'data' => $branchMatrixData,
+            'current_page' => $productsPaginator->currentPage(),
+            'last_page' => $productsPaginator->lastPage(),
+            'per_page' => $productsPaginator->perPage(),
+            'total' => $productsPaginator->total(),
+            'links' => $productsPaginator->linkCollection()->toArray(),
+        ];
 
         // --- Sales Trend Timeline ---
         $salesTrend = [];
@@ -647,42 +650,47 @@ class ReportController extends Controller
 
         // --- Unsold Products (3 Months) ---
         $threeMonthsAgoForUnsold = Carbon::now()->subMonths(3);
-        $soldProductIds = SaleItem::whereHas('sale', function ($query) use ($threeMonthsAgoForUnsold, $branchId, $activeBranchIds) {
-            $query->where('status', 'completed')
-                  ->where('created_at', '>=', $threeMonthsAgoForUnsold);
-            if ($branchId !== 'all') {
-                $query->where('branch_id', $branchId);
-            } else {
-                $query->whereIn('branch_id', $activeBranchIds);
-            }
-        })->pluck('product_id')->unique()->toArray();
 
-        $unsoldProductsRaw = Product::whereHas('branches', function ($query) use ($branchId, $activeBranchIds) {
+        $unsoldProductsQuery = Product::whereHas('branches', function ($query) use ($branchId, $activeBranchIds) {
             if ($branchId !== 'all') {
                 $query->where('branches.id', $branchId);
             } else {
                 $query->whereIn('branches.id', $activeBranchIds);
             }
         })
-        ->whereNotIn('id', $soldProductIds)
+        ->whereNotExists(function ($query) use ($threeMonthsAgoForUnsold, $branchId, $activeBranchIds) {
+            $query->select(DB::raw(1))
+                  ->from('sale_items')
+                  ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+                  ->whereColumn('sale_items.product_id', 'products.id')
+                  ->where('sales.status', 'completed')
+                  ->where('sales.created_at', '>=', $threeMonthsAgoForUnsold);
+            if ($branchId !== 'all') {
+                $query->where('sales.branch_id', $branchId);
+            } else {
+                $query->whereIn('sales.branch_id', $activeBranchIds);
+            }
+        })
+        ->select('products.*')
+        ->selectSub(function($query) use ($branchId, $activeBranchIds) {
+            $query->select('sales.created_at')
+                  ->from('sale_items')
+                  ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+                  ->whereColumn('sale_items.product_id', 'products.id')
+                  ->where('sales.status', 'completed');
+            if ($branchId !== 'all') {
+                $query->where('sales.branch_id', $branchId);
+            } else {
+                $query->whereIn('sales.branch_id', $activeBranchIds);
+            }
+            $query->latest('sales.created_at')->limit(1);
+        }, 'last_sold_date')
         ->with(['category', 'branches'])
-        ->get();
+        ->orderByRaw('last_sold_date IS NULL DESC, last_sold_date ASC');
 
-        $unsoldProductsMapped = $unsoldProductsRaw->map(function ($product) use ($branchId, $activeBranchIds) {
-            // Find last completed sale for this product (filtered by selected branch)
-            $lastSaleItem = SaleItem::where('product_id', $product->id)
-                ->whereHas('sale', function ($query) use ($branchId, $activeBranchIds) {
-                    $query->where('status', 'completed');
-                    if ($branchId !== 'all') {
-                        $query->where('branch_id', $branchId);
-                    } else {
-                        $query->whereIn('branch_id', $activeBranchIds);
-                    }
-                })
-                ->with('sale')
-                ->latest()
-                ->first();
+        $unsoldProductsPaginator = $unsoldProductsQuery->paginate(10, ['*'], 'unsold_page')->withQueryString();
 
+        $unsoldProductsData = collect($unsoldProductsPaginator->items())->map(function ($product) use ($branchId, $activeBranchIds) {
             // Calculate stock
             $stock = 0;
             if ($branchId !== 'all') {
@@ -699,14 +707,18 @@ class ReportController extends Controller
                 'category' => $product->category?->name ?? 'Uncategorized',
                 'price' => (float)$product->price,
                 'stock' => (int)$stock,
-                'last_sold_date' => $lastSaleItem ? $lastSaleItem->sale->created_at->toIso8601String() : null,
+                'last_sold_date' => $product->last_sold_date,
             ];
         });
 
-        // Sort: Never sold items first, then oldest sale date
-        $unsoldProductsSorted = $unsoldProductsMapped->sortBy(function ($item) {
-            return $item['last_sold_date'] ? Carbon::parse($item['last_sold_date'])->timestamp : 0;
-        })->values()->all();
+        $unsoldProducts = [
+            'data' => $unsoldProductsData,
+            'current_page' => $unsoldProductsPaginator->currentPage(),
+            'last_page' => $unsoldProductsPaginator->lastPage(),
+            'per_page' => $unsoldProductsPaginator->perPage(),
+            'total' => $unsoldProductsPaginator->total(),
+            'links' => $unsoldProductsPaginator->linkCollection()->toArray(),
+        ];
 
         return Inertia::render('Reports/Index', [
             'branches' => $branches,
@@ -738,7 +750,7 @@ class ReportController extends Controller
             'transferChartData' => $transferTrend,
             'topTransferredProducts' => $topTransferred,
             'transfersByBranch' => $transfersByBranch,
-            'unsoldProducts' => $unsoldProductsSorted,
+            'unsoldProducts' => $unsoldProducts,
         ]);
     }
 }
