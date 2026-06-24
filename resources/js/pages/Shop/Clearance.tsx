@@ -22,14 +22,14 @@ interface Props {
 }
 
 export default function ClearancePage({ products }: Props) {
-    const descriptionText = "LM2 Bicycle Trading Clearance Sale! Don't miss out on amazing deals and limited-time discounts on premium bicycles, components, and accessories.";
+    const descriptionText = "LM2 Bicycle Trading Clearance Sale / Promo Sale! Don't miss out on amazing deals and limited-time discounts on premium bicycles, components, and accessories.";
 
     return (
         <>
             <AppLayout>
-                <Head title="Clearance Sale">
+                <Head title="Clearance Sale / Promo Sale">
                     <meta name="description" head-key="description" content={descriptionText} />
-                    <meta property="og:title" content="Clearance Sale - LM2 Bicycle Trading" />
+                    <meta property="og:title" content="Clearance Sale / Promo Sale - LM2 Bicycle Trading" />
                     <meta property="og:description" content={descriptionText} />
                     <meta property="og:type" content="website" />
                 </Head>
@@ -38,7 +38,7 @@ export default function ClearancePage({ products }: Props) {
                     {/* Header Section */}
                     <div className="py-10 text-center">
                         <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl uppercase">
-                            <span className="bg-yellow-400 px-4 py-2">Clearance Sale</span>
+                            <span className="bg-yellow-400 px-4 py-2">Clearance Sale / Promo Sale</span>
                         </h1>
                         <p className="mx-auto mt-6 max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
                             Don't miss out on these amazing deals. Limited time only!
@@ -67,7 +67,7 @@ export default function ClearancePage({ products }: Props) {
 
                                         <div className="absolute left-3 top-3 flex flex-col gap-2">
                                             <span className="bg-yellow-400 px-2 py-1 text-xs font-bold text-black uppercase shadow-sm">
-                                                Clearance Sale
+                                                Clearance Sale / Promo Sale
                                             </span>
                                         </div>
                                     </div>
@@ -140,7 +140,7 @@ export default function ClearancePage({ products }: Props) {
                     ) : (
                         <div className="text-center py-20">
                             <PackageOpen className="mx-auto h-20 w-20 text-gray-300 mb-4" />
-                            <h3 className="text-lg font-medium text-gray-900">No products on clearance right now</h3>
+                            <h3 className="text-lg font-medium text-gray-900">No products on clearance / promo right now</h3>
                             <p className="text-gray-500">Check back later for amazing deals.</p>
                             <Link href="/">
                                 <button className="mt-4 text-sm underline">Go back home</button>

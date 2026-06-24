@@ -390,7 +390,7 @@ export default function Show({ product }: Props) {
                                             ₱{product.price ? Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
                                         </span>
                                         <div className="bg-yellow-400 text-black text-[10px] font-bold px-2 py-0.5 mt-1 rounded uppercase inline-block">
-                                            Clearance Sale
+                                            Clearance Sale / Promo Sale
                                         </div>
                                     </>
                                 ) : (

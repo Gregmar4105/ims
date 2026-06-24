@@ -308,10 +308,10 @@ export function AppHeader() {
                                 </NavigationMenuContent>
                             </NavigationMenuItem>
 
-                            {/* Clearance Sale! */}
+                            {/* Clearance Sale / Promo Sale */}
                             <NavigationMenuItem>
                                 <Link href="/clearance-sale" className={cn(navigationMenuTriggerStyle(), "text-yellow-600 font-bold")}>
-                                    Clearance Sale!
+                                    Clearance Sale / Promo Sale
                                 </Link>
                             </NavigationMenuItem>
 
