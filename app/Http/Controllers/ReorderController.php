@@ -13,80 +13,90 @@ use App\Models\Category;
 
 class ReorderController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $isSystemAdmin = $user->hasRole('System Administrator');
 
-        $reorders = collect();
+        $query = BranchProduct::query()
+            ->has('product')
+            ->has('branch')
+            ->whereNotNull('reorder_level')
+            ->where('reorder_level', '>', 0)
+            ->whereRaw('quantity <= reorder_level');
 
-        if ($isSystemAdmin) {
-            // For System Admin, get products globally where ANY branch quantity is <= its specific reorder_level
-            
-            // Get branch-specific products that need reorder
-            $branchReorders = Product::whereHas('branches', function ($query) {
-                    $query->whereNotNull('branch_products.reorder_level')
-                          ->where('branch_products.reorder_level', '>', 0)
-                          ->whereRaw('branch_products.quantity <= branch_products.reorder_level');
-                })
-                ->with(['brand', 'category', 'supplier', 'branches'])->get();
+        if (!$isSystemAdmin) {
+            $query->where('branch_id', $user->branch_id);
+        }
 
-            // Format for frontend
-            foreach ($branchReorders as $product) {
-                foreach ($product->branches as $branch) {
-                    if ($branch->pivot->reorder_level > 0 && $branch->pivot->quantity <= $branch->pivot->reorder_level) {
-                        $reorders->push([
-                            'id' => $product->id,
-                            'name' => $product->name,
-                            'code' => $product->code,
-                            'sku' => $product->sku,
-                            'image_path' => $product->image_path,
-                            'quantity' => $branch->pivot->quantity,
-                            'reorder_level' => $branch->pivot->reorder_level,
-                            'brand' => $product->brand,
-                            'category' => $product->category,
-                            'supplier' => $product->supplier,
-                            'branch' => [
-                                'id' => $branch->id,
-                                'name' => $branch->branch_name
-                            ]
-                        ]);
-                    }
-                }
-            }
+        // Filter by Search Query
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->whereHas('product', function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhere('sku', 'like', "%{$search}%")
+                        ->orWhereHas('brand', function ($qb) use ($search) {
+                            $qb->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('category', function ($qc) use ($search) {
+                            $qc->where('name', 'like', "%{$search}%");
+                        });
+                });
+            });
+        }
 
-        } else if ($user->branch_id) {
-            // For Branch Admin / Employee: Only fetch products in their branch where branch_products.quantity <= branch_products.reorder_level
-            $branchProducts = Product::whereHas('branches', function ($query) use ($user) {
-                    $query->where('branch_id', $user->branch_id)
-                          ->whereNotNull('branch_products.reorder_level')
-                          ->where('branch_products.reorder_level', '>', 0)
-                          ->whereRaw('branch_products.quantity <= branch_products.reorder_level');
-                })
-                ->with(['brand', 'category', 'supplier', 'branches' => function($query) use ($user) {
-                    $query->where('branch_id', $user->branch_id);
-                }])->get();
+        // Filter by Brand
+        if ($request->filled('brand') && $request->input('brand') !== 'all') {
+            $brandName = $request->input('brand');
+            $query->whereHas('product.brand', function ($q) use ($brandName) {
+                $q->where('name', $brandName);
+            });
+        }
 
-            foreach ($branchProducts as $product) {
-                $branchPivot = $product->branches->first()->pivot;
-                $branchQuantity = $branchPivot->quantity ?? 0;
-                $reorderLevel = $branchPivot->reorder_level ?? 0;
-                
-                $reorders->push([
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'code' => $product->code,
-                    'sku' => $product->sku,
-                    'image_path' => $product->image_path,
-                    'quantity' => $branchQuantity,
-                    'reorder_level' => $reorderLevel,
-                    'brand' => $product->brand,
-                    'category' => $product->category,
-                    'supplier' => $product->supplier,
-                    'branch' => null // Don't need to specify branch for localized users
-                ]);
+        // Filter by Category & Subcategory
+        if ($request->filled('category') && $request->input('category') !== 'all') {
+            $categoryName = $request->input('category');
+            if ($request->filled('subcategory') && $request->input('subcategory') !== 'all') {
+                $subCategoryName = $request->input('subcategory');
+                $query->whereHas('product.category', function ($q) use ($subCategoryName) {
+                    $q->where('name', $subCategoryName);
+                });
+            } else {
+                $query->whereHas('product.category', function ($q) use ($categoryName) {
+                    $q->where('name', $categoryName)
+                      ->orWhere('name', 'like', $categoryName . ' %');
+                });
             }
         }
+
+        // Eager load relations
+        $query->with(['product.brand', 'product.category', 'product.supplier', 'branch']);
+
+        // Paginate the results (10 per page)
+        $paginated = $query->paginate(10)->withQueryString();
+
+        // Transform results to match the structure expected by the frontend
+        $paginated->getCollection()->transform(function ($bp) use ($isSystemAdmin) {
+            $product = $bp->product;
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'code' => $product->code,
+                'sku' => $product->sku,
+                'image_path' => $product->image_path,
+                'quantity' => $bp->quantity,
+                'reorder_level' => $bp->reorder_level,
+                'brand' => $product->brand,
+                'category' => $product->category,
+                'supplier' => $product->supplier,
+                'branch' => $isSystemAdmin ? [
+                    'id' => $bp->branch->id,
+                    'name' => $bp->branch->branch_name
+                ] : null
+            ];
+        });
 
         // Fetch brands/categories based on visibility rules
         $brandsQuery = Brand::where('status', 'Active');
@@ -101,11 +111,12 @@ class ReorderController extends Controller
         $categories = $categoriesQuery->pluck('name')->unique()->values();
 
         return Inertia::render('Reorders/Index', [
-            'reorders' => $reorders->values()->all(),
+            'reorders' => $paginated,
             'options' => [
                 'brands' => $brands,
                 'categories' => $categories,
             ],
+            'filters' => $request->only(['search', 'brand', 'category', 'subcategory']),
         ]);
     }
 }

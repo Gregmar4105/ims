@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type SharedData } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage, router } from '@inertiajs/react';
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Bike, AlertTriangle, Printer, X } from 'lucide-react';
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { SearchableSelect } from '@/components/SearchableSelect';
+import Pagination from '@/components/Pagination';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -40,21 +41,38 @@ interface ReorderProduct {
     branch: { id: number, name: string } | null; // Null if global or localized view
 }
 
+interface PaginatedData<T> {
+    data: T[];
+    links: {
+        url: string | null;
+        label: string;
+        active: boolean;
+    }[];
+    total: number;
+    current_page: number;
+}
+
 interface Props {
-    reorders: ReorderProduct[];
+    reorders: PaginatedData<ReorderProduct>;
     options: {
         brands: string[];
         categories: string[];
     };
+    filters: {
+        search?: string;
+        brand?: string;
+        category?: string;
+        subcategory?: string;
+    };
 }
 
-export default function Index({ reorders, options }: Props) {
+export default function Index({ reorders, options, filters }: Props) {
     const { auth } = usePage<SharedData>().props;
     const branchName = auth.user?.branch?.branch_name;
-    const [searchQuery, setSearchQuery] = useState('');
-    const [brand, setBrand] = useState('all');
-    const [baseCategory, setBaseCategory] = useState('all');
-    const [subCategory, setSubCategory] = useState('all');
+    const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [brand, setBrand] = useState(filters.brand || 'all');
+    const [baseCategory, setBaseCategory] = useState(filters.category || 'all');
+    const [subCategory, setSubCategory] = useState(filters.subcategory || 'all');
 
     // Intelligent Category Grouping
     const categoryGroups = useMemo(() => {
@@ -74,46 +92,50 @@ export default function Index({ reorders, options }: Props) {
         return categoryGroups[baseCategory] || [];
     }, [baseCategory, categoryGroups]);
 
-    const handleBaseCategoryChange = (val: string) => {
-        setBaseCategory(val);
-        if (val === 'all') {
-            setSubCategory('all');
-        } else {
-            const subs = categoryGroups[val] || [];
-            if (subs.length === 1) {
-                setSubCategory(subs[0]);
-            } else {
-                setSubCategory('all');
-            }
-        }
+    const applyFilters = (searchVal = searchQuery, brandVal = brand, baseCatVal = baseCategory, subCatVal = subCategory) => {
+        router.get('/reorders', {
+            search: searchVal,
+            brand: brandVal,
+            category: baseCatVal,
+            subcategory: subCatVal,
+        }, { preserveState: true, replace: true, preserveScroll: true });
     };
 
-    const filteredReorders = useMemo(() => {
-        return reorders.filter(product => {
-            // 1. Search Query Filter
-            const matchesSearch = searchQuery === '' || 
-                product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.brand?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.category?.name.toLowerCase().includes(searchQuery.toLowerCase());
-
-            // 2. Brand Filter
-            const matchesBrand = brand === 'all' || product.brand?.name === brand;
-
-            // 3. Category & Subcategory Filter
-            let matchesCategory = true;
-            if (baseCategory !== 'all') {
-                if (subCategory !== 'all') {
-                    matchesCategory = product.category?.name === subCategory;
-                } else {
-                    matchesCategory = product.category?.name ? product.category.name.split(' ')[0] === baseCategory : false;
-                }
+    // Debounce search input
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            if (searchQuery !== (filters.search || '')) {
+                applyFilters(searchQuery, brand, baseCategory, subCategory);
             }
+        }, 400);
 
-            return matchesSearch && matchesBrand && matchesCategory;
-        });
-    }, [reorders, searchQuery, brand, baseCategory, subCategory]);
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchQuery]);
+
+    const handleBrandChange = (val: string) => {
+        setBrand(val);
+        applyFilters(searchQuery, val, baseCategory, subCategory);
+    };
+
+    const handleBaseCategoryChange = (val: string) => {
+        setBaseCategory(val);
+        let finalSub = 'all';
+        if (val !== 'all') {
+            const subs = categoryGroups[val] || [];
+            if (subs.length === 1) {
+                finalSub = subs[0];
+            }
+        }
+        setSubCategory(finalSub);
+        applyFilters(searchQuery, brand, val, finalSub);
+    };
+
+    const handleSubCategoryChange = (val: string) => {
+        setSubCategory(val);
+        applyFilters(searchQuery, brand, baseCategory, val);
+    };
+
+    const displayedReorders = reorders.data;
 
     const isSystemAdmin = auth.roles.includes('System Administrator');
 
@@ -127,7 +149,7 @@ export default function Index({ reorders, options }: Props) {
                         <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
                             Reorders Required
                             <span className="bg-red-100 text-red-700 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-red-900 dark:text-red-300">
-                                {reorders.length}
+                                {reorders.total}
                             </span>
                         </h1>
                         <p className="text-sm text-muted-foreground mt-1">
@@ -157,7 +179,7 @@ export default function Index({ reorders, options }: Props) {
                             <SearchableSelect
                                 options={options.brands}
                                 value={brand}
-                                onValueChange={setBrand}
+                                onValueChange={handleBrandChange}
                                 placeholder="Brand"
                                 allLabel="All Brands"
                             />
@@ -174,7 +196,7 @@ export default function Index({ reorders, options }: Props) {
                                 <SearchableSelect
                                     options={subCategories}
                                     value={subCategory}
-                                    onValueChange={setSubCategory}
+                                    onValueChange={handleSubCategoryChange}
                                     placeholder="Sub-Category"
                                     allLabel="All Sub-Categories"
                                     getLabel={(opt) => opt === 'all' ? 'All' : opt.replace(new RegExp(`^${baseCategory}\\s*`), '') || opt}
@@ -190,6 +212,7 @@ export default function Index({ reorders, options }: Props) {
                                         setBrand('all');
                                         setBaseCategory('all');
                                         setSubCategory('all');
+                                        router.get('/reorders', {}, { preserveState: true, replace: true, preserveScroll: true });
                                     }}
                                     className="h-9 px-2 text-red-500 hover:text-red-700 hover:bg-red-50 col-span-2 md:col-span-1"
                                 >
@@ -214,8 +237,8 @@ export default function Index({ reorders, options }: Props) {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredReorders.length > 0 ? (
-                                    filteredReorders.map((product, index) => (
+                                {displayedReorders.length > 0 ? (
+                                    displayedReorders.map((product, index) => (
                                         <TableRow key={`${product.id}-${index}`} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
                                             <TableCell>
                                                 {product.image_path ? (
@@ -295,6 +318,11 @@ export default function Index({ reorders, options }: Props) {
                             </TableBody>
                         </Table>
                     </div>
+                    {reorders.links && reorders.links.length > 3 && (
+                        <div className="p-4 border-t flex justify-end">
+                            <Pagination links={reorders.links} />
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -320,7 +348,7 @@ export default function Index({ reorders, options }: Props) {
                     <div className="text-right">
                         <p className="text-xs font-semibold text-gray-900">Generated On</p>
                         <p className="text-xs text-gray-600">{new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</p>
-                        <p className="text-xs font-semibold text-gray-900 mt-1">Total Items: {filteredReorders.length}</p>
+                        <p className="text-xs font-semibold text-gray-900 mt-1">Total Items: {reorders.total}</p>
                     </div>
                 </div>
 
@@ -336,7 +364,7 @@ export default function Index({ reorders, options }: Props) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {filteredReorders.map((product, index) => (
+                        {displayedReorders.map((product, index) => (
                             <tr key={`print-${product.id}-${index}`} className="break-inside-avoid">
                                 <td className="py-2 pr-2 align-top">
                                     <div className="font-semibold text-gray-900">{product.name}</div>
@@ -370,7 +398,7 @@ export default function Index({ reorders, options }: Props) {
                                 </td>
                             </tr>
                         ))}
-                        {filteredReorders.length === 0 && (
+                        {displayedReorders.length === 0 && (
                             <tr>
                                 <td colSpan={isSystemAdmin ? 6 : 5} className="py-6 text-center text-gray-500 italic">
                                     No items found to print.
