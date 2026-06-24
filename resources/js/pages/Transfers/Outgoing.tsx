@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, Truck, CheckCircle, Clock, User, Barcode, QrCode, Plus, XCircle, Send, ShoppingCart } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, User, Barcode, QrCode, Plus, XCircle, Send, ShoppingCart, Printer } from 'lucide-react';
 
 interface Branch {
     id: number;
@@ -233,30 +233,51 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                                             </CardTitle>
                                         </div>
  
-                                        {['readied', 'requested'].includes(transfer.status) && (
-                                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() => handleReject(transfer.id)}
-                                                    className="flex-1 sm:flex-none gap-2"
-                                                >
-                                                    <XCircle className="w-4 h-4" />
-                                                    {transfer.status === 'requested' ? "Reject Request" : "Reject"}
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => handleInitiateClick(transfer)}
-                                                    className={`flex-1 sm:flex-none gap-2 text-white ${
-                                                        transfer.status === 'requested'
-                                                            ? 'bg-violet-600 hover:bg-violet-700 dark:bg-violet-700 dark:hover:bg-violet-800'
-                                                            : 'bg-green-600 hover:bg-green-700'
-                                                    }`}
-                                                >
-                                                    <Send className="w-4 h-4" />
-                                                    {transfer.status === 'requested' ? "Approve & Transfer" : "Initiate Transfer"}
-                                                </Button>
-                                            </div>
+                                        {(transfer.is_request || transfer.status === 'requested' || ['readied', 'requested'].includes(transfer.status)) && (
+                                             <div className="flex items-center gap-2 w-full sm:w-auto">
+                                                 {(transfer.is_request || transfer.status === 'requested') && (
+                                                     <a
+                                                         href={`/transfers/${transfer.id}/print`}
+                                                         target="_blank"
+                                                         rel="noopener noreferrer"
+                                                         className="flex-1 sm:flex-none"
+                                                     >
+                                                         <Button
+                                                             variant="outline"
+                                                             size="sm"
+                                                             className="w-full h-9 gap-1.5 font-medium"
+                                                             type="button"
+                                                         >
+                                                             <Printer className="w-4 h-4" /> Print
+                                                         </Button>
+                                                     </a>
+                                                 )}
+                                                 {['readied', 'requested'].includes(transfer.status) && (
+                                                     <>
+                                                         <Button
+                                                             variant="destructive"
+                                                             size="sm"
+                                                             onClick={() => handleReject(transfer.id)}
+                                                             className="flex-1 sm:flex-none gap-2"
+                                                         >
+                                                             <XCircle className="w-4 h-4" />
+                                                             {transfer.status === 'requested' ? "Reject Request" : "Reject"}
+                                                         </Button>
+                                                         <Button
+                                                             size="sm"
+                                                             onClick={() => handleInitiateClick(transfer)}
+                                                             className={`flex-1 sm:flex-none gap-2 text-white ${
+                                                                 transfer.status === 'requested'
+                                                                     ? 'bg-violet-600 hover:bg-violet-700 dark:bg-violet-700 dark:hover:bg-violet-800'
+                                                                     : 'bg-green-600 hover:bg-green-700'
+                                                             }`}
+                                                         >
+                                                             <Send className="w-4 h-4" />
+                                                             {transfer.status === 'requested' ? "Approve & Transfer" : "Initiate Transfer"}
+                                                         </Button>
+                                                     </>
+                                                 )}
+                                             </div>
                                         )}
                                     </div>
                                     <CardDescription className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-3 text-sm">
