@@ -729,75 +729,81 @@ class GoogleSheetsService
     {
         $cleanRow = [];
         foreach (array_values($row) as $value) {
+            $valStr = '';
             if (is_array($value) || is_object($value)) {
                 $value = (array)$value;
                 if (empty($value)) {
-                    $cleanRow[] = 'null';
-                    continue;
-                }
-                
-                // Format as human-readable string (e.g. Name: Value) instead of JSON
-                $formatted = [];
-                foreach ($value as $item) {
-                    $item = (array)$item;
-                    $name = $item['name'] ?? null;
-                    $options = $item['options'] ?? $item['value'] ?? null;
-                    
-                    if ($name && $options) {
-                        if (is_array($options)) {
-                            $optStrings = [];
-                            foreach ($options as $opt) {
-                                $opt = (array)$opt;
-                                if (isset($opt['value']) && isset($opt['quantity'])) {
-                                    $optStrings[] = "{$opt['value']} ({$opt['quantity']})";
-                                } elseif (isset($opt['value'])) {
-                                    $optStrings[] = $opt['value'];
-                                } else {
-                                    $optStrings[] = implode(':', $opt);
-                                }
-                            }
-                            $optStr = implode('/', $optStrings);
-                            $formatted[] = "$name: $optStr";
-                        } else {
-                            $formatted[] = "$name: $options";
-                        }
-                    } elseif ($name) {
-                        $formatted[] = $name;
-                    } elseif ($options) {
-                        if (is_array($options)) {
-                            $optStrings = [];
-                            foreach ($options as $opt) {
-                                $opt = (array)$opt;
-                                if (isset($opt['value']) && isset($opt['quantity'])) {
-                                    $optStrings[] = "{$opt['value']} ({$opt['quantity']})";
-                                } elseif (isset($opt['value'])) {
-                                    $optStrings[] = $opt['value'];
-                                } else {
-                                    $optStrings[] = implode(':', $opt);
-                                }
-                            }
-                            $formatted[] = implode('/', $optStrings);
-                        } else {
-                            $formatted[] = $options;
-                        }
-                    } elseif (is_scalar($item)) {
-                        $formatted[] = (string)$item;
-                    }
-                }
-                
-                if (!empty($formatted)) {
-                    $cleanRow[] = implode(', ', $formatted);
+                    $valStr = 'null';
                 } else {
-                    $cleanRow[] = 'null';
+                    // Format as human-readable string (e.g. Name: Value) instead of JSON
+                    $formatted = [];
+                    foreach ($value as $item) {
+                        $item = (array)$item;
+                        $name = $item['name'] ?? null;
+                        $options = $item['options'] ?? $item['value'] ?? null;
+                        
+                        if ($name && $options) {
+                            if (is_array($options)) {
+                                $optStrings = [];
+                                foreach ($options as $opt) {
+                                    $opt = (array)$opt;
+                                    if (isset($opt['value']) && isset($opt['quantity'])) {
+                                        $optStrings[] = "{$opt['value']} ({$opt['quantity']})";
+                                    } elseif (isset($opt['value'])) {
+                                        $optStrings[] = $opt['value'];
+                                    } else {
+                                        $optStrings[] = implode(':', $opt);
+                                    }
+                                }
+                                $optStr = implode('/', $optStrings);
+                                $formatted[] = "$name: $optStr";
+                            } else {
+                                $formatted[] = "$name: $options";
+                            }
+                        } elseif ($name) {
+                            $formatted[] = $name;
+                        } elseif ($options) {
+                            if (is_array($options)) {
+                                $optStrings = [];
+                                foreach ($options as $opt) {
+                                    $opt = (array)$opt;
+                                    if (isset($opt['value']) && isset($opt['quantity'])) {
+                                        $optStrings[] = "{$opt['value']} ({$opt['quantity']})";
+                                    } elseif (isset($opt['value'])) {
+                                        $optStrings[] = $opt['value'];
+                                    } else {
+                                        $optStrings[] = implode(':', $opt);
+                                    }
+                                }
+                                $formatted[] = implode('/', $optStrings);
+                            } else {
+                                $formatted[] = $options;
+                            }
+                        } elseif (is_scalar($item)) {
+                            $formatted[] = (string)$item;
+                        }
+                    }
+                    
+                    if (!empty($formatted)) {
+                        $valStr = implode(', ', $formatted);
+                    } else {
+                        $valStr = 'null';
+                    }
                 }
             } else {
                 // If the value is strictly null or an empty string, we show 'null'
                 if ($value === null || $value === '') {
-                    $cleanRow[] = 'null';
+                    $valStr = 'null';
                 } else {
-                    $cleanRow[] = $value;
+                    $valStr = (string)$value;
                 }
             }
+
+            // Truncate to avoid Google Sheets 50,000 character limit per cell
+            if (strlen($valStr) > 49000) {
+                $valStr = substr($valStr, 0, 48900) . '... [TRUNCATED]';
+            }
+            $cleanRow[] = $valStr;
         }
         return $cleanRow;
     }
@@ -875,40 +881,40 @@ class GoogleSheetsService
             $salesHeaders = ['Sale ID', 'Branch', 'Status', 'Date', 'Readied By', 'Approved By', 'Items', 'Total Price', 'Notes'];
             $salesRows = [$salesHeaders];
             
-            $allSales = \App\Models\Sale::with(['branch', 'readiedBy', 'approvedBy', 'items.product'])
+            \App\Models\Sale::with(['branch', 'readiedBy', 'approvedBy', 'items.product'])
                 ->orderBy('created_at', 'desc')
-                ->get();
-            
-            foreach ($allSales as $sale) {
-                $branchName = $sale->branch?->branch_name;
-                if ($branchName === null || $branchName === '') {
-                    continue;
-                }
+                ->chunk(30, function ($sales) use (&$salesRows) {
+                    foreach ($sales as $sale) {
+                        $branchName = $sale->branch?->branch_name;
+                        if ($branchName === null || $branchName === '') {
+                            continue;
+                        }
 
-                $itemCount = $sale->items->count();
-                $itemsSummary = $sale->items->take(250)->map(function($item) {
-                    return '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity . ' @ ' . $item->price;
-                })->implode("\n");
-                if ($itemCount > 250) {
-                    $itemsSummary .= "\n• ... and " . ($itemCount - 250) . " more items";
-                }
+                        $itemCount = $sale->items->count();
+                        $itemsSummary = $sale->items->take(50)->map(function($item) {
+                            return '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity . ' @ ' . $item->price;
+                        })->implode("\n");
+                        if ($itemCount > 50) {
+                            $itemsSummary .= "\n• ... and " . ($itemCount - 50) . " more items";
+                        }
 
-                $total = $sale->items->sum(function($item) {
-                    return $item->price * $item->quantity;
+                        $total = $sale->items->sum(function($item) {
+                            return $item->price * $item->quantity;
+                        });
+
+                        $salesRows[] = [
+                            $sale->id,
+                            $sale->branch?->branch_name,
+                            $sale->status,
+                            $sale->created_at->format('Y-m-d H:i'),
+                            $sale->readiedBy?->name,
+                            $sale->approvedBy?->name,
+                            $itemsSummary,
+                            $total,
+                            $sale->notes,
+                        ];
+                    }
                 });
-
-                $salesRows[] = [
-                    $sale->id,
-                    $sale->branch?->branch_name,
-                    $sale->status,
-                    $sale->created_at->format('Y-m-d H:i'),
-                    $sale->readiedBy?->name,
-                    $sale->approvedBy?->name,
-                    $itemsSummary,
-                    $total,
-                    $sale->notes,
-                ];
-            }
             
             $this->updateSheetContent('Sales', array_values($salesRows));
             return true;
@@ -928,48 +934,48 @@ class GoogleSheetsService
             $transferHeaders = ['Transfer ID', 'Source Branch', 'Destination', 'Status', 'Date', 'Readied By', 'Approved By', 'Received By', 'Items', 'Notes'];
             $transferRows = [$transferHeaders];
             
-            $allTransfers = \App\Models\Transfer::with(['sourceBranch', 'destinationBranch', 'supplier', 'readiedBy', 'approvedBy', 'receivedBy', 'items.product'])
+            \App\Models\Transfer::with(['sourceBranch', 'destinationBranch', 'supplier', 'readiedBy', 'approvedBy', 'receivedBy', 'items.product'])
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->chunk(10, function ($transfers) use (&$transferRows) {
+                    foreach ($transfers as $transfer) {
+                        $sourceBranch = $transfer->sourceBranch?->branch_name;
+                        $destination = $transfer->destinationBranch?->branch_name ?? $transfer->supplier?->name ?? 'Unknown';
 
-            foreach ($allTransfers as $transfer) {
-                $sourceBranch = $transfer->sourceBranch?->branch_name;
-                $destination = $transfer->destinationBranch?->branch_name ?? $transfer->supplier?->name ?? 'Unknown';
+                        $isSourceArchived = $sourceBranch && (strpos($sourceBranch, '[ARCHIVED]') !== false);
+                        $isDestArchived = $destination && (strpos($destination, '[ARCHIVED]') !== false);
 
-                $isSourceArchived = $sourceBranch && (strpos($sourceBranch, '[ARCHIVED]') !== false);
-                $isDestArchived = $destination && (strpos($destination, '[ARCHIVED]') !== false);
+                        if ($isSourceArchived || $isDestArchived) {
+                            continue;
+                        }
 
-                if ($isSourceArchived || $isDestArchived) {
-                    continue;
-                }
+                        $itemCount = $transfer->items->count();
+                        $itemsSummary = $transfer->items->take(50)->map(function($item) {
+                            $summary = '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
+                            if ($item->received_quantity !== null) {
+                                $summary .= " [Rec: {$item->received_quantity}]";
+                            }
+                            return $summary;
+                        })->implode("\n");
+                        if ($itemCount > 50) {
+                            $itemsSummary .= "\n• ... and " . ($itemCount - 50) . " more items";
+                        }
 
-                $itemCount = $transfer->items->count();
-                $itemsSummary = $transfer->items->take(250)->map(function($item) {
-                    $summary = '• ' . ($item->product->name ?? 'Unknown') . ' x ' . $item->quantity;
-                    if ($item->received_quantity !== null) {
-                        $summary .= " [Rec: {$item->received_quantity}]";
+                        $destination = $transfer->destinationBranch?->branch_name ?? $transfer->supplier?->name ?? 'Unknown';
+
+                        $transferRows[] = [
+                            $transfer->id,
+                            $transfer->sourceBranch?->branch_name,
+                            $destination,
+                            $transfer->status,
+                            $transfer->created_at->format('Y-m-d H:i'),
+                            $transfer->readiedBy?->name,
+                            $transfer->approvedBy?->name,
+                            $transfer->received_by_name ?? $transfer->receivedBy?->name,
+                            $itemsSummary,
+                            $transfer->notes,
+                        ];
                     }
-                    return $summary;
-                })->implode("\n");
-                if ($itemCount > 250) {
-                    $itemsSummary .= "\n• ... and " . ($itemCount - 250) . " more items";
-                }
-
-                $destination = $transfer->destinationBranch?->branch_name ?? $transfer->supplier?->name ?? 'Unknown';
-
-                $transferRows[] = [
-                    $transfer->id,
-                    $transfer->sourceBranch?->branch_name,
-                    $destination,
-                    $transfer->status,
-                    $transfer->created_at->format('Y-m-d H:i'),
-                    $transfer->readiedBy?->name,
-                    $transfer->approvedBy?->name,
-                    $transfer->received_by_name ?? $transfer->receivedBy?->name,
-                    $itemsSummary,
-                    $transfer->notes,
-                ];
-            }
+                });
             
             $this->updateSheetContent('Transfers', array_values($transferRows));
             return true;

@@ -58,6 +58,7 @@ class GoogleSheetsSyncController extends Controller
     public function syncAll()
     {
         set_time_limit(600);
+        ini_set('memory_limit', '512M');
         
         try {
             $branches = Branch::all();
@@ -70,6 +71,7 @@ class GoogleSheetsSyncController extends Controller
             ];
 
             foreach ($branches as $branch) {
+                \Illuminate\Support\Facades\DB::reconnect();
                 $rows = [$headers];
                 
                 $branchProducts = BranchProduct::where('branch_id', $branch->id)
@@ -113,6 +115,7 @@ class GoogleSheetsSyncController extends Controller
             }
 
             // --- Reorders Tab Sync ---
+            \Illuminate\Support\Facades\DB::reconnect();
             $reorderHeaders = ['ID', 'Product Name', 'Brand', 'Category', 'Supplier'];
             foreach ($branches as $branch) {
                 $reorderHeaders[] = $branch->branch_name . ' Stock';
@@ -148,9 +151,11 @@ class GoogleSheetsSyncController extends Controller
             $this->sheetsService->updateSheetContent('Reorders', array_values($reorderRows));
 
             // --- Sales Tab Sync (All History) ---
+            \Illuminate\Support\Facades\DB::reconnect();
             $this->sheetsService->syncSalesSheet();
 
             // --- Transfers Tab Sync (All History) ---
+            \Illuminate\Support\Facades\DB::reconnect();
             $this->sheetsService->syncTransfersSheet();
 
             return back()->with('success', 'Full sync completed successfully.');
