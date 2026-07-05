@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, Plus, Trash2, Scan, ShoppingCart, Check, X, AlertCircle, Loader2, Barcode, Camera, TicketPercent, Wallet, Upload, CircleDollarSign, Clock, Coins } from 'lucide-react';
+import { Package, Plus, Trash2, Scan, ShoppingCart, Check, X, AlertCircle, Loader2, Barcode, Camera, TicketPercent, Wallet, Upload, CircleDollarSign, Clock, Coins, MessageSquare } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 import { usePermission } from '@/hooks/usePermission';
 import { Html5Qrcode } from 'html5-qrcode';
@@ -33,6 +34,7 @@ interface SaleItem {
     price: number; // The current selling price (can be discounted)
     product: Product;
     custom_code: string | null;
+    note?: string | null;
 }
 
 interface ServiceFee {
@@ -53,6 +55,7 @@ interface PendingSale {
         quantity: number;
         price: number;
         custom_code?: string | null;
+        note?: string | null;
         product: {
             name: string;
         };
@@ -97,7 +100,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const lastScanRef = useRef<number>(0);
 
     const { data, setData, post, processing, reset, errors } = useForm({
-        items: [] as { product_id: number; quantity: number; price: number; original_price: number; custom_code: string | null }[],
+        items: [] as { product_id: number; quantity: number; price: number; original_price: number; custom_code: string | null; note: string | null }[],
         notes: '',
         add_service_fee: false,
         service_fee_name: '',
@@ -110,6 +113,10 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const [discountModalOpen, setDiscountModalOpen] = useState(false);
     const [selectedItemForDiscount, setSelectedItemForDiscount] = useState<SaleItem | null>(null);
     const [newPrice, setNewPrice] = useState<string>('');
+
+    const [noteModalOpen, setNoteModalOpen] = useState(false);
+    const [selectedItemForNote, setSelectedItemForNote] = useState<SaleItem | null>(null);
+    const [itemNoteText, setItemNoteText] = useState<string>('');
 
     // Focus scanner input on load and after actions
     useEffect(() => {
@@ -346,7 +353,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                 );
             }
             toast.success('Item added to list');
-            return [...prev, { product_id: product.id, quantity: 1, price: Number(product.price) || 0, product: product, custom_code: product.code }];
+            return [...prev, { product_id: product.id, quantity: 1, price: Number(product.price) || 0, product: product, custom_code: product.code, note: null }];
         });
     };
 
@@ -404,6 +411,24 @@ export default function Create({ products, pendingSales }: { products: Product[]
         setSelectedItemForDiscount(null);
         toast.success('Price updated for this item');
     };
+
+    const handleOpenNoteModal = (item: SaleItem) => {
+        setSelectedItemForNote(item);
+        setItemNoteText(item.note || '');
+        setNoteModalOpen(true);
+    };
+
+    const handleSaveNote = () => {
+        if (!selectedItemForNote) return;
+        setCart(prev => prev.map(item =>
+            item.product_id === selectedItemForNote.product_id
+                ? { ...item, note: itemNoteText.trim() || null }
+                : item
+        ));
+        setNoteModalOpen(false);
+        setSelectedItemForNote(null);
+        toast.success('Note updated for this item');
+    };
     const handleReadySale = () => {
         if (cart.length === 0) return;
 
@@ -417,7 +442,8 @@ export default function Create({ products, pendingSales }: { products: Product[]
             quantity: item.quantity,
             price: item.price,
             original_price: Number(item.product.price) || 0,
-            custom_code: item.custom_code || null
+            custom_code: item.custom_code || null,
+            note: item.note || null
         }));
 
         post('/sales', {
@@ -858,6 +884,12 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                                 Stock: {item.product.available_quantity}
                                                             </span>
                                                         </div>
+                                                        {item.note && (
+                                                            <div className="text-[11px] text-green-700 dark:text-green-400 italic mt-1 font-medium bg-green-50 dark:bg-green-950/20 px-2 py-0.5 rounded w-fit flex items-center gap-1">
+                                                                <MessageSquare className="w-3 h-3" />
+                                                                <span>Note: {item.note}</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-4">
@@ -890,6 +922,15 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                             title="Apply Discount"
                                                         >
                                                             <TicketPercent className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className={`h-8 w-8 ${item.note ? 'text-green-600 border-green-300 bg-green-50/50 hover:bg-green-100 dark:text-green-400 dark:border-green-800/30 dark:bg-green-950/20' : 'text-primary border-primary/20 hover:bg-primary/10'}`}
+                                                            onClick={() => handleOpenNoteModal(item)}
+                                                            title={item.note ? "Edit Note" : "Add Note"}
+                                                        >
+                                                            <MessageSquare className="w-4 h-4" />
                                                         </Button>
                                                         <Button
                                                             variant="outline"
@@ -1158,6 +1199,12 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                         {item.custom_code && (
                                                             <span className="text-[10px] text-muted-foreground font-mono">Code: {item.custom_code}</span>
                                                         )}
+                                                        {item.note && (
+                                                            <span className="text-[10px] text-green-700 dark:text-green-400 italic mt-0.5 flex items-center gap-0.5">
+                                                                <MessageSquare className="w-2.5 h-2.5" />
+                                                                <span>Note: {item.note}</span>
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
@@ -1243,6 +1290,38 @@ export default function Create({ products, pendingSales }: { products: Product[]
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setDiscountModalOpen(false)}>Cancel</Button>
                             <Button onClick={handleApplyDiscount}>Apply New Price</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Note Modal */}
+                <Dialog open={noteModalOpen} onOpenChange={setNoteModalOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <MessageSquare className="w-5 h-5 text-primary" />
+                                Add Note to Item
+                            </DialogTitle>
+                            <DialogDescription>
+                                Add a note for {selectedItemForNote?.product.name} (e.g. custom requests or specific configurations).
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex flex-col gap-4 py-4">
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="item-note">Note</Label>
+                                <Textarea
+                                    id="item-note"
+                                    placeholder="Type note here..."
+                                    value={itemNoteText}
+                                    onChange={(e) => setItemNoteText(e.target.value)}
+                                    rows={3}
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setNoteModalOpen(false)}>Cancel</Button>
+                            <Button onClick={handleSaveNote}>Save Note</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

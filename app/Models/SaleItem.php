@@ -13,6 +13,7 @@ class SaleItem extends Model
         'price',
         'original_price',
         'custom_code',
+        'note',
     ];
 
     public function sale()

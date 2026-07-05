@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, CheckCircle, XCircle, Clock, User, ArrowRight, Barcode, QrCode, Store, Search, DollarSign, Briefcase, Printer, Settings2, Image, Wallet, Percent, ClipboardList, ArrowLeft, RotateCcw, Trash2 } from 'lucide-react';
+import { Package, CheckCircle, XCircle, Clock, User, ArrowRight, Barcode, QrCode, Store, Search, DollarSign, Briefcase, Printer, Settings2, Image, Wallet, Percent, ClipboardList, ArrowLeft, RotateCcw, Trash2, MessageSquare } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ interface SaleItem {
         code: string | null;
     };
     custom_code: string | null;
+    note?: string | null;
     quantity: number;
     price: number;
     original_price: number | null;
@@ -1322,6 +1323,12 @@ export default function Index({
                                                                             <div className="flex items-center gap-1.5">
                                                                                 <QrCode className="w-3.5 h-3.5" />
                                                                                 <span className="font-mono">{item.product.qr_code}</span>
+                                                                            </div>
+                                                                        )}
+                                                                        {item.note && (
+                                                                            <div className="flex items-center gap-1.5 text-[11px] text-green-700 dark:text-green-400 font-medium bg-green-50 dark:bg-green-950/20 px-2 py-0.5 rounded w-fit italic mt-0.5">
+                                                                                <MessageSquare className="w-3.5 h-3.5" />
+                                                                                <span>Note: {item.note}</span>
                                                                             </div>
                                                                         )}
                                                                     </div>

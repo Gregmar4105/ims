@@ -2,7 +2,7 @@ import { Head } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
+import { Printer, MessageSquare } from 'lucide-react';
 import { handleNativePrintFallback } from '@/lib/utils';
 import { useBluetoothPrinterContext } from '@/contexts/bluetooth-printer-context';
 import { PrintSelectionModal } from '@/components/print-selection-modal';
@@ -22,6 +22,7 @@ interface Sale {
         original_price: number | null;
         product: { name: string; barcode: string; qr_code: string; code: string | null };
         custom_code: string | null;
+        note: string | null;
     }>;
     service_fees?: Array<{ id: number; name: string; amount: number | string }>;
     payment_method?: string | null;
@@ -135,6 +136,12 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                                             ) : null}
                                             <p>{item.product.barcode || item.product.qr_code}</p>
                                         </div>
+                                        {item.note && (
+                                            <div className="flex items-center gap-1 text-xs text-gray-600 font-sans italic mt-1">
+                                                <MessageSquare className="w-3.5 h-3.5 text-gray-400" />
+                                                <span>Note: {item.note}</span>
+                                            </div>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-right py-3">{item.quantity}</TableCell>
                                     <TableCell className="text-right py-3">

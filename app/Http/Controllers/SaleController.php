@@ -545,6 +545,7 @@ class SaleController extends Controller
             'items.*.price' => 'required|numeric|min:0',
             'items.*.original_price' => 'required|numeric|min:0',
             'items.*.custom_code' => 'nullable|string',
+            'items.*.note' => 'nullable|string',
             'notes' => 'nullable|string',
             'add_service_fee' => 'nullable|boolean',
             'service_fee_name' => 'nullable|string|max:255',
@@ -581,6 +582,7 @@ class SaleController extends Controller
                     'price' => $item['price'],
                     'original_price' => $item['original_price'],
                     'custom_code' => $item['custom_code'] ?? null,
+                    'note' => $item['note'] ?? null,
                 ]);
             }
 
