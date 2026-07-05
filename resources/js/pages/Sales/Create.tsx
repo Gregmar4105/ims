@@ -77,9 +77,9 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const { can } = usePermission();
     
     const getSaleTotal = (sale: PendingSale) => {
-        const itemsTotal = sale.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0);
+        const itemsTotal = sale.items.reduce((sum, item) => sum + Math.ceil(item.quantity * Number(item.price)), 0);
         const serviceFeeTotal = sale.service_fees?.reduce((sum, fee) => sum + Number(fee.amount), 0) || 0;
-        return itemsTotal + serviceFeeTotal;
+        return Math.ceil(itemsTotal + serviceFeeTotal);
     };
 
     const [scannedCode, setScannedCode] = useState('');
@@ -548,7 +548,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const handleCashReceivedChange = (value: string) => {
         approveForm.setData(data => {
             const cash = parseFloat(value) || 0;
-            const total = selectedSaleForApproval ? selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0) : 0;
+            const total = selectedSaleForApproval ? getSaleTotal(selectedSaleForApproval) : 0;
             const change = Math.max(0, cash - total);
             return {
                 ...data,
@@ -561,7 +561,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const handleSplitCashReceivedChange = (value: string) => {
         approveForm.setData(data => {
             const cash = parseFloat(value) || 0;
-            const total = selectedSaleForApproval ? selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0) : 0;
+            const total = selectedSaleForApproval ? getSaleTotal(selectedSaleForApproval) : 0;
             const ewallet = Math.max(0, total - cash);
             return {
                 ...data,
@@ -574,7 +574,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
     const handleReservationCashReceivedChange = (value: string) => {
         approveForm.setData(data => {
             const cash = parseFloat(value) || 0;
-            const total = selectedSaleForApproval ? selectedSaleForApproval.items.reduce((sum, item) => sum + (item.quantity * Number(item.price)), 0) : 0;
+            const total = selectedSaleForApproval ? getSaleTotal(selectedSaleForApproval) : 0;
             const remaining = selectedSaleForApproval ? (total - Number(selectedSaleForApproval.downpayment || 0)) : 0;
             const change = Math.max(0, cash - remaining);
             return {
@@ -874,7 +874,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                             />
                                                         </div>
                                                         <div className="flex flex-col items-end mr-4">
-                                                            <span className="text-sm font-bold">₱{(item.price * item.quantity).toFixed(2)}</span>
+                                                            <span className="text-sm font-bold">₱{Math.ceil(item.price * item.quantity).toFixed(2)}</span>
                                                             <div className="flex flex-col items-end">
                                                                 {item.price !== Number(item.product.price) && (
                                                                     <span className="text-[10px] text-muted-foreground line-through">₱{Number(item.product.price).toFixed(2)}</span>
@@ -1081,8 +1081,8 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                     <div className="text-sm text-muted-foreground">
                                         Total Items: <span className="font-medium text-foreground">{cart.reduce((acc, item) => acc + item.quantity, 0)}</span>
                                         <div className="text-xl font-bold text-primary mt-1">
-                                            Total: ₱{(
-                                                cart.reduce((acc, item) => acc + (item.quantity * item.price), 0) +
+                                            Total: ₱{Math.ceil(
+                                                cart.reduce((acc, item) => acc + Math.ceil(item.quantity * item.price), 0) +
                                                 (data.add_service_fee && data.service_fee_amount ? Number(data.service_fee_amount) : 0)
                                             ).toFixed(2)}
                                         </div>

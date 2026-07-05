@@ -232,7 +232,7 @@ export default function Index({
 
     const pureCashSales = todaySales.filter(s => s.payment_method === 'cash');
     const pureCashSalesTotal = pureCashSales.reduce((sum, sale) => {
-        return sum + sale.items.reduce((s, i) => s + (i.price * i.quantity), 0);
+        return sum + sale.items.reduce((s, i) => s + Math.ceil(i.price * i.quantity), 0);
     }, 0);
 
     const homeCreditSales = todaySales.filter(s => s.payment_method === 'home_credit');
@@ -251,7 +251,7 @@ export default function Index({
     }, 0);
     const totalReservationLeft = reservationSales.reduce((sum, s) => {
         if (s.status === 'reserved') {
-            const saleTotal = s.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            const saleTotal = s.items.reduce((acc, item) => acc + Math.ceil(item.price * item.quantity), 0);
             return sum + (saleTotal - Number(s.downpayment || 0));
         }
         return sum;
@@ -268,7 +268,7 @@ export default function Index({
     }> = [];
 
     todaySales.forEach(sale => {
-        const saleTotal = sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const saleTotal = sale.items.reduce((sum, item) => sum + Math.ceil(item.price * item.quantity), 0);
         if (sale.payment_method === 'cash') {
             cashSalesEntries.push({
                 id: sale.id,
@@ -727,7 +727,7 @@ export default function Index({
                                     ) : (
                                         <div className="divide-y divide-emerald-100/50 dark:divide-emerald-900/10">
                                             {ewalletSalesFilter.map((sale) => {
-                                                const saleTotal = sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                                                const saleTotal = sale.items.reduce((sum, item) => sum + Math.ceil(item.price * item.quantity), 0);
                                                 const displayAmount = sale.payment_method === 'reservation' 
                                                     ? (saleTotal - Number(sale.downpayment || 0))
                                                     : (sale.payment_method === 'split_bill' ? Number(sale.split_ewallet_amount || 0) : saleTotal);
@@ -804,7 +804,7 @@ export default function Index({
                                     ) : (
                                         <div className="divide-y divide-emerald-100/50 dark:divide-emerald-900/10">
                                             {todaySales.filter(s => s.payment_method === 'home_credit').map((sale) => {
-                                                const saleTotal = sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                                                const saleTotal = sale.items.reduce((sum, item) => sum + Math.ceil(item.price * item.quantity), 0);
                                                 return (
                                                     <div key={sale.id} className="p-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-955/5 transition-colors">
                                                         <div className="flex justify-between items-start gap-2">
@@ -968,7 +968,7 @@ export default function Index({
                                     ) : (
                                         <div className="divide-y divide-emerald-100/50 dark:divide-emerald-900/10">
                                             {todaySales.filter(s => s.payment_method === 'reservation').map((sale) => {
-                                                const saleTotal = sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                                                const saleTotal = sale.items.reduce((sum, item) => sum + Math.ceil(item.price * item.quantity), 0);
                                                 return (
                                                     <div key={sale.id} className="p-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-955/5 transition-colors">
                                                         <div className="flex justify-between items-start gap-2">
@@ -1328,7 +1328,7 @@ export default function Index({
                                                                 </TableCell>
                                                                 <TableCell className="text-right">
                                                                     <div className="flex flex-col items-end">
-                                                                        <span className="font-bold">₱{Number(item.price * item.quantity).toFixed(2)}</span>
+                                                                        <span className="font-bold">₱{Math.ceil(item.price * item.quantity).toFixed(2)}</span>
                                                                         <div className="flex flex-col items-end text-[10px]">
                                                                             {item.original_price && Number(item.original_price) !== Number(item.price) && (
                                                                                 <span className="text-muted-foreground line-through">₱{Number(item.original_price).toFixed(2)}</span>
@@ -1374,8 +1374,8 @@ export default function Index({
                                                                         Total Amount
                                                                     </TableCell>
                                                                     <TableCell className="text-right text-lg font-black">
-                                                                        ₱{(
-                                                                            sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) +
+                                                                        ₱{Math.ceil(
+                                                                            sale.items.reduce((sum, item) => sum + Math.ceil(item.price * item.quantity), 0) +
                                                                             sale.service_fees.reduce((sum, fee) => sum + Number(fee.amount), 0)
                                                                         ).toFixed(2)}
                                                                     </TableCell>

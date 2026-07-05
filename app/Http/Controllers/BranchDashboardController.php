@@ -108,7 +108,7 @@ class BranchDashboardController extends Controller
         $todayReservationSalesSum = 0;
 
         foreach ($todaySales as $sale) {
-            $saleRevenue = $sale->items->sum(fn($item) => $item->quantity * $item->price);
+            $saleRevenue = $sale->items->sum(fn($item) => ceil($item->quantity * $item->price));
             if ($sale->payment_method === 'cash') {
                 $todayCashSalesSum += $saleRevenue;
                 $todaySalesSum += $saleRevenue;
@@ -328,7 +328,7 @@ class BranchDashboardController extends Controller
             ->map(function ($items, $categoryName) {
                 return [
                     'name'  => $categoryName,
-                    'value' => (float)$items->sum(fn($item) => $item->quantity * $item->price),
+                    'value' => (float)$items->sum(fn($item) => ceil($item->quantity * $item->price)),
                     'count' => (int)$items->sum('quantity'),
                 ];
             })

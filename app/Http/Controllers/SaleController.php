@@ -133,7 +133,7 @@ class SaleController extends Controller
         $todayReservationSalesSum = 0;
  
         foreach ($todaySales as $sale) {
-            $saleRevenue = $sale->items->sum(fn($item) => $item->quantity * $item->price);
+            $saleRevenue = $sale->items->sum(fn($item) => ceil($item->quantity * $item->price));
             if ($sale->payment_method === 'cash') {
                 $todayCashSalesSum += $saleRevenue;
                 $todaySalesSum += $saleRevenue;

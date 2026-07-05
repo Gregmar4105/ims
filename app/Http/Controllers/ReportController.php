@@ -76,7 +76,7 @@ class ReportController extends Controller
         $totalItemsSold = 0;
         foreach ($sales as $sale) {
             foreach ($sale->items as $item) {
-                $totalRevenue += $item->quantity * $item->price;
+                $totalRevenue += ceil($item->quantity * $item->price);
                 $totalItemsSold += $item->quantity;
             }
         }
@@ -357,7 +357,7 @@ class ReportController extends Controller
             ->map(function ($items, $categoryName) {
                 return [
                     'name' => $categoryName,
-                    'value' => (float)$items->sum(fn($item) => $item->quantity * $item->price),
+                    'value' => (float)$items->sum(fn($item) => ceil($item->quantity * $item->price)),
                     'count' => (int)$items->sum('quantity'),
                 ];
             })
@@ -373,7 +373,7 @@ class ReportController extends Controller
             ->groupBy('payment_method')
             ->map(function ($sales, $method) {
                 $total = $sales->sum(function($sale) {
-                    return $sale->items->sum(fn($item) => $item->quantity * $item->price);
+                    return $sale->items->sum(fn($item) => ceil($item->quantity * $item->price));
                 });
                 return [
                     'name' => ucfirst(str_replace('_', ' ', $method)),

@@ -50,7 +50,7 @@ export default function PrintList({ sales, filters }: { sales: Sale[], filters: 
     };
 
     const calculateTotal = (sale: Sale) => {
-        return sale.items.reduce((total, item) => total + (item.quantity * item.price), 0);
+        return Math.ceil(sale.items.reduce((total, item) => total + Math.ceil(item.quantity * item.price), 0));
     };
 
     return (

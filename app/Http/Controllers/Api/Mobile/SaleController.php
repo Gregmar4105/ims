@@ -323,9 +323,9 @@ class SaleController extends Controller
                 'product_code' => $i->product?->code,
                 'quantity'     => $i->quantity,
                 'price'        => $i->price,
-                'subtotal'     => $i->quantity * $i->price,
+                'subtotal'     => ceil($i->quantity * $i->price),
             ]);
-            $base['total'] = $sale->items->sum(fn ($i) => $i->quantity * $i->price);
+            $base['total'] = $sale->items->sum(fn ($i) => ceil($i->quantity * $i->price));
         }
 
         return $base;

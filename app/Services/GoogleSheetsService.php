@@ -511,7 +511,7 @@ class GoogleSheetsService
 
             // Calculate total
             $total = $sale->items->sum(function($item) {
-                return $item->price * $item->quantity;
+                return ceil($item->price * $item->quantity);
             });
 
             // Build data row
@@ -899,7 +899,7 @@ class GoogleSheetsService
                         }
 
                         $total = $sale->items->sum(function($item) {
-                            return $item->price * $item->quantity;
+                            return ceil($item->price * $item->quantity);
                         });
 
                         $salesRows[] = [

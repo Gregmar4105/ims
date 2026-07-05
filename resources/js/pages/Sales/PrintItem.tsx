@@ -70,7 +70,7 @@ export default function PrintItem({ sale }: { sale: Sale }) {
     };
 
     const totalServiceFees = sale.service_fees?.reduce((sum, fee) => sum + Number(fee.amount), 0) || 0;
-    const totalRevenue = sale.items.reduce((sum, item) => sum + (item.quantity * item.price), 0) + totalServiceFees;
+    const totalRevenue = Math.ceil(sale.items.reduce((sum, item) => sum + Math.ceil(item.quantity * item.price), 0) + totalServiceFees);
     const totalItems = sale.items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
@@ -146,7 +146,7 @@ export default function PrintItem({ sale }: { sale: Sale }) {
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right py-3 pr-0 font-medium font-mono">
-                                        ₱{(item.quantity * item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        ₱{Math.ceil(item.quantity * item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </TableCell>
                                 </TableRow>
                             ))}
