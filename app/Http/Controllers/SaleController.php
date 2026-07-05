@@ -408,6 +408,7 @@ class SaleController extends Controller
                 'products.qr_code',
                 'products.price',
                 'products.image_path',
+                'products.variations',
                 'branch_products.quantity as available_quantity'
             )
             ->get();
@@ -485,6 +486,7 @@ class SaleController extends Controller
                 'qr_code' => $p->qr_code,
                 'price' => $p->price,
                 'image_path' => $p->image_path,
+                'variations' => $p->variations,
                 'available_quantity' => $branchProduct ? $branchProduct->quantity : 0,
             ];
         });
@@ -522,6 +524,7 @@ class SaleController extends Controller
                 'products.qr_code',
                 'products.price',
                 'products.image_path',
+                'products.variations',
                 'branch_products.quantity as available_quantity'
             )
             ->first();

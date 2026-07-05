@@ -26,6 +26,7 @@ interface Product {
     price: number | null;
     available_quantity: number;
     image_path: string | null;
+    variations?: any[] | null;
 }
 
 interface SaleItem {
@@ -35,6 +36,8 @@ interface SaleItem {
     product: Product;
     custom_code: string | null;
     note?: string | null;
+    custom_note?: string | null;
+    selected_variations?: Record<string, string>;
 }
 
 interface ServiceFee {
@@ -333,6 +336,59 @@ export default function Create({ products, pendingSales }: { products: Product[]
         }
     };
 
+    const getParsedVariations = (variations: any): any[] => {
+        if (!variations) return [];
+        if (typeof variations === 'string') {
+            try {
+                const decoded = JSON.parse(variations);
+                if (Array.isArray(decoded)) return decoded;
+            } catch (e) {}
+            return [];
+        }
+        if (Array.isArray(variations)) return variations;
+        return [];
+    };
+
+    const getOptionsArray = (options: any): string[] => {
+        if (typeof options === 'string') {
+            return options.split(',').map(o => o.trim());
+        }
+        if (Array.isArray(options)) {
+            return options.map(opt => typeof opt === 'object' ? opt.value : String(opt));
+        }
+        return [];
+    };
+
+    const getCombinedNote = (variations: Record<string, string> | undefined, customNote: string | null | undefined) => {
+        const varParts = variations 
+            ? Object.entries(variations)
+                .filter(([_, value]) => value !== '')
+                .map(([name, value]) => `${name}: ${value}`) 
+            : [];
+        const varString = varParts.join(', ');
+        if (varString && customNote) {
+            return `${varString} | ${customNote}`;
+        }
+        return varString || customNote || null;
+    };
+
+    const updateSelectedVariation = (productId: number, variationName: string, value: string) => {
+        setCart(prev => prev.map(item => {
+            if (item.product_id === productId) {
+                const nextVars = {
+                    ...(item.selected_variations || {}),
+                    [variationName]: value
+                };
+                return {
+                    ...item,
+                    selected_variations: nextVars,
+                    note: getCombinedNote(nextVars, item.custom_note)
+                };
+            }
+            return item;
+        }));
+    };
+
     const addToCart = (product: Product) => {
         if (product.available_quantity <= 0) {
             toast.error(`Cannot add. ${product.name} is out of stock.`);
@@ -353,7 +409,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
                 );
             }
             toast.success('Item added to list');
-            return [...prev, { product_id: product.id, quantity: 1, price: Number(product.price) || 0, product: product, custom_code: product.code, note: null }];
+            return [...prev, { product_id: product.id, quantity: 1, price: Number(product.price) || 0, product: product, custom_code: product.code, note: null, custom_note: null, selected_variations: {} }];
         });
     };
 
@@ -414,7 +470,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
 
     const handleOpenNoteModal = (item: SaleItem) => {
         setSelectedItemForNote(item);
-        setItemNoteText(item.note || '');
+        setItemNoteText(item.custom_note || '');
         setNoteModalOpen(true);
     };
 
@@ -422,7 +478,11 @@ export default function Create({ products, pendingSales }: { products: Product[]
         if (!selectedItemForNote) return;
         setCart(prev => prev.map(item =>
             item.product_id === selectedItemForNote.product_id
-                ? { ...item, note: itemNoteText.trim() || null }
+                ? { 
+                    ...item, 
+                    custom_note: itemNoteText.trim() || null,
+                    note: getCombinedNote(item.selected_variations, itemNoteText.trim() || null)
+                  }
                 : item
         ));
         setNoteModalOpen(false);
@@ -895,15 +955,36 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                 <div className="flex items-center gap-4">
                                                     <div className="flex items-center gap-2">
                                                         {/* Editable Product Code */}
-                                                        <div className="flex flex-col items-start mr-2">
-                                                            <span className="text-[10px] text-muted-foreground mb-0.5">Code</span>
-                                                            <Input
-                                                                type="text"
-                                                                value={item.custom_code || ''}
-                                                                onChange={(e) => updateCustomCode(item.product_id, e.target.value)}
-                                                                className="w-24 h-8 text-center text-xs font-mono px-1.5"
-                                                                placeholder="Code"
-                                                            />
+                                                        <div className="flex flex-col items-start gap-1.5 mr-2">
+                                                            <div className="flex flex-col items-start">
+                                                                <span className="text-[10px] text-muted-foreground mb-0.5">Code</span>
+                                                                <Input
+                                                                    type="text"
+                                                                    value={item.custom_code || ''}
+                                                                    onChange={(e) => updateCustomCode(item.product_id, e.target.value)}
+                                                                    className="w-24 h-8 text-center text-xs font-mono px-1.5"
+                                                                    placeholder="Code"
+                                                                />
+                                                            </div>
+                                                            {getParsedVariations(item.product.variations).map((v, vIdx) => {
+                                                                const options = getOptionsArray(v.options);
+                                                                const currentValue = item.selected_variations?.[v.name] || '';
+                                                                return (
+                                                                    <div key={vIdx} className="flex flex-col items-start w-24">
+                                                                        <span className="text-[9px] text-muted-foreground mb-0.5 truncate max-w-full font-medium" title={v.name}>{v.name}</span>
+                                                                        <select
+                                                                            value={currentValue}
+                                                                            onChange={(e) => updateSelectedVariation(item.product_id, v.name, e.target.value)}
+                                                                            className="w-24 h-8 text-[11px] rounded-md border border-input bg-background px-1.5 py-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
+                                                                        >
+                                                                            <option value="">Select</option>
+                                                                            {options.map((opt, oIdx) => (
+                                                                                <option key={oIdx} value={opt}>{opt}</option>
+                                                                            ))}
+                                                                        </select>
+                                                                    </div>
+                                                                );
+                                                            })}
                                                         </div>
                                                         <div className="flex flex-col items-end mr-4">
                                                             <span className="text-sm font-bold">₱{Math.ceil(item.price * item.quantity).toFixed(2)}</span>
