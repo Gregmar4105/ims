@@ -221,6 +221,15 @@ class SaleController extends Controller
         }
         $todayServiceFees = $todayServiceFeesQuery->get();
         $todayServiceFeesSum = $todayServiceFees->sum('amount');
+        
+        $todayServiceFeesCashSum = $todayServiceFees->sum(function ($fee) {
+            if (($fee->payment_method ?? 'cash') === 'cash') {
+                return (float)$fee->amount;
+            } elseif ($fee->payment_method === 'split_bill') {
+                return (float)($fee->cash_received ?? 0);
+            }
+            return 0.0;
+        });
  
         // 4. Returns (for Cash on Hand deduction)
         $todayReturnsQuery = SaleReturn::where('return_type', 'refund');
@@ -238,7 +247,7 @@ class SaleController extends Controller
         $todayReturnsSum = $todayReturnsQuery->sum('refund_amount');
 
         // 5. Cash on Hand
-        $cashOnHand = $todayCashSalesSum + $todayServiceFeesSum - $todayExpensesSum - $todayReturnsSum;
+        $cashOnHand = $todayCashSalesSum + $todayServiceFeesCashSum - $todayExpensesSum - $todayReturnsSum;
  
         $stats = [
             'today_sales' => (float)$todaySalesSum,
@@ -540,6 +549,9 @@ class SaleController extends Controller
             'add_service_fee' => 'nullable|boolean',
             'service_fee_name' => 'nullable|string|max:255',
             'service_fee_amount' => 'nullable|numeric|min:0',
+            'service_fee_payment_method' => 'required_if:add_service_fee,true|nullable|in:cash,e-wallet,split_bill',
+            'service_fee_cash_received' => 'required_if:service_fee_payment_method,split_bill|nullable|numeric|min:0',
+            'service_fee_split_ewallet_amount' => 'required_if:service_fee_payment_method,split_bill|nullable|numeric|min:0',
         ]);
         
         $user = auth()->user();
@@ -579,6 +591,9 @@ class SaleController extends Controller
                     'amount' => $request->service_fee_amount,
                     'created_by' => $user->id,
                     'sale_id' => $sale->id,
+                    'payment_method' => $request->service_fee_payment_method ?? 'cash',
+                    'cash_received' => $request->service_fee_payment_method === 'split_bill' ? $request->service_fee_cash_received : null,
+                    'split_ewallet_amount' => $request->service_fee_payment_method === 'split_bill' ? $request->service_fee_split_ewallet_amount : null,
                 ]);
             }
         });

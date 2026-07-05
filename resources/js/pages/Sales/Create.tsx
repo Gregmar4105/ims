@@ -102,6 +102,9 @@ export default function Create({ products, pendingSales }: { products: Product[]
         add_service_fee: false,
         service_fee_name: '',
         service_fee_amount: '',
+        service_fee_payment_method: 'cash',
+        service_fee_cash_received: '',
+        service_fee_split_ewallet_amount: '',
     });
 
     const [discountModalOpen, setDiscountModalOpen] = useState(false);
@@ -221,6 +224,27 @@ export default function Create({ products, pendingSales }: { products: Product[]
             active = false;
         };
     }, [debouncedSearch]);
+ 
+    // Recalculate split e-wallet amount for optional service fee when amount or cash received changes
+    useEffect(() => {
+        if (data.service_fee_payment_method === 'split_bill') {
+            const cashVal = parseFloat(data.service_fee_cash_received) || 0;
+            const totalAmt = parseFloat(data.service_fee_amount) || 0;
+            const ewalletVal = Math.max(0, totalAmt - cashVal);
+            const expectedEwallet = ewalletVal.toFixed(2);
+            if (data.service_fee_split_ewallet_amount !== expectedEwallet) {
+                setData('service_fee_split_ewallet_amount', expectedEwallet);
+            }
+        } else {
+            if (data.service_fee_cash_received !== '' || data.service_fee_split_ewallet_amount !== '') {
+                setData(d => ({
+                    ...d,
+                    service_fee_cash_received: '',
+                    service_fee_split_ewallet_amount: ''
+                }));
+            }
+        }
+    }, [data.service_fee_amount, data.service_fee_payment_method, data.service_fee_cash_received, data.service_fee_split_ewallet_amount]);
 
     const normalizeCode = (code: string | null) => {
         if (!code) return '';
@@ -966,6 +990,86 @@ export default function Create({ products, pendingSales }: { products: Product[]
                                                             <p className="text-xs text-destructive">{errors.service_fee_amount}</p>
                                                         )}
                                                     </div>
+
+                                                    <div className="space-y-1.5 sm:col-span-2">
+                                                        <Label>Payment Method</Label>
+                                                        <div className="grid grid-cols-3 gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setData('service_fee_payment_method', 'cash')}
+                                                                className={`flex items-center justify-center gap-1.5 py-2.5 rounded-md border text-xs font-semibold transition-all ${data.service_fee_payment_method === 'cash'
+                                                                    ? 'border-primary bg-primary/5 text-primary'
+                                                                    : 'border-input hover:bg-accent bg-background'
+                                                                }`}
+                                                            >
+                                                                <CircleDollarSign className="w-3.5 h-3.5" />
+                                                                Cash
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setData('service_fee_payment_method', 'e-wallet')}
+                                                                className={`flex items-center justify-center gap-1.5 py-2.5 rounded-md border text-xs font-semibold transition-all ${data.service_fee_payment_method === 'e-wallet'
+                                                                    ? 'border-primary bg-primary/5 text-primary'
+                                                                    : 'border-input hover:bg-accent bg-background'
+                                                                }`}
+                                                            >
+                                                                <Wallet className="w-3.5 h-3.5" />
+                                                                E-Wallet
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setData('service_fee_payment_method', 'split_bill')}
+                                                                className={`flex items-center justify-center gap-1.5 py-2.5 rounded-md border text-xs font-semibold transition-all ${data.service_fee_payment_method === 'split_bill'
+                                                                    ? 'border-primary bg-primary/5 text-primary'
+                                                                    : 'border-input hover:bg-accent bg-background'
+                                                                }`}
+                                                            >
+                                                                <Coins className="w-3.5 h-3.5" />
+                                                                Split Bill
+                                                            </button>
+                                                        </div>
+                                                        {errors.service_fee_payment_method && (
+                                                            <p className="text-xs text-destructive">{errors.service_fee_payment_method}</p>
+                                                        )}
+                                                    </div>
+
+                                                    {data.service_fee_payment_method === 'split_bill' && (
+                                                        <div className="grid grid-cols-2 gap-4 sm:col-span-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                            <div className="space-y-1.5">
+                                                                <Label htmlFor="service-fee-cash-received">Cash Portion</Label>
+                                                                <div className="relative">
+                                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-semibold">₱</span>
+                                                                    <Input
+                                                                        id="service-fee-cash-received"
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        min="0"
+                                                                        placeholder="0.00"
+                                                                        className="pl-7"
+                                                                        value={data.service_fee_cash_received}
+                                                                        onChange={(e) => setData('service_fee_cash_received', e.target.value)}
+                                                                    />
+                                                                </div>
+                                                                {errors.service_fee_cash_received && (
+                                                                    <p className="text-xs text-destructive">{errors.service_fee_cash_received}</p>
+                                                                )}
+                                                            </div>
+                                                            <div className="space-y-1.5">
+                                                                <Label htmlFor="service-fee-split-ewallet">E-Wallet Portion</Label>
+                                                                <div className="relative">
+                                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-semibold">₱</span>
+                                                                    <Input
+                                                                        id="service-fee-split-ewallet"
+                                                                        type="text"
+                                                                        className="pl-7 bg-muted"
+                                                                        value={data.service_fee_split_ewallet_amount}
+                                                                        disabled
+                                                                        readOnly
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

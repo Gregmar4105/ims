@@ -15,6 +15,9 @@ class ServiceFee extends Model
         'amount',
         'created_by',
         'sale_id',
+        'payment_method',
+        'cash_received',
+        'split_ewallet_amount',
     ];
 
     public function branch()

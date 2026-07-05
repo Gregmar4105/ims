@@ -173,7 +173,17 @@ class BranchDashboardController extends Controller
         if ($endDate) {
             $todayServiceFeesQuery->where('created_at', '<=', $endDate);
         }
-        $todayServiceFeesSum = $todayServiceFeesQuery->sum('amount');
+        $todayServiceFees = $todayServiceFeesQuery->get();
+        $todayServiceFeesSum = $todayServiceFees->sum('amount');
+        
+        $todayServiceFeesCashSum = $todayServiceFees->sum(function ($fee) {
+            if (($fee->payment_method ?? 'cash') === 'cash') {
+                return (float)$fee->amount;
+            } elseif ($fee->payment_method === 'split_bill') {
+                return (float)($fee->cash_received ?? 0);
+            }
+            return 0.0;
+        });
 
         // Returns (for Cash on Hand deduction)
         $todayReturnsQuery = \App\Models\SaleReturn::where('return_type', 'refund')
@@ -187,7 +197,7 @@ class BranchDashboardController extends Controller
         $todayReturnsSum = $todayReturnsQuery->sum('refund_amount');
 
         // Cash on Hand
-        $cashOnHand = $todayCashSalesSum + $todayServiceFeesSum - $todayExpensesSum - $todayReturnsSum;
+        $cashOnHand = $todayCashSalesSum + $todayServiceFeesCashSum - $todayExpensesSum - $todayReturnsSum;
 
         $weeklySales = $salesQuery(SaleItem::query())
             ->whereHas('sale', fn($q) => $q->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]))

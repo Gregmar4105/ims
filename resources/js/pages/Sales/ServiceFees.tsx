@@ -34,6 +34,9 @@ interface ServiceFee {
     updated_at: string;
     creator?: Creator;
     sale_id?: number | null;
+    payment_method?: 'cash' | 'e-wallet' | 'split_bill';
+    cash_received?: number | string | null;
+    split_ewallet_amount?: number | string | null;
 }
 
 interface PaginatedData<T> {
@@ -116,7 +119,31 @@ export default function ServiceFees({ serviceFees, todayFees, todayFeesSum, filt
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         amount: '',
+        payment_method: 'cash',
+        cash_received: '',
+        split_ewallet_amount: '',
     });
+
+    // Recalculate split e-wallet amount for logged service fee when amount or cash received changes
+    useEffect(() => {
+        if (data.payment_method === 'split_bill') {
+            const cashVal = parseFloat(data.cash_received) || 0;
+            const totalAmt = parseFloat(data.amount) || 0;
+            const ewalletVal = Math.max(0, totalAmt - cashVal);
+            const expectedEwallet = ewalletVal.toFixed(2);
+            if (data.split_ewallet_amount !== expectedEwallet) {
+                setData('split_ewallet_amount', expectedEwallet);
+            }
+        } else {
+            if (data.cash_received !== '' || data.split_ewallet_amount !== '') {
+                setData(d => ({
+                    ...d,
+                    cash_received: '',
+                    split_ewallet_amount: ''
+                }));
+            }
+        }
+    }, [data.amount, data.payment_method, data.cash_received, data.split_ewallet_amount]);
 
     // Debounced search for historical service fees
     useEffect(() => {
@@ -317,6 +344,7 @@ export default function ServiceFees({ serviceFees, todayFees, todayFeesSum, filt
                                                     <TableRow>
                                                         <TableHead className="pl-6">Service Name / Description</TableHead>
                                                         <TableHead>Connected Sale</TableHead>
+                                                        <TableHead>MOP</TableHead>
                                                         <TableHead>Logged By</TableHead>
                                                         <TableHead>Time</TableHead>
                                                         <TableHead className="text-right pr-6">Amount</TableHead>
@@ -335,6 +363,21 @@ export default function ServiceFees({ serviceFees, todayFees, todayFeesSum, filt
                                                                     </Badge>
                                                                 ) : (
                                                                     <span className="text-xs text-muted-foreground italic">None (Direct Log)</span>
+                                                                )}
+                                                            </TableCell>
+                                                            <TableCell className="text-muted-foreground text-sm">
+                                                                {fee.payment_method === 'split_bill' ? (
+                                                                    <Badge variant="outline" className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200">
+                                                                        Split (₱{Number(fee.cash_received).toFixed(0)}/₱{Number(fee.split_ewallet_amount).toFixed(0)})
+                                                                    </Badge>
+                                                                ) : fee.payment_method === 'e-wallet' ? (
+                                                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200">
+                                                                        E-Wallet
+                                                                    </Badge>
+                                                                ) : (
+                                                                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 border-emerald-200">
+                                                                        Cash
+                                                                    </Badge>
                                                                 )}
                                                             </TableCell>
                                                             <TableCell className="text-muted-foreground text-sm">
@@ -417,6 +460,86 @@ export default function ServiceFees({ serviceFees, todayFees, todayFeesSum, filt
                                             <p className="text-xs text-destructive">{errors.amount}</p>
                                         )}
                                     </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Payment Method</Label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setData('payment_method', 'cash')}
+                                                className={`flex items-center justify-center gap-1 py-2.5 rounded-md border text-xs font-semibold transition-all ${data.payment_method === 'cash'
+                                                    ? 'border-primary bg-primary/5 text-primary'
+                                                    : 'border-input hover:bg-accent bg-background'
+                                                }`}
+                                            >
+                                                <CircleDollarSign className="w-3.5 h-3.5" />
+                                                Cash
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setData('payment_method', 'e-wallet')}
+                                                className={`flex items-center justify-center gap-1 py-2.5 rounded-md border text-xs font-semibold transition-all ${data.payment_method === 'e-wallet'
+                                                    ? 'border-primary bg-primary/5 text-primary'
+                                                    : 'border-input hover:bg-accent bg-background'
+                                                }`}
+                                            >
+                                                <Wallet className="w-3.5 h-3.5" />
+                                                E-Wallet
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setData('payment_method', 'split_bill')}
+                                                className={`flex items-center justify-center gap-1 py-2.5 rounded-md border text-xs font-semibold transition-all ${data.payment_method === 'split_bill'
+                                                    ? 'border-primary bg-primary/5 text-primary'
+                                                    : 'border-input hover:bg-accent bg-background'
+                                                }`}
+                                            >
+                                                <Coins className="w-3.5 h-3.5" />
+                                                Split Bill
+                                            </button>
+                                        </div>
+                                        {errors.payment_method && (
+                                            <p className="text-xs text-destructive">{errors.payment_method}</p>
+                                        )}
+                                    </div>
+
+                                    {data.payment_method === 'split_bill' && (
+                                        <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="cash-received">Cash Portion</Label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-semibold">₱</span>
+                                                    <Input
+                                                        id="cash-received"
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        placeholder="0.00"
+                                                        className="pl-7"
+                                                        value={data.cash_received}
+                                                        onChange={(e) => setData('cash_received', e.target.value)}
+                                                    />
+                                                </div>
+                                                {errors.cash_received && (
+                                                    <p className="text-xs text-destructive">{errors.cash_received}</p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="split-ewallet">E-Wallet Portion</Label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-semibold">₱</span>
+                                                    <Input
+                                                        id="split-ewallet"
+                                                        type="text"
+                                                        className="pl-7 bg-muted"
+                                                        value={data.split_ewallet_amount}
+                                                        disabled
+                                                        readOnly
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </CardContent>
                                 <CardFooter className="pt-2 flex justify-end">
                                     <Button type="submit" disabled={processing} className="w-full mt-2 sm:w-auto bg-red-600 hover:bg-red-700 text-white dark:bg-red-600 dark:hover:bg-red-700">
@@ -478,6 +601,15 @@ export default function ServiceFees({ serviceFees, todayFees, todayFeesSum, filt
                                                         {fee.sale_id && (
                                                             <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 text-[10px] py-0 px-1.5 leading-none">
                                                                 Sale #{fee.sale_id}
+                                                            </Badge>
+                                                        )}
+                                                        {fee.payment_method === 'split_bill' ? (
+                                                            <Badge variant="outline" className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200 text-[10px] py-0 px-1.5 leading-none">
+                                                                Split (₱{Number(fee.cash_received).toFixed(0)}/₱{Number(fee.split_ewallet_amount).toFixed(0)})
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge variant="outline" className={`${fee.payment_method === 'e-wallet' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 border-emerald-200'} text-[10px] py-0 px-1.5 leading-none`}>
+                                                                {fee.payment_method === 'e-wallet' ? 'E-Wallet' : 'Cash'}
                                                             </Badge>
                                                         )}
                                                     </div>

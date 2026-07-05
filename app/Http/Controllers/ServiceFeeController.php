@@ -77,6 +77,9 @@ class ServiceFeeController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|in:cash,e-wallet,split_bill',
+            'cash_received' => 'required_if:payment_method,split_bill|nullable|numeric|min:0',
+            'split_ewallet_amount' => 'required_if:payment_method,split_bill|nullable|numeric|min:0',
         ]);
 
         $user = auth()->user();
@@ -93,6 +96,9 @@ class ServiceFeeController extends Controller
             'name' => $request->name,
             'amount' => $request->amount,
             'created_by' => $user->id,
+            'payment_method' => $request->payment_method,
+            'cash_received' => $request->payment_method === 'split_bill' ? $request->cash_received : null,
+            'split_ewallet_amount' => $request->payment_method === 'split_bill' ? $request->split_ewallet_amount : null,
         ]);
 
         return redirect()->back()->with('success', 'Service fee logged successfully.');
