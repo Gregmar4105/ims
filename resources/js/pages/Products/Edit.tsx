@@ -78,6 +78,7 @@ interface Product {
     out_of_stock_since: string | null;
     clearance_price: number | null;
     clearance_until: string | null;
+    quantity_last_changed_at: string | null;
 }
 
 interface Props {
@@ -451,6 +452,17 @@ export default function Edit({ product, brands, categories, suppliers, isSystemA
                                     required
                                 />
                                 {errors.quantity && <p className="text-sm text-red-500">{errors.quantity}</p>}
+                                {product.quantity_last_changed_at && (
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1 bg-gray-50 dark:bg-gray-900/50 p-2 rounded-md border border-gray-100 dark:border-gray-800">
+                                        <Clock className="h-3.5 w-3.5 text-blue-500" />
+                                        <span>
+                                            Last changed: <strong>{new Date(product.quantity_last_changed_at).toLocaleString(undefined, {
+                                                dateStyle: 'medium',
+                                                timeStyle: 'short'
+                                            })}</strong>
+                                        </span>
+                                    </p>
+                                )}
                             </div>
 
                             <div className="space-y-2">

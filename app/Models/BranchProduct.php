@@ -17,11 +17,24 @@ class BranchProduct extends Model
         'description',
         'variations',
         'reorder_level',
+        'quantity_last_changed_at',
     ];
 
     protected $casts = [
         'variations' => 'array',
+        'quantity_last_changed_at' => 'datetime',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($model) {
+            if ($model->isDirty('quantity')) {
+                $model->quantity_last_changed_at = now();
+            }
+        });
+    }
 
     public function branch()
     {

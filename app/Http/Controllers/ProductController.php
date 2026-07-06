@@ -635,8 +635,10 @@ class ProductController extends Controller
             $product->description = $branchProduct->pivot->description ?? $product->description;
             $product->variations = $branchProduct->pivot->variations ?? $product->variations;
             $product->reorder_level = $branchProduct->pivot->reorder_level ?? 0;
+            $product->quantity_last_changed_at = $branchProduct->pivot->quantity_last_changed_at;
         } else {
             $product->reorder_level = 0;
+            $product->quantity_last_changed_at = null;
         }
 
         $brands = Brand::where('status', 'Active')->get();
