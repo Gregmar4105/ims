@@ -232,19 +232,37 @@ class SaleController extends Controller
         });
  
         // 4. Returns (for Cash on Hand deduction)
-        $todayReturnsQuery = SaleReturn::where('return_type', 'refund');
+        $todayReturnsQuery = SaleReturn::where('return_type', 'refund')
+            ->whereHas('sale', function($q) {
+                $q->where('payment_method', '!=', 'e-wallet');
+            });
+        
+        $todayEwalletReturnsQuery = SaleReturn::where('return_type', 'refund')
+            ->whereHas('sale', function($q) {
+                $q->where('payment_method', 'e-wallet');
+            });
+
         if ($startDate) {
             $todayReturnsQuery->where('created_at', '>=', $startDate);
+            $todayEwalletReturnsQuery->where('created_at', '>=', $startDate);
         }
         if ($endDate) {
             $todayReturnsQuery->where('created_at', '<=', $endDate);
+            $todayEwalletReturnsQuery->where('created_at', '<=', $endDate);
         }
         if ($branchId) {
             $todayReturnsQuery->whereHas('sale', fn($q) => $q->where('branch_id', $branchId));
+            $todayEwalletReturnsQuery->whereHas('sale', fn($q) => $q->where('branch_id', $branchId));
         } elseif (!$user->hasRole('System Administrator') && $user->branch_id) {
             $todayReturnsQuery->whereHas('sale', fn($q) => $q->where('branch_id', $user->branch_id));
+            $todayEwalletReturnsQuery->whereHas('sale', fn($q) => $q->where('branch_id', $user->branch_id));
         }
         $todayReturnsSum = $todayReturnsQuery->sum('refund_amount');
+        $todayEwalletReturnsSum = $todayEwalletReturnsQuery->sum('refund_amount');
+
+        // Deduct e-wallet returns from e-wallet sales and total sales
+        $todayEwalletSalesSum -= $todayEwalletReturnsSum;
+        $todaySalesSum -= $todayEwalletReturnsSum;
 
         // 5. Cash on Hand
         $cashOnHand = $todayCashSalesSum + $todayServiceFeesCashSum - $todayExpensesSum - $todayReturnsSum;
@@ -1017,7 +1035,8 @@ class SaleController extends Controller
                     $replacementName = $replacement ? $replacement->name : 'replacement';
                     $message .= " exchanged for {$request->replacement_quantity}x {$replacementName}";
                 } else {
-                    $message .= " refunded (₱" . number_format($refundAmount, 2) . " cash)";
+                    $methodText = $sale->payment_method === 'e-wallet' ? 'e-wallet' : 'cash';
+                    $message .= " refunded (₱" . number_format($refundAmount, 2) . " {$methodText})";
                 }
                 $message .= " by {$user->name}.";
 
@@ -1033,7 +1052,9 @@ class SaleController extends Controller
 
         $successMsg = $request->return_type === 'exchange' 
             ? 'Exchange processed successfully and inventory updated.' 
-            : 'Return processed and cash refund recorded.';
+            : ($sale->payment_method === 'e-wallet' 
+                ? 'Return processed and e-wallet refund recorded.' 
+                : 'Return processed and cash refund recorded.');
 
         return redirect()->back()->with('success', $successMsg);
     }

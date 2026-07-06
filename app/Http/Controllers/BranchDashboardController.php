@@ -187,14 +187,25 @@ class BranchDashboardController extends Controller
 
         // Returns (for Cash on Hand deduction)
         $todayReturnsQuery = \App\Models\SaleReturn::where('return_type', 'refund')
-            ->whereHas('sale', fn($q) => $q->where('branch_id', $branchId));
+            ->whereHas('sale', fn($q) => $q->where('branch_id', $branchId)->where('payment_method', '!=', 'e-wallet'));
+        
+        $todayEwalletReturnsQuery = \App\Models\SaleReturn::where('return_type', 'refund')
+            ->whereHas('sale', fn($q) => $q->where('branch_id', $branchId)->where('payment_method', 'e-wallet'));
+
         if ($startDate) {
             $todayReturnsQuery->where('created_at', '>=', $startDate);
+            $todayEwalletReturnsQuery->where('created_at', '>=', $startDate);
         }
         if ($endDate) {
             $todayReturnsQuery->where('created_at', '<=', $endDate);
+            $todayEwalletReturnsQuery->where('created_at', '<=', $endDate);
         }
         $todayReturnsSum = $todayReturnsQuery->sum('refund_amount');
+        $todayEwalletReturnsSum = $todayEwalletReturnsQuery->sum('refund_amount');
+
+        // Deduct e-wallet returns from e-wallet sales and total sales
+        $todayEwalletSalesSum -= $todayEwalletReturnsSum;
+        $todaySalesSum -= $todayEwalletReturnsSum;
 
         // Cash on Hand
         $cashOnHand = $todayCashSalesSum + $todayServiceFeesCashSum - $todayExpensesSum - $todayReturnsSum;

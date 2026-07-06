@@ -18,6 +18,8 @@ interface Sale {
     branch_id: number;
     created_at: string;
     customer_name?: string | null;
+    payment_method?: string;
+    ewallet_provider?: string | null;
     items: {
         id: number;
         product_id: number;
@@ -53,6 +55,7 @@ interface Return {
         branch: {
             branch_name: string;
         } | null;
+        payment_method?: string;
     } | null;
     returned_by: {
         name: string;
@@ -476,7 +479,7 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
                                                             }}
                                                             className="accent-primary"
                                                         />
-                                                        Refund Cash
+                                                        {selectedSale?.payment_method === 'e-wallet' ? 'Refund E-Wallet' : 'Refund Cash'}
                                                     </label>
                                                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                                                         <input
@@ -677,10 +680,15 @@ export default function Returns({ completedSales, recentReturns, filters }: { co
                                                                     {ret.return_type === 'exchange' ? 'Exchange' : 'Refund'}
                                                                 </Badge>
                                                                 {ret.return_type === 'refund' && (
-                                                                    <span className="text-xs font-bold text-red-650 dark:text-red-400">
-                                                                        ₱{Number(ret.refund_amount).toFixed(2)}
-                                                                    </span>
-                                                                )}
+                                                                     <div className="flex flex-col gap-0.5">
+                                                                         <span className="text-xs font-bold text-red-650 dark:text-red-400">
+                                                                             ₱{Number(ret.refund_amount).toFixed(2)}
+                                                                         </span>
+                                                                         <span className="text-[9px] text-muted-foreground font-medium uppercase">
+                                                                             ({ret.sale?.payment_method === 'e-wallet' ? 'E-Wallet' : 'Cash'})
+                                                                         </span>
+                                                                     </div>
+                                                                 )}
                                                                 <span className="text-[9px] text-muted-foreground">
                                                                     {ret.restored_to_inventory ? 'Restocked original' : 'Discarded original'}
                                                                 </span>

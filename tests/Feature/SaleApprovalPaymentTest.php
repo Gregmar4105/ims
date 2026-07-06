@@ -238,3 +238,68 @@ test('branch admin can approve a sale with split bill payment', function () {
     $pivotQuantity = $product->branches()->find($branch->id)->pivot->quantity;
     expect($pivotQuantity)->toBe(3); // 5 - 2
 });
+
+test('returns of e-wallet sales deduct from e-wallet sales stats and not cash on hand', function () {
+    $branch = Branch::create([
+        'branch_name' => 'Test Branch',
+        'location' => 'Test Location',
+    ]);
+
+    $admin = User::factory()->create(['branch_id' => $branch->id]);
+    $admin->assignRole('Branch Administrator');
+
+    $employee = User::factory()->create(['branch_id' => $branch->id]);
+    $employee->assignRole('Employee');
+
+    $product = Product::create([
+        'name' => 'E-Wallet Item',
+        'price' => 1000.00,
+        'sku' => 'E-WAL-1',
+    ]);
+    $product->branches()->attach($branch->id, ['quantity' => 10]);
+
+    // Create a completed e-wallet sale
+    $sale = Sale::create([
+        'branch_id' => $branch->id,
+        'status' => 'completed',
+        'payment_method' => 'e-wallet',
+        'ewallet_provider' => 'GCash',
+        'readied_by' => $employee->id,
+        'approved_by' => $admin->id,
+    ]);
+
+    $saleItem = SaleItem::create([
+        'sale_id' => $sale->id,
+        'product_id' => $product->id,
+        'quantity' => 2, // Total sale amount = 2000.00
+        'price' => 1000.00,
+        'original_price' => 1000.00,
+    ]);
+
+    // Check initial stats on sales-list page
+    $response = $this->actingAs($admin)->get('/sales-list');
+    $stats = $response->viewData('page')['props']['stats'];
+    expect($stats['today_ewallet_sales'])->toBe(2000.00);
+    expect($stats['today_cash_sales'])->toBe(0.00);
+    expect($stats['cash_on_hand'])->toBe(0.00);
+
+    // Process a return (refund) of 1 item
+    $this->actingAs($admin)->post('/sale-returns', [
+        'sale_id' => $sale->id,
+        'product_id' => $product->id,
+        'quantity' => 1,
+        'reason' => 'Defective',
+        'return_type' => 'refund',
+        'restored_to_inventory' => true,
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    // Check stats again on sales-list page
+    $response2 = $this->actingAs($admin)->get('/sales-list');
+    $stats2 = $response2->viewData('page')['props']['stats'];
+    // E-wallet sales should deduct the refund amount of 1000.00
+    expect($stats2['today_ewallet_sales'])->toBe(1000.00);
+    expect($stats2['today_sales'])->toBe(1000.00);
+    // Cash on hand should remain 0.00 (not be -1000.00)
+    expect($stats2['cash_on_hand'])->toBe(0.00);
+    expect($stats2['today_returns_sum'])->toBe(0.00); // Because it is e-wallet, not cash return
+});
