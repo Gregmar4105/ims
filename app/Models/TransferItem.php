@@ -12,6 +12,11 @@ class TransferItem extends Model
         'quantity',
         'received_quantity',
         'status',
+        'selected_variations',
+    ];
+
+    protected $casts = [
+        'selected_variations' => 'array',
     ];
 
     public function transfer()

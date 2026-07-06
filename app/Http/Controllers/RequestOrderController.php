@@ -102,6 +102,7 @@ class RequestOrderController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
+            'items.*.selected_variations' => 'nullable|array',
             'notes' => 'nullable|string',
         ]);
 
@@ -143,6 +144,7 @@ class RequestOrderController extends Controller
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
                     'status' => 'pending',
+                    'selected_variations' => $item['selected_variations'] ?? null,
                 ]);
                 $totalItemsCount += $item['quantity'];
             }

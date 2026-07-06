@@ -36,6 +36,7 @@ interface TransferItem {
     quantity: number;
     received_quantity: number;
     status: string;
+    selected_variations?: Record<string, string>;
 }
 
 interface Transfer {
@@ -428,7 +429,18 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                                                                 <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary">
                                                                     <Package className="w-4 h-4" />
                                                                 </div>
-                                                                {item.product?.name}
+                                                                <div>
+                                                                    <div>{item.product?.name}</div>
+                                                                    {item.selected_variations && Object.keys(item.selected_variations).length > 0 && (
+                                                                        <div className="flex flex-wrap gap-1 mt-1 text-[10px] text-zinc-500 font-normal">
+                                                                            {Object.entries(item.selected_variations).map(([key, val]) => (
+                                                                                <span key={key} className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded">
+                                                                                    {key}: {val}
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </TableCell>
                                                         <TableCell>

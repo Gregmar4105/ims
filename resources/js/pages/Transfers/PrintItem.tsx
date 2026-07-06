@@ -25,6 +25,7 @@ interface Transfer {
         quantity: number;
         received_quantity: number;
         product: { name: string; barcode: string; qr_code: string };
+        selected_variations?: Record<string, string>;
     }>;
 }
 
@@ -131,6 +132,11 @@ export default function PrintItem({ transfer }: { transfer: Transfer }) {
                                 <TableRow key={item.id} className="border-b border-gray-100 hover:bg-transparent">
                                     <TableCell className="py-3 pl-0">
                                         <p className="font-medium">{item.product?.name}</p>
+                                        {item.selected_variations && Object.keys(item.selected_variations).length > 0 && (
+                                            <p className="text-xs text-gray-600 italic mt-0.5">
+                                                ({Object.entries(item.selected_variations).map(([key, val]) => `${key}: ${val}`).join(', ')})
+                                            </p>
+                                        )}
                                         <p className="text-xs text-gray-500 font-mono mt-0.5">{item.product?.barcode || item.product?.qr_code}</p>
                                     </TableCell>
                                     {isReceived ? (

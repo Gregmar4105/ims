@@ -38,6 +38,7 @@ interface TransferItem {
     quantity: number;
     received_quantity: number;
     status: string;
+    selected_variations?: Record<string, string>;
 }
 
 interface Transfer {
@@ -280,14 +281,25 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                                             <TableBody>
                                                 {transfer.items.map((item) => (
                                                     <TableRow key={item.id} className="hover:bg-muted/5">
-                                                        <TableCell className="font-medium pl-6">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary">
-                                                                    <Package className="w-4 h-4" />
-                                                                </div>
-                                                                {item.product?.name}
-                                                            </div>
-                                                        </TableCell>
+                                                         <TableCell className="font-medium pl-6">
+                                                             <div className="flex items-center gap-3">
+                                                                 <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary">
+                                                                     <Package className="w-4 h-4" />
+                                                                 </div>
+                                                                 <div>
+                                                                     <div>{item.product?.name}</div>
+                                                                     {item.selected_variations && Object.keys(item.selected_variations).length > 0 && (
+                                                                         <div className="flex flex-wrap gap-1 mt-1 text-[10px] text-zinc-500 font-normal">
+                                                                             {Object.entries(item.selected_variations).map(([key, val]) => (
+                                                                                 <span key={key} className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded">
+                                                                                     {key}: {val}
+                                                                                 </span>
+                                                                             ))}
+                                                                         </div>
+                                                                     )}
+                                                                 </div>
+                                                             </div>
+                                                         </TableCell>
                                                         <TableCell>
                                                             <div className="flex flex-col gap-1 text-xs text-muted-foreground">
                                                                 {item.product?.barcode && (
@@ -493,6 +505,15 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                                                         >
                                                             {item.product?.name}
                                                         </Label>
+                                                        {item.selected_variations && Object.keys(item.selected_variations).length > 0 && (
+                                                            <div className="flex flex-wrap gap-1 mt-1 text-[10px] text-zinc-500 font-normal">
+                                                                {Object.entries(item.selected_variations).map(([key, val]) => (
+                                                                    <span key={key} className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded">
+                                                                        {key}: {val}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                                             {item.product?.barcode && (
                                                                 <span className="font-mono flex items-center gap-1"><Barcode className="w-3.5 h-3.5" />{item.product.barcode}</span>

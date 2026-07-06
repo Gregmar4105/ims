@@ -42,6 +42,7 @@ interface TransferItem {
     quantity: number;
     received_quantity: number;
     status: string;
+    selected_variations?: Record<string, string>;
 }
 
 interface Transfer {
@@ -68,7 +69,7 @@ const breadcrumbs = [
 export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
     const { post } = useForm();
     const [initiatingTransfer, setInitiatingTransfer] = useState<Transfer | null>(null);
-    const [adjustedItems, setAdjustedItems] = useState<{ id: number; product: Product; quantity: number }[]>([]);
+    const [adjustedItems, setAdjustedItems] = useState<{ id: number; product: Product; quantity: number; selected_variations?: Record<string, string> }[]>([]);
     const [notes, setNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -88,7 +89,8 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
         setAdjustedItems(transfer.items.map(item => ({
             id: item.id,
             product: item.product,
-            quantity: item.quantity
+            quantity: item.quantity,
+            selected_variations: item.selected_variations
         })));
         setNotes(transfer.notes || '');
     };
@@ -315,7 +317,18 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                                                                 <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary">
                                                                     <Package className="w-4 h-4" />
                                                                 </div>
-                                                                {item.product?.name}
+                                                                <div>
+                                                                    <div>{item.product?.name}</div>
+                                                                    {item.selected_variations && Object.keys(item.selected_variations).length > 0 && (
+                                                                        <div className="flex flex-wrap gap-1 mt-1 text-[10px] text-zinc-500 font-normal">
+                                                                            {Object.entries(item.selected_variations).map(([key, val]) => (
+                                                                                <span key={key} className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded">
+                                                                                    {key}: {val}
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </TableCell>
                                                         <TableCell>
@@ -375,6 +388,15 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                                         <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 break-words whitespace-normal" title={item.product?.name}>
                                             {item.product?.name}
                                         </h4>
+                                        {item.selected_variations && Object.keys(item.selected_variations).length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mt-1 text-[10px] text-zinc-500 font-normal">
+                                                {Object.entries(item.selected_variations).map(([key, val]) => (
+                                                    <span key={key} className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded">
+                                                        {key}: {val}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1.5">
                                             {item.product?.barcode && (
                                                 <span className="flex items-center gap-1 font-mono bg-gray-100 dark:bg-zinc-900 border border-gray-150 dark:border-gray-800 px-1.5 py-0.5 rounded text-gray-700 dark:text-gray-300">

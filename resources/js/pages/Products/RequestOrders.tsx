@@ -37,6 +37,7 @@ interface Product {
     brand?: { name: string } | null;
     category?: { name: string } | null;
     supplier?: { name: string } | null;
+    variations?: any;
 }
 
 interface Props {
@@ -134,9 +135,42 @@ export default function RequestOrders({ products, filters, options, requestingBr
     const debounceTimer = useRef<number | null>(null);
 
     // Selected Items (Cart) State
-    const [cart, setCart] = useState<Array<{ product: Product; quantity: number }>>([]);
-    const [notes, setNotes] = useState('');
+    interface CartItem {
+        product: Product;
+        quantity: number;
+        selected_variations?: Record<string, string>;
+    }
+
+    const [cart, setCart] = useState<CartItem[]>(() => {
+        try {
+            const saved = localStorage.getItem('request_basket');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            return [];
+        }
+    });
+
+    const [notes, setNotes] = useState(() => {
+        try {
+            const saved = localStorage.getItem('request_notes');
+            return saved || '';
+        } catch (e) {
+            return '';
+        }
+    });
+
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [tableSelectedVariations, setTableSelectedVariations] = useState<Record<number, Record<string, string>>>({});
+
+    // Persist cart changes
+    useEffect(() => {
+        localStorage.setItem('request_basket', JSON.stringify(cart));
+    }, [cart]);
+
+    // Persist notes changes
+    useEffect(() => {
+        localStorage.setItem('request_notes', notes);
+    }, [notes]);
 
     // Synchronize filters when query parameters change
     useEffect(() => {
@@ -144,6 +178,29 @@ export default function RequestOrders({ products, filters, options, requestingBr
         setBrand(filters?.brand || "all");
         setCategory(filters?.category || "all");
     }, [filters]);
+
+    const getParsedVariations = (variations: any): any[] => {
+        if (!variations) return [];
+        if (typeof variations === 'string') {
+            try {
+                const decoded = JSON.parse(variations);
+                if (Array.isArray(decoded)) return decoded;
+            } catch (e) {}
+            return [];
+        }
+        if (Array.isArray(variations)) return variations;
+        return [];
+    };
+
+    const getOptionsArray = (options: any): string[] => {
+        if (typeof options === 'string') {
+            return options.split(',').map(o => o.trim());
+        }
+        if (Array.isArray(options)) {
+            return options.map(opt => typeof opt === 'object' ? opt.value : String(opt));
+        }
+        return [];
+    };
 
     function updateParams(newParams: any) {
         const currentUrl = new URL(window.location.href);
@@ -200,6 +257,8 @@ export default function RequestOrders({ products, filters, options, requestingBr
             return;
         }
 
+        const preselected = tableSelectedVariations[product.id] || {};
+
         setCart(prev => {
             const existing = prev.find(item => item.product.id === product.id);
             if (existing) {
@@ -215,7 +274,7 @@ export default function RequestOrders({ products, filters, options, requestingBr
                 );
             }
             toast.success(`Added "${product.name}" to request list.`);
-            return [...prev, { product, quantity: 1 }];
+            return [...prev, { product, quantity: 1, selected_variations: preselected }];
         });
     };
 
@@ -232,7 +291,7 @@ export default function RequestOrders({ products, filters, options, requestingBr
                     return { ...item, quantity: newQty };
                 }
                 return item;
-            }).filter(Boolean) as Array<{ product: Product; quantity: number }>;
+            }).filter(Boolean) as CartItem[];
         });
     };
 
@@ -270,7 +329,8 @@ export default function RequestOrders({ products, filters, options, requestingBr
         router.post("/request-orders", {
             items: cart.map(item => ({
                 product_id: item.product.id,
-                quantity: item.quantity
+                quantity: item.quantity,
+                selected_variations: item.selected_variations || {}
             })),
             notes: notes
         }, {
@@ -279,6 +339,8 @@ export default function RequestOrders({ products, filters, options, requestingBr
                 setNotes('');
                 setIsSubmitting(false);
                 toast.success("Request Order submitted successfully!");
+                localStorage.removeItem('request_basket');
+                localStorage.removeItem('request_notes');
             },
             onError: (err) => {
                 setIsSubmitting(false);
@@ -286,6 +348,40 @@ export default function RequestOrders({ products, filters, options, requestingBr
                 toast.error(firstErr || "Failed to submit Request Order.");
             }
         });
+    };
+
+    const handleTableVariationChange = (productId: number, variationName: string, value: string) => {
+        const inCart = cart.find(item => item.product.id === productId);
+        if (inCart) {
+            setCart(prev => prev.map(item => {
+                if (item.product.id === productId) {
+                    return {
+                        ...item,
+                        selected_variations: {
+                            ...(item.selected_variations || {}),
+                            [variationName]: value
+                        }
+                    };
+                }
+                return item;
+            }));
+        }
+
+        setTableSelectedVariations(prev => ({
+            ...prev,
+            [productId]: {
+                ...(prev[productId] || {}),
+                [variationName]: value
+            }
+        }));
+    };
+
+    const getSelectedVariationValue = (productId: number, variationName: string) => {
+        const inCart = cart.find(item => item.product.id === productId);
+        if (inCart && inCart.selected_variations) {
+            return inCart.selected_variations[variationName] || '';
+        }
+        return tableSelectedVariations[productId]?.[variationName] || '';
     };
 
     const hasActiveFilters = search || brand !== 'all' || category !== 'all';
@@ -416,6 +512,29 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                                                 {product.code && <span>Code: {product.code}</span>}
                                                                 {product.sku && <span>SKU: {product.sku}</span>}
                                                             </div>
+                                                            {getParsedVariations(product.variations).length > 0 && (
+                                                                <div className="flex flex-wrap items-center gap-3 mt-2">
+                                                                    {getParsedVariations(product.variations).map((v, vIdx) => {
+                                                                        const options = getOptionsArray(v.options);
+                                                                        const currentValue = getSelectedVariationValue(product.id, v.name);
+                                                                        return (
+                                                                            <div key={vIdx} className="flex flex-col items-start w-24">
+                                                                                <span className="text-[9px] text-muted-foreground mb-0.5 truncate max-w-full font-medium" title={v.name}>{v.name}</span>
+                                                                                <select
+                                                                                    value={currentValue}
+                                                                                    onChange={(e) => handleTableVariationChange(product.id, v.name, e.target.value)}
+                                                                                    className="w-24 h-8 text-[11px] rounded-md border border-input bg-background px-1.5 py-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
+                                                                                >
+                                                                                    <option value="">Select</option>
+                                                                                    {options.map((opt, oIdx) => (
+                                                                                        <option key={oIdx} value={opt}>{opt}</option>
+                                                                                    ))}
+                                                                                </select>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            )}
                                                         </TableCell>
                                                         <TableCell>
                                                             <div className="text-sm">{product.category?.name || 'Uncategorized'}</div>
@@ -544,6 +663,42 @@ export default function RequestOrders({ products, filters, options, requestingBr
                                                         <span className="text-[10px] text-muted-foreground block font-mono mt-0.5">
                                                             Max: {item.product.quantity} available
                                                         </span>
+                                                        {getParsedVariations(item.product.variations).length > 0 && (
+                                                            <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
+                                                                {getParsedVariations(item.product.variations).map((v, vIdx) => {
+                                                                    const options = getOptionsArray(v.options);
+                                                                    const currentValue = item.selected_variations?.[v.name] || '';
+                                                                    return (
+                                                                        <div key={vIdx} className="flex items-center justify-between gap-2 text-[10px]">
+                                                                            <span className="text-muted-foreground truncate font-medium max-w-[80px]" title={v.name}>{v.name}:</span>
+                                                                            <select
+                                                                                value={currentValue}
+                                                                                onChange={(e) => {
+                                                                                    setCart(prev => prev.map(cItem => {
+                                                                                        if (cItem.product.id === item.product.id) {
+                                                                                            return {
+                                                                                                ...cItem,
+                                                                                                selected_variations: {
+                                                                                                    ...(cItem.selected_variations || {}),
+                                                                                                    [v.name]: e.target.value
+                                                                                                }
+                                                                                            };
+                                                                                        }
+                                                                                        return cItem;
+                                                                                    }));
+                                                                                }}
+                                                                                className="w-28 h-6 text-[10px] rounded border border-gray-300 dark:border-gray-600 bg-background px-1 py-0 focus-visible:outline-none cursor-pointer"
+                                                                            >
+                                                                                <option value="">Select</option>
+                                                                                {options.map((opt, oIdx) => (
+                                                                                    <option key={oIdx} value={opt}>{opt}</option>
+                                                                                ))}
+                                                                            </select>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     <div className="flex items-center gap-1.5 shrink-0 col-span-1">
