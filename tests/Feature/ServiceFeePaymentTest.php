@@ -143,3 +143,56 @@ test('cash on hand sums only the cash portion of service fees', function () {
         expect((float)$stats['cash_on_hand'])->toBe(150.00); // 100 cash + 50 split cash portion
     });
 });
+
+test('can filter service fees by payment method', function () {
+    $branch = Branch::create([
+        'branch_name' => 'Test Branch',
+        'location' => 'Test Location',
+    ]);
+
+    $admin = User::factory()->create(['branch_id' => $branch->id]);
+    $admin->assignRole('Branch Administrator');
+
+    // Create cash fee
+    ServiceFee::create([
+        'branch_id' => $branch->id,
+        'name' => 'Cash Fee',
+        'amount' => 100.00,
+        'created_by' => $admin->id,
+        'payment_method' => 'cash',
+        'created_at' => Carbon::now(),
+    ]);
+
+    // Create e-wallet fee
+    ServiceFee::create([
+        'branch_id' => $branch->id,
+        'name' => 'E-Wallet Fee',
+        'amount' => 200.00,
+        'created_by' => $admin->id,
+        'payment_method' => 'e-wallet',
+        'created_at' => Carbon::now(),
+    ]);
+
+    // Request filter for cash
+    $response = $this->actingAs($admin)->get('/service-fees?payment_method=cash');
+    $response->assertInertia(function ($page) {
+        $fees = $page->toArray()['props']['serviceFees']['data'];
+        expect(count($fees))->toBe(1);
+        expect($fees[0]['payment_method'])->toBe('cash');
+    });
+
+    // Request filter for e-wallet
+    $response = $this->actingAs($admin)->get('/service-fees?payment_method=e-wallet');
+    $response->assertInertia(function ($page) {
+        $fees = $page->toArray()['props']['serviceFees']['data'];
+        expect(count($fees))->toBe(1);
+        expect($fees[0]['payment_method'])->toBe('e-wallet');
+    });
+
+    // Request filter for all
+    $response = $this->actingAs($admin)->get('/service-fees?payment_method=all');
+    $response->assertInertia(function ($page) {
+        $fees = $page->toArray()['props']['serviceFees']['data'];
+        expect(count($fees))->toBe(2);
+    });
+});

@@ -47,6 +47,12 @@ class ServiceFeeController extends Controller
             $query->where('created_at', '<=', Carbon::parse($dateTo)->endOfDay());
         }
 
+        // Payment Method Filter
+        $paymentMethod = $request->query('payment_method');
+        if ($paymentMethod && $paymentMethod !== 'all') {
+            $query->where('payment_method', $paymentMethod);
+        }
+
         $serviceFees = $query->paginate(10)->withQueryString();
 
         // Today's service fees (resets at midnight - created on the current calendar date)
@@ -68,7 +74,7 @@ class ServiceFeeController extends Controller
             'serviceFees' => $serviceFees,
             'todayFees' => $todayFees,
             'todayFeesSum' => (float)$todayFeesSum,
-            'filters' => $request->only(['search', 'date_from', 'date_to']),
+            'filters' => $request->only(['search', 'date_from', 'date_to', 'payment_method']),
         ]);
     }
 

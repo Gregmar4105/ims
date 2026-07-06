@@ -56,6 +56,7 @@ interface Props {
         search?: string;
         date_from?: string;
         date_to?: string;
+        payment_method?: string;
     };
 }
 
@@ -74,6 +75,7 @@ export default function ServiceFees({ serviceFees, todayFees, todayFeesSum, filt
     const [search, setSearch] = useState(filters.search || '');
     const [dateFrom, setDateFrom] = useState(filters.date_from || '');
     const [dateTo, setDateTo] = useState(filters.date_to || '');
+    const [paymentMethod, setPaymentMethod] = useState(filters.payment_method || 'all');
 
     const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
     const [isDeletingAll, setIsDeletingAll] = useState(false);
@@ -155,18 +157,23 @@ export default function ServiceFees({ serviceFees, todayFees, todayFeesSum, filt
         return () => clearTimeout(timer);
     }, [search]);
 
-    // Perform filter updates on date change
+    // Perform filter updates on date or payment method change
     useEffect(() => {
-        if (dateFrom !== (filters.date_from || '') || dateTo !== (filters.date_to || '')) {
+        if (
+            dateFrom !== (filters.date_from || '') ||
+            dateTo !== (filters.date_to || '') ||
+            paymentMethod !== (filters.payment_method || 'all')
+        ) {
             performSearch();
         }
-    }, [dateFrom, dateTo]);
+    }, [dateFrom, dateTo, paymentMethod]);
 
     const performSearch = () => {
         router.get('/service-fees', {
             search,
             date_from: dateFrom,
             date_to: dateTo,
+            payment_method: paymentMethod,
         }, { preserveState: true, replace: true, preserveScroll: true });
     };
 
@@ -174,6 +181,7 @@ export default function ServiceFees({ serviceFees, todayFees, todayFeesSum, filt
         setSearch('');
         setDateFrom('');
         setDateTo('');
+        setPaymentMethod('all');
         router.get('/service-fees', {}, { preserveState: true, replace: true });
     };
 
@@ -301,7 +309,20 @@ export default function ServiceFees({ serviceFees, todayFees, todayFeesSum, filt
                                             onChange={(e) => setDateTo(e.target.value)}
                                         />
                                     </div>
-                                    {(search || dateFrom || dateTo) && (
+                                    <div className="flex items-center gap-2 bg-background px-3 py-1.5 rounded-md border text-sm w-full md:w-auto">
+                                        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">MOP:</span>
+                                        <select
+                                            className="bg-transparent border-none text-sm outline-none w-full md:w-[110px] cursor-pointer"
+                                            value={paymentMethod}
+                                            onChange={(e) => setPaymentMethod(e.target.value)}
+                                        >
+                                            <option value="all">All Payments</option>
+                                            <option value="cash">Cash</option>
+                                            <option value="e-wallet">E-Wallet</option>
+                                            <option value="split_bill">Split Bill</option>
+                                        </select>
+                                    </div>
+                                    {(search || dateFrom || dateTo || paymentMethod !== 'all') && (
                                         <Button
                                             variant="ghost"
                                             size="icon"
