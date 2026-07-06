@@ -463,7 +463,14 @@ export default function Index({ transfers, stats, filters }: { transfers: Pagina
                                                             {item.quantity}
                                                         </TableCell>
                                                         <TableCell className="text-right font-semibold pr-6">
-                                                            {item.received_quantity}
+                                                            <div className="flex items-center justify-end gap-1.5">
+                                                                <span>{item.received_quantity}</span>
+                                                                {item.status === 'rejected' && (
+                                                                    <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4 leading-3 bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300 border-rose-200 dark:border-rose-800 hover:bg-rose-100/80">
+                                                                        Rejected
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
                                                         </TableCell>
                                                     </TableRow>
                                                 ))}

@@ -144,6 +144,9 @@ export default function PrintItem({ transfer }: { transfer: Transfer }) {
                                             <TableCell className="text-right py-3 text-gray-500">{item.quantity}</TableCell>
                                             <TableCell className="text-right py-3 pr-0 font-medium font-mono">
                                                 {item.received_quantity}
+                                                {item.status === 'rejected' && (
+                                                    <span className="ml-1 text-[10px] text-red-600 font-bold uppercase">(Rejected)</span>
+                                                )}
                                             </TableCell>
                                         </>
                                     ) : (

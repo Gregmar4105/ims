@@ -78,7 +78,7 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
         status: 'completed',
         received_by: '',
         received_by_name: '',
-        items: [] as Array<{ id: number; received_quantity: number }>,
+        items: [] as Array<{ id: number; received_quantity: number; is_rejected?: boolean }>,
     });
 
     const formatDate = (dateString: string) => {
@@ -100,7 +100,8 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
             received_by_name: currentUser.name,
             items: transfer.items.map(item => ({
                 id: item.id,
-                received_quantity: item.received_quantity > 0 ? item.received_quantity : item.quantity
+                received_quantity: item.received_quantity > 0 ? item.received_quantity : item.quantity,
+                is_rejected: false
             }))
         });
 
@@ -144,6 +145,20 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
         setData('items', data.items.map(item =>
             item.id === itemId ? { ...item, received_quantity: clampedVal } : item
         ));
+    };
+
+    const handleToggleReject = (itemId: number, checked: boolean) => {
+        setData('items', data.items.map(item => {
+            if (item.id === itemId) {
+                const originalItem = selectedTransfer?.items.find(i => i.id === itemId);
+                return {
+                    ...item,
+                    is_rejected: checked,
+                    received_quantity: checked ? 0 : (originalItem ? originalItem.quantity : 0)
+                };
+            }
+            return item;
+        }));
     };
 
     const handleSubmitConfirm = () => {
@@ -479,21 +494,25 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                                         const formItem = data.items.find(i => i.id === item.id);
                                         const isVerified = verifiedProducts[item.id] ?? true;
                                         const currentQty = formItem?.received_quantity ?? 0;
+                                        const isRejected = formItem?.is_rejected ?? false;
 
                                         return (
                                             <div 
                                                 key={item.id} 
                                                 className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 rounded-lg border transition-all duration-200 gap-4 bg-muted/10 ${
-                                                    !isVerified 
-                                                        ? 'border-rose-200 dark:border-rose-950/30 bg-rose-50/20 dark:bg-rose-950/10 opacity-75' 
-                                                        : 'hover:bg-muted/30 border-zinc-100 dark:border-zinc-800'
+                                                    isRejected
+                                                        ? 'border-rose-300 dark:border-rose-900 bg-rose-50/20 dark:bg-rose-950/10'
+                                                        : !isVerified 
+                                                            ? 'border-rose-200 dark:border-rose-950/30 bg-rose-50/20 dark:bg-rose-950/10 opacity-75' 
+                                                            : 'hover:bg-muted/30 border-zinc-100 dark:border-zinc-800'
                                                 }`}
                                             >
-                                                <div className="flex items-start gap-3 w-full sm:w-[60%]">
+                                                <div className="flex items-start gap-3 w-full sm:w-[50%]">
                                                     <div className="pt-0.5">
                                                         <Checkbox 
                                                             id={`verify-${item.id}`}
-                                                            checked={isVerified}
+                                                            checked={isVerified && !isRejected}
+                                                            disabled={isRejected}
                                                             onCheckedChange={(checked) => handleToggleVerify(item.id, !!checked)}
                                                             className="h-5 w-5 rounded border-zinc-300 dark:border-zinc-700"
                                                         />
@@ -501,7 +520,7 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                                                     <div className="space-y-1">
                                                         <Label 
                                                             htmlFor={`verify-${item.id}`}
-                                                            className={`font-semibold text-sm cursor-pointer select-none text-zinc-900 dark:text-zinc-50 ${!isVerified ? 'line-through text-muted-foreground' : ''}`}
+                                                            className={`font-semibold text-sm cursor-pointer select-none text-zinc-900 dark:text-zinc-50 ${isRejected ? 'line-through text-rose-500/80 dark:text-rose-400/80' : !isVerified ? 'line-through text-muted-foreground' : ''}`}
                                                         >
                                                             {item.product?.name}
                                                         </Label>
@@ -525,28 +544,45 @@ export default function Incoming({ transfers }: { transfers: Transfer[] }) {
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-[40%]">
+                                                <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-[50%]">
                                                     <div className="text-right">
                                                         <span className="text-xs text-muted-foreground block font-medium">Sent Qty</span>
                                                         <span className="font-bold text-sm text-zinc-700 dark:text-zinc-300">{item.quantity}</span>
                                                     </div>
 
-                                                    <div className="flex flex-col items-end gap-1 min-w-[120px]">
+                                                    <div className="flex flex-col items-end gap-1 min-w-[100px]">
                                                         <span className="text-xs text-muted-foreground font-medium block">Received Qty</span>
                                                         <div className="flex items-center gap-2">
                                                             <Input 
                                                                 type="number"
                                                                 min={0}
                                                                 max={item.quantity}
-                                                                disabled={!isVerified}
+                                                                disabled={!isVerified || isRejected}
                                                                 value={currentQty}
                                                                 onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
                                                                 className="w-20 text-center font-semibold h-9 focus-visible:ring-primary"
                                                             />
                                                         </div>
-                                                        {!isVerified && (
+                                                        {isRejected ? (
+                                                            <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">Rejected</span>
+                                                        ) : !isVerified ? (
                                                             <span className="text-[10px] text-rose-500 font-semibold mt-0.5">Product Mismatch</span>
-                                                        )}
+                                                        ) : null}
+                                                    </div>
+
+                                                    <div className="flex flex-col items-center gap-1.5 pt-4">
+                                                        <Checkbox 
+                                                            id={`reject-${item.id}`}
+                                                            checked={isRejected}
+                                                            onCheckedChange={(checked) => handleToggleReject(item.id, !!checked)}
+                                                            className="h-5 w-5 rounded border-rose-300 dark:border-rose-700 data-[state=checked]:bg-rose-600 data-[state=checked]:text-white"
+                                                        />
+                                                        <Label 
+                                                            htmlFor={`reject-${item.id}`}
+                                                            className="text-[10px] font-bold text-rose-600 dark:text-rose-400 cursor-pointer select-none"
+                                                        >
+                                                            Reject
+                                                        </Label>
                                                     </div>
                                                 </div>
                                             </div>

@@ -325,6 +325,7 @@ class TransferController extends Controller
             'items' => 'required|array',
             'items.*.id' => 'required|exists:transfer_items,id',
             'items.*.received_quantity' => 'required|integer|min:0',
+            'items.*.is_rejected' => 'nullable|boolean',
         ]);
 
         $newStatus = $request->status;
@@ -371,7 +372,7 @@ class TransferController extends Controller
                         // Update item status and received quantity
                         $item->update([
                             'received_quantity' => 0,
-                            'status' => 'missing',
+                            'status' => 'rejected',
                         ]);
                     }
 
@@ -391,40 +392,69 @@ class TransferController extends Controller
                             continue;
                         }
 
-                        $newReceivedQty = max(0, min((int)$itemData['received_quantity'], $item->quantity));
-                        $remainingQty = $item->quantity - $newReceivedQty;
+                        $isRejected = !empty($itemData['is_rejected']);
 
-                        // Increment destination stock by the newly received quantity
-                        if ($newReceivedQty > 0) {
-                            $destBranchProduct = DB::table('branch_products')
-                                ->where('branch_id', $transfer->destination_branch_id)
+                        if ($isRejected) {
+                            // Return sent quantity to source branch
+                            $sourceBranchProduct = DB::table('branch_products')
+                                ->where('branch_id', $transfer->source_branch_id)
                                 ->where('product_id', $item->product_id)
                                 ->first();
 
-                            if ($destBranchProduct) {
+                            if ($sourceBranchProduct) {
                                 DB::table('branch_products')
-                                    ->where('id', $destBranchProduct->id)
-                                    ->increment('quantity', $newReceivedQty);
+                                    ->where('id', $sourceBranchProduct->id)
+                                    ->increment('quantity', $item->quantity);
                             } else {
                                 DB::table('branch_products')->insert([
-                                    'branch_id' => $transfer->destination_branch_id,
+                                    'branch_id' => $transfer->source_branch_id,
                                     'product_id' => $item->product_id,
-                                    'quantity' => $newReceivedQty,
+                                    'quantity' => $item->quantity,
                                     'created_at' => now(),
                                     'updated_at' => now(),
                                 ]);
                             }
-                        }
 
-                        if ($remainingQty > 0) {
-                            $hasRemaining = true;
                             $item->update([
-                                'quantity' => $remainingQty,
                                 'received_quantity' => 0,
-                                'status' => 'incomplete',
+                                'status' => 'rejected',
                             ]);
                         } else {
-                            $item->delete();
+                            $newReceivedQty = max(0, min((int)$itemData['received_quantity'], $item->quantity));
+                            $remainingQty = $item->quantity - $newReceivedQty;
+
+                            // Increment destination stock by the newly received quantity
+                            if ($newReceivedQty > 0) {
+                                $destBranchProduct = DB::table('branch_products')
+                                    ->where('branch_id', $transfer->destination_branch_id)
+                                    ->where('product_id', $item->product_id)
+                                    ->first();
+
+                                if ($destBranchProduct) {
+                                    DB::table('branch_products')
+                                        ->where('id', $destBranchProduct->id)
+                                        ->increment('quantity', $newReceivedQty);
+                                } else {
+                                    DB::table('branch_products')->insert([
+                                        'branch_id' => $transfer->destination_branch_id,
+                                        'product_id' => $item->product_id,
+                                        'quantity' => $newReceivedQty,
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                }
+                            }
+
+                            if ($remainingQty > 0) {
+                                $hasRemaining = true;
+                                $item->update([
+                                    'quantity' => $remainingQty,
+                                    'received_quantity' => 0,
+                                    'status' => 'incomplete',
+                                ]);
+                            } else {
+                                $item->delete();
+                            }
                         }
                     }
 
@@ -452,39 +482,81 @@ class TransferController extends Controller
                             continue;
                         }
 
-                        $newReceivedQty = (int)$itemData['received_quantity'];
-                        $oldReceivedQty = (int)$item->received_quantity;
+                        $isRejected = !empty($itemData['is_rejected']);
 
-                        // Difference to add/remove from destination branch
-                        $delta = $newReceivedQty - $oldReceivedQty;
-
-                        if ($delta !== 0) {
-                            $destBranchProduct = DB::table('branch_products')
-                                ->where('branch_id', $transfer->destination_branch_id)
+                        if ($isRejected) {
+                            // 1. Return sent quantity to source branch
+                            $sourceBranchProduct = DB::table('branch_products')
+                                ->where('branch_id', $transfer->source_branch_id)
                                 ->where('product_id', $item->product_id)
                                 ->first();
 
-                            if ($destBranchProduct) {
+                            if ($sourceBranchProduct) {
                                 DB::table('branch_products')
-                                    ->where('id', $destBranchProduct->id)
-                                    ->increment('quantity', $delta);
+                                    ->where('id', $sourceBranchProduct->id)
+                                    ->increment('quantity', $item->quantity);
                             } else {
                                 DB::table('branch_products')->insert([
-                                    'branch_id' => $transfer->destination_branch_id,
+                                    'branch_id' => $transfer->source_branch_id,
                                     'product_id' => $item->product_id,
-                                    'quantity' => $newReceivedQty,
+                                    'quantity' => $item->quantity,
                                     'created_at' => now(),
                                     'updated_at' => now(),
                                 ]);
                             }
-                        }
 
-                        // Determine item status
-                        $itemStatus = 'ok';
-                        if ($newReceivedQty === 0) {
-                            $itemStatus = 'missing';
-                        } elseif ($newReceivedQty < $item->quantity) {
-                            $itemStatus = 'incomplete';
+                            // 2. Remove previously received quantity from destination branch
+                            $oldReceivedQty = (int)$item->received_quantity;
+                            if ($oldReceivedQty > 0) {
+                                $destBranchProduct = DB::table('branch_products')
+                                    ->where('branch_id', $transfer->destination_branch_id)
+                                    ->where('product_id', $item->product_id)
+                                    ->first();
+
+                                if ($destBranchProduct) {
+                                    DB::table('branch_products')
+                                        ->where('id', $destBranchProduct->id)
+                                        ->decrement('quantity', $oldReceivedQty);
+                                }
+                            }
+
+                            $newReceivedQty = 0;
+                            $itemStatus = 'rejected';
+                        } else {
+                            $newReceivedQty = (int)$itemData['received_quantity'];
+                            $oldReceivedQty = (int)$item->received_quantity;
+
+                            // Difference to add/remove from destination branch
+                            $delta = $newReceivedQty - $oldReceivedQty;
+
+                            if ($delta !== 0) {
+                                $destBranchProduct = DB::table('branch_products')
+                                    ->where('branch_id', $transfer->destination_branch_id)
+                                    ->where('product_id', $item->product_id)
+                                    ->first();
+
+                                if ($destBranchProduct) {
+                                    DB::table('branch_products')
+                                        ->where('id', $destBranchProduct->id)
+                                        ->increment('quantity', $delta);
+                                } else {
+                                    DB::table('branch_products')->insert([
+                                        'branch_id' => $transfer->destination_branch_id,
+                                        'product_id' => $item->product_id,
+                                        'quantity' => $newReceivedQty,
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                }
+                            }
+
+                            // Determine item status
+                            $itemStatus = 'ok';
+                            if ($newReceivedQty === 0) {
+                                $itemStatus = 'missing';
+                            } elseif ($newReceivedQty < $item->quantity) {
+                                $itemStatus = 'incomplete';
+                            }
                         }
 
                         $item->update([
