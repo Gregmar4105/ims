@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trash2, Plus, Calendar, DollarSign, Search, ListFilter, ClipboardList, Wallet, User, Clock, Loader2, XCircle, Check, Cog } from 'lucide-react';
+import { Trash2, Plus, Calendar, DollarSign, CircleDollarSign, Coins, Search, ListFilter, ClipboardList, Wallet, User, Clock, Loader2, XCircle, Check, Cog } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import Pagination from '@/components/Pagination';
