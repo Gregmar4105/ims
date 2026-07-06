@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, usePage, router } from '@inertiajs/react';
 import { useEffect, useState, useRef } from 'react';
-import { Send, Search, MessageSquare, MoreVertical, ArrowLeft, ChevronLeft, Truck, Clock, FileText, Paperclip, X, Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Send, Search, MessageSquare, MoreVertical, ArrowLeft, ChevronLeft, Truck, Clock, FileText, Paperclip, X, Camera, Image as ImageIcon, Loader2, Reply } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { toast } from 'sonner';
 
 // Add global declarations
 declare global {
@@ -47,6 +48,88 @@ interface Message {
     attachment_path?: string | null;
     created_at: string;
     sender: User;
+    reply_to_message_id?: number | null;
+    reply_to?: Message | null;
+}
+
+interface SwipeToReplyProps {
+    children: React.ReactNode;
+    onReply: () => void;
+}
+
+function SwipeToReply({ children, onReply }: SwipeToReplyProps) {
+    const [startX, setStartX] = useState(0);
+    const [startY, setStartY] = useState(0);
+    const [currentX, setCurrentX] = useState(0);
+    const [isSwiping, setIsSwiping] = useState(false);
+    const [isSwipeTriggered, setIsSwipeTriggered] = useState(false);
+    const threshold = 50;
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        setStartX(e.touches[0].clientX);
+        setStartY(e.touches[0].clientY);
+        setCurrentX(e.touches[0].clientX);
+        setIsSwiping(false);
+        setIsSwipeTriggered(false);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        const diffX = e.touches[0].clientX - startX;
+        const diffY = e.touches[0].clientY - startY;
+
+        // Swiping left shifts the message bubble to the left to show the reply icon on the right.
+        if (diffX < 0 && Math.abs(diffX) > Math.abs(diffY)) {
+            if (Math.abs(diffX) > 10) {
+                setIsSwiping(true);
+            }
+            if (isSwiping) {
+                const translateX = Math.max(diffX, -80);
+                setCurrentX(startX + translateX);
+                setIsSwipeTriggered(Math.abs(translateX) >= threshold);
+            }
+        }
+    };
+
+    const handleTouchEnd = () => {
+        const diffX = currentX - startX;
+        if (isSwiping && Math.abs(diffX) >= threshold) {
+            onReply();
+        }
+        setIsSwiping(false);
+        setIsSwipeTriggered(false);
+        setStartX(0);
+        setCurrentX(0);
+    };
+
+    const translation = isSwiping ? Math.max(currentX - startX, -80) : 0;
+
+    return (
+        <div className="relative w-full overflow-hidden">
+            {isSwiping && (
+                <div 
+                    className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center transition-all duration-200"
+                    style={{
+                        opacity: Math.min(Math.abs(translation) / threshold, 1),
+                        transform: `scale(${Math.min(Math.abs(translation) / threshold, 1.1)}) translateY(-50%)`,
+                        color: isSwipeTriggered ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
+                    }}
+                >
+                    <Reply className="w-5 h-5" />
+                </div>
+            )}
+            <div
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={{
+                    transform: `translateX(${translation}px)`,
+                    transition: isSwiping ? 'none' : 'transform 0.2s cubic-bezier(0.1, 0.8, 0.25, 1)',
+                }}
+            >
+                {children}
+            </div>
+        </div>
+    );
 }
 
 interface Transfer {
@@ -143,6 +226,21 @@ export default function BranchChatIndex({ branch }: { branch: Branch }) {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [replyingToMessage, setReplyingToMessage] = useState<Message | null>(null);
+    const [highlightedMessageId, setHighlightedMessageId] = useState<number | null>(null);
+
+    const scrollToMessage = (replyToId: number) => {
+        const element = document.getElementById(`msg-${replyToId}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setHighlightedMessageId(replyToId);
+            setTimeout(() => {
+                setHighlightedMessageId(null);
+            }, 1500);
+        } else {
+            toast.error("Original message not loaded. Scroll up to load older messages.");
+        }
+    };
 
     // Contextual transfers for selected branch
     const branchTransfers = selectedBranch ? activeTransfers.filter(t => {
@@ -367,12 +465,16 @@ export default function BranchChatIndex({ branch }: { branch: Branch }) {
         if (attachment) {
             formData.append('attachment', attachment);
         }
+        if (replyingToMessage) {
+            formData.append('reply_to_message_id', String(replyingToMessage.id));
+        }
 
         // Optimistic UI could go here, but for files it's tricky.
         // We'll rely on the comprehensive response.
 
         setNewMessage('');
         clearAttachment();
+        setReplyingToMessage(null);
 
         axios.post(`/branch-chats/messages`, formData, {
             headers: {
@@ -654,7 +756,16 @@ export default function BranchChatIndex({ branch }: { branch: Branch }) {
                                             };
 
                                             return (
-                                                <div key={msg.id || index} className="flex flex-col gap-4">
+                                                <div 
+                                                    key={msg.id || index} 
+                                                    id={`msg-${msg.id}`}
+                                                    className={cn(
+                                                        "flex flex-col gap-4 transition-all duration-500 rounded-2xl p-1",
+                                                        highlightedMessageId === msg.id 
+                                                            ? "bg-primary/10 scale-[1.01] ring-1 ring-primary/30" 
+                                                            : ""
+                                                    )}
+                                                >
                                                     {showDateSeparator && (
                                                         <div className="flex justify-center my-2 sticky top-0 z-10">
                                                             <span className="text-xs font-medium text-muted-foreground bg-muted/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm border">
@@ -662,45 +773,77 @@ export default function BranchChatIndex({ branch }: { branch: Branch }) {
                                                             </span>
                                                         </div>
                                                     )}
-                                                    <div
-                                                        className={cn(
-                                                            "flex gap-2 max-w-[85%]",
-                                                            isMe ? "ml-auto flex-row-reverse" : ""
-                                                        )}
-                                                    >
-                                                        {!isMe && (
-                                                            <Avatar className="w-8 h-8 mt-1">
-                                                                <AvatarImage src={msg.sender?.profile_photo_url} />
-                                                                <AvatarFallback>{msg.sender?.name?.substring(0, 1) || '?'}</AvatarFallback>
-                                                            </Avatar>
-                                                        )}
-                                                        <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
-                                                            <span className="text-[10px] text-muted-foreground mb-1 px-1">
-                                                                {msg.sender?.name || 'Unknown User'}
-                                                            </span>
-                                                            <div className={cn(
-                                                                "p-3 rounded-2xl shadow-sm",
-                                                                isMe
-                                                                    ? "bg-primary text-primary-foreground rounded-tr-none"
-                                                                    : "bg-card border rounded-tl-none"
-                                                            )}>
-                                                                {msg.attachment_path && (
-                                                                    <div className="mb-2">
-                                                                        <img
-                                                                            src={`/storage/${msg.attachment_path}`}
-                                                                            alt="Attachment"
-                                                                            className="rounded-lg max-h-60 object-contain cursor-pointer"
-                                                                            onClick={() => setPreviewImage(`/storage/${msg.attachment_path}`)}
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                                {msg.content && <p className="text-sm">{msg.content}</p>}
-                                                                <span className="text-[10px] opacity-70 mt-1 block">
-                                                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    <SwipeToReply onReply={() => setReplyingToMessage(msg)}>
+                                                        <div
+                                                            className={cn(
+                                                                "flex gap-2 max-w-[85%] group relative",
+                                                                isMe ? "ml-auto flex-row-reverse" : ""
+                                                            )}
+                                                        >
+                                                            {!isMe && (
+                                                                <Avatar className="w-8 h-8 mt-1">
+                                                                    <AvatarImage src={msg.sender?.profile_photo_url} />
+                                                                    <AvatarFallback>{msg.sender?.name?.substring(0, 1) || '?'}</AvatarFallback>
+                                                                </Avatar>
+                                                            )}
+                                                            <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
+                                                                <span className="text-[10px] text-muted-foreground mb-1 px-1">
+                                                                    {msg.sender?.name || 'Unknown User'}
                                                                 </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className={cn(
+                                                                        "p-3 rounded-2xl shadow-sm relative",
+                                                                        isMe
+                                                                            ? "bg-primary text-primary-foreground rounded-tr-none"
+                                                                            : "bg-card border rounded-tl-none"
+                                                                    )}>
+                                                                        {msg.reply_to && (
+                                                                            <div 
+                                                                                onClick={() => scrollToMessage(msg.reply_to!.id)}
+                                                                                className={cn(
+                                                                                    "mb-2 p-2 rounded-lg text-xs cursor-pointer select-none border-l-2 text-left truncate max-w-xs transition-colors",
+                                                                                    isMe 
+                                                                                        ? "bg-primary-foreground/10 border-primary-foreground/40 text-primary-foreground/90 hover:bg-primary-foreground/20" 
+                                                                                        : "bg-muted border-primary/40 text-muted-foreground hover:bg-muted/80"
+                                                                                )}
+                                                                            >
+                                                                                <div className="font-semibold truncate">
+                                                                                    {msg.reply_to.sender?.name || "Unknown User"}
+                                                                                </div>
+                                                                                <div className="truncate opacity-85">
+                                                                                    {msg.reply_to.content || (msg.reply_to.attachment_path ? "📷 Photo" : "")}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                        {msg.attachment_path && (
+                                                                            <div className="mb-2">
+                                                                                <img
+                                                                                    src={`/storage/${msg.attachment_path}`}
+                                                                                    alt="Attachment"
+                                                                                    className="rounded-lg max-h-60 object-contain cursor-pointer"
+                                                                                    onClick={() => setPreviewImage(`/storage/${msg.attachment_path}`)}
+                                                                                />
+                                                                            </div>
+                                                                        )}
+                                                                        {msg.content && <p className="text-sm">{msg.content}</p>}
+                                                                        <span className="text-[10px] opacity-70 mt-1 block">
+                                                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                        </span>
+                                                                    </div>
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="hidden md:flex opacity-0 group-hover:opacity-100 h-8 w-8 rounded-full transition-opacity shrink-0 text-muted-foreground hover:bg-muted"
+                                                                        onClick={() => setReplyingToMessage(msg)}
+                                                                        title="Reply"
+                                                                    >
+                                                                        <Reply className="w-4 h-4" />
+                                                                    </Button>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    </SwipeToReply>
                                                 </div>
                                             );
                                         })}
@@ -727,12 +870,35 @@ export default function BranchChatIndex({ branch }: { branch: Branch }) {
                                                     {attachment && <div className="opacity-50">{(attachment.size / 1024 / 1024).toFixed(2)} MB</div>}
                                                 </div>
                                                 <button onClick={clearAttachment} className="p-1 hover:bg-muted-foreground/20 rounded-full">
-                                                    <X className="w-4 h-4" />
+                                                        <X className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         )}
 
-                                        <form onSubmit={handleSendMessage} className="flex gap-2 items-end">
+                                        {/* Reply Preview Area */}
+                                        {replyingToMessage && (
+                                            <div className="flex items-center justify-between gap-3 p-3 bg-muted/60 border border-b-0 rounded-t-xl animate-in slide-in-from-bottom-2 duration-200">
+                                                <div className="flex-1 min-w-0 border-l-2 border-primary pl-3">
+                                                    <div className="text-xs font-semibold text-primary">
+                                                        Replying to {replyingToMessage.sender?.name}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground truncate">
+                                                        {replyingToMessage.content || (replyingToMessage.attachment_path ? "📷 Photo" : "")}
+                                                    </div>
+                                                </div>
+                                                <Button 
+                                                    type="button" 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-8 w-8 rounded-full shrink-0 text-muted-foreground hover:bg-muted-foreground/10" 
+                                                    onClick={() => setReplyingToMessage(null)}
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        <form onSubmit={handleSendMessage} className={cn("flex gap-2 items-end", replyingToMessage ? "border p-2 bg-card rounded-b-xl border-t-0" : "")}>
                                             {/* File Input */}
                                             <input
                                                 type="file"

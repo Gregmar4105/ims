@@ -23,7 +23,7 @@ class BranchChatController extends Controller
         // Get internal messages for the current user's branch
         $currentBranchId = auth()->user()->branch_id;
         
-        $query = \App\Models\Message::with(['sender.branch'])
+        $query = \App\Models\Message::with(['sender.branch', 'replyTo.sender'])
             ->where('receiver_branch_id', $currentBranchId)
             ->whereHas('sender', function($q) use ($currentBranchId) {
                 // Sender must also be from the exact same branch for it to be internal
@@ -111,6 +111,7 @@ class BranchChatController extends Controller
         $request->validate([
             'content' => 'nullable|string',
             'attachment' => 'nullable|image|max:2048', // Max 2MB
+            'reply_to_message_id' => 'nullable|exists:messages,id',
         ]);
 
         if (empty($request->content) && !$request->hasFile('attachment')) {
@@ -132,6 +133,7 @@ class BranchChatController extends Controller
             'receiver_branch_id' => $senderBranchId, // Self branch = internal
             'content' => $request->content ?? '',
             'attachment_path' => $attachmentPath,
+            'reply_to_message_id' => $request->reply_to_message_id,
         ]);
 
         // Broadcast event
@@ -173,6 +175,6 @@ class BranchChatController extends Controller
             \Illuminate\Support\Facades\Log::error('OneSignal notification failed: ' . $e->getMessage());
         }
 
-        return response()->json($message->load(['sender.branch']));
+        return response()->json($message->load(['sender.branch', 'replyTo.sender']));
     }
 }

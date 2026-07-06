@@ -12,6 +12,7 @@ class Message extends Model
         'content',
         'attachment_path',
         'read_at',
+        'reply_to_message_id',
     ];
 
     public function sender()
@@ -22,5 +23,10 @@ class Message extends Model
     public function receiverBranch()
     {
         return $this->belongsTo(Branch::class, 'receiver_branch_id');
+    }
+
+    public function replyTo()
+    {
+        return $this->belongsTo(Message::class, 'reply_to_message_id');
     }
 }
