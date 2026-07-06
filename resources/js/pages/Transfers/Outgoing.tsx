@@ -11,6 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -66,9 +67,15 @@ const breadcrumbs = [
     },
 ];
 
-export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
+export default function Outgoing({ transfers, branches }: { transfers: Transfer[]; branches: Branch[] }) {
     const { post } = useForm();
     const [initiatingTransfer, setInitiatingTransfer] = useState<Transfer | null>(null);
+    const [selectedBranchId, setSelectedBranchId] = useState<string>('all');
+
+    const filteredTransfers = useMemo(() => {
+        if (selectedBranchId === 'all') return transfers;
+        return transfers.filter(t => t.destination_branch_id === parseInt(selectedBranchId));
+    }, [transfers, selectedBranchId]);
     const [adjustedItems, setAdjustedItems] = useState<{ id: number; product: Product; quantity: number; selected_variations?: Record<string, string> }[]>([]);
     const [notes, setNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -159,23 +166,55 @@ export default function Outgoing({ transfers }: { transfers: Transfer[] }) {
                         <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Outgoing Transfers</h1>
                         <p className="text-muted-foreground mt-1">Manage and track transfers sent to other branches.</p>
                     </div>
-                    <Button className="gap-2 shadow-sm" asChild>
-                        <Link href="/transfers/create">
-                            <Plus className="w-4 h-4" />
-                            New Transfer
-                        </Link>
-                    </Button>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                        <Select value={selectedBranchId} onValueChange={setSelectedBranchId}>
+                            <SelectTrigger className="w-full sm:w-[200px] h-10">
+                                <SelectValue placeholder="Filter by Branch" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Branches</SelectItem>
+                                {branches.map(branch => (
+                                    <SelectItem key={branch.id} value={branch.id.toString()}>
+                                        {branch.branch_name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" className="flex-1 sm:flex-none gap-2 shadow-sm text-gray-700 dark:text-gray-200" asChild>
+                                <a 
+                                    href={selectedBranchId === 'all' ? '/outgoing/print' : `/outgoing/print?branch_id=${selectedBranchId}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <Printer className="w-4 h-4" />
+                                    Print All
+                                </a>
+                            </Button>
+                            <Button className="flex-1 sm:flex-none gap-2 shadow-sm" asChild>
+                                <Link href="/transfers/create">
+                                    <Plus className="w-4 h-4" />
+                                    New Transfer
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
                 </div>
 
-                {transfers.length === 0 ? (
+                {filteredTransfers.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-xl bg-muted/30">
                         <Truck className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
-                        <h3 className="text-lg font-medium">No outgoing transfers</h3>
-                        <p className="text-muted-foreground">Create a new transfer to get started.</p>
+                        <h3 className="text-lg font-medium">
+                            {selectedBranchId === 'all' ? "No outgoing transfers" : "No outgoing transfers for this branch"}
+                        </h3>
+                        <p className="text-muted-foreground">
+                            {selectedBranchId === 'all' ? "Create a new transfer to get started." : "Try clearing the branch filter."}
+                        </p>
                     </div>
                 ) : (
                     <div className="grid gap-6">
-                        {transfers.map((transfer) => (
+                        {filteredTransfers.map((transfer) => (
                             <Card 
                                 key={transfer.id} 
                                 className={`overflow-hidden border shadow-sm hover:shadow-md transition-all duration-200 ${

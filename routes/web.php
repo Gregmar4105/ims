@@ -162,6 +162,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     Route::get('outgoing', [\App\Http\Controllers\TransferController::class, 'outgoing'])->name('transfers.outgoing');
+    Route::get('outgoing/print', [\App\Http\Controllers\TransferController::class, 'printOutgoing'])->name('transfers.printOutgoing');
     Route::get('transfers/create', [\App\Http\Controllers\TransferController::class, 'create'])->name('transfers.create');
     Route::post('transfers', [\App\Http\Controllers\TransferController::class, 'store'])->name('transfers.store');
     Route::post('transfers/{transfer}/reject', [\App\Http\Controllers\TransferController::class, 'reject'])->name('transfers.reject');

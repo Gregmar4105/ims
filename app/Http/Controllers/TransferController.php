@@ -32,8 +32,46 @@ class TransferController extends Controller
             ->latest()
             ->get();
 
+        $branches = Branch::where('id', '!=', $branchId)->get();
+
         return Inertia::render('Transfers/Outgoing', [
             'transfers' => $transfers,
+            'branches' => $branches,
+        ]);
+    }
+
+    public function printOutgoing(Request $request)
+    {
+        $user = auth()->user();
+        
+        $branchId = ($user->hasRole('System Administrator') && session()->has('active_branch_id'))
+            ? session('active_branch_id')
+            : $user->branch_id;
+
+        if (!$branchId) {
+            abort(403, 'User does not belong to a branch or no active branch selected');
+        }
+
+        $query = Transfer::with(['items.product', 'sourceBranch', 'destinationBranch', 'readiedBy', 'approvedBy', 'supplier'])
+            ->where('source_branch_id', $branchId)
+            ->whereIn('status', ['readied', 'outgoing', 'requested', 'incomplete'])
+            ->latest();
+
+        if ($request->has('branch_id') && $request->branch_id && $request->branch_id !== 'all') {
+            $query->where('destination_branch_id', $request->branch_id);
+        }
+
+        $transfers = $query->get();
+        
+        $filteredBranch = null;
+        if ($request->has('branch_id') && $request->branch_id && $request->branch_id !== 'all') {
+            $filteredBranch = Branch::find($request->branch_id);
+        }
+
+        return Inertia::render('Transfers/PrintOutgoing', [
+            'transfers' => $transfers,
+            'filteredBranch' => $filteredBranch,
+            'sourceBranch' => Branch::find($branchId),
         ]);
     }
 
