@@ -111,6 +111,7 @@ export default function Create({ products, pendingSales }: { products: Product[]
         service_fee_payment_method: 'cash',
         service_fee_cash_received: '',
         service_fee_split_ewallet_amount: '',
+        custom_date: '',
     });
 
     const [discountModalOpen, setDiscountModalOpen] = useState(false);
@@ -903,12 +904,29 @@ export default function Create({ products, pendingSales }: { products: Product[]
                     <div className="lg:col-span-2 space-y-6">
                         <Card className="h-full flex flex-col">
                             <CardHeader>
-                                <CardTitle className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <ShoppingCart className="w-5 h-5" />
-                                        Current Sale Items
+                                <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div className="flex flex-wrap items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <ShoppingCart className="w-5 h-5" />
+                                            Current Sale Items
+                                        </div>
+                                        {can('system.admin') && (
+                                            <div className="flex items-center gap-2 bg-muted/40 px-2 py-1 rounded-md border">
+                                                <Label htmlFor="custom-date" className="text-xs font-medium text-muted-foreground whitespace-nowrap cursor-pointer">
+                                                    Backdate:
+                                                </Label>
+                                                <Input
+                                                    id="custom-date"
+                                                    type="date"
+                                                    value={data.custom_date || ''}
+                                                    onChange={(e) => setData('custom_date', e.target.value)}
+                                                    max={new Date().toLocaleDateString('en-CA')}
+                                                    className="w-36 h-7 text-xs px-2 py-0 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none"
+                                                />
+                                            </div>
+                                        )}
                                     </div>
-                                    <Badge variant="secondary">{cart.length} items</Badge>
+                                    <Badge variant="secondary" className="w-fit">{cart.length} items</Badge>
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="flex-1">

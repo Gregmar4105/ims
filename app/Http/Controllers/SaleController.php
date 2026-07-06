@@ -556,6 +556,7 @@ class SaleController extends Controller
             'service_fee_payment_method' => 'required_if:add_service_fee,true|nullable|in:cash,e-wallet,split_bill',
             'service_fee_cash_received' => 'required_if:service_fee_payment_method,split_bill|nullable|numeric|min:0',
             'service_fee_split_ewallet_amount' => 'required_if:service_fee_payment_method,split_bill|nullable|numeric|min:0',
+            'custom_date' => 'nullable|date',
         ]);
         
         $user = auth()->user();
@@ -566,19 +567,29 @@ class SaleController extends Controller
         if (!$branchId) {
             abort(403, 'User does not belong to a branch or active branch not selected');
         }
+
+        $customDate = null;
+        if ($user->hasRole('System Administrator') && $request->filled('custom_date')) {
+            $customDate = Carbon::parse($request->custom_date)->setTimeFrom(now());
+        }
         
         $sale = null;
 
-        DB::transaction(function () use ($request, $user, $branchId, &$sale) {
-            $sale = Sale::create([
+        DB::transaction(function () use ($request, $user, $branchId, $customDate, &$sale) {
+            $sale = new Sale([
                 'branch_id' => $branchId,
                 'status' => 'readied',
                 'readied_by' => $user->id,
                 'notes' => $request->notes,
             ]);
+            if ($customDate) {
+                $sale->created_at = $customDate;
+                $sale->updated_at = $customDate;
+            }
+            $sale->save();
             
             foreach ($request->items as $item) {
-                SaleItem::create([
+                $saleItem = new SaleItem([
                     'sale_id' => $sale->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
@@ -587,10 +598,15 @@ class SaleController extends Controller
                     'custom_code' => $item['custom_code'] ?? null,
                     'note' => $item['note'] ?? null,
                 ]);
+                if ($customDate) {
+                    $saleItem->created_at = $customDate;
+                    $saleItem->updated_at = $customDate;
+                }
+                $saleItem->save();
             }
 
             if ($request->add_service_fee && $request->service_fee_amount > 0) {
-                ServiceFee::create([
+                $serviceFee = new ServiceFee([
                     'branch_id' => $branchId,
                     'name' => $request->service_fee_name ?: 'Service Fee',
                     'amount' => $request->service_fee_amount,
@@ -600,6 +616,11 @@ class SaleController extends Controller
                     'cash_received' => $request->service_fee_payment_method === 'split_bill' ? $request->service_fee_cash_received : null,
                     'split_ewallet_amount' => $request->service_fee_payment_method === 'split_bill' ? $request->service_fee_split_ewallet_amount : null,
                 ]);
+                if ($customDate) {
+                    $serviceFee->created_at = $customDate;
+                    $serviceFee->updated_at = $customDate;
+                }
+                $serviceFee->save();
             }
         });
         
@@ -687,7 +708,11 @@ class SaleController extends Controller
                     $updateData['change_amount'] = $request->reservation_change_amount;
                 }
 
-                $sale->update($updateData);
+                $sale->fill($updateData);
+                if ($sale->created_at->format('Y-m-d') !== now()->format('Y-m-d')) {
+                    $sale->updated_at = $sale->created_at;
+                }
+                $sale->save();
             } else {
                 // Deduct inventory for each item
                 foreach ($sale->items as $item) {
@@ -734,7 +759,11 @@ class SaleController extends Controller
                     $updateData['change_amount'] = $request->change_amount;
                 }
 
-                $sale->update($updateData);
+                $sale->fill($updateData);
+                if ($sale->created_at->format('Y-m-d') !== now()->format('Y-m-d')) {
+                    $sale->updated_at = $sale->created_at;
+                }
+                $sale->save();
             }
         });
         
